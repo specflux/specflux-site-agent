@@ -222,11 +222,27 @@ final class Checks {
 				),
 				$count
 			),
-			function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=agent-safety-abilities' ) : null,
+			self::abilityReviewUrl(),
 			'manage_options',
 			__( 'Ask an administrator to review these abilities in SenroGate → Abilities.', 'senroflux' ),
 			'senroflux_passthrough_unreviewed'
 		);
+	}
+
+	/**
+	 * Where SenroGate's ability review lives. It registers under Tools, so
+	 * prefer WordPress's own answer for the registered menu page and fall
+	 * back to the Tools URL when the menu is not registered in this request.
+	 */
+	private static function abilityReviewUrl(): ?string {
+		if ( function_exists( 'menu_page_url' ) ) {
+			$url = menu_page_url( 'agent-safety-abilities', false );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+
+		return function_exists( 'admin_url' ) ? admin_url( 'tools.php?page=agent-safety-abilities' ) : null;
 	}
 
 	/** Has this user dismissed the Agent Safety advisory? Never re-arms. */

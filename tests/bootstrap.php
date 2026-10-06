@@ -476,6 +476,13 @@ if ( ! function_exists( 'admin_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'menu_page_url' ) ) {
+	/** Minimal shim: a page is "registered" when the test seeded its URL. */
+	function menu_page_url( string $menu_slug, bool $display = true ): string {
+		return (string) ( $GLOBALS['senroflux_test_menu_urls'][ $menu_slug ] ?? '' );
+	}
+}
+
 if ( ! function_exists( 'get_transient' ) ) {
 	$GLOBALS['senroflux_test_transients'] = array();
 

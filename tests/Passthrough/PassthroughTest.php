@@ -276,6 +276,21 @@ final class PassthroughTest extends TestCase {
 		$this->assertSame( array( 'acme/delete-things' ), Passthrough::awaitingReview() );
 	}
 
+	public function test_the_setup_check_links_senrogates_registered_review_page(): void {
+		$this->enable( array( 'acme/list-things' ) );
+		Plugin::reset();
+		Plugin::set_dependency_probe( true );
+		try {
+			$this->assertSame( 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities', Checks::passthroughAwaitingReview()?->fixUrl(), 'unregistered menu falls back to Tools' );
+
+			$GLOBALS['senroflux_test_menu_urls'] = array( 'agent-safety-abilities' => 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities&x=1' );
+			$this->assertSame( 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities&x=1', Checks::passthroughAwaitingReview()?->fixUrl(), 'the registered menu URL is preferred' );
+		} finally {
+			unset( $GLOBALS['senroflux_test_menu_urls'] );
+			Plugin::reset();
+		}
+	}
+
 	public function test_the_save_handler_needs_the_capability_and_sanitises(): void {
 		$screen = new class() extends SettingsScreen {
 			public ?string $to = 'none';
