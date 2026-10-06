@@ -424,6 +424,13 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/** Minimal shim (core also strips script/style bodies). */
+	function wp_strip_all_tags( string $text ): string {
+		return trim( strip_tags( $text ) );
+	}
+}
+
 if ( ! function_exists( 'esc_attr' ) ) {
 	/** Identity shim. */
 	function esc_attr( $text ) {

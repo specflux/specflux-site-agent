@@ -530,6 +530,9 @@
                 "string",
                 "string"
             ],
+            "senroflux_result_presenters": [
+                "list<Presenter>"
+            ],
             "senroflux_default_budget": [
                 "array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int}"
             ]

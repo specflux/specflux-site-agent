@@ -14,6 +14,7 @@ use Specflux\SenroFlux\Http\Ajax;
 use Specflux\SenroFlux\Http\Rest;
 use Specflux\SenroFlux\Model\AiClientGateway;
 use Specflux\SenroFlux\Model\ImageCapability;
+use Specflux\SenroFlux\Present\ResultPresenter;
 use Specflux\SenroFlux\Model\ModelGatewayInterface;
 use Specflux\SenroFlux\Packs\ObjectLookup;
 use Specflux\SenroFlux\Run\Budget;
@@ -828,6 +829,7 @@ final class Plugin {
 		$steps       = array();
 		$suggestions = array();
 		$resolutions = array();
+		$presenter   = new ResultPresenter();
 		foreach ( $store->getSteps( $run_id ) as $step ) {
 			$steps[] = array(
 				'seq'         => $step->seq,
@@ -848,6 +850,12 @@ final class Plugin {
 				// tier (harness-internal tool results, questions, plans).
 				'tier'        => is_array( $step->messageArray ) && array_key_exists( 'tier', $step->messageArray )
 					? $step->messageArray['tier']
+					: null,
+				// 0.4 S1: additive. The card the Runs screen renders for a
+				// tool_result, computed here at read time from the stored
+				// response (no schema change); null for every other kind.
+				'display'     => StepKind::ToolResult === $step->kind
+					? $presenter->present( (string) $step->toolName, self::toolResponse( $step->messageArray ), $step->status )
 					: null,
 			);
 
@@ -1002,6 +1010,18 @@ final class Plugin {
 	// ------------------------------------------------------------------
 	// Internals
 	// ------------------------------------------------------------------
+
+	/**
+	 * The FunctionResponse's response out of a tool_result message.
+	 *
+	 * @param array<string,mixed>|null $message Stored message_json.
+	 * @return array<string,mixed>
+	 */
+	private static function toolResponse( ?array $message ): array {
+		$response = $message['parts'][0]['functionResponse']['response'] ?? null;
+
+		return is_array( $response ) ? $response : array();
+	}
 
 	/**
 	 * Is the plugin backed by a database handle and the Runner class loaded?

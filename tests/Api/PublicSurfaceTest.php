@@ -45,9 +45,10 @@ final class PublicSurfaceTest extends TestCase {
 	 */
 	private static function apiHooks(): array {
 		return array(
-			'senroflux_packs'          => array( 'array<string,Pack>' ),
-			'senroflux_run_skills'     => array( 'list<Skill>', 'Pack|null', 'string', 'string' ),
-			'senroflux_default_budget' => array(
+			'senroflux_packs'             => array( 'array<string,Pack>' ),
+			'senroflux_run_skills'        => array( 'list<Skill>', 'Pack|null', 'string', 'string' ),
+			'senroflux_result_presenters' => array( 'list<Presenter>' ),
+			'senroflux_default_budget'    => array(
 				'array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int}',
 			),
 		);
