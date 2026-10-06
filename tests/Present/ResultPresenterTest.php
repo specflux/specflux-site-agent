@@ -409,15 +409,107 @@ final class ResultPresenterTest extends TestCase {
 		$this->assertSame( 'table', $card['type'] );
 		$this->assertSame( array( 'a', '1' ), $card['rows'][0] );
 	}
+
+	public function test_page_id_gets_a_page_preview_link_from_the_helper(): void {
+		$links = new FakeLinks();
+		$card  = ( new ResultPresenter( null, $links ) )->present(
+			'senroflux/update-post',
+			array(
+				'id'        => 11,
+				'status'    => 'draft',
+				'post_type' => 'page',
+			)
+		);
+
+		$this->assertSame( 'Page #11', $card['title'] );
+		$this->assertSame( 'https://example.test/?p=11&preview=true', $this->labels( $card['links'] )['Preview'] );
+	}
+
+	public function test_a_helper_returning_null_omits_the_link(): void {
+		$links          = new FakeLinks();
+		$links->missing = array( 42 );
+		$card           = ( new ResultPresenter( null, $links ) )->present(
+			'senroflux/create-post',
+			array(
+				'id'     => 42,
+				'status' => 'draft',
+			)
+		);
+
+		$this->assertSame( array(), $card['links'] );
+	}
+
+	public function test_title_and_coupon_code_resolve_from_the_id(): void {
+		$links          = new FakeLinks();
+		$links->titles  = array(
+			42 => 'Spring sale',
+			3  => 'hero.jpg',
+		);
+		$links->coupons = array( 61 => 'SPRING10' );
+		$presenter      = new ResultPresenter( null, $links );
+
+		$this->assertSame(
+			'Spring sale',
+			$presenter->present(
+				'senroflux/create-post',
+				array(
+					'id'     => 42,
+					'status' => 'draft',
+				)
+			)['title']
+		);
+		$this->assertSame(
+			'hero.jpg',
+			$presenter->present(
+				'senroflux/generate-image',
+				array(
+					'attachment_id' => 3,
+					'url'           => 'https://example.test/u/a.png',
+				)
+			)['title']
+		);
+		$this->assertSame( 'SPRING10', $presenter->present( 'senroflux/coupon-create', array( 'coupon_id' => 61 ) )['title'] );
+		$this->assertSame(
+			'Post #9',
+			$presenter->present(
+				'senroflux/create-post',
+				array(
+					'id'     => 9,
+					'status' => 'draft',
+				)
+			)['title']
+		);
+	}
 }
 
 final class FakeLinks implements Links {
 
-	public function edit( int $id ): string {
-		return 'https://example.test/edit/' . $id;
+	/** @var array<int,string> */
+	public array $titles = array();
+
+	/** @var array<int,string> */
+	public array $coupons = array();
+
+	/** @var list<int> Ids whose helpers return null. */
+	public array $missing = array();
+
+	public function edit( int $id ): ?string {
+		return in_array( $id, $this->missing, true ) ? null : 'https://example.test/edit/' . $id;
 	}
 
-	public function view( int $id, bool $published ): string {
+	public function view( int $id, bool $published ): ?string {
+		if ( in_array( $id, $this->missing, true ) ) {
+			return null;
+		}
+
 		return 'https://example.test/?p=' . $id . ( $published ? '' : '&preview=true' );
+	}
+
+	public function title( int $id ): string {
+		return $this->titles[ $id ] ?? '';
+	}
+
+	public function couponCode( int $id ): string {
+		return $this->coupons[ $id ] ?? '';
 	}
 }

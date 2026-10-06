@@ -28,6 +28,9 @@ final class MediaPresenter implements Presenter {
 		$id    = (int) $response['attachment_id'];
 		$alt   = Fmt::text( $response['alt'] ?? '' );
 		$title = Fmt::first( $response, array( 'title', 'alt' ) );
+		if ( '' === $title ) {
+			$title = Fmt::text( $links->title( $id ) );
+		}
 
 		return array(
 			'type'          => 'media',

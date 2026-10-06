@@ -90,11 +90,11 @@ final class Fmt {
 	 * A link entry for a payload; null when the URL is not usable.
 	 *
 	 * @param string $label Link text.
-	 * @param string $url   URL.
+	 * @param string|null $url   URL; null or unusable omits the link.
 	 * @param string $kind  edit|preview|view.
 	 * @return array{label:string,url:string,kind:string}|null
 	 */
-	public static function link( string $label, string $url, string $kind ): ?array {
+	public static function link( string $label, ?string $url, string $kind ): ?array {
 		$url = self::url( $url );
 
 		return '' === $url ? null : array(

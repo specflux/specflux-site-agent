@@ -1,6 +1,6 @@
 <?php
 /**
- * Link builder for result cards — URLs built from ids, never fetched.
+ * Link builder for result cards — local reads by id through core helpers.
  *
  * @package SenroFlux
  */
@@ -13,9 +13,9 @@ namespace Specflux\SenroFlux\Present;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A presenter never fetches (0.4 S3.1): it formats the response plus links
- * built from ids. This is the only seam that knows how a link is built, so
- * tests inject a fake and the WordPress one is pure string construction.
+ * A presenter reads only LOCAL objects by id, through core helpers (0.4
+ * S3.1): never abilities or remote services. This is the only seam that
+ * touches WordPress, so tests inject a fake. A null link means "omit it".
  */
 interface Links {
 
@@ -25,7 +25,7 @@ interface Links {
 	 *
 	 * @param int $id Object id.
 	 */
-	public function edit( int $id ): string;
+	public function edit( int $id ): ?string;
 
 	/**
 	 * The front-end URL for an object: its permalink-redirecting `?p=` form
@@ -34,5 +34,19 @@ interface Links {
 	 * @param int  $id        Object id.
 	 * @param bool $published Whether the response says it is published.
 	 */
-	public function view( int $id, bool $published ): string;
+	public function view( int $id, bool $published ): ?string;
+
+	/**
+	 * The stored title of a local post-like object; '' when unknown.
+	 *
+	 * @param int $id Object id.
+	 */
+	public function title( int $id ): string;
+
+	/**
+	 * The code of a local coupon; '' when unknown or WooCommerce is absent.
+	 *
+	 * @param int $id Coupon id.
+	 */
+	public function couponCode( int $id ): string;
 }

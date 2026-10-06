@@ -14,26 +14,38 @@ defined( 'ABSPATH' ) || exit;
 
 final class WpLinks implements Links {
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @param int $id Object id.
-	 */
-	public function edit( int $id ): string {
-		return function_exists( 'admin_url' ) ? admin_url( 'post.php?post=' . $id . '&action=edit' ) : '';
+	/** {@inheritDoc} */
+	public function edit( int $id ): ?string {
+		if ( ! function_exists( 'get_edit_post_link' ) ) {
+			return null;
+		}
+		$url = get_edit_post_link( $id, 'raw' );
+
+		return is_string( $url ) && '' !== $url ? $url : null;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @param int  $id        Object id.
-	 * @param bool $published Whether the response says it is published.
-	 */
-	public function view( int $id, bool $published ): string {
-		if ( ! function_exists( 'home_url' ) ) {
+	/** {@inheritDoc} */
+	public function view( int $id, bool $published ): ?string {
+		$helper = $published ? 'get_permalink' : 'get_preview_post_link';
+		if ( ! function_exists( $helper ) ) {
+			return null;
+		}
+		$url = $published ? get_permalink( $id ) : get_preview_post_link( $id );
+
+		return is_string( $url ) && '' !== $url ? $url : null;
+	}
+
+	/** {@inheritDoc} */
+	public function title( int $id ): string {
+		return function_exists( 'get_the_title' ) ? (string) get_the_title( $id ) : '';
+	}
+
+	/** {@inheritDoc} */
+	public function couponCode( int $id ): string {
+		if ( ! function_exists( 'wc_get_coupon_code_by_id' ) ) {
 			return '';
 		}
 
-		return home_url( '/?p=' . $id . ( $published ? '' : '&preview=true' ) );
+		return (string) wc_get_coupon_code_by_id( $id );
 	}
 }

@@ -45,6 +45,9 @@ final class PostPresenter implements Presenter {
 		$title     = Fmt::first( $response, array( 'title_raw', 'title_rendered' ) );
 		$link      = Fmt::first( $response, array( 'link' ) );
 		if ( '' === $title ) {
+			$title = Fmt::text( $links->title( $id ) );
+		}
+		if ( '' === $title ) {
 			/* translators: 1: Post or Page, 2: object id. */
 			$title = sprintf( __( '%1$s #%2$d', 'senroflux' ), $is_page ? __( 'Page', 'senroflux' ) : __( 'Post', 'senroflux' ), $id );
 		}

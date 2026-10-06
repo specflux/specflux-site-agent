@@ -37,6 +37,9 @@ final class CouponPresenter implements Presenter {
 		$id     = (int) ( $response['coupon_id'] ?? $response['id'] ?? 0 );
 		$fields = array();
 		$code   = Fmt::text( $response['code'] ?? '' );
+		if ( '' === $code && $id > 0 ) {
+			$code = Fmt::text( $links->couponCode( $id ) );
+		}
 		if ( array_key_exists( 'amount', $response ) ) {
 			$fields[] = array(
 				'label' => __( 'Amount', 'senroflux' ),
