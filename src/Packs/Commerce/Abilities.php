@@ -10,6 +10,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Packs\Commerce;
 
 use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SenroFlux\Packs\Commerce\Platforms\Woo\WriteInput;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\RunStore;
 use Specflux\SenroFlux\Run\Tracker;
@@ -200,15 +201,18 @@ final class Abilities {
 	 */
 	private static function registrars(): array {
 		return array(
-			'set-product-image'  => 'registerSetProductImage',
-			'coupon-create'      => 'registerCouponCreate',
-			'coupon-enable'      => 'registerCouponEnable',
-			'orders-refund'      => 'registerOrdersRefund',
-			'shipping-zone-save' => 'registerShippingZoneSave',
-			'tax-rate-save'      => 'registerTaxRateSave',
-			'products-catalogue' => 'registerProductsCatalogue',
-			'store-report'       => 'registerStoreReport',
-			'save-store-report'  => 'registerSaveStoreReport',
+			'set-product-image'      => 'registerSetProductImage',
+			'coupon-create'          => 'registerCouponCreate',
+			'coupon-enable'          => 'registerCouponEnable',
+			'orders-refund'          => 'registerOrdersRefund',
+			'shipping-zone-save'     => 'registerShippingZoneSave',
+			'tax-rate-save'          => 'registerTaxRateSave',
+			'products-catalogue'     => 'registerProductsCatalogue',
+			'store-report'           => 'registerStoreReport',
+			'save-store-report'      => 'registerSaveStoreReport',
+			'stock-adjust'           => 'registerStockAdjust',
+			'variation-price-update' => 'registerVariationPriceUpdate',
+			'sale-schedule'          => 'registerSaleSchedule',
 		);
 	}
 
@@ -1951,6 +1955,326 @@ final class Abilities {
 
 		$objects = Tracker::recordRead( self::currentObjects(), $coupon_id, self::modifiedMarker( $coupon_id ) );
 		self::$store->updateRun( self::$current_run_id, array( 'objects_json' => $objects ) );
+	}
+
+	// ------------------------------------------------------------------
+	// C4-W: stock, variation price, sale schedule (WC CRUD, never REST)
+	// ------------------------------------------------------------------
+
+	/**
+	 * `senroflux/stock-adjust` — Woo ships no stock-write ability. Changes a
+	 * product's or variation's stock through `wc_update_product_stock()` (SQL
+	 * set/increase/decrease, so a concurrent order's own stock move is not
+	 * overwritten the way a stale snapshot would), or sets `stock_status` on a
+	 * product that does not manage a quantity. Never turns stock management
+	 * on or off, and never takes a quantity below zero.
+	 */
+	private static function registerStockAdjust(): void {
+		self::registerProductWrite(
+			'stock-adjust',
+			__( 'Adjust stock', 'senroflux' ),
+			__( 'Set, increase or decrease a product\'s or variation\'s stock quantity, or set its stock status when it does not track a quantity. Never goes below zero.', 'senroflux' ),
+			array(
+				'id'           => array( 'type' => 'integer' ),
+				'mode'         => array(
+					'type' => 'string',
+					'enum' => WriteInput::STOCK_MODES,
+				),
+				'quantity'     => array(
+					'type'    => 'integer',
+					'minimum' => 0,
+				),
+				'stock_status' => array(
+					'type' => 'string',
+					'enum' => WriteInput::STOCK_STATUSES,
+				),
+			),
+			array( 'id' ),
+			array(
+				'product_id'     => array( 'type' => 'integer' ),
+				'variation_id'   => array( 'type' => array( 'integer', 'null' ) ),
+				'stock_quantity' => array( 'type' => array( 'integer', 'null' ) ),
+				'stock_status'   => array( 'type' => 'string' ),
+			),
+			static fn ( array $input ) => self::executeStockAdjust( $input )
+		);
+	}
+
+	/**
+	 * `senroflux/variation-price-update` — Woo has no variation ability, and a
+	 * variable product's prices live on its variations. Same price rules as a
+	 * product price change.
+	 */
+	private static function registerVariationPriceUpdate(): void {
+		self::registerProductWrite(
+			'variation-price-update',
+			__( 'Update variation price', 'senroflux' ),
+			__( 'Change the regular and/or sale price of one variation of a variable product. Name the parent product and the variation. A sale price must be below the regular price.', 'senroflux' ),
+			array(
+				'product_id'    => array( 'type' => 'integer' ),
+				'variation_id'  => array( 'type' => 'integer' ),
+				'regular_price' => array( 'type' => array( 'string', 'number' ) ),
+				'sale_price'    => array( 'type' => array( 'string', 'number' ) ),
+			),
+			array( 'product_id', 'variation_id' ),
+			array(
+				'product_id'    => array( 'type' => 'integer' ),
+				'variation_id'  => array( 'type' => 'integer' ),
+				'regular_price' => array( 'type' => 'string' ),
+				'sale_price'    => array( 'type' => 'string' ),
+			),
+			static fn ( array $input ) => self::executeVariationPrice( $input )
+		);
+	}
+
+	/**
+	 * `senroflux/sale-schedule` — a sale price with an optional start and end
+	 * (the store's timezone), through CRUD so Woo reschedules its own sale
+	 * events. The call describes the whole sale: omitted dates are cleared,
+	 * and an empty `sale_price` ends the sale.
+	 */
+	private static function registerSaleSchedule(): void {
+		self::registerProductWrite(
+			'sale-schedule',
+			__( 'Schedule sale', 'senroflux' ),
+			__( 'Put a product or variation on sale: a sale price below the regular price, with an optional start and end date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, store timezone; an end date alone means the end of that day). Omitted dates are cleared. An empty sale_price ends the sale. Not for variable parents — schedule the variations.', 'senroflux' ),
+			array(
+				'id'                => array( 'type' => 'integer' ),
+				'sale_price'        => array( 'type' => array( 'string', 'number' ) ),
+				'date_on_sale_from' => array( 'type' => array( 'string', 'null' ) ),
+				'date_on_sale_to'   => array( 'type' => array( 'string', 'null' ) ),
+			),
+			array( 'id', 'sale_price' ),
+			array(
+				'product_id'        => array( 'type' => 'integer' ),
+				'variation_id'      => array( 'type' => array( 'integer', 'null' ) ),
+				'sale_price'        => array( 'type' => 'string' ),
+				'date_on_sale_from' => array( 'type' => array( 'string', 'null' ) ),
+				'date_on_sale_to'   => array( 'type' => array( 'string', 'null' ) ),
+			),
+			static fn ( array $input ) => self::executeSaleSchedule( $input )
+		);
+	}
+
+	/**
+	 * One registration shape for the three product-write polyfills.
+	 *
+	 * @param lowercase-string                  $template   Ability name segment.
+	 * @param string                           $label      Label.
+	 * @param string                           $desc       Description.
+	 * @param array<string,array<string,mixed>> $properties Input properties.
+	 * @param list<string>                     $required   Required input keys.
+	 * @param array<string,array<string,mixed>> $out        Output properties.
+	 * @param callable                         $exec       Execute callback.
+	 */
+	private static function registerProductWrite( string $template, string $label, string $desc, array $properties, array $required, array $out, callable $exec ): void {
+		wp_register_ability(
+			'senroflux/' . $template,
+			array(
+				'label'               => $label,
+				'description'         => $desc,
+				'category'            => self::CATEGORY,
+				'input_schema'        => array(
+					'type'                 => 'object',
+					'required'             => $required,
+					'additionalProperties' => false,
+					'properties'           => $properties,
+				),
+				'output_schema'       => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => $out,
+				),
+				'execute_callback'    => static function ( $input = array() ) use ( $exec ) {
+					return $exec( is_array( $input ) ? $input : array() );
+				},
+				'permission_callback' => static function ( $input = array() ) {
+					unset( $input );
+
+					// phpcs:ignore WordPress.WP.Capabilities.Unknown -- a real WooCommerce capability; unknown only to phpcs's core capability list.
+					return function_exists( 'current_user_can' ) && current_user_can( 'manage_woocommerce' );
+				},
+				'meta'                => self::meta(
+					array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => 'stock-adjust' !== $template,
+					)
+				),
+			)
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $input Call input.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function executeStockAdjust( array $input ): array|WP_Error {
+		$error = WriteInput::stock( $input );
+		if ( null !== $error ) {
+			return $error;
+		}
+
+		$id      = (int) $input['id'];
+		$product = self::wcProduct( $id );
+		if ( null === $product ) {
+			return self::notFound( __( 'Product not found.', 'senroflux' ) );
+		}
+
+		$manages = (bool) $product->get_manage_stock();
+
+		if ( isset( $input['stock_status'] ) ) {
+			if ( $manages ) {
+				return new WP_Error( 'stock_managed', __( 'This product tracks a stock quantity — change the quantity, not the status.', 'senroflux' ), array( 'status' => 400 ) );
+			}
+			$product->set_stock_status( (string) $input['stock_status'] );
+			$product->save();
+		} else {
+			if ( ! $manages ) {
+				return new WP_Error( 'stock_not_managed', __( 'This product does not track a stock quantity. Set its stock_status instead.', 'senroflux' ), array( 'status' => 400 ) );
+			}
+			$mode     = (string) $input['mode'];
+			$quantity = (int) $input['quantity'];
+			$current  = (int) $product->get_stock_quantity();
+
+			if ( 'decrease' === $mode && $quantity > $current ) {
+				return new WP_Error( 'stock_below_zero', __( 'That would take stock below zero.', 'senroflux' ), array( 'status' => 400 ) );
+			}
+			if ( ! function_exists( 'wc_update_product_stock' ) ) {
+				return new WP_Error( 'gateway_unavailable', __( 'Stock changes are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			}
+			wc_update_product_stock( $product, $quantity, $mode );
+		}
+
+		$fresh = self::wcProduct( $id );
+		if ( null === $fresh ) {
+			return self::notFound( __( 'Product not found.', 'senroflux' ) );
+		}
+
+		$quantity_after = $fresh->get_stock_quantity();
+
+		return array(
+			'product_id'     => self::parentOrSelf( $fresh ),
+			'variation_id'   => self::variationIdOf( $fresh ),
+			'stock_quantity' => null === $quantity_after ? null : (int) $quantity_after,
+			'stock_status'   => (string) $fresh->get_stock_status(),
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $input Call input.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function executeVariationPrice( array $input ): array|WP_Error {
+		$error = WriteInput::variationPrice( $input );
+		if ( null !== $error ) {
+			return $error;
+		}
+
+		$variation = self::wcProduct( (int) $input['variation_id'] );
+		if ( null === $variation || ! $variation->is_type( 'variation' ) || (int) $variation->get_parent_id() !== (int) $input['product_id'] ) {
+			return self::notFound( __( 'That variation does not belong to that product.', 'senroflux' ) );
+		}
+
+		$regular = array_key_exists( 'regular_price', $input ) ? self::priceText( $input['regular_price'] ) : (string) $variation->get_regular_price();
+		$sale    = array_key_exists( 'sale_price', $input ) ? self::priceText( $input['sale_price'] ) : (string) $variation->get_sale_price();
+
+		if ( '' !== $sale && '' !== $regular && (float) $sale >= (float) $regular ) {
+			return new WP_Error( 'sale_not_below_regular', __( 'The sale price must be below the regular price.', 'senroflux' ), array( 'status' => 400 ) );
+		}
+
+		if ( array_key_exists( 'regular_price', $input ) ) {
+			$variation->set_regular_price( $regular );
+		}
+		if ( array_key_exists( 'sale_price', $input ) ) {
+			$variation->set_sale_price( $sale );
+		}
+		$variation->save();
+
+		$fresh = self::wcProduct( (int) $input['variation_id'] );
+
+		return array(
+			'product_id'    => (int) $input['product_id'],
+			'variation_id'  => (int) $input['variation_id'],
+			'regular_price' => null === $fresh ? $regular : (string) $fresh->get_regular_price(),
+			'sale_price'    => null === $fresh ? $sale : (string) $fresh->get_sale_price(),
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $input Call input.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	private static function executeSaleSchedule( array $input ): array|WP_Error {
+		$error = WriteInput::saleSchedule( $input );
+		if ( null !== $error ) {
+			return $error;
+		}
+
+		$id      = (int) $input['id'];
+		$product = self::wcProduct( $id );
+		if ( null === $product ) {
+			return self::notFound( __( 'Product not found.', 'senroflux' ) );
+		}
+		if ( $product->is_type( 'variable' ) || $product->is_type( 'grouped' ) ) {
+			return new WP_Error( 'unsupported_type', __( 'This product\'s prices live on its variations or children — schedule those instead.', 'senroflux' ), array( 'status' => 400 ) );
+		}
+
+		$sale    = self::priceText( $input['sale_price'] );
+		$regular = (string) $product->get_regular_price();
+		if ( '' !== $sale && ( '' === $regular || (float) $sale >= (float) $regular ) ) {
+			return new WP_Error( 'sale_not_below_regular', __( 'The sale price must be below the product\'s regular price.', 'senroflux' ), array( 'status' => 400 ) );
+		}
+
+		$from = ( '' !== $sale && is_string( $input['date_on_sale_from'] ?? null ) ) ? WriteInput::expandDate( trim( $input['date_on_sale_from'] ), false ) : null;
+		$to   = ( '' !== $sale && is_string( $input['date_on_sale_to'] ?? null ) ) ? WriteInput::expandDate( trim( $input['date_on_sale_to'] ), true ) : null;
+
+		$product->set_sale_price( $sale );
+		$product->set_date_on_sale_from( $from );
+		$product->set_date_on_sale_to( $to );
+		$product->save();
+
+		return array(
+			'product_id'        => self::parentOrSelf( $product ),
+			'variation_id'      => self::variationIdOf( $product ),
+			'sale_price'        => $sale,
+			'date_on_sale_from' => $from,
+			'date_on_sale_to'   => $to,
+		);
+	}
+
+	/**
+	 * A WooCommerce product object, or null when absent or not a product
+	 * object (CRUD or nothing — never a raw post read).
+	 */
+	private static function wcProduct( int $id ): ?object {
+		if ( $id <= 0 || ! function_exists( 'wc_get_product' ) ) {
+			return null;
+		}
+		$product = wc_get_product( $id );
+
+		return is_object( $product ) ? $product : null;
+	}
+
+	private static function parentOrSelf( object $product ): int {
+		$parent = $product->is_type( 'variation' ) ? (int) $product->get_parent_id() : 0;
+
+		return $parent > 0 ? $parent : (int) $product->get_id();
+	}
+
+	private static function variationIdOf( object $product ): ?int {
+		return $product->is_type( 'variation' ) ? (int) $product->get_id() : null;
+	}
+
+	/**
+	 * @param mixed $value A price as sent.
+	 */
+	private static function priceText( mixed $value ): string {
+		return is_scalar( $value ) ? trim( (string) $value ) : '';
+	}
+
+	private static function notFound( string $message ): WP_Error {
+		return new WP_Error( 'not_found', $message, array( 'status' => 400 ) );
 	}
 
 	/**

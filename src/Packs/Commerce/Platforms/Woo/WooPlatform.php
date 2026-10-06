@@ -78,24 +78,32 @@ final class WooPlatform implements StorePlatform {
 	/** @return array<string,string|array{polyfill:string,native?:string,shape?:callable|null}> */
 	public function roleMap(): array {
 		return array(
-			'read'           => 'products-query',
-			'catalogue'      => 'products-catalogue',
-			'create'         => 'product-create',
-			'update'         => 'product-update',
-			'image'          => 'set-product-image',
-			'search'         => 'media-search',
-			'image-generate' => 'generate-image',
-			'coupon-create'  => 'coupon-create',
-			'coupon-enable'  => 'coupon-enable',
+			'read'            => 'products-query',
+			'catalogue'       => 'products-catalogue',
+			'create'          => 'product-create',
+			'update'          => 'product-update',
+			'image'           => 'set-product-image',
+			'search'          => 'media-search',
+			'image-generate'  => 'generate-image',
+			'coupon-create'   => 'coupon-create',
+			'coupon-enable'   => 'coupon-enable',
 			// 'order-note' resolves to ONE ability (Woo's own `order-add-note`)
 			// that spans TWO pack verbs, same shape as 'update'.
-			'order-read'     => 'orders-query',
-			'order-note'     => 'order-add-note',
-			'refund'         => 'orders-refund',
-			'shipping-write' => 'shipping-zone-save',
-			'tax-write'      => 'tax-rate-save',
-			'store-report'   => 'store-report',
-			'report-save'    => 'save-store-report',
+			'order-read'      => 'orders-query',
+			'order-note'      => 'order-add-note',
+			'refund'          => 'orders-refund',
+			'shipping-write'  => 'shipping-zone-save',
+			'tax-write'       => 'tax-rate-save',
+			'store-report'    => 'store-report',
+			'report-save'     => 'save-store-report',
+			// C4-W. `order-status` and `product-trash` resolve to Woo's own
+			// abilities (`order-update-status`, `product-delete`); the other three
+			// have no Woo ability, so they are `senroflux/` polyfills over WC CRUD.
+			'order-status'    => 'order-update-status',
+			'product-trash'   => 'product-delete',
+			'stock'           => 'stock-adjust',
+			'variation-price' => 'variation-price-update',
+			'sale-schedule'   => 'sale-schedule',
 		);
 	}
 
@@ -129,6 +137,9 @@ final class WooPlatform implements StorePlatform {
 			'products-catalogue',
 			'store-report',
 			'save-store-report',
+			'stock-adjust',
+			'variation-price-update',
+			'sale-schedule',
 		);
 	}
 
@@ -154,6 +165,16 @@ final class WooPlatform implements StorePlatform {
 			'commerce/tax-write'            => 2,
 			'commerce/store-report'         => 0,
 			'commerce/report-save'          => 2,
+			// C4-W. Order status mirrors SenroGate (order-update-status: Tier 1,
+			// Tier 2 for a status that emails or moves stock). A force delete is
+			// Tier 2 in SenroGate's catalog; here it is also refused outright.
+			'commerce/order-status'         => 1,
+			'commerce/order-status-notify'  => 2,
+			'commerce/product-trash'        => 1,
+			'commerce/product-delete-force' => 2,
+			// No SenroGate entry for these (`senroflux/` polyfills): SenroFlux's own
+			// VerbTier governs them. Stock changes what can be sold, so Tier 2.
+			'commerce/stock-adjust'         => 2,
 		);
 	}
 
@@ -172,6 +193,8 @@ final class WooPlatform implements StorePlatform {
 			'media-search'    => array( 'query' ),
 			'orders-query'    => array( 'id' ),
 			'order-add-note'  => array( 'id', 'note', 'customer_note' ),
+			'order-update-status' => array( 'id', 'status', 'note' ),
+			'product-delete'  => array( 'id', 'force' ),
 			default           => array(),
 		};
 	}
@@ -200,6 +223,11 @@ final class WooPlatform implements StorePlatform {
 			'tax-rate-save'      => 'commerce/tax-write',
 			'store-report'       => 'commerce/store-report',
 			'save-store-report'  => 'commerce/report-save',
+			'order-update-status' => $this->orderStatusVerb( $input ),
+			'product-delete'     => WriteInput::isForceDelete( $input ) ? 'commerce/product-delete-force' : 'commerce/product-trash',
+			'stock-adjust'       => 'commerce/stock-adjust',
+			'variation-price-update',
+			'sale-schedule'      => 'commerce/price-change',
 			default              => null,
 		};
 	}
@@ -214,6 +242,19 @@ final class WooPlatform implements StorePlatform {
 	 * @param array<string,mixed> $input     Call input.
 	 */
 	public function validateCall( string $base_name, array $input ): ?WP_Error {
+		switch ( $base_name ) {
+			case 'order-update-status':
+				return WriteInput::orderStatus( $input );
+			case 'product-delete':
+				return WriteInput::productTrash( $input );
+			case 'stock-adjust':
+				return WriteInput::stock( $input );
+			case 'variation-price-update':
+				return WriteInput::variationPrice( $input );
+			case 'sale-schedule':
+				return WriteInput::saleSchedule( $input );
+		}
+
 		if ( ! in_array( $base_name, array( 'product-create', 'product-update' ), true ) ) {
 			return null;
 		}
@@ -248,7 +289,7 @@ final class WooPlatform implements StorePlatform {
 			'commerce/product-create-draft',
 			'commerce/product-update',
 			'commerce/price-change',
-			'commerce/product-publish' => $product['id'] ?? $output['id'] ?? $args['id'] ?? null,
+			'commerce/product-publish' => $product['id'] ?? $output['id'] ?? $output['product_id'] ?? $args['id'] ?? null,
 			'commerce/product-image' => $output['product_id'] ?? null,
 			'commerce/image-generate' => $output['attachment_id'] ?? null,
 			'commerce/coupon-draft',
@@ -256,6 +297,11 @@ final class WooPlatform implements StorePlatform {
 			'commerce/order-note-private',
 			'commerce/order-note-customer' => $args['id'] ?? null,
 			'commerce/refund' => $output['order_id'] ?? null,
+			'commerce/order-status',
+			'commerce/order-status-notify' => $args['id'] ?? null,
+			'commerce/product-trash',
+			'commerce/product-delete-force' => $args['id'] ?? null,
+			'commerce/stock-adjust' => $output['product_id'] ?? null,
 			'commerce/shipping-write' => $output['zone_id'] ?? null,
 			'commerce/tax-write' => $output['tax_rate_id'] ?? null,
 			'commerce/report-save' => $output['page_id'] ?? null,
@@ -275,6 +321,21 @@ final class WooPlatform implements StorePlatform {
 		return true === ( $input['customer_note'] ?? false )
 			? 'commerce/order-note-customer'
 			: 'commerce/order-note-private';
+	}
+
+	/**
+	 * `order-update-status`'s predicate: a status that emails the customer or
+	 * moves stock is Tier 2; any other (failed, draft, trash...) stays Tier 1.
+	 * Normalised the way Woo reads it, so a `wc-` prefix cannot dodge the rule.
+	 *
+	 * @param array<string,mixed> $input Call input.
+	 */
+	private function orderStatusVerb( array $input ): string {
+		$status = WriteInput::normalizeOrderStatus( $input['status'] ?? null );
+
+		return null !== $status && in_array( $status, WriteInput::NOTIFYING_ORDER_STATUSES, true )
+			? 'commerce/order-status-notify'
+			: 'commerce/order-status';
 	}
 
 	/**

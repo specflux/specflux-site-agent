@@ -30,14 +30,14 @@ use Specflux\SenroFlux\Tools\VerbTier;
 final class CommerceTierParityTest extends TestCase {
 
 	/** Ability base names this pack registers a role for (S19, full table). */
-	private const PACK_ABILITIES = array( 'products-query', 'product-create', 'product-update', 'orders-query', 'order-add-note' );
+	private const PACK_ABILITIES = array( 'products-query', 'product-create', 'product-update', 'orders-query', 'order-add-note', 'order-update-status', 'product-delete' );
 
 	/**
-	 * Ability base names S19 deliberately does NOT make pack roles for
-	 * ("`product-delete` and `order-update-status` are deliberately not
-	 * roles").
+	 * Ability base names that are still deliberately NOT pack roles (the
+	 * MCP-bridge create/update names). `order-update-status` and
+	 * `product-delete` became roles in C4-W and are classified above.
 	 */
-	private const DELIBERATELY_NOT_ROLES = array( 'order-update-status', 'product-delete', 'orders-create', 'orders-update', 'products-update' );
+	private const DELIBERATELY_NOT_ROLES = array( 'orders-create', 'orders-update', 'products-update' );
 
 	private function fixturePath(): string {
 		return __DIR__ . '/commerce-tier-parity.json';
@@ -90,12 +90,12 @@ final class CommerceTierParityTest extends TestCase {
 	}
 
 	/**
-	 * `order-update-status` and `product-delete` are DELIBERATELY not pack
-	 * roles (S19): `verbFor()` falls through to the base-class direct-allow
-	 * default (the ability id unchanged) for both, and neither base name
-	 * appears in any `roleVerbs()` entry.
+	 * The MCP-bridge names (`orders-create`, `orders-update`, `products-update`)
+	 * are deliberately not pack roles: `verbFor()` falls through to the
+	 * base-class direct-allow default (the ability id unchanged), and no
+	 * `roleVerbs()` entry names them.
 	 */
-	public function test_order_update_status_and_product_delete_are_deliberately_not_roles(): void {
+	public function test_the_mcp_bridge_names_are_deliberately_not_roles(): void {
 		$pack       = new CommercePack();
 		$role_verbs = $pack->roleVerbs();
 
