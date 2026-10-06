@@ -467,6 +467,12 @@ final class Runner {
 			);
 		}
 
+		// 0.4 S5: a hold park has no human decision to wait for — every tick
+		// (with or without a resolution) just retries the held call.
+		if ( is_string( $parked['hold'] ?? null ) && '' !== $parked['hold'] ) {
+			return $this->resumeFromHold( $run, $parked, $new_steps );
+		}
+
 		if ( '' === $action ) {
 			// No decision yet: remain parked, RE-SURFACING the approval card
 			// so a polling consumer can render it again.
@@ -844,6 +850,13 @@ final class Runner {
 					return $this->park( $run, $new_steps, $call, $remaining, $outcome );
 				}
 
+				// 0.4 S5: a SenroGate pause / rate-limit window parks the run
+				// with NO tool_result step — the call has not happened, so it
+				// is not counted against any budget until its retry lands.
+				if ( 'hold' === $outcome->kind ) {
+					return $this->parkHold( $run, $new_steps, $call, $remaining, $outcome );
+				}
+
 				$new_steps[] = $this->appendToolResult( $run, $call, $outcome );
 				$run         = $this->refresh( $run );
 				// Errors/denials flow back to the model as error text; it decides.
@@ -1153,6 +1166,163 @@ final class Runner {
 		return wp_kses( $summary, array( 'a' => array( 'href' => true ) ), array( 'http', 'https' ) );
 	}
 
+	// ------------------------------------------------------------------
+	// 0.4 S5: SenroGate pause / rate-limit holds
+	// ------------------------------------------------------------------
+
+	/**
+	 * Park on a transient SenroGate refusal. Reuses the approval park (status
+	 * `awaiting_approval`, an Approval-kind step) with a `hold` reason in the
+	 * context, so the resume machinery, crash-resume and sibling drain all
+	 * apply unchanged; only the card and the resume rule differ.
+	 *
+	 * @param list<array<string,mixed>>               $new_steps Accumulator.
+	 * @param array{id:string,name:string,args:mixed} $call      Held call.
+	 * @param list<array<string,mixed>>               $remaining Sibling calls queued after it.
+	 * @return array{run:Run,ui:array<string,mixed>}
+	 */
+	private function parkHold( Run $run, array &$new_steps, array $call, array $remaining, ToolOutcome $outcome ): array {
+		$reason  = (string) $outcome->errorCode;
+		$context = array(
+			'parked'           => true,
+			'approval_id'      => null,
+			'hold'             => $reason,
+			'held_at'          => Clock::now(),
+			'verb'             => $call['name'],
+			'tier'             => null,
+			'tool_name'        => $call['name'],
+			'function_call_id' => $call['id'],
+			'args'             => $call['args'] ?? array(),
+			'remaining'        => $remaining,
+		);
+
+		$seq         = $this->store->appendStep( $run->id, StepKind::Approval, $context, $call['name'], null, 'parked' );
+		$new_steps[] = array(
+			'seq'         => $seq,
+			'kind'        => StepKind::Approval->value,
+			'message'     => $context,
+			'tool_name'   => $call['name'],
+			'approval_id' => null,
+			'status'      => 'parked',
+		);
+		$this->store->updateRun( $run->id, array( 'status' => RunStatus::AwaitingApproval->value ) );
+
+		return array(
+			'run' => $this->refresh( $run ),
+			'ui'  => $this->holdUi( $reason ),
+		);
+	}
+
+	/**
+	 * Retry the held call. Still held = re-surface the card (one park, no new
+	 * step, no loop of failures); otherwise the call's real outcome is
+	 * recorded exactly once and the loop runs on.
+	 *
+	 * @param array<string,mixed>       $parked    The park context.
+	 * @param list<array<string,mixed>> $new_steps Accumulator.
+	 * @return array{run:Run,steps:list<array<string,mixed>>,ui:?array<string,mixed>}|null
+	 */
+	private function resumeFromHold( Run $run, array $parked, array &$new_steps ): ?array {
+		$call = array(
+			'id'   => (string) ( $parked['function_call_id'] ?? '' ),
+			'name' => (string) ( $parked['tool_name'] ?? '' ),
+			'args' => $parked['args'] ?? array(),
+		);
+
+		$registry = ToolRegistry::forRun( $run );
+		$refusal  = $this->fenceRefusal( $registry, $run, $call );
+		if ( null !== $refusal ) {
+			$new_steps[] = $this->appendFenceRefusal( $run->id, $call, $refusal, $this->fencedVerb( $registry, $run, $call ) );
+		} else {
+			$outcome = $this->executeCall( $registry, $run, $call );
+
+			if ( 'hold' === $outcome->kind ) {
+				return array(
+					'run'   => $this->refresh( $run ),
+					'steps' => $new_steps,
+					'ui'    => $this->holdUi( (string) $outcome->errorCode ),
+				);
+			}
+
+			if ( 'approval_required' === $outcome->kind ) {
+				// The hold lifted but SenroGate now wants a human: a normal
+				// approval park replaces the hold.
+				$new_steps[] = $this->appendApprovalStep( $run->id, $outcome, $call, array_values( is_array( $parked['remaining'] ?? null ) ? $parked['remaining'] : array() ) );
+
+				return array(
+					'run'   => $this->refresh( $run ),
+					'steps' => $new_steps,
+					'ui'    => $this->approvalUi( $outcome, $call ),
+				);
+			}
+
+			$new_steps[] = $this->appendToolResult( run: $run, call: $call, outcome: $outcome );
+		}
+
+		$this->store->updateRun( $run->id, array( 'status' => RunStatus::Running->value ) );
+
+		return null;
+	}
+
+	/**
+	 * The hold card's facts: why the call waits and, for a rate limit, how
+	 * long. Pause details come from SenroGate's public container when it
+	 * exposes them; absent = a generic card.
+	 *
+	 * @return array{hold:array<string,mixed>}
+	 */
+	private function holdUi( string $reason ): array {
+		if ( 'site_paused' === $reason ) {
+			$hold = array(
+				'kind'          => 'paused',
+				'paused_at'     => null,
+				'paused_reason' => '',
+			);
+			try {
+				$container = function_exists( 'agent_safety' ) ? agent_safety() : null;
+				$switch    = ( is_object( $container ) && method_exists( $container, 'pause' ) ) ? $container->pause() : null;
+				$state     = ( is_object( $switch ) && method_exists( $switch, 'state' ) ) ? $switch->state() : null;
+				if ( is_array( $state ) ) {
+					$hold['paused_at']     = is_int( $state['since'] ?? null ) ? $state['since'] : null;
+					$hold['paused_reason'] = is_string( $state['reason'] ?? null ) ? $state['reason'] : '';
+				}
+			} catch ( \Throwable ) {
+				// A broken pause API degrades to the generic card.
+				$hold['paused_at']     = null;
+				$hold['paused_reason'] = '';
+			}
+
+			return array( 'hold' => $hold );
+		}
+
+		// SenroGate's counters are fixed windows keyed off the clock
+		// (RateCounter: minute / hour buckets), so the reset is the time left
+		// in the current window. An unrecognised rule has no known window.
+		$window = str_ends_with( $reason, '_minute' ) ? 60 : ( str_ends_with( $reason, '_hour' ) ? 3600 : 0 );
+
+		return array(
+			'hold' => array(
+				'kind'        => 'rate_limited',
+				'retry_after' => $window > 0 ? $window - ( Clock::now() % $window ) : null,
+			),
+		);
+	}
+
+	/**
+	 * The hold card's UI facts for a run currently held, fresh, or null.
+	 * Carried on the run-detail read so the card survives a reload.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public function parkedHoldUi( Run $run ): ?array {
+		$parked = RunStatus::AwaitingApproval === $run->status ? $this->latestParkedContext( $run->id ) : null;
+		if ( null === $parked || ! is_string( $parked['hold'] ?? null ) || '' === $parked['hold'] ) {
+			return null;
+		}
+
+		return $this->holdUi( $parked['hold'] )['hold'];
+	}
+
 	/**
 	 * The approval card's UI facts for a run currently parked on an approval,
 	 * computed fresh (same {@see approvalUi()} the tick response uses), or
@@ -1171,7 +1341,10 @@ final class Runner {
 			if ( StepKind::Approval !== $step->kind || ! is_array( $step->messageArray ) || true !== ( $step->messageArray['parked'] ?? false ) ) {
 				continue;
 			}
-			$parked  = $step->messageArray;
+			$parked = $step->messageArray;
+			if ( is_string( $parked['hold'] ?? null ) && '' !== $parked['hold'] ) {
+				return null; // A hold park has its own card ({@see parkedHoldUi()}).
+			}
 			$outcome = ToolOutcome::approvalRequired(
 				(string) ( $parked['approval_id'] ?? '' ),
 				(string) ( $parked['tool_name'] ?? '' ),

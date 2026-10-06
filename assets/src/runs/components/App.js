@@ -268,11 +268,12 @@ export default function App( { config } ) {
 				// `ui` otherwise (Chat matches each to the parked step, so a
 				// stale one is never shown).
 				ui:
-					state.ui && ( state.ui.plan || state.ui.approval )
+					state.ui && ( state.ui.plan || state.ui.approval || state.ui.hold )
 						? {
 								...( previous && previous.ui ),
 								...( state.ui.plan ? { plan: state.ui.plan } : {} ),
 								...( state.ui.approval ? { approval: state.ui.approval } : {} ),
+								...( state.ui.hold ? { hold: state.ui.hold } : {} ),
 						  }
 						: previous && previous.ui,
 			};
@@ -470,6 +471,7 @@ export default function App( { config } ) {
 						suggestions={ runDetail.suggestions }
 						planUi={ runDetail.ui && runDetail.ui.plan }
 						approvalUi={ runDetail.ui && runDetail.ui.approval }
+						holdUi={ runDetail.ui && runDetail.ui.hold }
 						canManageBrief={ Boolean( config.canManageSiteBrief ) }
 						modelChoices={ config.modelChoices || {} }
 						onResolvePark={ handleResolvePark }

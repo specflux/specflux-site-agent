@@ -899,6 +899,7 @@ final class Plugin {
 		// 0.4 S3.2: the report's Changes area, built at read time. Null for a
 		// live run, or a viewer without the run's capability.
 		$changes_section = ( new \Specflux\SenroFlux\Approval\ChangesBridge() )->section( $run );
+		$hold_ui         = $this->runner()->parkedHoldUi( $run );
 
 		return array(
 			'run'         => array(
@@ -951,6 +952,7 @@ final class Plugin {
 				array(
 					'plan'     => $plan_ui,
 					'approval' => $approval_ui,
+					'hold'     => $hold_ui,
 				),
 				static fn ( ?array $facts ): bool => null !== $facts
 			),

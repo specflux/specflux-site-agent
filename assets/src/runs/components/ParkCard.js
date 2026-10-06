@@ -9,7 +9,14 @@ const HEADINGS = {
 	question: __( 'Question for you', 'senroflux' ),
 	plan: __( 'Plan: needs your OK', 'senroflux' ),
 	approval: __( 'Approve this change?', 'senroflux' ),
+	hold: __( 'Waiting to continue', 'senroflux' ),
 };
+
+/** Longest wait between automatic retries of a held call, in seconds. */
+const HOLD_MAX_POLL_SECONDS = 60;
+/** Shortest wait, and the poll interval when no reset time is known. */
+const HOLD_MIN_POLL_SECONDS = 5;
+const HOLD_DEFAULT_POLL_SECONDS = 15;
 
 /**
  * An inline park card (S10): a yellow top rule, a heading naming the kind,
@@ -43,8 +50,10 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 			headingRef.current.focus();
 		}
 		// Only re-focus when the park itself changes, not on every re-render.
+		// A hold card is re-surfaced by every automatic retry; that must not
+		// pull focus back to the heading each time.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ kind, payload ] );
+	}, [ kind, 'hold' === kind ? null : payload ] );
 
 	return (
 		<section className="senroflux-park-card" aria-labelledby="senroflux-park-heading">
@@ -63,6 +72,7 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 			{ 'approval' === kind && (
 				<ApprovalBody payload={ payload } gateMode={ gateMode } onResolve={ onResolve } busy={ busy } />
 			) }
+			{ 'hold' === kind && <HoldBody payload={ payload } onResolve={ onResolve } busy={ busy } /> }
 		</section>
 	);
 }
@@ -442,4 +452,86 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 			</div>
 		</div>
 	);
+}
+
+/**
+ * 0.4 S5: SenroGate paused the site, or a rate-limit window is full. Nothing
+ * failed and nothing needs a decision: the call waits and is retried, here
+ * automatically (the client's ticks are the only thing that advances a run)
+ * and on demand with "Check again". A hold resumes with no resolution payload.
+ */
+function HoldBody( { payload, onResolve, busy } ) {
+	const hold = payload || {};
+	const retryAfter = 'number' === typeof hold.retry_after ? hold.retry_after : null;
+
+	useEffect( () => {
+		if ( ! onResolve || busy ) {
+			return undefined;
+		}
+		const seconds = null === retryAfter
+			? HOLD_DEFAULT_POLL_SECONDS
+			: Math.min( HOLD_MAX_POLL_SECONDS, Math.max( HOLD_MIN_POLL_SECONDS, retryAfter + 1 ) );
+		const timer = setTimeout( () => onResolve( null ), seconds * 1000 );
+		return () => clearTimeout( timer );
+	}, [ onResolve, busy, retryAfter ] );
+
+	return (
+		<div className="senroflux-park-body">
+			<p className="senroflux-hold-message" role="status" dir="auto">
+				{ holdMessage( hold ) }
+			</p>
+			<p>{ __( 'This run is not failing. It continues on its own as soon as the wait is over.', 'senroflux' ) }</p>
+			<div className="senroflux-park-actions">
+				<button
+					type="button"
+					className="button"
+					disabled={ ! onResolve || busy }
+					onClick={ () => onResolve && onResolve( null ) }
+				>
+					{ __( 'Check again', 'senroflux' ) }
+				</button>
+			</div>
+		</div>
+	);
+}
+
+/** The one-sentence reason a call is waiting. */
+function holdMessage( hold ) {
+	if ( 'rate_limited' === hold.kind ) {
+		if ( 'number' !== typeof hold.retry_after ) {
+			return __( 'Waiting for the rate limit to reset.', 'senroflux' );
+		}
+		const minutes = Math.max( 1, Math.ceil( hold.retry_after / 60 ) );
+		return sprintf(
+			/* translators: %d: whole minutes until SenroGate's rate-limit window resets. */
+			_n(
+				'Waiting for the rate limit (resets in about %d minute).',
+				'Waiting for the rate limit (resets in about %d minutes).',
+				minutes,
+				'senroflux'
+			),
+			minutes
+		);
+	}
+
+	const when = 'number' === typeof hold.paused_at
+		? new Date( hold.paused_at * 1000 ).toLocaleString( undefined, { dateStyle: 'medium', timeStyle: 'short' } )
+		: '';
+	const why = 'string' === typeof hold.paused_reason ? hold.paused_reason : '';
+	if ( '' !== when && '' !== why ) {
+		return sprintf(
+			/* translators: 1: date and time the pause started, 2: the administrator's stated reason. */
+			__( 'An administrator paused agent access on this site %1$s, reason: %2$s', 'senroflux' ),
+			when,
+			why
+		);
+	}
+	if ( '' !== when ) {
+		return sprintf(
+			/* translators: %s: date and time the pause started. */
+			__( 'An administrator paused agent access on this site %s.', 'senroflux' ),
+			when
+		);
+	}
+	return __( 'An administrator paused agent access on this site.', 'senroflux' );
 }

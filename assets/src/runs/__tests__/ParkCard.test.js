@@ -259,3 +259,80 @@ describe( 'a site plan card lists the pages already on the site', () => {
 		expect( screen.queryByRole( 'heading', { name: 'Pages on the site now' } ) ).toBeNull();
 	} );
 } );
+
+/**
+ * 0.4 S5: a SenroGate pause or rate-limit wait is a hold card: it explains
+ * the wait, offers no approve/reject, retries by itself and on demand.
+ */
+describe( 'the hold card', () => {
+	afterEach( () => {
+		jest.useRealTimers();
+	} );
+
+	it( 'names the pause, when it started and why', () => {
+		render(
+			<ParkCard
+				kind="hold"
+				gateMode="agent_safety"
+				payload={ { kind: 'paused', paused_at: 1700000000, paused_reason: 'Investigating an import' } }
+				onResolve={ () => {} }
+			/>
+		);
+
+		expect( screen.getByRole( 'heading', { name: 'Waiting to continue' } ) ).toBeInTheDocument();
+		const status = screen.getByRole( 'status' );
+		expect( status ).toHaveTextContent( /An administrator paused agent access on this site .+, reason: Investigating an import/ );
+		expect( screen.queryByRole( 'button', { name: 'Approve' } ) ).not.toBeInTheDocument();
+		expect( screen.queryByRole( 'button', { name: 'Reject' } ) ).not.toBeInTheDocument();
+	} );
+
+	it( 'falls back to a generic sentence when the pause details are unknown', () => {
+		render( <ParkCard kind="hold" gateMode="agent_safety" payload={ { kind: 'paused', paused_at: null, paused_reason: '' } } /> );
+
+		expect( screen.getByRole( 'status' ) ).toHaveTextContent( 'An administrator paused agent access on this site.' );
+	} );
+
+	it( 'shows minutes for a rate limit, rounded up, singular and plural', () => {
+		const { rerender } = render(
+			<ParkCard kind="hold" gateMode="agent_safety" payload={ { kind: 'rate_limited', retry_after: 3000 } } />
+		);
+		expect( screen.getByRole( 'status' ) ).toHaveTextContent( 'Waiting for the rate limit (resets in about 50 minutes).' );
+
+		rerender( <ParkCard kind="hold" gateMode="agent_safety" payload={ { kind: 'rate_limited', retry_after: 15 } } /> );
+		expect( screen.getByRole( 'status' ) ).toHaveTextContent( 'Waiting for the rate limit (resets in about 1 minute).' );
+	} );
+
+	it( 'retries on its own, with no resolution payload, once the wait is over', () => {
+		jest.useFakeTimers();
+		const onResolve = jest.fn();
+		render(
+			<ParkCard
+				kind="hold"
+				gateMode="agent_safety"
+				payload={ { kind: 'rate_limited', retry_after: 20 } }
+				onResolve={ onResolve }
+			/>
+		);
+
+		jest.advanceTimersByTime( 20000 );
+		expect( onResolve ).not.toHaveBeenCalled();
+		jest.advanceTimersByTime( 1500 );
+		expect( onResolve ).toHaveBeenCalledTimes( 1 );
+		expect( onResolve ).toHaveBeenCalledWith( null );
+	} );
+
+	it( 'does not retry while a tick is in flight, and Check again retries at once', () => {
+		jest.useFakeTimers();
+		const onResolve = jest.fn();
+		const { rerender } = render(
+			<ParkCard kind="hold" gateMode="agent_safety" payload={ { kind: 'paused' } } onResolve={ onResolve } busy />
+		);
+		jest.advanceTimersByTime( 120000 );
+		expect( onResolve ).not.toHaveBeenCalled();
+		expect( screen.getByRole( 'button', { name: 'Check again' } ) ).toBeDisabled();
+
+		rerender( <ParkCard kind="hold" gateMode="agent_safety" payload={ { kind: 'paused' } } onResolve={ onResolve } /> );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Check again' } ) );
+		expect( onResolve ).toHaveBeenCalledWith( null );
+	} );
+} );

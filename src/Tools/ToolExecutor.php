@@ -118,6 +118,15 @@ final class ToolExecutor {
 			}
 
 			if ( is_wp_error( $permission ) ) {
+				// 0.4 S5: in Agent Safety mode a pause or a rate-limit window
+				// is a hold, not a refusal — the run parks and retries.
+				if ( null === $gate ) {
+					$transient = ToolOutcome::transientReason( (string) $permission->get_error_code(), (string) $permission->get_error_message() );
+					if ( null !== $transient ) {
+						return ToolOutcome::hold( $transient, (string) $permission->get_error_message() );
+					}
+				}
+
 				return ToolOutcome::denied(
 					(string) $permission->get_error_code(),
 					(string) $permission->get_error_message()
