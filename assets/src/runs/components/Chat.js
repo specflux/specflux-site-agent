@@ -137,7 +137,8 @@ function approvalCardPayload( step, approvalUi ) {
 	if ( 'approval' !== step.kind || ! approvalUi || approvalUi.approval_id !== step.message?.approval_id ) {
 		return step.message;
 	}
-	return { ...step.message, summary: approvalUi.summary };
+	// `diff` (0.4 S4) is explanation only; the card never sends it back.
+	return { ...step.message, summary: approvalUi.summary, ...( approvalUi.diff ? { diff: approvalUi.diff } : {} ) };
 }
 
 export default function Chat( {

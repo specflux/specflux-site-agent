@@ -1068,3 +1068,71 @@
 		transition: inline-size 0.15s ease;
 	}
 }
+
+/* Approve with a diff (0.4 S4): "What changes". Removed text is struck
+ * through and added text underlined, so it reads without colour; logical
+ * properties keep it correct in RTL. */
+.senroflux-approval-diff {
+	margin-block: 8px;
+	padding-inline-start: 10px;
+	border-inline-start: 3px solid #dcdcde;
+}
+
+.senroflux-diff-fields {
+	margin: 0;
+}
+
+.senroflux-diff-field {
+	margin-block-end: 6px;
+}
+
+.senroflux-diff-field dt {
+	font-weight: 600;
+}
+
+.senroflux-diff-field dd {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.senroflux-diff-tag {
+	color: #50575e;
+}
+
+.senroflux-diff-del {
+	background: #fcf0f1;
+	text-decoration: line-through;
+}
+
+.senroflux-diff-ins {
+	background: #edfaef;
+	text-decoration: underline;
+}
+
+.senroflux-diff-ops {
+	margin: 0;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+.senroflux-diff-heading {
+	margin-block: 6px 2px;
+	font-weight: 600;
+}
+
+.senroflux-diff-note {
+	margin: 0;
+	color: #50575e;
+}
+
+.senroflux-diff-block {
+	margin-block-start: 6px;
+}
+
+.senroflux-diff-current,
+.senroflux-diff-proposed {
+	min-inline-size: 0;
+}

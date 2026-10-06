@@ -256,6 +256,17 @@ final class ApprovalSummaryTest extends TestCase {
 		$this->assertSame( '', $detail['ui']['approval']['summary'] );
 	}
 
+	public function test_an_unknown_ability_carries_args_but_no_diff_in_either_gate_mode(): void {
+		foreach ( array( GateMode::BuiltIn, GateMode::AgentSafety ) as $mode ) {
+			$run_id = $this->seedParkedApproval( 'agsafe-smoke/write', array( 'x' => 1 ), $mode );
+
+			$approval = Plugin::instance()->get( $run_id )['ui']['approval'];
+
+			$this->assertSame( array( 'x' => 1 ), $approval['args_preview'] );
+			$this->assertArrayNotHasKey( 'diff', $approval );
+		}
+	}
+
 	public function test_summary_markup_is_reduced_to_text_and_plain_links(): void {
 		add_filter(
 			'agent_safety_approval_summary',

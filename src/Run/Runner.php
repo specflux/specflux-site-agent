@@ -10,6 +10,8 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Run;
 
 use Specflux\SenroFlux\Approval\ApprovalBridge;
+use Specflux\SenroFlux\Approval\Diff\ApprovalDiff;
+use Specflux\SenroFlux\Approval\Diff\WpObjectReader;
 use Specflux\SenroFlux\Approval\GrantBridge;
 use Specflux\SenroFlux\Model\ModelGatewayInterface;
 use Specflux\SenroFlux\Skills\Skill;
@@ -1094,8 +1096,31 @@ final class Runner {
 		if ( null !== $notice && '' !== $notice ) {
 			$ui['approval']['notice'] = $notice;
 		}
+		// 0.4 S4: "What changes", additive. Explanation only; the approval
+		// still binds to the arguments, and absent means no section.
+		$diff = $this->approvalDiff( $call );
+		if ( null !== $diff ) {
+			$ui['approval']['diff'] = $diff;
+		}
 
 		return $ui;
+	}
+
+	/**
+	 * Current against proposed for a parked call, read just now. Reads only;
+	 * any failure means no diff, never a blocked park.
+	 *
+	 * @param array{id:string,name:string,args:mixed} $call Parked call.
+	 * @return array<string,mixed>|null
+	 */
+	private function approvalDiff( array $call ): ?array {
+		$args = is_array( $call['args'] ?? null ) ? $call['args'] : array();
+
+		try {
+			return ( new ApprovalDiff( new WpObjectReader() ) )->build( ToolRegistry::abilityName( (string) $call['name'] ), $args );
+		} catch ( \Throwable ) {
+			return null;
+		}
 	}
 
 	/**

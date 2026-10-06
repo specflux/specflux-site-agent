@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from '@wordpress/element';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import TierBadge from './TierBadge';
 import ApprovalSummary from './ApprovalSummary';
+import ApprovalDiff from './ApprovalDiff';
 import { planApprovalCount } from '../utils';
 
 const HEADINGS = {
@@ -404,6 +405,8 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 					</p>
 				</div>
 			) }
+			{ /* Explanation only: never read back by the buttons below. */ }
+			<ApprovalDiff diff={ payload.diff } />
 			{ hasArgs && (
 				<details className="senroflux-approval-args" open={ ! hasSummary }>
 					<summary>{ __( 'Arguments', 'senroflux' ) }</summary>
