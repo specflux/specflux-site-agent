@@ -217,6 +217,9 @@ final class Plugin {
 	 * Agent Safety's own priority-0 bootstrap so its classes exist).
 	 */
 	public function boot(): void {
+		// 0.4 S8: decides `meta.mcp.public` for senroflux/* abilities; must be
+		// hooked before any ability registers.
+		\Specflux\SenroFlux\Passthrough\ExternalExposure::register();
 		// 0.3 S3: Agent Safety is no longer a hard dependency — its absence
 		// only decides the gate mode a run starts in (GateMode::BuiltIn), so
 		// boot wires the runtime either way. `available()` still reports

@@ -59,7 +59,7 @@ final class SettingsScreenTest extends TestCase {
 	public function test_the_screen_shows_one_checkbox_ticked_by_default(): void {
 		$html = $this->html( $this->screen() );
 
-		$this->assertSame( 1, substr_count( $html, 'type="checkbox"' ) );
+		$this->assertSame( 1, substr_count( $html, 'name="senroflux_use_theme_patterns"' ) );
 		$this->assertMatchesRegularExpression( '/name="senroflux_use_theme_patterns"[^>]* checked=/', $html );
 	}
 

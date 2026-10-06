@@ -200,6 +200,18 @@ if ( ! function_exists( 'checked' ) ) {
 	}
 }
 
+if ( ! function_exists( 'disabled' ) ) {
+	/** WP's `disabled()` helper (same contract as the `checked()` shim above). */
+	function disabled( mixed $disabled, mixed $current = true, bool $display = true ): string {
+		$result = (string) $disabled === (string) $current ? " disabled='disabled'" : '';
+		if ( $display ) {
+			echo $result; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- test shim of core's own helper.
+		}
+
+		return $result;
+	}
+}
+
 if ( ! function_exists( 'selected' ) ) {
 	/** WP's `selected()` helper (same contract as the `checked()` shim above). */
 	function selected( mixed $selected, mixed $current = true, bool $display = true ): string {

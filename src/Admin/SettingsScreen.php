@@ -23,6 +23,7 @@ namespace Specflux\SenroFlux\Admin;
 
 use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
 use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
+use Specflux\SenroFlux\Passthrough\ExternalExposure;
 use Specflux\SenroFlux\Passthrough\Passthrough;
 use Specflux\SenroFlux\Plugin;
 use Specflux\SenroFlux\Run\GateMode;
@@ -47,6 +48,7 @@ class SettingsScreen {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_post_senroflux_save_brief', array( $this, 'handleSave' ) );
 		add_action( 'admin_post_senroflux_save_passthrough', array( $this, 'handleSavePassthrough' ) );
+		add_action( 'admin_post_senroflux_save_external', array( $this, 'handleSaveExternal' ) );
 	}
 
 	/**
@@ -156,6 +158,22 @@ class SettingsScreen {
 		$this->redirectPassthrough( null );
 	}
 
+	/** admin-post handler: save the "external AI apps" switch (0.4 S8). */
+	public function handleSaveExternal(): void {
+		check_admin_referer( 'senroflux_save_external' );
+
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+		}
+
+		$posted = isset( $_POST[ ExternalExposure::OPTION ] ) && is_string( $_POST[ ExternalExposure::OPTION ] )
+			? sanitize_text_field( wp_unslash( $_POST[ ExternalExposure::OPTION ] ) )
+			: '0';
+		update_option( ExternalExposure::OPTION, ExternalExposure::sanitize( $posted ) ? '1' : '0' );
+
+		$this->redirectPassthrough( null );
+	}
+
 	/** Redirect back to the passthrough section (test override seam). */
 	protected function redirectPassthrough( ?string $error_code ): void {
 		$url = admin_url( 'admin.php?page=' . self::SLUG );
@@ -244,9 +262,37 @@ class SettingsScreen {
 
 		echo '</form>';
 
+		$this->renderExternal();
 		$this->renderPassthrough();
 
 		echo '</div>';
+	}
+
+	/** The "external AI apps" switch (0.4 S8). */
+	private function renderExternal(): void {
+		$present = ExternalExposure::senrogatePresent();
+
+		echo '<hr><h2>' . esc_html__( 'External AI apps', 'senroflux' ) . '</h2>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="senroflux_save_external">';
+		wp_nonce_field( 'senroflux_save_external' );
+		printf(
+			'<p><label><input type="checkbox" name="%1$s" value="1"%2$s%3$s> %4$s</label></p>',
+			esc_attr( ExternalExposure::OPTION ),
+			checked( ExternalExposure::effective(), true, false ),
+			disabled( $present, false, false ),
+			esc_html__( 'Let external AI apps use SenroFlux\'s abilities', 'senroflux' )
+		);
+		echo '<p class="description">' . esc_html__( 'Calls from external apps get SenroGate\'s tiers and approvals, not SenroFlux\'s plan, budgets or report.', 'senroflux' ) . '</p>';
+		if ( ! $present ) {
+			echo '<p class="description">' . esc_html__( 'This needs SenroGate. Install and activate it to turn this on; until then SenroFlux\'s abilities stay unavailable to external apps.', 'senroflux' ) . '</p>';
+		}
+		printf(
+			'<p><button type="submit" class="button button-primary"%2$s>%1$s</button></p>',
+			esc_html__( 'Save', 'senroflux' ),
+			disabled( $present, false, false )
+		);
+		echo '</form>';
 	}
 
 	/** The "Abilities from other plugins" section (0.4 S6). */
