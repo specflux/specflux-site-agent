@@ -37,7 +37,7 @@ final class CommerceTierParityTest extends TestCase {
 	 * ("`product-delete` and `order-update-status` are deliberately not
 	 * roles").
 	 */
-	private const DELIBERATELY_NOT_ROLES = array( 'order-update-status', 'product-delete' );
+	private const DELIBERATELY_NOT_ROLES = array( 'order-update-status', 'product-delete', 'orders-create', 'orders-update', 'products-update' );
 
 	private function fixturePath(): string {
 		return __DIR__ . '/commerce-tier-parity.json';
@@ -124,6 +124,39 @@ final class CommerceTierParityTest extends TestCase {
 		}
 	}
 
+	public function test_a_price_or_stock_meta_write_on_product_update_is_a_price_change(): void {
+		$pack = new CommercePack();
+
+		foreach ( array( '_price', '_regular_price', '_sale_price', '_stock', '_manage_stock' ) as $key ) {
+			$verb = $pack->verbFor(
+				'woocommerce/product-update',
+				array(
+					'id'        => 5,
+					'meta_data' => array(
+						array(
+							'key'   => $key,
+							'value' => '1',
+						),
+					),
+				)
+			);
+			$this->assertSame( 2, \Specflux\SenroFlux\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ), $key );
+		}
+		$verb = $pack->verbFor(
+			'woocommerce/product-update',
+			array(
+				'id'        => 5,
+				'meta_data' => array(
+					array(
+						'key'   => '_note',
+						'value' => 'x',
+					),
+				),
+			)
+		);
+		$this->assertSame( 1, \Specflux\SenroFlux\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ) );
+	}
+
 	/**
 	 * The two copies (this repo's and Agent Safety's) must be byte-identical
 	 * — the shared-file mechanism S19 documents in place of a composer
@@ -134,7 +167,12 @@ final class CommerceTierParityTest extends TestCase {
 	 * nothing.
 	 */
 	public function test_byte_identical_to_agent_safetys_copy_when_the_sibling_repo_is_present(): void {
-		$sibling = dirname( __DIR__, 3 ) . '/agent-safety/plugin/tests/Fixtures/commerce-tier-parity.json';
+		// SENROFLUX_PARITY_SIBLING points at the producer's fixture when the
+		// checkout is not laid out as ../agent-safety (e.g. a SenroGate worktree).
+		$override = getenv( 'SENROFLUX_PARITY_SIBLING' );
+		$sibling  = ( false !== $override && '' !== $override )
+			? $override
+			: dirname( __DIR__, 3 ) . '/agent-safety/plugin/tests/Fixtures/commerce-tier-parity.json';
 
 		if ( ! is_readable( $sibling ) ) {
 			if ( 'true' === getenv( 'CI' ) ) {

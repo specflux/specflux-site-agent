@@ -219,6 +219,17 @@ final class CommercePack extends Pack {
 			}
 		}
 
+		// Mirrors SenroGate's guarded meta keys: a price or stock write via
+		// `meta_data` is the same money-shaping edit as the named fields.
+		$meta = $input['meta_data'] ?? null;
+		if ( is_array( $meta ) ) {
+			foreach ( $meta as $entry ) {
+				if ( is_array( $entry ) && is_string( $entry['key'] ?? null ) && in_array( $entry['key'], array( '_price', '_regular_price', '_sale_price', '_stock', '_manage_stock' ), true ) ) {
+					return true;
+				}
+			}
+		}
+
 		return false;
 	}
 

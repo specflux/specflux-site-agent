@@ -344,7 +344,12 @@ final class GateHoldTest extends TestCase {
 	}
 
 	public function test_transient_reason_prefers_the_error_data_reason_over_the_message(): void {
-		$data = array( 'status' => 403, 'verb' => 'x/y', 'tier' => 1, 'reason' => 'site_paused' );
+		$data = array(
+			'status' => 403,
+			'verb'   => 'x/y',
+			'tier'   => 1,
+			'reason' => 'site_paused',
+		);
 		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): denied_by_class', $data ) );
 		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'a reworded message', $data ) );
 		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): site_paused', array( 'reason' => 'denied_by_class' ) ), 'a non-transient data reason wins over the message' );
