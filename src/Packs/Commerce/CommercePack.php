@@ -54,6 +54,11 @@ final class CommercePack extends Pack {
 		return 'commerce';
 	}
 
+	/** The store platform a new run pins: the selected one, or null when none is usable. */
+	public function pinForRun(): ?string {
+		return StorePlatforms::select()->platform?->id();
+	}
+
 	/**
 	 * Scope this pack to the platform a run pinned for the length of one tick
 	 * (null leaves it). Changing it drops the per-request resolved-ability cache.
@@ -74,28 +79,56 @@ final class CommercePack extends Pack {
 	 * answers when none is usable and the setup check is what refuses).
 	 */
 	public function platform(): StorePlatform {
-		if ( null !== $this->run_platform_id ) {
-			$pinned = StorePlatforms::get( $this->run_platform_id );
-			if ( null !== $pinned ) {
-				return $pinned;
-			}
-		}
-
-		$selected = StorePlatforms::select()->platform;
-		if ( null !== $selected ) {
-			return $selected;
-		}
-
-		$all = StorePlatforms::all();
-
-		return array() !== $all ? reset( $all ) : new WooPlatform();
+		return StorePlatforms::resolve( $this->run_platform_id );
 	}
 
 	/**
 	 * @return array<string,string> The selected platform's role => template map.
 	 */
 	public function roles(): array {
-		return $this->platform()->roleMap();
+		return array_map(
+			static fn ( string|array $value ): string => StorePlatforms::roleSpec( $value )['polyfill'],
+			$this->platform()->roleMap()
+		);
+	}
+
+	/**
+	 * @param string $role     Role.
+	 * @param string $template The polyfill template.
+	 */
+	protected function nativeTemplate( string $role, string $template ): string {
+		$map = $this->platform()->roleMap();
+
+		return isset( $map[ $role ] ) ? StorePlatforms::roleSpec( $map[ $role ] )['native'] : $template;
+	}
+
+	/**
+	 * Apply a role's platform `shape` when the call resolved to the platform's
+	 * native ability (never to the `senroflux/` polyfill).
+	 *
+	 * @param string              $ability The concrete ability id.
+	 * @param array<string,mixed> $input   The pack-shaped input.
+	 * @return array<string,mixed>
+	 */
+	public function shapeInput( string $ability, array $input ): array {
+		if ( 0 === strpos( $ability, self::POLYFILL_NAMESPACE ) ) {
+			return $input;
+		}
+
+		$map = $this->platform()->roleMap();
+		foreach ( $this->resolveAbilities() as $role => $resolved ) {
+			if ( $resolved !== $ability || ! isset( $map[ $role ] ) ) {
+				continue;
+			}
+			$shape = StorePlatforms::roleSpec( $map[ $role ] )['shape'];
+			if ( null !== $shape ) {
+				$shaped = $shape( $input );
+
+				return is_array( $shaped ) ? $shaped : $input;
+			}
+		}
+
+		return $input;
 	}
 
 	/** @return string The selected platform's run capability (`manage_woocommerce` for Woo). */

@@ -57,7 +57,9 @@ class ChangesBridge {
 	 * @param Run $run The run.
 	 */
 	public function capabilityFor( Run $run ): string {
-		return 'commerce' === $run->pack ? 'manage_woocommerce' : 'manage_options';
+		return 'commerce' === $run->pack
+			? \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::resolve( $run->storePlatform )->restoreCapability()
+			: 'manage_options';
 	}
 
 	/**

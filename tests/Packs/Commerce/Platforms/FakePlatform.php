@@ -62,8 +62,33 @@ final class FakePlatform implements StorePlatform {
 		return $this->capability;
 	}
 
+	/** @var array<string,mixed> */
+	public array $roles = array( 'read' => 'fake-read' );
+
 	public function roleMap(): array {
-		return array( 'read' => 'fake-read' );
+		return $this->roles;
+	}
+
+	public function restoreCapability(): string {
+		return 'manage_options';
+	}
+
+	public function approvalSummary( string $pack_verb, string $base_name, array $input ): ?string {
+		unset( $base_name, $input );
+
+		return 'fake card for ' . $pack_verb;
+	}
+
+	public function describeObject( string $object_id ): ?array {
+		return str_starts_with( $object_id, 'order:' )
+			? array(
+				'object_type' => 'order',
+				'title'       => 'Fake ' . $object_id,
+				'status'      => 'ok',
+				'edit_url'    => null,
+				'preview_url' => null,
+			)
+			: null;
 	}
 
 	public function polyfills(): array {
@@ -83,7 +108,11 @@ final class FakePlatform implements StorePlatform {
 	public function verbFor( string $base_name, array $input ): ?string {
 		unset( $input );
 
-		return 'fake-read' === $base_name ? 'fake/verb' : null;
+		return match ( $base_name ) {
+			'fake-read' => 'fake/verb',
+			'orders-refund' => 'commerce/refund',
+			default => null,
+		};
 	}
 
 	public function validateCall( string $base_name, array $input ): ?WP_Error {

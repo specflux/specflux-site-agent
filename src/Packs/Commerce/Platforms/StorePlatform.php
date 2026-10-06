@@ -63,14 +63,48 @@ interface StorePlatform {
 	public function runCapability(): string;
 
 	/**
-	 * Commerce role => ability-id template (the name segment). The segment is
-	 * resolved through {@see abilityNamespaces()}: the platform's native
-	 * ability when registered and shape-compatible, else the `senroflux/`
-	 * polyfill of the same name.
+	 * Commerce role => ability. A value is either a template string (the
+	 * native ability and the `senroflux/` polyfill share that name segment),
+	 * or `array{polyfill:string, native?:string, shape?:callable|null}`:
+	 * `polyfill` is the `senroflux/` template, `native` the platform ability's
+	 * namespace-relative name when it differs (default: the polyfill name), and
+	 * `shape` an optional `fn(array $input): array` turning the pack's input
+	 * into the native ability's input, applied only when the native ability
+	 * (not the polyfill) was resolved, after validation and approval.
+	 * {@see StorePlatforms::roleSpec()} normalises a value.
 	 *
-	 * @return array<string,string>
+	 * The shape-compat check uses {@see inputProperties()} for the role's
+	 * polyfill template against the native schema, so a shaped role should
+	 * return the native keys (or none).
+	 *
+	 * @return array<string,string|array{polyfill:string,native?:string,shape?:callable|null}>
 	 */
 	public function roleMap(): array;
+
+	/**
+	 * The capability a human needs to see and undo this platform's store
+	 * changes (`manage_woocommerce` for Woo).
+	 */
+	public function restoreCapability(): string;
+
+	/**
+	 * A platform-specific approval card for a Tier-2 pack verb, or null to use
+	 * the commerce pack's default (Woo-shaped) card.
+	 *
+	 * @param string              $pack_verb The resolved commerce verb.
+	 * @param string              $base_name The ability name segment.
+	 * @param array<string,mixed> $input     Call input.
+	 */
+	public function approvalSummary( string $pack_verb, string $base_name, array $input ): ?string;
+
+	/**
+	 * Run-report lookup for a prefixed store object id (`order:`, `coupon:`,
+	 * `zone:`, `taxrate:`, `page:`), or null to use the default (Woo) lookup.
+	 *
+	 * @param string $object_id The tracked object id.
+	 * @return array{object_type:string,title:string,status:string,edit_url:?string,preview_url:?string}|null
+	 */
+	public function describeObject( string $object_id ): ?array;
 
 	/**
 	 * The `senroflux/` polyfill templates this platform needs registered.

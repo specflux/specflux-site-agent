@@ -73,6 +73,75 @@ final class StorePlatforms {
 		return $out;
 	}
 
+	/**
+	 * Normalise a {@see StorePlatform::roleMap()} value.
+	 *
+	 * @param string|array{polyfill:string,native?:string,shape?:callable|null} $value Role map value.
+	 * @return array{polyfill:string,native:string,shape:callable|null}
+	 */
+	public static function roleSpec( string|array $value ): array {
+		if ( is_string( $value ) ) {
+			return array(
+				'polyfill' => $value,
+				'native'   => $value,
+				'shape'    => null,
+			);
+		}
+
+		$polyfill = $value['polyfill'];
+		$shape    = $value['shape'] ?? null;
+
+		return array(
+			'polyfill' => $polyfill,
+			'native'   => $value['native'] ?? $polyfill,
+			'shape'    => is_callable( $shape ) ? $shape : null,
+		);
+	}
+
+	/**
+	 * The platform to speak for: the pinned one when registered, else the
+	 * selected one, else the first registered (so static answers still exist
+	 * when none is usable), else WooCommerce.
+	 *
+	 * @param string|null $pinned_id A run's pinned platform id.
+	 */
+	public static function resolve( ?string $pinned_id = null ): StorePlatform {
+		if ( null !== $pinned_id ) {
+			$pinned = self::get( $pinned_id );
+			if ( null !== $pinned ) {
+				return $pinned;
+			}
+		}
+
+		$selected = self::select()->platform;
+		if ( null !== $selected ) {
+			return $selected;
+		}
+
+		$all = self::all();
+
+		return array() !== $all ? reset( $all ) : new WooPlatform();
+	}
+
+	/**
+	 * Namespaces SenroGate governs through registered platforms: every
+	 * non-polyfill namespace of every registered platform.
+	 *
+	 * @return list<string>
+	 */
+	public static function governedNamespaces(): array {
+		$out = array();
+		foreach ( self::all() as $platform ) {
+			foreach ( $platform->abilityNamespaces() as $namespace ) {
+				if ( Pack::POLYFILL_NAMESPACE !== $namespace ) {
+					$out[] = $namespace;
+				}
+			}
+		}
+
+		return array_values( array_unique( $out ) );
+	}
+
 	/** One registered platform, or null. */
 	public static function get( string $id ): ?StorePlatform {
 		return self::all()[ $id ] ?? null;

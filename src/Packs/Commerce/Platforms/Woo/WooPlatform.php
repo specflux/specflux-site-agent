@@ -75,7 +75,7 @@ final class WooPlatform implements StorePlatform {
 		return 'manage_woocommerce';
 	}
 
-	/** @return array<string,string> */
+	/** @return array<string,string|array{polyfill:string,native?:string,shape?:callable|null}> */
 	public function roleMap(): array {
 		return array(
 			'read'           => 'products-query',
@@ -97,6 +97,24 @@ final class WooPlatform implements StorePlatform {
 			'store-report'   => 'store-report',
 			'report-save'    => 'save-store-report',
 		);
+	}
+
+	public function restoreCapability(): string {
+		return 'manage_woocommerce';
+	}
+
+	/** Woo keeps the commerce pack's built-in cards. */
+	public function approvalSummary( string $pack_verb, string $base_name, array $input ): ?string {
+		unset( $pack_verb, $base_name, $input );
+
+		return null;
+	}
+
+	/** Woo keeps the built-in lookup. */
+	public function describeObject( string $object_id ): ?array {
+		unset( $object_id );
+
+		return null;
 	}
 
 	/** @return list<string> */

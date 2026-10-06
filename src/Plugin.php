@@ -547,9 +547,8 @@ final class Plugin {
 			// is resolved ONCE here and then scoped over the rest of start() so
 			// the allow-list below is the pinned platform's. No usable
 			// platform pins nothing (the commerce setup check is what refuses).
-			if ( $pack_obj instanceof \Specflux\SenroFlux\Packs\Commerce\CommercePack ) {
-				$selected_platform = \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::select()->platform;
-				$store_platform    = null !== $selected_platform ? $selected_platform->id() : null;
+			$store_platform = $pack_obj->pinForRun();
+			if ( null !== $store_platform ) {
 				$pack_obj->useRunPlatform( $store_platform );
 				$allow = $pack_obj->allowList();
 			}
@@ -572,9 +571,7 @@ final class Plugin {
 			}
 
 			// The allow-list is fixed; the pin lives on the run row from here.
-			if ( $pack_obj instanceof \Specflux\SenroFlux\Packs\Commerce\CommercePack ) {
-				$pack_obj->useRunPlatform( null );
-			}
+			$pack_obj->useRunPlatform( null );
 		}
 
 		// The "non-empty allow" guard applies only to the DIRECT path: with a
@@ -746,7 +743,7 @@ final class Plugin {
 
 		// C4-0: a commerce run answers for the store platform it pinned at start.
 		$commerce = null !== $run ? self::pack_for_run( $run ) : null;
-		if ( $commerce instanceof \Specflux\SenroFlux\Packs\Commerce\CommercePack && null !== $run->storePlatform ) {
+		if ( null !== $commerce && null !== $run?->storePlatform ) {
 			$commerce->useRunPlatform( $run->storePlatform );
 		}
 
@@ -763,7 +760,7 @@ final class Plugin {
 			\Specflux\SenroFlux\Packs\Site\FrontPage::forgetRunContext();
 			\Specflux\SenroFlux\Packs\Site\Style::forgetRunContext();
 			\Specflux\SenroFlux\Packs\Commerce\Abilities::forgetRunContext();
-			if ( $commerce instanceof \Specflux\SenroFlux\Packs\Commerce\CommercePack ) {
+			if ( null !== $commerce ) {
 				$commerce->useRunPlatform( null );
 			}
 		}

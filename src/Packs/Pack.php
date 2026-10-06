@@ -130,7 +130,7 @@ abstract class Pack {
 
 		$resolved = array();
 		foreach ( $this->roles() as $role => $template ) {
-			$resolved[ $role ] = $this->resolveAbility( $template );
+			$resolved[ $role ] = $this->resolveAbility( $role, $template );
 		}
 
 		$this->resolved      = $resolved;
@@ -169,7 +169,7 @@ abstract class Pack {
 	 * {@see abilityNamespaces()} that is registered and shape-compatible, or
 	 * the last (polyfill) namespace when none of the earlier ones qualify.
 	 */
-	private function resolveAbility( string $template ): string {
+	private function resolveAbility( string $role, string $template ): string {
 		$namespaces = $this->abilityNamespaces();
 		$last_index = count( $namespaces ) - 1;
 
@@ -180,8 +180,9 @@ abstract class Pack {
 				// fallback, never gated on a compat check against itself.
 				return $candidate;
 			}
-			if ( $this->namespaceCompatible( $candidate, $template ) ) {
-				return $candidate;
+			$native = $namespace . $this->nativeTemplate( $role, $template );
+			if ( $this->namespaceCompatible( $native, $template ) ) {
+				return $native;
 			}
 		}
 
@@ -189,6 +190,52 @@ abstract class Pack {
 		// namespace (enforced at registration), so an empty list never
 		// reaches here in practice.
 		return self::POLYFILL_NAMESPACE . $template;
+	}
+
+	/**
+	 * The scope id a new run pins at start (the commerce pack's store
+	 * platform), or null. Default: nothing to pin.
+	 */
+	public function pinForRun(): ?string {
+		return null;
+	}
+
+	/**
+	 * Scope this pack to a run's pinned id for one tick (null leaves it).
+	 * Default: nothing to scope.
+	 *
+	 * @param string|null $pinned The run's pinned id.
+	 */
+	public function useRunPlatform( ?string $pinned ): void {
+		unset( $pinned );
+	}
+
+	/**
+	 * The name segment a role's NATIVE (non-polyfill) ability goes by, when it
+	 * differs from the polyfill template. Default: the same.
+	 *
+	 * @param string $role     Role.
+	 * @param string $template The polyfill template.
+	 */
+	protected function nativeTemplate( string $role, string $template ): string {
+		unset( $role );
+
+		return $template;
+	}
+
+	/**
+	 * Turn the pack's input into the input a role's NATIVE ability takes,
+	 * applied by the executor to a call that resolved to a native ability.
+	 * Default: unchanged.
+	 *
+	 * @param string              $ability The concrete ability id.
+	 * @param array<string,mixed> $input   The pack-shaped input.
+	 * @return array<string,mixed>
+	 */
+	public function shapeInput( string $ability, array $input ): array {
+		unset( $ability );
+
+		return $input;
 	}
 
 	/**

@@ -2482,8 +2482,22 @@ final class Runner {
 			$name,
 			is_array( $args ) ? $args : null,
 			$this->builtinGateFor( $run, $name, is_array( $args ) ? $args : array(), (string) ( $call['id'] ?? '' ), $approved ),
-			$this->validateCallFor( $run )
+			$this->validateCallFor( $run ),
+			$this->shapeInputFor( $run )
 		);
+	}
+
+	/**
+	 * C4: the run's pack's native-input shaper ({@see \Specflux\SenroFlux\Packs\Pack::shapeInput()}); null without a pack.
+	 *
+	 * @return callable(string,array<string,mixed>):array<string,mixed>|null
+	 */
+	private function shapeInputFor( Run $run ): ?callable {
+		$pack = is_callable( $this->pack_resolver ) ? ( $this->pack_resolver )( $run ) : null;
+
+		return ( null !== $pack )
+			? static fn ( string $ability, array $args ): array => $pack->shapeInput( $ability, $args )
+			: null;
 	}
 
 	/**
