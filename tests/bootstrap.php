@@ -73,7 +73,7 @@ if ( ! defined( 'SENROFLUX_URL' ) ) {
 // S23: senroflux.php (never loaded under bare PHPUnit) defines this; tests
 // that read it (PublicSurfaceTest) need the same value.
 if ( ! defined( 'SENROFLUX_API_VERSION' ) ) {
-	define( 'SENROFLUX_API_VERSION', '0.3.0' );
+	define( 'SENROFLUX_API_VERSION', '0.4.0' );
 }
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
