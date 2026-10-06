@@ -1933,7 +1933,7 @@ final class Runner {
 		// 0.3 S20: the site owner's standing notes, opaque to the harness.
 		$brief = SiteBrief::get();
 
-		$text = InstructionRenderer::render( $skills, $this->tailFor( $run ), $run->gateMode, $withheld_notice, $brief );
+		$text = InstructionRenderer::render( $skills, $this->tailFor( $run ), $run->gateMode, $withheld_notice, $brief, array() !== \Specflux\SenroFlux\Passthrough\Passthrough::exposedNames( $run->gateMode ) );
 
 		/**
 		 * This filter is documented in SPEC-SENROFLUX.md S8; post-render only.

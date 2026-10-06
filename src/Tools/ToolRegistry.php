@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tools;
 
+use Specflux\SenroFlux\Passthrough\Passthrough;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\Run;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -55,6 +56,11 @@ final class ToolRegistry {
 		$names        = array();
 		$declarations = array();
 
+		// 0.4 S6: abilities from other plugins the admin enabled join EVERY
+		// run, as exact names only (never a glob), and only when exposed for
+		// this run's pinned gate mode.
+		$passthrough = array_flip( Passthrough::exposedNames( $run->gateMode ) );
+
 		foreach ( $abilities as $ability ) {
 			if ( ! is_object( $ability ) || ! method_exists( $ability, 'get_name' ) ) {
 				continue;
@@ -78,7 +84,7 @@ final class ToolRegistry {
 				continue;
 			}
 
-			$admitted = false;
+			$admitted = isset( $passthrough[ $name ] );
 			foreach ( $run->allow as $pattern ) {
 				if ( AbilityGlob::matches( $pattern, $name ) ) {
 					$admitted = true;

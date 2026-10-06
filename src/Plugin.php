@@ -218,6 +218,9 @@ final class Plugin {
 	 * Agent Safety's own priority-0 bootstrap so its classes exist).
 	 */
 	public function boot(): void {
+		// 0.4 S8: decides `meta.mcp.public` for senroflux/* abilities; must be
+		// hooked before any ability registers.
+		\Specflux\SenroFlux\Passthrough\ExternalExposure::register();
 		// 0.3 S3: Agent Safety is no longer a hard dependency — its absence
 		// only decides the gate mode a run starts in (GateMode::BuiltIn), so
 		// boot wires the runtime either way. `available()` still reports
@@ -346,6 +349,15 @@ final class Plugin {
 		// HTTP surface (S9). Both transports delegate to the PHP API below.
 		( new Ajax() )->register();
 		add_action( 'rest_api_init', array( new Rest(), 'register' ) );
+
+		// 0.4 S6: direct-allow runs (no pack) tier passthrough abilities
+		// through the site-wide verb map. Last in line: nothing another
+		// callback returns can loosen a passthrough tier.
+		add_filter(
+			\Specflux\SenroFlux\Tools\VerbTier::VERB_MAP_FILTER,
+			array( \Specflux\SenroFlux\Passthrough\Passthrough::class, 'filterVerbMap' ),
+			PHP_INT_MAX
+		);
 
 		// Observation screen (S10).
 		if ( function_exists( 'is_admin' ) && is_admin() ) {
@@ -1153,7 +1165,10 @@ final class Plugin {
 			static function ( \Specflux\SenroFlux\Run\Run $run ): ?array {
 				$pack = self::pack_for_run( $run );
 
-				return null !== $pack ? $pack->verbMap() : null;
+				// 0.4 S6: exposed passthrough abilities are tiered (Tier 2
+				// unless built-in Read) and become known verbs. The pack's
+				// own entries win any collision.
+				return null !== $pack ? $pack->verbMap() + \Specflux\SenroFlux\Passthrough\Passthrough::tierMap( $run->gateMode ) : null;
 			},
 			// S7/S10: the fence tiers a call by its PACK VERB, not by the
 			// ability that carries it — `senroflux/publish-post` is
@@ -1162,6 +1177,12 @@ final class Plugin {
 			// pack, so its verb stays the ability id (S9).
 			static function ( \Specflux\SenroFlux\Run\Run $run, string $ability, array $args ): string {
 				$pack = self::pack_for_run( $run );
+
+				// 0.4 S6: a passthrough ability's verb is its own name; no
+				// pack knows it.
+				if ( null !== $pack && array_key_exists( $ability, \Specflux\SenroFlux\Passthrough\Passthrough::tierMap( $run->gateMode ) ) ) {
+					return $ability;
+				}
 
 				return null !== $pack ? $pack->verbFor( $ability, $args ) : $ability;
 			},

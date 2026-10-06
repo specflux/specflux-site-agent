@@ -10,7 +10,9 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Setup;
 
 use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SenroFlux\Passthrough\Passthrough;
 use Specflux\SenroFlux\Plugin;
+use Specflux\SenroFlux\Run\GateMode;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -51,6 +53,11 @@ final class Checks {
 		$agent_safety = self::agentSafetyAdvisory( $user_id );
 		if ( null !== $agent_safety ) {
 			$checks[] = $agent_safety;
+		}
+
+		$awaiting = self::passthroughAwaitingReview();
+		if ( null !== $awaiting ) {
+			$checks[] = $awaiting;
 		}
 
 		return $checks;
@@ -183,6 +190,42 @@ final class Checks {
 			'install_plugins',
 			__( 'Ask an administrator to install the Agent Tollgate plugin.', 'senroflux' ),
 			'senroflux_agent_safety_missing'
+		);
+	}
+
+	/**
+	 * `senroflux/passthrough-review` (advisory, harness): null unless the site
+	 * runs in SenroGate mode and N enabled abilities from other plugins are
+	 * hidden from runs until SenroGate reviews them (0.4 S6).
+	 */
+	public static function passthroughAwaitingReview(): ?SetupCheck {
+		if ( GateMode::AgentSafety !== Plugin::currentGateMode() ) {
+			return null;
+		}
+
+		$count = count( Passthrough::awaitingReview() );
+		if ( 0 === $count ) {
+			return null;
+		}
+
+		return new SetupCheck(
+			'senroflux/passthrough-review',
+			SetupCheck::ADVISORY,
+			false,
+			sprintf(
+				/* translators: %d: number of abilities. */
+				_n(
+					'%d enabled ability from another plugin is hidden from runs until it is reviewed in SenroGate → Abilities.',
+					'%d enabled abilities from other plugins are hidden from runs until they are reviewed in SenroGate → Abilities.',
+					$count,
+					'senroflux'
+				),
+				$count
+			),
+			function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=agent-safety-abilities' ) : null,
+			'manage_options',
+			__( 'Ask an administrator to review these abilities in SenroGate → Abilities.', 'senroflux' ),
+			'senroflux_passthrough_unreviewed'
 		);
 	}
 
