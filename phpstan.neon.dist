@@ -84,6 +84,13 @@ parameters:
             path: src/Run/*
             count: 3
         -
+            # SenroGate's `changes()` API object (0.5) is not installed in this
+            # checkout and is only reached behind the method_exists() probes in
+            # ChangesBridge::api(), so phpstan sees a bare `object`.
+            message: '#^Call to an undefined method object::(forCorrelation|preview|undo)\(\)\.$#'
+            path: src/Approval/ChangesBridge.php
+            count: 4
+        -
             # The Agent Safety go-forward pack lives in the external
             # wp-agentsafety plugin, which is NOT installed in this checkout;
             # phpstan therefore cannot resolve these classes. Every code path

@@ -117,6 +117,65 @@ final class ResultPresenterTest extends TestCase {
 		$this->assertSame( '', $card['alt'] );
 	}
 
+	public function test_published_product_has_edit_and_view_links(): void {
+		$card = $this->present(
+			'woocommerce/products-get',
+			array(
+				'id'            => 88,
+				'name'          => 'Trail Mug',
+				'status'        => 'publish',
+				'regular_price' => '18.00',
+			)
+		);
+
+		$this->assertSame(
+			array(
+				'Edit' => 'https://example.test/edit/88',
+				'View' => 'https://example.test/?p=88',
+			),
+			$this->labels( $card['links'] )
+		);
+		$this->assertSame( 'view', $card['links'][1]['kind'] );
+	}
+
+	public function test_draft_product_has_edit_and_preview_links_the_pane_can_use(): void {
+		$card = $this->present(
+			'woocommerce/products-get',
+			array(
+				'id'            => 89,
+				'name'          => 'Draft Mug',
+				'status'        => 'draft',
+				'regular_price' => '18.00',
+			)
+		);
+
+		$this->assertSame(
+			array(
+				'Edit'    => 'https://example.test/edit/89',
+				'Preview' => 'https://example.test/?p=89&preview=true',
+			),
+			$this->labels( $card['links'] )
+		);
+		$this->assertSame( 'preview', $card['links'][1]['kind'] );
+	}
+
+	public function test_product_view_link_is_omitted_when_the_helper_has_nothing(): void {
+		$links          = new FakeLinks();
+		$links->missing = array( 90 );
+		$card           = ( new ResultPresenter( null, $links ) )->present(
+			'woocommerce/products-get',
+			array(
+				'id'            => 90,
+				'name'          => 'Gone',
+				'status'        => 'draft',
+				'regular_price' => '1',
+			),
+			'ok'
+		);
+
+		$this->assertSame( array(), $card['links'] );
+	}
+
 	public function test_product_shows_name_price_stock_status(): void {
 		$card = $this->present(
 			'woocommerce/products-get',

@@ -154,3 +154,29 @@ export function resolveSuggestion( runId, seq, action, text ) {
 	}
 	return apiFetch( { path: `${ NAMESPACE }/runs/${ runId }/suggestions/${ seq }`, method: 'POST', data } );
 }
+
+/**
+ * POST /senroflux/v1/runs/{id}/changes/preview (0.4 S3.2): what undoing the
+ * run, or one of its changes, would do now. Writes nothing. Human click only;
+ * the nonce is the run's own, from its `changes_section`.
+ *
+ * @param {number} runId
+ * @param {string} nonce    `run.changes_section.nonce`.
+ * @param {number} [changeId] One change of the run; omitted means the whole run.
+ */
+export function previewUndo( runId, nonce, changeId ) {
+	const data = { nonce };
+	if ( changeId ) {
+		data.change_id = changeId;
+	}
+	return apiFetch( { path: `${ NAMESPACE }/runs/${ runId }/changes/preview`, method: 'POST', data } );
+}
+
+/** POST /senroflux/v1/runs/{id}/changes/undo (0.4 S3.2): the same shape, and it restores. */
+export function undoChanges( runId, nonce, changeId ) {
+	const data = { nonce };
+	if ( changeId ) {
+		data.change_id = changeId;
+	}
+	return apiFetch( { path: `${ NAMESPACE }/runs/${ runId }/changes/undo`, method: 'POST', data } );
+}

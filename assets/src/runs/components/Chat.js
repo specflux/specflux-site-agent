@@ -311,7 +311,7 @@ export default function Chat( {
 			) }
 			{ /* 0.3 S12 (stage 22b): the harness-built report, once the run is terminal. */ }
 			{ isTerminalStatus( run.status ) && run.report && 'object' === typeof run.report && (
-				<ReportView report={ run.report } steps={ steps } />
+				<ReportView report={ run.report } steps={ steps } runId={ run.id } changesSection={ run.changes_section } />
 			) }
 			{ /* 0.3 S20 (stage 22b): a follow-up starts from a finished, cancelled or failed run. */ }
 			{ isTerminalStatus( run.status ) && canFollowUp && onFollowUp && (

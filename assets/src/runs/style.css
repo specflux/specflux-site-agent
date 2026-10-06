@@ -1069,6 +1069,120 @@
 	}
 }
 
+/* Changes and undo in the report (0.4 S3.2). State is said in words; logical
+ * properties only so it reads correctly in RTL. */
+.senroflux-changes-heading {
+	margin-block-end: 4px;
+}
+
+.senroflux-changes {
+	margin-block: 8px;
+}
+
+.senroflux-changes-list,
+.senroflux-undo-items {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.senroflux-changes-row,
+.senroflux-undo-item {
+	margin-block-end: 8px;
+	padding-inline-start: 10px;
+	border-inline-start: 3px solid #dcdcde;
+}
+
+.senroflux-undo-item.is-failed {
+	border-inline-start-color: #b32d2e;
+}
+
+.senroflux-changes-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 12px;
+}
+
+.senroflux-changes-name {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.senroflux-changes-state,
+.senroflux-undo-item-reason,
+.senroflux-changes-note {
+	color: #50575e;
+}
+
+.senroflux-changes-diff,
+.senroflux-drift-table {
+	margin-block: 4px;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.senroflux-changes-diff th,
+.senroflux-changes-diff td,
+.senroflux-drift-table th,
+.senroflux-drift-table td {
+	padding: 2px 8px;
+	border: 1px solid #dcdcde;
+	text-align: start;
+	overflow-wrap: anywhere;
+}
+
+.senroflux-drift-table caption {
+	padding-block: 2px;
+	font-weight: 600;
+	text-align: start;
+}
+
+.senroflux-changes-error {
+	color: #b32d2e;
+}
+
+.senroflux-undo-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-block-start: 12px;
+}
+
+.senroflux-report-revisions {
+	font-size: 12px;
+}
+
+.senroflux-undo-result {
+	margin-block: 8px;
+}
+
+.senroflux-undo-result-line {
+	margin-block: 0 4px;
+	font-weight: 600;
+}
+
+.senroflux-undo-result-reason {
+	margin-block: 0 4px;
+	color: #50575e;
+}
+
+.senroflux-undo-item-status {
+	font-weight: 600;
+}
+
+.senroflux-changes-undo-run {
+	margin-block-start: 4px;
+}
+
+.senroflux-changes-undo {
+	margin-inline-start: auto;
+}
+
+.senroflux-undo-dialog {
+	max-inline-size: 640px;
+}
+
 /* Approve with a diff (0.4 S4): "What changes". Removed text is struck
  * through and added text underlined, so it reads without colour; logical
  * properties keep it correct in RTL. */

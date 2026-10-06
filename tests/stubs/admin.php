@@ -87,6 +87,13 @@ if ( ! function_exists( 'wp_create_nonce' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/** Nonce-verification shim: valid only for the deterministic nonce of the same action. */
+	function wp_verify_nonce( string $nonce, string $action ): int|false {
+		return wp_create_nonce( $action ) === $nonce ? 1 : false;
+	}
+}
+
 if ( ! function_exists( 'remove_filter' ) ) {
 	/**
 	 * Remove ONE callback, like WordPress does.
@@ -204,5 +211,14 @@ if ( ! function_exists( 'register_setting' ) ) {
 	/** Test knob: records each registration under its option name. */
 	function register_setting( string $group, string $option, array $args = array() ): void {
 		$GLOBALS['senroflux_test_registered_settings'][ $option ] = array( 'group' => $group ) + $args;
+	}
+}
+
+if ( ! function_exists( 'wp_get_post_revisions' ) ) {
+	/** Test knob: $GLOBALS['senroflux_test_revisions'][ $post_id ] = list of revision objects (newest first). */
+	function wp_get_post_revisions( int $post_id, array $args = array() ): array {
+		unset( $args );
+
+		return $GLOBALS['senroflux_test_revisions'][ $post_id ] ?? array();
 	}
 }

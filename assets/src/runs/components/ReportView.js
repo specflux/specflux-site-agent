@@ -1,5 +1,6 @@
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { reportCounts, storeReportFromSteps } from '../utils';
+import ChangesSection from './ChangesSection';
 
 /** Only http(s) links render as links: the edit url is server-built, but a stored report is read back as untrusted. */
 function safeUrl( url ) {
@@ -96,7 +97,7 @@ function summaryLine( counts ) {
  * the change") and the mark is decoration (`aria-hidden`): the two states
  * differ without colour, for sighted and assistive-tech users alike (S12).
  */
-function ChangeRow( { change } ) {
+function ChangeRow( { change, revisionUrl } ) {
 	const verified = Boolean( change.verified );
 	// `unknown` is Report's fail-closed placeholder, not something to show.
 	const labels = typeLabels();
@@ -117,6 +118,16 @@ function ChangeRow( { change } ) {
 				) }
 			</span>
 			<EditLink object={ change } />
+			{ revisionUrl && (
+				<a
+					className="senroflux-report-revisions"
+					href={ revisionUrl }
+					/* translators: %s: the title of the object whose revisions open. */
+					aria-label={ sprintf( __( 'Revisions of %s', 'senroflux' ), objectName( change ) ) }
+				>
+					{ __( 'Revisions', 'senroflux' ) }
+				</a>
+			) }
 			<span className="senroflux-report-state">
 				{ verified ? __( 'Verified', 'senroflux' ) : __( 'Not checked after the change', 'senroflux' ) }
 			</span>
@@ -184,8 +195,12 @@ function StoreReport( { data } ) {
  * @param {Object} props
  * @param {Object} props.report `run.report` (`result_json`).
  * @param {Array}  props.steps  The run's steps, for the J13 store report.
+ * @param {number} [props.runId]  The run, for undo requests.
+ * @param {Object} [props.changesSection] `run.changes_section` (0.4 S3.2): undo with SenroGate 0.5+, otherwise Revisions links and one note.
  */
-export default function ReportView( { report, steps } ) {
+export default function ReportView( { report, steps, runId, changesSection } ) {
+	const revisions =
+		changesSection && 'revisions' === changesSection.mode && changesSection.revisions ? changesSection.revisions : {};
 	const changes = Array.isArray( report.changes ) ? report.changes : [];
 	const counts = reportCounts( report );
 	const withheld = Array.isArray( report.withheld_roles ) ? report.withheld_roles : [];
@@ -203,10 +218,15 @@ export default function ReportView( { report, steps } ) {
 			{ changes.length > 0 && (
 				<ul className="senroflux-report-changes">
 					{ changes.map( ( change, index ) => (
-						<ChangeRow key={ `${ change.object_id }-${ index }` } change={ change } />
+						<ChangeRow
+							key={ `${ change.object_id }-${ index }` }
+							change={ change }
+							revisionUrl={ safeUrl( revisions[ change.object_id ] ) }
+						/>
 					) ) }
 				</ul>
 			) }
+			<ChangesSection runId={ runId } section={ changesSection } />
 			<ul className="senroflux-report-meta">
 				<li className="senroflux-report-gate">
 					{ __( 'Gate mode:', 'senroflux' ) } { gateModeLabel( report.gate_mode ) }

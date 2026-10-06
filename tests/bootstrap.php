@@ -38,6 +38,9 @@ require_once __DIR__ . '/stubs/abilities.php';
 // service, and RequestContext's correlation scope. Inert until a test opts in.
 require_once __DIR__ . '/stubs/agent-safety.php';
 require_once __DIR__ . '/stubs/agent-safety-context.php';
+// SenroGate 0.5 change-history API shapes (0.4 S3.2).
+require_once __DIR__ . '/stubs/agent-safety-changes-core.php';
+require_once __DIR__ . '/stubs/agent-safety-changes.php';
 // Runner test doubles (FakeGateway, RecordingBridge) — class_exists-guarded.
 require_once __DIR__ . '/stubs/run-doubles.php';
 // wp_ai_client_prompt() double (defect 2): AiClientMediaGateway's timeout tests.

@@ -126,3 +126,17 @@ if ( ! class_exists( 'WP_REST_Response', false ) ) {
 		}
 	}
 }
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	/** Test knob: $GLOBALS['senroflux_test_logged_in'], defaults to true. */
+	function is_user_logged_in(): bool {
+		return (bool) ( $GLOBALS['senroflux_test_logged_in'] ?? true );
+	}
+}
+
+if ( ! function_exists( 'did_action' ) ) {
+	/** Test knob: $GLOBALS['senroflux_test_did_action'][ $hook ] = fire count. */
+	function did_action( string $hook ): int {
+		return (int) ( $GLOBALS['senroflux_test_did_action'][ $hook ] ?? 0 );
+	}
+}

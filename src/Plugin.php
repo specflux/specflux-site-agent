@@ -884,6 +884,9 @@ final class Plugin {
 
 		$plan_ui     = $this->runner()->parkedPlanUi( $run );
 		$approval_ui = $this->runner()->parkedApprovalUi( $run );
+		// 0.4 S3.2: the report's Changes area, built at read time. Null for a
+		// live run, or a viewer without the run's capability.
+		$changes_section = ( new \Specflux\SenroFlux\Approval\ChangesBridge() )->section( $run );
 
 		return array(
 			'run'         => array(
@@ -925,7 +928,7 @@ final class Plugin {
 				// 0.2 S12: the harness-built report (result_json), surfaced on
 				// every read so a terminal run carries its changes list.
 				'report'              => $run->result,
-			),
+			) + ( null !== $changes_section ? array( 'changes_section' => $changes_section ) : array() ),
 			'steps'       => $steps,
 			// 0.3 S20: keyed by seq in $suggestions above; re-indexed for the caller.
 			'suggestions' => array_values( $suggestions ),
@@ -940,6 +943,37 @@ final class Plugin {
 				static fn ( ?array $facts ): bool => null !== $facts
 			),
 		);
+	}
+
+	/**
+	 * Preview or perform an undo of one run's recorded changes (0.4 S3.2).
+	 *
+	 * A human click only: the REST route proves the session and nonce, and
+	 * SenroGate re-checks the actor. Never reachable as a model tool.
+	 *
+	 * @param int      $run_id    Run id.
+	 * @param int|null $change_id One change of the run, or null for the whole run.
+	 * @param bool     $preview   True to write nothing and report what would happen.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	public function undoRun( int $run_id, ?int $change_id, bool $preview ): array|WP_Error {
+		if ( ! $this->ready() ) {
+			return $this->ungoverned_error();
+		}
+
+		$run = $this->runner()->store()->getRun( $run_id );
+		if ( null === $run ) {
+			return new WP_Error( 'senroflux_not_found', __( 'Run not found.', 'senroflux' ), array( 'status' => 404 ) );
+		}
+		if ( ! $this->maySee( $run ) ) {
+			return new WP_Error( 'senroflux_forbidden', __( 'This run belongs to another user.', 'senroflux' ), array( 'status' => 403 ) );
+		}
+
+		$bridge = new \Specflux\SenroFlux\Approval\ChangesBridge();
+
+		return $preview
+			? $bridge->preview( $run, $change_id )
+			: $bridge->undo( $run, $change_id, (int) get_current_user_id() );
 	}
 
 	/**

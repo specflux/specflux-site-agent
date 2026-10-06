@@ -11,6 +11,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Http;
 
 use Specflux\SenroFlux\Admin\RunsScreen;
+use Specflux\SenroFlux\Approval\ChangesBridge;
 use Specflux\SenroFlux\Packs\PackRegistry;
 use Specflux\SenroFlux\Plugin;
 
@@ -59,6 +60,11 @@ defined( 'ABSPATH' ) || exit;
  *   `{runs: list<array<string,mixed>>}`, one lightweight summary per row
  *   (see {@see \Specflux\SenroFlux\Plugin::listRecent()}).
  * - `GET /runs/{run_id}` — {@see routeGet()}. Response: RunState.
+ * - `POST /runs/{run_id}/changes/preview` and `/changes/undo` —
+ *   {@see routeUndoPreview()} / {@see routeUndo()} (0.4 S3.2). Browser
+ *   session only (REST cookie nonce plus the run's own undo nonce); an
+ *   application-password request is refused. Params: `nonce`, `change_id`
+ *   (optional). Not part of the consumer contract.
  * - `POST /runs/{run_id}/suggestions/{seq}` — {@see routeSuggestionDecision()}
  *   (0.3 S20; requires `manage_options`, re-checked in the handler). Params:
  *   `run_id`/`seq` (int, from the URL), `action` (string, required),
@@ -189,6 +195,34 @@ final class Rest {
 		// callback, RE-CHECKED in the handler (fail closed, B0 rule 2), and
 		// the REST framework's own cookie-nonce check for a logged-in
 		// browser session (a REST nonce, as S20 asks).
+		// 0.4 S3.2: undo a run's recorded changes. Human click only; see
+		// routeUndo() for the full check list. Preview writes nothing.
+		foreach ( array( 'preview', 'undo' ) as $undo_action ) {
+			register_rest_route(
+				self::NAMESPACE_V1,
+				'/runs/(?P<run_id>\d+)/changes/' . $undo_action,
+				array(
+					'methods'             => 'POST',
+					'callback'            => 'undo' === $undo_action ? array( $this, 'routeUndo' ) : array( $this, 'routeUndoPreview' ),
+					'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+					'args'                => array(
+						'run_id'    => array(
+							'type'     => 'integer',
+							'required' => true,
+						),
+						'change_id' => array(
+							'type'     => 'integer',
+							'required' => false,
+						),
+						'nonce'     => array(
+							'type'     => 'string',
+							'required' => true,
+						),
+					),
+				)
+			);
+		}
+
 		register_rest_route(
 			self::NAMESPACE_V1,
 			'/runs/(?P<run_id>\d+)/suggestions/(?P<seq>\d+)',
@@ -347,6 +381,62 @@ final class Rest {
 				(string) $request->get_param( 'action' ),
 				is_string( $text ) ? $text : null
 			)
+		);
+	}
+
+	/**
+	 * POST /runs/{id}/changes/undo (0.4 S3.2). Params: `nonce` (required, the
+	 * run's own undo nonce from the report), `change_id` (optional; omitted
+	 * means the whole run).
+	 *
+	 * Refused unless: the requester is a logged-in browser session (REST
+	 * cookie nonce, via core) and NOT an application-password request; the
+	 * run's undo nonce is valid for this user; the user holds the run's
+	 * capability and may see the run. SenroGate then re-checks the actor and
+	 * refuses agent contexts itself.
+	 *
+	 * @param \WP_REST_Request $request The request.
+	 */
+	public function routeUndo( \WP_REST_Request $request ): \WP_REST_Response {
+		return $this->undoRoute( $request, false );
+	}
+
+	/**
+	 * POST /runs/{id}/changes/preview: what an undo would do now, writing
+	 * nothing. Same gate as {@see routeUndo()}.
+	 *
+	 * @param \WP_REST_Request $request The request.
+	 */
+	public function routeUndoPreview( \WP_REST_Request $request ): \WP_REST_Response {
+		return $this->undoRoute( $request, true );
+	}
+
+	/**
+	 * Shared undo/preview gate.
+	 *
+	 * @param \WP_REST_Request $request The request.
+	 * @param bool             $preview Preview only.
+	 */
+	private function undoRoute( \WP_REST_Request $request, bool $preview ): \WP_REST_Response {
+		$forbidden = static fn ( string $code, string $message ): \WP_Error => new \WP_Error( $code, $message, array( 'status' => 403 ) );
+		$run_id    = (int) $request->get_param( 'run_id' );
+
+		if ( ! is_user_logged_in() ) {
+			return $this->respond( $forbidden( 'senroflux_forbidden', __( 'Insufficient permissions.', 'senroflux' ) ) );
+		}
+		// An application-password request is a script or an agent, not a person on the Runs screen.
+		if ( function_exists( 'did_action' ) && did_action( 'application_password_did_authenticate' ) > 0 ) {
+			return $this->respond( $forbidden( 'senroflux_undo_human_only', __( 'An undo must come from a person on the Runs screen.', 'senroflux' ) ) );
+		}
+		$nonce = $request->get_param( 'nonce' );
+		if ( ! is_string( $nonce ) || ! wp_verify_nonce( $nonce, ChangesBridge::nonceAction( $run_id ) ) ) {
+			return $this->respond( $forbidden( 'senroflux_bad_nonce', __( 'This page has expired. Reload it to continue.', 'senroflux' ) ) );
+		}
+
+		$change_id = $request->get_param( 'change_id' );
+
+		return $this->respond(
+			senroflux()->undoRun( $run_id, is_numeric( $change_id ) && (int) $change_id > 0 ? (int) $change_id : null, $preview )
 		);
 	}
 

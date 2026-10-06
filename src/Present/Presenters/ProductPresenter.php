@@ -43,14 +43,24 @@ final class ProductPresenter implements Presenter {
 				'value' => is_int( $qty ) ? sprintf( '%s (%d)', $stock, $qty ) : $stock,
 			);
 		}
-		$id = is_int( $response['id'] ?? null ) ? $response['id'] : 0;
+		$id        = is_int( $response['id'] ?? null ) ? $response['id'] : 0;
+		$published = 'publish' === Fmt::text( $response['status'] ?? '' );
 
 		return array(
 			'type'   => 'product',
 			'title'  => Fmt::text( $response['name'] ),
 			'status' => Fmt::text( $response['status'] ?? '' ),
 			'fields' => $fields,
-			'links'  => $id > 0 ? Fmt::links( array( Fmt::link( __( 'Edit', 'senroflux' ), $links->edit( $id ), 'edit' ) ) ) : array(),
+			// Edit plus a view (published) or preview (otherwise) link, so the
+			// preview pane can show a product like a post or page.
+			'links'  => $id > 0 ? Fmt::links(
+				array(
+					Fmt::link( __( 'Edit', 'senroflux' ), $links->edit( $id ), 'edit' ),
+					$published
+						? Fmt::link( __( 'View', 'senroflux' ), $links->view( $id, true ), 'view' )
+						: Fmt::link( __( 'Preview', 'senroflux' ), $links->view( $id, false ), 'preview' ),
+				)
+			) : array(),
 		);
 	}
 }
