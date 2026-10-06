@@ -66,6 +66,13 @@ describe( 'ResultCard', () => {
 		expect( screen.queryByText( /more not shown/ ) ).not.toBeInTheDocument();
 	} );
 
+	it( 'keeps chrome strings outside data-senroflux-content so they stay translatable', () => {
+		render( <ResultCard raw="{}" display={ { type: 'error', title: 'T', message: 'Nope' } } /> );
+		expect( screen.getByText( 'Error' ).closest( '[data-senroflux-content]' ) ).toBeNull();
+		expect( screen.getByRole( 'button', { name: 'Show raw' } ).closest( '[data-senroflux-content]' ) ).toBeNull();
+		expect( screen.getByText( 'Nope' ).closest( '[data-senroflux-content]' ) ).not.toBeNull();
+	} );
+
 	it( 'renders an error as readable text with a non-color cue', () => {
 		render( <ResultCard raw="" display={ { type: 'error', title: 'That did not work', message: 'Nope' } } /> );
 		expect( screen.getByText( 'Error' ) ).toBeInTheDocument();

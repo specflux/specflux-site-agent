@@ -72,7 +72,7 @@ function Fields( { fields } ) {
 			{ rows.map( ( f, i ) => (
 				<div key={ i } className="senroflux-card-field">
 					<dt>{ text( f.label ) }</dt>
-					<dd>{ text( f.value ) }</dd>
+					<dd data-senroflux-content>{ text( f.value ) }</dd>
 				</div>
 			) ) }
 		</dl>
@@ -100,24 +100,24 @@ function Body( { display } ) {
 					<p className="senroflux-card-title">
 						<span aria-hidden="true">{ '⚠ ' }</span>
 						<span className="senroflux-card-errorlabel">{ __( 'Error', 'senroflux' ) }</span>
-						{ text( display.title ) && ': ' + text( display.title ) }
+						{ text( display.title ) && <span data-senroflux-content>{ ': ' + text( display.title ) }</span> }
 					</p>
-					{ text( display.message ) && <p className="senroflux-card-message">{ text( display.message ) }</p> }
+					{ text( display.message ) && <p className="senroflux-card-message" data-senroflux-content>{ text( display.message ) }</p> }
 				</div>
 			);
 		case 'list':
 			return (
 				<>
 					<p className="senroflux-card-title">
-						{ text( display.title ) }{ ' ' }
+						<span data-senroflux-content>{ text( display.title ) }</span>{ ' ' }
 						{ /* translators: %d: number of items in the list. */ sprintf( _n( '(%d item)', '(%d items)', Number( display.count ) || 0, 'senroflux' ), Number( display.count ) || 0 ) }
 					</p>
 					<ul className="senroflux-card-list">
 						{ ( Array.isArray( display.items ) ? display.items : [] ).map( ( item, i ) => (
 							<li key={ i }>
 								{ item && item.thumbnail_url && <Thumb url={ item.thumbnail_url } alt={ item.label } /> }
-								<span>{ text( item && item.label ) }</span>
-								{ text( item && item.detail ) && <span className="senroflux-card-detail">{ text( item.detail ) }</span> }
+								<span data-senroflux-content>{ text( item && item.label ) }</span>
+								{ text( item && item.detail ) && <span className="senroflux-card-detail" data-senroflux-content>{ text( item.detail ) }</span> }
 							</li>
 						) ) }
 					</ul>
@@ -129,12 +129,12 @@ function Body( { display } ) {
 			const rows = Array.isArray( display.rows ) ? display.rows : [];
 			return (
 				<>
-					{ text( display.title ) && <p className="senroflux-card-title">{ text( display.title ) }</p> }
+					{ text( display.title ) && <p className="senroflux-card-title" data-senroflux-content>{ text( display.title ) }</p> }
 					<table className="senroflux-card-table">
 						<thead>
 							<tr>
 								{ columns.map( ( c, i ) => (
-									<th key={ i } scope="col">{ text( c ) }</th>
+									<th key={ i } scope="col" data-senroflux-content>{ text( c ) }</th>
 								) ) }
 							</tr>
 						</thead>
@@ -142,7 +142,7 @@ function Body( { display } ) {
 							{ rows.map( ( row, r ) => (
 								<tr key={ r }>
 									{ ( Array.isArray( row ) ? row : [] ).map( ( cell, c ) =>
-										0 === c ? <th key={ c } scope="row">{ text( cell ) }</th> : <td key={ c }>{ text( cell ) }</td>
+										0 === c ? <th key={ c } scope="row" data-senroflux-content>{ text( cell ) }</th> : <td key={ c } data-senroflux-content>{ text( cell ) }</td>
 									) }
 								</tr>
 							) ) }
@@ -158,8 +158,8 @@ function Body( { display } ) {
 				<>
 					{ 'media' === display.type && <Thumb url={ display.thumbnail_url } alt={ display.alt } /> }
 					<p className="senroflux-card-title">
-						{ text( display.title ) }
-						{ status && <span className="senroflux-card-status">{ status }</span> }
+						<span data-senroflux-content>{ text( display.title ) }</span>
+						{ status && <span className="senroflux-card-status" data-senroflux-content>{ status }</span> }
 					</p>
 					<Fields fields={ display.fields } />
 					<Links links={ display.links } />
@@ -183,7 +183,7 @@ export default function ResultCard( { display, raw } ) {
 		return <span data-senroflux-content>{ raw }</span>;
 	}
 	return (
-		<div className="senroflux-card" data-senroflux-content data-card-type={ display.type }>
+		<div className="senroflux-card" data-card-type={ display.type }>
 			<Body display={ display } />
 			{ raw && (
 				<>
@@ -195,7 +195,7 @@ export default function ResultCard( { display, raw } ) {
 					>
 						{ showRaw ? __( 'Hide raw', 'senroflux' ) : __( 'Show raw', 'senroflux' ) }
 					</button>
-					{ showRaw && <pre className="senroflux-card-raw">{ raw }</pre> }
+					{ showRaw && <pre className="senroflux-card-raw" data-senroflux-content>{ raw }</pre> }
 				</>
 			) }
 		</div>
