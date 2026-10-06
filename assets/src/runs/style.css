@@ -852,3 +852,147 @@
 .senroflux-dismiss-check {
 	margin-block-start: 4px;
 }
+
+/* Result cards (0.4 S2): text-only renderings of a tool result's `display`
+ * payload. Logical properties only; the one transition is motion-guarded. */
+.senroflux-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 6px 10px;
+	border: 1px solid #dcdcde;
+	border-inline-start-width: 3px;
+	border-radius: 4px;
+	background: #fff;
+	color: #1d2327;
+}
+
+.senroflux-card p {
+	margin: 0;
+}
+
+.senroflux-card-title {
+	font-weight: 600;
+}
+
+.senroflux-card-status {
+	margin-inline-start: 8px;
+	padding-inline: 6px;
+	border-radius: 9px;
+	background: #e6e6e7;
+	color: #3c434a;
+	font-size: 11px;
+	font-weight: 400;
+}
+
+.senroflux-card-fields {
+	margin: 0;
+}
+
+.senroflux-card-field {
+	display: flex;
+	gap: 8px;
+}
+
+.senroflux-card-field dt {
+	font-weight: 600;
+	min-inline-size: 8em;
+}
+
+.senroflux-card-field dd {
+	margin: 0;
+}
+
+.senroflux-card-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.senroflux-card-thumb-wrap {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+}
+
+.senroflux-card-thumb {
+	max-inline-size: 96px;
+	max-block-size: 96px;
+	object-fit: cover;
+	border-radius: 3px;
+}
+
+.senroflux-card-noalt {
+	font-size: 11px;
+	color: #8a4b00;
+	font-style: italic;
+}
+
+.senroflux-card-list {
+	margin: 0;
+	padding-inline-start: 18px;
+}
+
+.senroflux-card-list li {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+.senroflux-card-detail {
+	color: #50575e;
+}
+
+.senroflux-card-more {
+	color: #50575e;
+	font-style: italic;
+}
+
+.senroflux-card-table {
+	border-collapse: collapse;
+	inline-size: 100%;
+}
+
+.senroflux-card-table th,
+.senroflux-card-table td {
+	padding: 2px 8px;
+	text-align: start;
+	border-block-end: 1px solid #f0f0f1;
+}
+
+.senroflux-card-error {
+	color: #8a2424;
+}
+
+.senroflux-card-errorlabel {
+	text-decoration: underline;
+}
+
+.senroflux-card-raw-toggle {
+	align-self: flex-start;
+	font-size: 12px;
+}
+
+.senroflux-card-raw {
+	margin: 0;
+	padding: 6px;
+	background: #f6f7f7;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-size: 11.5px;
+}
+
+@media not ( prefers-reduced-motion: reduce ) {
+	.senroflux-card-raw-toggle {
+		transition: color 0.15s ease;
+	}
+}
+
+.senroflux-card-message {
+	overflow-wrap: anywhere;
+}

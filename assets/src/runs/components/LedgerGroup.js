@@ -1,6 +1,7 @@
 import { useState } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 import TierBadge from './TierBadge';
+import ResultCard from './ResultCard';
 import { stepLabel, stepResult, stepVerb, stepTier, ledgerLabels } from '../utils';
 
 /**
@@ -44,7 +45,7 @@ export default function LedgerGroup( { calls, gateMode } ) {
 							) : (
 								/* S22 pseudo-locale: raw tool-result data (often
 								 * a JSON dump), never chrome. */
-								<span data-senroflux-content>{ stepResult( call.step ) }</span>
+								<ResultCard display={ call.step.display } raw={ stepResult( call.step ) } />
 							) }
 						</span>
 					</li>
