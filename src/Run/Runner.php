@@ -165,6 +165,8 @@ final class Runner {
 		 * it ride the report, not that a change re-open the run.
 		 */
 		private readonly mixed $guides_hash_resolver = null,
+		/** @var callable(string):bool|null C4-0: is a pinned store platform still usable (installed, active, governed)? Absent = never mismatches. */
+		private readonly mixed $store_platform_probe = null,
 	) {
 	}
 
@@ -341,6 +343,12 @@ final class Runner {
 			$mismatch_report = $this->gateModeMismatch( $run );
 			if ( null !== $mismatch_report ) {
 				return $this->state( $this->refresh( $run ), array(), array( 'report' => $mismatch_report ) );
+			}
+
+			// C4-0: the platform pinned at start() must still be usable.
+			$platform_report = $this->storePlatformMismatch( $run );
+			if ( null !== $platform_report ) {
+				return $this->state( $this->refresh( $run ), array(), array( 'report' => $platform_report ) );
 			}
 
 			$new_steps = array();
@@ -4611,6 +4619,32 @@ final class Runner {
 			$run,
 			'gate_mode_changed',
 			__( 'The gate mode changed after this run started; it cannot continue safely.', 'senroflux' )
+		);
+	}
+
+	/**
+	 * C4-0: compare the run's pinned store platform with what is usable now. A
+	 * terminal run, a run with no pinned platform and a missing probe are never
+	 * checked. A pinned platform that has vanished (deactivated, or SenroGate
+	 * no longer governs it) fails the run (`store_platform_changed`, partial
+	 * report) and returns that report; null means "carry on". Public for the
+	 * same reason {@see gateModeMismatch()} is.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public function storePlatformMismatch( Run $run ): ?array {
+		if ( $run->status->isTerminal() || null === $run->storePlatform || ! is_callable( $this->store_platform_probe ) ) {
+			return null;
+		}
+
+		if ( true === ( $this->store_platform_probe )( $run->storePlatform ) ) {
+			return null;
+		}
+
+		return $this->failError(
+			$run,
+			'store_platform_changed',
+			__( 'The store platform this run started on is no longer available; it cannot continue safely.', 'senroflux' )
 		);
 	}
 

@@ -26,6 +26,10 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Packs\Commerce;
 
+use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
+use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SenroFlux\Packs\Commerce\Platforms\Woo\WooPlatform;
 use Specflux\SenroFlux\Packs\Content\Media;
 use Specflux\SenroFlux\Packs\Pack;
 use Specflux\SenroFlux\Plugin;
@@ -43,48 +47,68 @@ defined( 'ABSPATH' ) || exit;
  */
 final class CommercePack extends Pack {
 
-	public function __construct() {
-		parent::__construct(
-			array(
-				'read'           => 'products-query',
-				'catalogue'      => 'products-catalogue',
-				'create'         => 'product-create',
-				'update'         => 'product-update',
-				'image'          => 'set-product-image',
-				'search'         => 'media-search',
-				'image-generate' => 'generate-image',
-				'coupon-create'  => 'coupon-create',
-				'coupon-enable'  => 'coupon-enable',
-				// Stage 13 (S19 operations rows). 'order-note' resolves to
-				// ONE ability (Woo's own `order-add-note`) that spans TWO
-				// pack verbs, same shape as 'update' above (see roleVerbs()).
-				'order-read'     => 'orders-query',
-				'order-note'     => 'order-add-note',
-				'refund'         => 'orders-refund',
-				'shipping-write' => 'shipping-zone-save',
-				'tax-write'      => 'tax-rate-save',
-				'store-report'   => 'store-report',
-				'report-save'    => 'save-store-report',
-			)
-		);
-	}
+	/** The platform id a run pinned (set per tick by the composition root), or null. */
+	private ?string $run_platform_id = null;
 
 	public function name(): string {
 		return 'commerce';
 	}
 
-	/** @return string 'manage_woocommerce' (S19: the commerce pack's run capability). */
-	public function runCapability(): string {
-		return 'manage_woocommerce';
+	/**
+	 * Scope this pack to the platform a run pinned for the length of one tick
+	 * (null leaves it). Changing it drops the per-request resolved-ability cache.
+	 *
+	 * @param string|null $platform_id The run's pinned platform id.
+	 */
+	public function useRunPlatform( ?string $platform_id ): void {
+		if ( $platform_id !== $this->run_platform_id ) {
+			$this->run_platform_id = $platform_id;
+			$this->forgetResolved();
+		}
 	}
 
 	/**
-	 * @return list<string> `['woocommerce/', 'senroflux/']` (S19) — Woo's
-	 *                       own session ability first, this pack's polyfill
-	 *                       last (required by {@see \Specflux\SenroFlux\Packs\PackRegistry::register()}).
+	 * The platform this pack currently speaks for: the run's pinned platform,
+	 * else the setting-or-only-candidate selection, else the first registered
+	 * platform (so the static contract — namespaces, tiers, capability — still
+	 * answers when none is usable and the setup check is what refuses).
+	 */
+	public function platform(): StorePlatform {
+		if ( null !== $this->run_platform_id ) {
+			$pinned = StorePlatforms::get( $this->run_platform_id );
+			if ( null !== $pinned ) {
+				return $pinned;
+			}
+		}
+
+		$selected = StorePlatforms::select()->platform;
+		if ( null !== $selected ) {
+			return $selected;
+		}
+
+		$all = StorePlatforms::all();
+
+		return array() !== $all ? reset( $all ) : new WooPlatform();
+	}
+
+	/**
+	 * @return array<string,string> The selected platform's role => template map.
+	 */
+	public function roles(): array {
+		return $this->platform()->roleMap();
+	}
+
+	/** @return string The selected platform's run capability (`manage_woocommerce` for Woo). */
+	public function runCapability(): string {
+		return $this->platform()->runCapability();
+	}
+
+	/**
+	 * @return list<string> The selected platform's namespaces, ending in the
+	 *                       polyfill namespace (required by {@see \Specflux\SenroFlux\Packs\PackRegistry::register()}).
 	 */
 	public function abilityNamespaces(): array {
-		return array( 'woocommerce/', self::POLYFILL_NAMESPACE );
+		return $this->platform()->abilityNamespaces();
 	}
 
 	/** @return bool true — the commerce pack refuses to start without Agent Safety (S19). */
@@ -93,186 +117,36 @@ final class CommercePack extends Pack {
 	}
 
 	/**
-	 * The input-property keys this pack's client actually sends, per ability
-	 * template (S9 shape-compat seam) — checked only against Woo's OWN
-	 * abilities (`products-query`, `product-create`, `product-update`); the
-	 * three commerce polyfills are always the final fallback and never
-	 * checked against themselves.
+	 * The input-property keys this pack's client sends per ability template
+	 * (S9 shape-compat seam), supplied by the platform.
 	 *
 	 * @param string $template Ability template.
 	 * @return list<string>
 	 */
 	protected function inputProperties( string $template ): array {
-		return match ( $template ) {
-			'products-query'  => array( 'id' ),
-			'product-create'  => array( 'name', 'sku', 'description', 'short_description', 'status', 'regular_price', 'sale_price' ),
-			'product-update'  => array( 'id', 'name', 'sku', 'description', 'short_description', 'status', 'regular_price', 'sale_price' ),
-			'media-search'    => array( 'query' ),
-			'orders-query'    => array( 'id' ),
-			'order-add-note'  => array( 'id', 'note', 'customer_note' ),
-			default           => array(),
-		};
+		return $this->platform()->inputProperties( $template );
 	}
 
 	/**
-	 * The S19 verb predicate. Dispatch is on the ability's name SEGMENT, so
-	 * it holds whether a role resolved to Woo's `woocommerce/product-update`
-	 * or (Woo absent/incompatible) this pack's own fallback name.
+	 * The S19 verb predicate. Dispatch is on the ability's name SEGMENT, so it
+	 * holds whether a role resolved to the platform's own ability or this
+	 * pack's fallback name. The platform owns the table.
 	 *
 	 * @param string              $ability The concrete ability id.
 	 * @param array<string,mixed> $input   Call input.
 	 */
 	public function verbFor( string $ability, array $input ): string {
-		return match ( $this->baseName( $ability ) ) {
-			'products-query'     => 'commerce/product-read',
-			'products-catalogue' => 'commerce/catalogue-read',
-			'product-create'     => $this->createVerb( $input ),
-			'product-update'     => $this->updateVerb( $input ),
-			'set-product-image'  => 'commerce/product-image',
-			'media-search'       => 'commerce/media-search',
-			'generate-image'     => 'commerce/image-generate',
-			'coupon-create'      => 'commerce/coupon-draft',
-			'coupon-enable'      => 'commerce/coupon-enable',
-			'orders-query'       => 'commerce/order-read',
-			'order-add-note'     => $this->noteVerb( $input ),
-			'orders-refund'      => 'commerce/refund',
-			'shipping-zone-save' => 'commerce/shipping-write',
-			'tax-rate-save'      => 'commerce/tax-write',
-			'store-report'       => 'commerce/store-report',
-			'save-store-report'  => 'commerce/report-save',
-			default              => $ability,
-		};
+		return $this->platform()->verbFor( $this->baseName( $ability ), $input ) ?? $ability;
 	}
 
 	/**
-	 * `order-add-note`'s predicate (S19 table): `customer_note` true is the
-	 * customer-visible note, Tier 2 and ungrantable; false or absent is the
-	 * private, internal-only note, Tier 1. Only a strict `true` counts —
-	 * a truthy-but-not-boolean value (e.g. the string `"1"` a looser client
-	 * might send) is read as absent/false, the SAME fail-closed-on-the-SAFER-
-	 * reading choice `isPublishStatus()` makes for `status`: understating
-	 * which note is customer-visible would be the dangerous direction, but
-	 * Woo's own ability schema types `customer_note` as a boolean, so a
-	 * non-boolean value here is a malformed call, not a legitimate "true".
-	 *
-	 * @param array<string,mixed> $input Call input.
-	 */
-	private function noteVerb( array $input ): string {
-		return true === ( $input['customer_note'] ?? false )
-			? 'commerce/order-note-customer'
-			: 'commerce/order-note-private';
-	}
-
-	/**
-	 * `product-create`'s predicate (S19 table): a status other than `draft`
-	 * (or absent, which Woo treats as draft) that is `publish`/`future` is
-	 * `commerce/product-publish`; anything else stays
-	 * `commerce/product-create-draft`. Only `publish`/`future` count as
-	 * "other than draft" for TIER purposes — a create with `status: pending`
-	 * or `private` is still a draft-shaped Tier-1 create in this pack's
-	 * reading, matching the pages pack's identical publish/future-only test
-	 * (0.3 S4) rather than treating every non-`draft` string as a publish.
-	 *
-	 * @param array<string,mixed> $input Call input.
-	 */
-	private function createVerb( array $input ): string {
-		return $this->isPublishStatus( $input ) ? 'commerce/product-publish' : 'commerce/product-create-draft';
-	}
-
-	/**
-	 * `product-update`'s predicate (S19 table). DECISION (explicitly asked
-	 * for by the build plan): when a single update call carries BOTH a
-	 * price field AND a publish/future status, both readings are Tier 2, so
-	 * there is no tier ambiguity to break — but the verb name still has to
-	 * pick one for the plan/approval card. Fail-closed reading: PUBLISH WINS.
-	 * A card that only said "price change" on a call that also takes the
-	 * product live would understate what is about to happen; "publish"
-	 * names the more consequential, harder-to-undo action, and the current
-	 * vs proposed price still renders on the publish card (S19: "product
-	 * title, preview link, price, stock").
-	 *
-	 * @param array<string,mixed> $input Call input.
-	 */
-	private function updateVerb( array $input ): string {
-		if ( $this->isPublishStatus( $input ) ) {
-			return 'commerce/product-publish';
-		}
-		if ( $this->isPriceChange( $input ) ) {
-			return 'commerce/price-change';
-		}
-
-		return 'commerce/product-update';
-	}
-
-	/**
-	 * S19: "when `regular_price` or `sale_price` is present" — present AND
-	 * non-null, so a call that merely echoes other fields with these keys
-	 * explicitly nulled (Woo's "clear this price" shape) is not mistaken for
-	 * having priced anything.
-	 *
-	 * @param array<string,mixed> $input Call input.
-	 */
-	private function isPriceChange( array $input ): bool {
-		foreach ( array( 'regular_price', 'sale_price' ) as $key ) {
-			if ( array_key_exists( $key, $input ) && null !== $input[ $key ] ) {
-				return true;
-			}
-		}
-
-		// Mirrors SenroGate's guarded meta keys: a price or stock write via
-		// `meta_data` is the same money-shaping edit as the named fields.
-		$meta = $input['meta_data'] ?? null;
-		if ( is_array( $meta ) ) {
-			foreach ( $meta as $entry ) {
-				if ( is_array( $entry ) && is_string( $entry['key'] ?? null ) && in_array( $entry['key'], array( '_price', '_regular_price', '_sale_price', '_stock', '_manage_stock' ), true ) ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * @param array<string,mixed> $input Call input.
-	 */
-	private function isPublishStatus( array $input ): bool {
-		$status = $input['status'] ?? null;
-		if ( ! is_string( $status ) ) {
-			return false;
-		}
-
-		return in_array( strtolower( trim( $status ) ), array( 'publish', 'future' ), true );
-	}
-
-	/**
-	 * The full S19 verb => tier table (catalogue, stage 12, plus operations,
-	 * stage 13).
+	 * The full S19 verb => tier table (catalogue plus operations), mirrored
+	 * from the selected platform.
 	 *
 	 * @return array<string,int>
 	 */
 	public function verbMap(): array {
-		return array(
-			'commerce/product-read'         => 0,
-			'commerce/catalogue-read'       => 0,
-			'commerce/product-create-draft' => 1,
-			'commerce/product-update'       => 1,
-			'commerce/price-change'         => 2,
-			'commerce/product-publish'      => 2,
-			'commerce/product-image'        => 1,
-			'commerce/media-search'         => 0,
-			'commerce/image-generate'       => 1,
-			'commerce/coupon-draft'         => 1,
-			'commerce/coupon-enable'        => 2,
-			'commerce/order-read'           => 0,
-			'commerce/order-note-private'   => 1,
-			'commerce/order-note-customer'  => 2,
-			'commerce/refund'               => 2,
-			'commerce/shipping-write'       => 2,
-			'commerce/tax-write'            => 2,
-			'commerce/store-report'         => 0,
-			'commerce/report-save'          => 2,
-		);
+		return $this->platform()->verbTiers();
 	}
 
 	/**
@@ -302,39 +176,15 @@ final class CommercePack extends Pack {
 	}
 
 	/**
-	 * The id an object a Tier >= 1 verb wrote carries in its ability output.
-	 * Proof-run defect fix: none of these used the base's `id`, so no
-	 * commerce write ever reached the run's report. Woo's own
-	 * `product-create`/`product-update` nest the product under `product`;
-	 * `order-add-note` answers the note, so the order is the call's own
-	 * `id`; every polyfill names its own key.
+	 * The id an object a Tier >= 1 verb wrote carries in its ability output;
+	 * the output shapes are the platform's.
 	 *
 	 * @param string              $verb   The pack verb.
 	 * @param array<string,mixed> $args   The call's args.
 	 * @param array<string,mixed> $output The call's output.
 	 */
 	public function objectIdForWrite( string $verb, array $args, array $output ): ?string {
-		$product = is_array( $output['product'] ?? null ) ? $output['product'] : array();
-
-		$id = match ( $verb ) {
-			'commerce/product-create-draft',
-			'commerce/product-update',
-			'commerce/price-change',
-			'commerce/product-publish' => $product['id'] ?? $output['id'] ?? $args['id'] ?? null,
-			'commerce/product-image' => $output['product_id'] ?? null,
-			'commerce/image-generate' => $output['attachment_id'] ?? null,
-			'commerce/coupon-draft',
-			'commerce/coupon-enable' => $output['coupon_id'] ?? null,
-			'commerce/order-note-private',
-			'commerce/order-note-customer' => $args['id'] ?? null,
-			'commerce/refund' => $output['order_id'] ?? null,
-			'commerce/shipping-write' => $output['zone_id'] ?? null,
-			'commerce/tax-write' => $output['tax_rate_id'] ?? null,
-			'commerce/report-save' => $output['page_id'] ?? null,
-			default => null,
-		};
-
-		return ( is_numeric( $id ) && (int) $id > 0 ) ? (string) (int) $id : null;
+		return $this->platform()->objectIdForWrite( $verb, $args, $output );
 	}
 
 	/**
@@ -384,35 +234,15 @@ final class CommercePack extends Pack {
 	}
 
 	/**
-	 * S19: BEFORE a call to a WOO-OWNED ability (`product-create`,
-	 * `product-update`) reaches that ability's own
-	 * `check_permissions()`/`execute()`, refuse a description/
-	 * short_description that carries a disallowed tag, an unsafe link
-	 * scheme, or more than {@see DescriptionValidator::MAX_WORDS} words
-	 * (D3). This pack's OWN polyfills (`set-product-image`, `coupon-create`,
-	 * `coupon-enable`) validate their own input directly inside their
-	 * `execute_callback` and are never routed through here.
+	 * S19: refuse a bad call to a platform-owned ability BEFORE it reaches that
+	 * ability's own permission check (the platform decides which abilities and
+	 * which rules; for Woo, the description validator on `product-create`/`-update`).
 	 *
 	 * @param string              $ability The concrete ability id.
 	 * @param array<string,mixed> $input   The call input.
 	 */
 	public function validateCall( string $ability, array $input ): ?WP_Error {
-		if ( ! in_array( $this->baseName( $ability ), array( 'product-create', 'product-update' ), true ) ) {
-			return null;
-		}
-
-		$validator = new DescriptionValidator();
-		foreach ( array( 'description', 'short_description' ) as $field ) {
-			if ( ! isset( $input[ $field ] ) || ! is_string( $input[ $field ] ) ) {
-				continue;
-			}
-			$violation = $validator->validate( $input[ $field ] );
-			if ( null !== $violation ) {
-				return $violation;
-			}
-		}
-
-		return null;
+		return $this->platform()->validateCall( $this->baseName( $ability ), $input );
 	}
 
 	/**
@@ -485,7 +315,28 @@ final class CommercePack extends Pack {
 			return array( $this->agentSafetyCheck() );
 		}
 
-		return parent::setupChecks( $user_id );
+		$checks = parent::setupChecks( $user_id );
+		if ( PlatformSelection::AMBIGUOUS === StorePlatforms::select()->status ) {
+			array_unshift( $checks, $this->platformCheck() );
+		}
+
+		return $checks;
+	}
+
+	/** The `commerce/platform` check: several governed platforms, none chosen. */
+	private function platformCheck(): SetupCheck {
+		$message = __( 'More than one store platform is active. Choose which one SenroFlux should use in SenroFlux > Settings.', 'senroflux' );
+
+		return new SetupCheck(
+			'commerce/platform',
+			SetupCheck::BLOCKING,
+			false,
+			$message,
+			function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=senroflux-settings' ) : null,
+			StorePlatforms::CAPABILITY,
+			__( 'More than one store platform is active. Ask a site administrator to choose which one SenroFlux should use.', 'senroflux' ),
+			'store_platform_unselected'
+		);
 	}
 
 	/** The `commerce/agent-safety` setup check (S19). */

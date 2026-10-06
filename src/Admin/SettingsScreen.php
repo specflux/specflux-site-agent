@@ -21,6 +21,8 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Admin;
 
+use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
+use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
 use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
 use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
 use Specflux\SenroFlux\Passthrough\ExternalExposure;
@@ -49,6 +51,7 @@ class SettingsScreen {
 		add_action( 'admin_post_senroflux_save_brief', array( $this, 'handleSave' ) );
 		add_action( 'admin_post_senroflux_save_passthrough', array( $this, 'handleSavePassthrough' ) );
 		add_action( 'admin_post_senroflux_save_external', array( $this, 'handleSaveExternal' ) );
+		add_action( 'admin_post_senroflux_save_store_platform', array( $this, 'handleSaveStorePlatform' ) );
 	}
 
 	/**
@@ -67,6 +70,62 @@ class SettingsScreen {
 				'show_in_rest'      => false,
 			)
 		);
+		register_setting(
+			'senroflux',
+			StorePlatforms::OPTION,
+			array(
+				'type'              => 'string',
+				'default'           => '',
+				'sanitize_callback' => array( StorePlatforms::class, 'sanitizeOption' ),
+				'show_in_rest'      => false,
+			)
+		);
+	}
+
+	/** admin-post handler: choose the store platform commerce runs use (C4-0). */
+	public function handleSaveStorePlatform(): void {
+		check_admin_referer( 'senroflux_save_store_platform' );
+
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+		}
+
+		$posted = isset( $_POST[ StorePlatforms::OPTION ] ) && is_string( $_POST[ StorePlatforms::OPTION ] )
+			? sanitize_key( wp_unslash( $_POST[ StorePlatforms::OPTION ] ) )
+			: '';
+		$saved  = StorePlatforms::save( $posted );
+
+		$this->redirectPassthrough( is_wp_error( $saved ) ? (string) $saved->get_error_code() : null );
+	}
+
+	/** The store-platform picker: shown only while several governed platforms are active. */
+	private function renderStorePlatform(): void {
+		$selection = StorePlatforms::select();
+		if ( count( $selection->candidates ) < 2 ) {
+			return;
+		}
+
+		echo '<hr><h2>' . esc_html__( 'Store platform', 'senroflux' ) . '</h2>';
+		if ( PlatformSelection::AMBIGUOUS === $selection->status ) {
+			echo '<div data-senroflux-notice class="notice notice-warning"><p>' . esc_html__( 'More than one store platform is active. Commerce runs will not start until you choose one.', 'senroflux' ) . '</p></div>';
+		}
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="senroflux_save_store_platform">';
+		wp_nonce_field( 'senroflux_save_store_platform' );
+		echo '<p><label for="senroflux-store-platform">' . esc_html__( 'Use this store platform for commerce runs', 'senroflux' ) . '</label> ';
+		echo '<select id="senroflux-store-platform" name="' . esc_attr( StorePlatforms::OPTION ) . '">';
+		echo '<option value="">' . esc_html__( 'Choose one...', 'senroflux' ) . '</option>';
+		foreach ( $selection->candidates as $candidate ) {
+			printf(
+				'<option value="%1$s"%2$s>%3$s</option>',
+				esc_attr( $candidate->id() ),
+				selected( StorePlatforms::chosenId(), $candidate->id(), false ),
+				esc_html( $candidate->label() )
+			);
+		}
+		echo '</select></p>';
+		printf( '<p><button type="submit" class="button button-primary">%s</button></p>', esc_html__( 'Save', 'senroflux' ) );
+		echo '</form>';
 	}
 
 	/** The capability required for this screen (S20: fixed at manage_options). */
@@ -262,6 +321,7 @@ class SettingsScreen {
 
 		echo '</form>';
 
+		$this->renderStorePlatform();
 		$this->renderExternal();
 		$this->renderPassthrough();
 

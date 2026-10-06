@@ -40,7 +40,8 @@ final class WpdbRunStore implements RunStore {
 		array $withheld_roles = array(),
 		?int $follow_up_of = null,
 		?string $model_provider = null,
-		?string $model_id = null
+		?string $model_id = null,
+		?string $store_platform = null
 	): int {
 		$table = Schema::runsTable( $this->db );
 		$now   = gmdate( 'Y-m-d H:i:s' );
@@ -67,8 +68,9 @@ final class WpdbRunStore implements RunStore {
 				'follow_up_of'        => $follow_up_of,
 				'model_provider'      => $model_provider,
 				'model_id'            => $model_id,
+				'store_platform'      => $store_platform,
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s' )
 		);
 
 		return (int) $this->db->insert_id;

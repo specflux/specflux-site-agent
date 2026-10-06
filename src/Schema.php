@@ -42,7 +42,7 @@ final class Schema {
 	 * never updated afterwards, like `gate_mode`; both NULL means automatic
 	 * selection, which is also what every older row reads back as.
 	 */
-	public const DB_VERSION = 7;
+	public const DB_VERSION = 8;
 
 	/**
 	 * Runs table name for this site.
@@ -223,6 +223,9 @@ final class Schema {
 				// NULL means automatic model selection.
 				'model_provider VARCHAR(64) NULL',
 				'model_id VARCHAR(191) NULL',
+				// Commerce store platform id, pinned at start, never updated
+				// afterwards; NULL = no platform pinned (every non-commerce run).
+				'store_platform VARCHAR(64) NULL',
 				'PRIMARY KEY  (id)',
 				'KEY user_id (user_id)',
 				'KEY status (status)',

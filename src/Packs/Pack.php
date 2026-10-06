@@ -129,7 +129,7 @@ abstract class Pack {
 		}
 
 		$resolved = array();
-		foreach ( $this->roles as $role => $template ) {
+		foreach ( $this->roles() as $role => $template ) {
 			$resolved[ $role ] = $this->resolveAbility( $template );
 		}
 
@@ -137,6 +137,16 @@ abstract class Pack {
 		$this->resolved_once = true;
 
 		return $this->resolved;
+	}
+
+	/**
+	 * Drop the per-request resolved-ability cache, for a pack whose role map
+	 * or namespaces can change within a request (the commerce pack, when the
+	 * store platform in scope changes).
+	 */
+	protected function forgetResolved(): void {
+		$this->resolved      = array();
+		$this->resolved_once = false;
 	}
 
 	/**
