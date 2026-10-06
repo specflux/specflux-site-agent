@@ -77,13 +77,18 @@ final class ToolOutcome {
 
 	/**
 	 * The transient reason inside a SenroGate `agent_safety_denied` error, or
-	 * null when it is any other denial. SenroGate's error carries the reason
-	 * only inside the message ("Blocked by SenroGate (<pack>): <reason>",
-	 * Verdict::error()); the data holds just status/verb/tier.
+	 * null when it is any other denial. SenroGate puts the machine reason in
+	 * the error data (`reason`); older builds carried it only in the message
+	 * ("Blocked by SenroGate (<pack>): <reason>"), so that stays as a fallback.
+	 *
+	 * @param array<mixed>|mixed $data The WP_Error data, when there is any.
 	 */
-	public static function transientReason( string $code, string $message ): ?string {
+	public static function transientReason( string $code, string $message, mixed $data = null ): ?string {
 		if ( 'agent_safety_denied' !== $code ) {
 			return null;
+		}
+		if ( is_array( $data ) && is_string( $data['reason'] ?? null ) && '' !== $data['reason'] ) {
+			return 1 === preg_match( '/^(site_paused|rate_limited_[a-z_]+)$/', $data['reason'] ) ? $data['reason'] : null;
 		}
 		if ( 1 === preg_match( '/\):\s*(site_paused|rate_limited_[a-z_]+)\s*$/', $message, $m ) ) {
 			return $m[1];

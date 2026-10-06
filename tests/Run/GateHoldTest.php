@@ -342,4 +342,13 @@ final class GateHoldTest extends TestCase {
 		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'site_paused is mentioned in passing: denied_by_class' ) );
 		$this->assertNull( ToolOutcome::transientReason( 'other_code', 'Blocked by SenroGate (Posts): site_paused' ) );
 	}
+
+	public function test_transient_reason_prefers_the_error_data_reason_over_the_message(): void {
+		$data = array( 'status' => 403, 'verb' => 'x/y', 'tier' => 1, 'reason' => 'site_paused' );
+		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): denied_by_class', $data ) );
+		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'a reworded message', $data ) );
+		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): site_paused', array( 'reason' => 'denied_by_class' ) ), 'a non-transient data reason wins over the message' );
+		$this->assertSame( 'rate_limited_calls_per_hour', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): rate_limited_calls_per_hour', array( 'status' => 403 ) ), 'no data reason falls back to the message' );
+		$this->assertNull( ToolOutcome::transientReason( 'other_code', 'm', $data ) );
+	}
 }
