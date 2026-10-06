@@ -22,6 +22,10 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Admin;
 
 use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
+use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
+use Specflux\SenroFlux\Passthrough\Passthrough;
+use Specflux\SenroFlux\Plugin;
+use Specflux\SenroFlux\Run\GateMode;
 use Specflux\SenroFlux\Run\SiteBrief;
 
 // Bail on direct access.
@@ -42,6 +46,7 @@ class SettingsScreen {
 		add_action( 'init', array( $this, 'registerSettings' ) );
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_post_senroflux_save_brief', array( $this, 'handleSave' ) );
+		add_action( 'admin_post_senroflux_save_passthrough', array( $this, 'handleSavePassthrough' ) );
 	}
 
 	/**
@@ -114,6 +119,51 @@ class SettingsScreen {
 
 		delete_transient( self::PENDING_TRANSIENT_PREFIX . $user );
 		$this->redirect( null );
+	}
+
+	/** admin-post handler: save the "Abilities from other plugins" switches (0.4 S6). */
+	public function handleSavePassthrough(): void {
+		check_admin_referer( 'senroflux_save_passthrough' );
+
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+		}
+
+		$enabled = array();
+		if ( isset( $_POST['senroflux_pt_enabled'] ) && is_array( $_POST['senroflux_pt_enabled'] ) ) {
+			foreach ( wp_unslash( $_POST['senroflux_pt_enabled'] ) as $name ) {
+				if ( is_string( $name ) ) {
+					$enabled[] = sanitize_text_field( $name );
+				}
+			}
+		}
+
+		$read = array();
+		if ( isset( $_POST['senroflux_pt_mode'] ) && is_array( $_POST['senroflux_pt_mode'] ) ) {
+			foreach ( wp_unslash( $_POST['senroflux_pt_mode'] ) as $name => $mode ) {
+				if ( is_string( $name ) && is_string( $mode ) ) {
+					$read[ sanitize_text_field( $name ) ] = sanitize_key( $mode );
+				}
+			}
+		}
+
+		$saved = Passthrough::save( $enabled, $read );
+		if ( is_wp_error( $saved ) ) {
+			$this->redirectPassthrough( (string) $saved->get_error_code() );
+			return;
+		}
+
+		$this->redirectPassthrough( null );
+	}
+
+	/** Redirect back to the passthrough section (test override seam). */
+	protected function redirectPassthrough( ?string $error_code ): void {
+		$url = admin_url( 'admin.php?page=' . self::SLUG );
+		$url = null !== $error_code
+			? add_query_arg( array( 'senroflux_pt_error' => $error_code ), $url )
+			: add_query_arg( array( 'senroflux_pt_saved' => '1' ), $url );
+		wp_safe_redirect( $url );
+		exit;
 	}
 
 	/** The one place a redirect-then-stop goes through (test override seam). */
@@ -192,6 +242,135 @@ class SettingsScreen {
 			esc_html__( 'Save settings', 'senroflux' )
 		);
 
-		echo '</form></div>';
+		echo '</form>';
+
+		$this->renderPassthrough();
+
+		echo '</div>';
+	}
+
+	/** The "Abilities from other plugins" section (0.4 S6). */
+	private function renderPassthrough(): void {
+		echo '<hr><h2>' . esc_html__( 'Abilities from other plugins', 'senroflux' ) . '</h2>';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
+		$error = isset( $_GET['senroflux_pt_error'] ) ? sanitize_text_field( wp_unslash( $_GET['senroflux_pt_error'] ) ) : '';
+		if ( Passthrough::ERROR_TOO_MANY === $error ) {
+			printf(
+				'<div data-senroflux-notice class="notice notice-error"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %d is the cap. */
+						__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'senroflux' ),
+						Passthrough::MAX_ENABLED
+					)
+				)
+			);
+		} elseif ( '' !== $error ) {
+			echo '<div data-senroflux-notice class="notice notice-error"><p>' . esc_html__( 'The abilities could not be saved.', 'senroflux' ) . '</p></div>';
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
+		if ( isset( $_GET['senroflux_pt_saved'] ) ) {
+			echo '<div data-senroflux-notice class="notice notice-success"><p>' . esc_html__( 'Abilities saved.', 'senroflux' ) . '</p></div>';
+		}
+
+		echo '<p>' . esc_html(
+			sprintf(
+				/* translators: %d is the cap. */
+				__( 'Other plugins register abilities SenroFlux can use. All are off until you turn them on (at most %d). Descriptions come from the plugin that registered each ability and are untrusted text. Each ability\'s own permission check still runs as the person running the task.', 'senroflux' ),
+				Passthrough::MAX_ENABLED
+			)
+		) . '</p>';
+
+		$candidates = Passthrough::candidates();
+		if ( array() === $candidates ) {
+			echo '<p>' . esc_html__( 'No abilities from other plugins are registered on this site.', 'senroflux' ) . '</p>';
+			return;
+		}
+
+		$config = Passthrough::config();
+
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="senroflux_save_passthrough">';
+		wp_nonce_field( 'senroflux_save_passthrough' );
+
+		$current = '';
+		foreach ( $candidates as $name => $ability ) {
+			$namespace = (string) strstr( $name, '/', true );
+			if ( $namespace !== $current ) {
+				if ( '' !== $current ) {
+					echo '</tbody></table>';
+				}
+				$current = $namespace;
+				printf( '<h3>%s</h3>', esc_html( $namespace . '/' ) );
+				echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'On', 'senroflux' ) . '</th><th>' . esc_html__( 'Ability', 'senroflux' ) . '</th><th>' . esc_html__( 'Treat as', 'senroflux' ) . '</th></tr></thead><tbody>';
+			}
+
+			$entry   = $config[ $name ] ?? array(
+				'enabled' => false,
+				'read'    => false,
+				'hash'    => '',
+			);
+			$problem = Passthrough::problem( $entry, $ability );
+			$on      = null === $problem;
+			$label   = method_exists( $ability, 'get_label' ) ? (string) $ability->get_label() : '';
+			$desc    = method_exists( $ability, 'get_description' ) ? (string) $ability->get_description() : '';
+			$meta    = method_exists( $ability, 'get_meta' ) ? $ability->get_meta() : array();
+			$flags   = array();
+			foreach ( is_array( $meta ) && is_array( $meta['annotations'] ?? null ) ? $meta['annotations'] : array() as $key => $value ) {
+				if ( is_string( $key ) && is_bool( $value ) ) {
+					$flags[] = $key . ': ' . ( $value ? 'yes' : 'no' );
+				}
+			}
+
+			echo '<tr><td>';
+			printf(
+				'<input type="checkbox" name="senroflux_pt_enabled[]" value="%1$s" id="senroflux-pt-%2$s"%3$s>',
+				esc_attr( $name ),
+				esc_attr( md5( $name ) ),
+				checked( $on, true, false )
+			);
+			echo '</td><td>';
+			printf(
+				'<label for="senroflux-pt-%s"><strong>%s</strong></label> <code>%s</code>',
+				esc_attr( md5( $name ) ),
+				esc_html( '' !== $label ? $label : $name ),
+				esc_html( $name )
+			);
+			if ( '' !== $desc ) {
+				echo '<br><span class="description">' . esc_html( $desc ) . '</span>';
+			}
+			if ( array() !== $flags ) {
+				echo '<br><span class="description">' . esc_html__( 'Annotations:', 'senroflux' ) . ' ' . esc_html( implode( ', ', $flags ) ) . '</span>';
+			}
+			if ( 'changed' === $problem ) {
+				echo '<br><strong class="senroflux-pt-drift">' . esc_html__( 'Off: this ability\'s inputs changed since you enabled it. Tick it again to re-enable.', 'senroflux' ) . '</strong>';
+			}
+			if ( $on && Passthrough::isDestructive( $ability ) ) {
+				echo '<br><span class="description">' . esc_html__( 'Marked destructive by its plugin: always asks for approval, whatever you choose.', 'senroflux' ) . '</span>';
+			}
+			if ( $on && GateMode::AgentSafety === Plugin::currentGateMode() && ! AbilityReviewProbe::isReviewed( $name ) ) {
+				echo '<br><span class="description">' . esc_html__( 'Hidden from runs until reviewed in SenroGate.', 'senroflux' ) . '</span>';
+			}
+			echo '</td><td>';
+			printf(
+				'<select name="senroflux_pt_mode[%1$s]"><option value="changes"%2$s>%3$s</option><option value="read"%4$s>%5$s</option></select>',
+				esc_attr( $name ),
+				selected( $entry['read'], false, false ),
+				esc_html__( 'Changes things', 'senroflux' ),
+				selected( $entry['read'], true, false ),
+				esc_html__( 'Read', 'senroflux' )
+			);
+			echo '</td></tr>';
+		}
+		echo '</tbody></table>';
+
+		echo '<p class="description">' . esc_html__( '"Read" only applies when SenroFlux\'s own approvals are in use; with SenroGate, its review decides.', 'senroflux' ) . '</p>';
+		printf(
+			'<p><button type="submit" class="button button-primary">%s</button></p>',
+			esc_html__( 'Save abilities', 'senroflux' )
+		);
+		echo '</form>';
 	}
 }
