@@ -13,13 +13,17 @@ namespace Specflux\SenroFlux\Tools;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Four terminal kinds (S5):
+ * Five terminal kinds (S5, plus 0.4 `hold`):
  *   - result            — the ability ran; carries its output array.
  *   - approval_required — Agent Safety demands a human; carries the
  *                         approval id (+ verb/tier from the gate's error data).
  *   - denied            — the gate refused; carries code + message. execute()
  *                         was NEVER called.
  *   - unknown_tool      — no such ability; never executed either.
+ *   - hold              — 0.4 S5: SenroGate refused the call for a TRANSIENT
+ *                         reason (`site_paused` or a `rate_limited_*` window).
+ *                         Never executed; the run parks and retries the same
+ *                         call later. `errorCode` carries the reason.
  */
 final class ToolOutcome {
 
@@ -58,6 +62,34 @@ final class ToolOutcome {
 	 */
 	public static function denied( string $code, string $message ): self {
 		return new self( 'denied', errorCode: $code, errorMessage: $message );
+	}
+
+	/**
+	 * A transient SenroGate refusal (pause / rate-limit window) — never
+	 * executed; the call is retried when the hold lifts.
+	 *
+	 * @param string $reason  `site_paused` or `rate_limited_<rule>`.
+	 * @param string $message SenroGate's own denial text (kept for audit).
+	 */
+	public static function hold( string $reason, string $message ): self {
+		return new self( 'hold', errorCode: $reason, errorMessage: $message );
+	}
+
+	/**
+	 * The transient reason inside a SenroGate `agent_safety_denied` error, or
+	 * null when it is any other denial. SenroGate's error carries the reason
+	 * only inside the message ("Blocked by SenroGate (<pack>): <reason>",
+	 * Verdict::error()); the data holds just status/verb/tier.
+	 */
+	public static function transientReason( string $code, string $message ): ?string {
+		if ( 'agent_safety_denied' !== $code ) {
+			return null;
+		}
+		if ( 1 === preg_match( '/\):\s*(site_paused|rate_limited_[a-z_]+)\s*$/', $message, $m ) ) {
+			return $m[1];
+		}
+
+		return null;
 	}
 
 	/**

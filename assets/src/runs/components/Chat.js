@@ -155,6 +155,7 @@ export default function Chat( {
 	onFollowUp,
 	planUi,
 	approvalUi,
+	holdUi,
 } ) {
 	const entries = groupSteps( steps );
 	const park = openPark( run, steps );
@@ -246,11 +247,20 @@ export default function Chat( {
 						) : null;
 					}
 					if ( [ 'question', 'plan', 'approval' ].includes( step.kind ) && step === park ) {
+						// 0.4 S5: an approval-kind step with a `hold` reason is a
+						// SenroGate pause / rate-limit wait, not a human decision.
+						const isHold = 'approval' === step.kind && step.message && step.message.hold;
+						let payload = planCardPayload( step, planUi );
+						if ( isHold ) {
+							payload = holdUi || { kind: 'site_paused' === step.message.hold ? 'paused' : 'rate_limited' };
+						} else if ( 'approval' === step.kind ) {
+							payload = approvalPayload;
+						}
 						return (
 							<ParkCard
 								key={ index }
-								kind={ step.kind }
-								payload={ 'approval' === step.kind ? approvalPayload : planCardPayload( step, planUi ) }
+								kind={ isHold ? 'hold' : step.kind }
+								payload={ payload }
 								gateMode={ run.gate_mode }
 								onResolve={ onResolvePark }
 								busy={ busy }

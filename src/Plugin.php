@@ -876,6 +876,7 @@ final class Plugin {
 
 		$plan_ui     = $this->runner()->parkedPlanUi( $run );
 		$approval_ui = $this->runner()->parkedApprovalUi( $run );
+		$hold_ui     = $this->runner()->parkedHoldUi( $run );
 
 		return array(
 			'run'         => array(
@@ -928,6 +929,7 @@ final class Plugin {
 				array(
 					'plan'     => $plan_ui,
 					'approval' => $approval_ui,
+					'hold'     => $hold_ui,
 				),
 				static fn ( ?array $facts ): bool => null !== $facts
 			),

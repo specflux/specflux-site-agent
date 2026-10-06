@@ -126,3 +126,34 @@ describe( 'a failed run says why (empty-model-turn shakedown)', () => {
 		expect( screen.queryByRole( 'alert' ) ).not.toBeInTheDocument();
 	} );
 } );
+
+describe( 'a run held by SenroGate (0.4 S5)', () => {
+	const holdStep = {
+		seq: 4,
+		kind: 'approval',
+		status: 'parked',
+		message: { parked: true, approval_id: null, hold: 'site_paused', verb: 'wpab__a__b', args: {} },
+	};
+
+	it( 'renders the hold card, not an approval card', () => {
+		render(
+			<Chat
+				run={ { ...baseRun, status: 'awaiting_approval' } }
+				steps={ [ holdStep ] }
+				holdUi={ { kind: 'paused', paused_at: null, paused_reason: '' } }
+				onResolvePark={ jest.fn() }
+			/>
+		);
+
+		expect( screen.getByRole( 'heading', { name: 'Waiting to continue' } ) ).toBeInTheDocument();
+		expect( screen.getByRole( 'status' ) ).toHaveTextContent( 'An administrator paused agent access on this site.' );
+		expect( screen.queryByRole( 'button', { name: 'Approve' } ) ).not.toBeInTheDocument();
+	} );
+
+	it( 'still renders the approval card for an ordinary approval park', () => {
+		const approvalStep = { ...holdStep, message: { parked: true, approval_id: 'a1', verb: 'x/y', args: {} } };
+		render( <Chat run={ { ...baseRun, status: 'awaiting_approval' } } steps={ [ approvalStep ] } onResolvePark={ jest.fn() } /> );
+
+		expect( screen.getByRole( 'button', { name: 'Approve' } ) ).toBeInTheDocument();
+	} );
+} );
