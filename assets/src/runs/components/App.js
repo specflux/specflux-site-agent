@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { listRuns, getRun, startRun, tickRun, cancelRun, resolveSuggestion, fetchSetupState, dismissAdvisory } from '../api';
-import { isParkedStatus, isTerminalStatus, runsForTab, sameRunId } from '../utils';
+import { isParkedStatus, isTerminalStatus, latestPreviewable, runsForTab, sameRunId } from '../utils';
 import RunList from './RunList';
 import Chat from './Chat';
 import EmptyState from './EmptyState';
 import MessageBox from './MessageBox';
+import PreviewPane from './PreviewPane';
 
 /**
  * Add the brief suggestions a tick's new steps created to the shown list, in
@@ -449,8 +450,10 @@ export default function App( { config } ) {
 		? 'running'
 		: 'idle';
 
+	const hasPreview = Boolean( runDetail && latestPreviewable( runDetail.steps ) );
+
 	return (
-		<div className="senroflux-runs-app">
+		<div className={ 'senroflux-runs-app' + ( hasPreview ? ' senroflux-runs-app--with-preview' : '' ) }>
 			<RunList
 				runs={ runs }
 				activeTab={ activeTab }
@@ -510,6 +513,7 @@ export default function App( { config } ) {
 					onCancelFollowUp={ () => setFollowUp( null ) }
 				/>
 			</main>
+			{ hasPreview && <PreviewPane steps={ runDetail.steps } userId={ config.userId } /> }
 		</div>
 	);
 }

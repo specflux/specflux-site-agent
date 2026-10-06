@@ -436,3 +436,47 @@ export function reportCounts( report ) {
 		notChecked: changes.filter( ( change ) => ! change.verified ).length,
 	};
 }
+
+/**
+ * The latest tool result worth previewing: a post, page or product card that
+ * carries a `preview` or `view` link. Reads only the server's `display`
+ * payload; never interprets a raw response.
+ *
+ * @param {Array} steps The run's steps.
+ * @return {{display:Object,link:Object,seq:*}|null} The step's display, its link, and a refresh key.
+ */
+export function latestPreviewable( steps ) {
+	const list = Array.isArray( steps ) ? steps : [];
+	for ( let i = list.length - 1; i >= 0; i-- ) {
+		const step = list[ i ];
+		const display = step && 'tool_result' === step.kind ? step.display : null;
+		if ( ! display || ! [ 'post', 'product' ].includes( display.type ) || ! Array.isArray( display.links ) ) {
+			continue;
+		}
+		const link = display.links.find( ( l ) => l && [ 'preview', 'view' ].includes( l.kind ) && l.url );
+		if ( link ) {
+			return { display, link, seq: undefined !== step.seq ? step.seq : i };
+		}
+	}
+	return null;
+}
+
+const previewKey = ( userId ) => `senroflux.previewCollapsed.${ userId || 0 }`;
+
+/** The saved collapsed state of the preview pane for a user (default expanded). */
+export function readPreviewCollapsed( userId ) {
+	try {
+		return '1' === window.localStorage.getItem( previewKey( userId ) );
+	} catch ( e ) {
+		return false;
+	}
+}
+
+/** Remember the preview pane's collapsed state for a user; storage failures are ignored. */
+export function storePreviewCollapsed( userId, collapsed ) {
+	try {
+		window.localStorage.setItem( previewKey( userId ), collapsed ? '1' : '0' );
+	} catch ( e ) {
+		// Storage can be blocked; the pane just forgets next time.
+	}
+}

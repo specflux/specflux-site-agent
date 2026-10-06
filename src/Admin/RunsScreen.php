@@ -287,6 +287,8 @@ class RunsScreen {
 			array(
 				'initialRunId'       => $run_id > 0 ? $run_id : null,
 				'initialGoal'        => '' !== $goal ? $goal : null,
+				// 0.4 S3: keys the preview pane's saved collapsed state.
+				'userId'             => get_current_user_id(),
 				// 0.3 S3: the SITE-WIDE mode a NEW run would start under —
 				// the empty state's promise sentence and the tier badge both
 				// read this, never a per-run value, since no run may be

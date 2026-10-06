@@ -996,3 +996,75 @@
 .senroflux-card-message {
 	overflow-wrap: anywhere;
 }
+
+/* Preview pane (0.4 S3): a third column beside the chat, only when the run
+ * has a previewable object. Logical properties throughout, so it flips in
+ * RTL. Collapsed it is a narrow rail holding just the toggle. */
+.senroflux-runs-app--with-preview {
+	grid-template-columns: 260px minmax(0, 1fr) auto;
+}
+
+.senroflux-preview-pane {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	inline-size: 340px;
+	max-inline-size: 40vw;
+	padding: 12px;
+	border-inline-start: 1px solid #dcdcde;
+	background: #fff;
+	box-sizing: border-box;
+}
+
+.senroflux-preview-pane.is-collapsed {
+	inline-size: auto;
+	padding-inline: 6px;
+}
+
+.senroflux-preview-pane.is-collapsed .senroflux-preview-toggle {
+	writing-mode: vertical-rl;
+	padding-block: 12px;
+}
+
+.senroflux-preview-body {
+	min-inline-size: 0;
+	overflow-wrap: anywhere;
+}
+
+.senroflux-preview-open {
+	margin-block: 8px 0;
+}
+
+.senroflux-preview-frame {
+	inline-size: 100%;
+	block-size: 360px;
+	margin-block-start: 8px;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+@media ( max-width: 1100px ) {
+	.senroflux-runs-app--with-preview {
+		grid-template-columns: 220px minmax(0, 1fr);
+	}
+
+	.senroflux-preview-pane,
+	.senroflux-preview-pane.is-collapsed {
+		grid-column: 1 / -1;
+		inline-size: auto;
+		max-inline-size: none;
+		border-inline-start: 0;
+		border-block-start: 1px solid #dcdcde;
+	}
+
+	.senroflux-preview-pane.is-collapsed .senroflux-preview-toggle {
+		writing-mode: horizontal-tb;
+		padding-block: 0;
+	}
+}
+
+@media not ( prefers-reduced-motion: reduce ) {
+	.senroflux-preview-pane {
+		transition: inline-size 0.15s ease;
+	}
+}
