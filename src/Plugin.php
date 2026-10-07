@@ -155,7 +155,7 @@ final class Plugin {
 		// at all (never mind govern). Unlike the Agent Safety check below,
 		// THIS gate is unconditional: a WooCommerce-less site must never see
 		// a commerce run option.
-		if ( class_exists( 'WooCommerce' ) ) {
+		if ( \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::anyActive() ) {
 			$commerce_pack = $this->commerce_pack();
 			add_filter(
 				'senroflux_packs',
@@ -246,7 +246,7 @@ final class Plugin {
 		$site_pack  = $this->site_pack();
 		// S19: only built when WooCommerce is active (mirrors govern()'s own
 		// gate) — a null entry here is filtered out below, never registered.
-		$commerce_pack = class_exists( 'WooCommerce' ) ? $this->commerce_pack() : null;
+		$commerce_pack = \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::anyActive() ? $this->commerce_pack() : null;
 		// The AS pack resolves the ability allow-list, which touches the
 		// Abilities registry — that must not happen before `init`, so the
 		// registration is deferred with the pack captured by value.
@@ -521,6 +521,7 @@ final class Plugin {
 		// pack is the single source of the allow-list (the direct-allow path
 		// keeps working with $pack = null).
 		$pack_obj       = null;
+		$store_platform = null;
 		$withheld_roles = array();
 		if ( null !== $pack ) {
 			$pack_obj = $this->packRegistry()->get( $pack );
@@ -541,6 +542,17 @@ final class Plugin {
 				return $preflight;
 			}
 
+			// C4-0: a commerce run pins the store platform it starts on. The
+			// selection (the only usable platform, else the admin's choice)
+			// is resolved ONCE here and then scoped over the rest of start() so
+			// the allow-list below is the pinned platform's. No usable
+			// platform pins nothing (the commerce setup check is what refuses).
+			$store_platform = $pack_obj->pinForRun();
+			if ( null !== $store_platform ) {
+				$pack_obj->useRunPlatform( $store_platform );
+				$allow = $pack_obj->allowList();
+			}
+
 			// 0.3 S6: roles whose declared capability the starting user lacks
 			// are WITHHELD — decided once, here, from who is starting the run
 			// (never per call, which is the gate's job). Their resolved
@@ -557,6 +569,9 @@ final class Plugin {
 				}
 				$allow = array_values( array_diff( $allow, $withheld_abilities ) );
 			}
+
+			// The allow-list is fixed; the pin lives on the run row from here.
+			$pack_obj->useRunPlatform( null );
 		}
 
 		// The "non-empty allow" guard applies only to the DIRECT path: with a
@@ -617,7 +632,8 @@ final class Plugin {
 			$withheld_roles,
 			$follow_up_of,
 			$model_provider,
-			$model_id
+			$model_id,
+			$store_platform
 		);
 
 		// S9: when a pack drove the allow-list, record that a caller-supplied
@@ -725,6 +741,12 @@ final class Plugin {
 		// only — see the class docblock), scoped the same way.
 		\Specflux\SenroFlux\Packs\Commerce\Abilities::useRunContext( $run_id, $this->runner()->store() );
 
+		// C4-0: a commerce run answers for the store platform it pinned at start.
+		$commerce = null !== $run ? self::pack_for_run( $run ) : null;
+		if ( null !== $commerce && null !== $run?->storePlatform ) {
+			$commerce->useRunPlatform( $run->storePlatform );
+		}
+
 		try {
 			$result = $this->runner()->tick( $run_id, $expected_step_count, $resume );
 
@@ -738,6 +760,9 @@ final class Plugin {
 			\Specflux\SenroFlux\Packs\Site\FrontPage::forgetRunContext();
 			\Specflux\SenroFlux\Packs\Site\Style::forgetRunContext();
 			\Specflux\SenroFlux\Packs\Commerce\Abilities::forgetRunContext();
+			if ( null !== $commerce ) {
+				$commerce->useRunPlatform( null );
+			}
 		}
 	}
 
@@ -776,6 +801,11 @@ final class Plugin {
 		// too — a run whose gate mode no longer matches the environment fails
 		// with a partial report (gate_mode_changed) instead of a plain cancel.
 		if ( null !== $this->runner()->gateModeMismatch( $run ) ) {
+			return $this->get( $run_id );
+		}
+
+		// C4-0: and for a pinned store platform that has vanished.
+		if ( null !== $this->runner()->storePlatformMismatch( $run ) ) {
 			return $this->get( $run_id );
 		}
 
@@ -1284,7 +1314,9 @@ final class Plugin {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->guidesHash() : null;
-			}
+			},
+			// C4-0: is the store platform a commerce run pinned still usable?
+			static fn ( string $platform_id ): bool => \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::usable( $platform_id )
 		);
 
 		return $this->runner;

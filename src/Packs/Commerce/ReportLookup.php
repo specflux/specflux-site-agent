@@ -36,6 +36,12 @@ final class ReportLookup {
 	 * @return array{object_type:string,title:string,status:string,edit_url:?string,preview_url:?string}|null
 	 */
 	public static function resolve( string $object_id ): ?array {
+		// C4: the active store platform may describe its own objects.
+		$custom = \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::resolve()->describeObject( $object_id );
+		if ( null !== $custom ) {
+			return $custom;
+		}
+
 		foreach ( array( self::COUPON_PREFIX, self::PAGE_PREFIX ) as $post_prefix ) {
 			if ( str_starts_with( $object_id, $post_prefix ) ) {
 				// A coupon and a saved report page are plain posts under a prefix.

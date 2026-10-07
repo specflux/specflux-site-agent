@@ -79,6 +79,11 @@ final class Run {
 		 */
 		public readonly ?string $modelProvider = null,
 		public readonly ?string $modelId = null,
+		/**
+		 * The commerce store platform id, resolved once at start() and never
+		 * changed afterwards — like {@see $gateMode}. Null = none pinned.
+		 */
+		public readonly ?string $storePlatform = null,
 	) {
 	}
 
@@ -126,6 +131,7 @@ final class Run {
 			followUpOf: isset( $row['follow_up_of'] ) && '' !== (string) $row['follow_up_of'] ? (int) $row['follow_up_of'] : null,
 			modelProvider: isset( $row['model_provider'] ) && is_string( $row['model_provider'] ) && '' !== $row['model_provider'] ? $row['model_provider'] : null,
 			modelId: isset( $row['model_id'] ) && is_string( $row['model_id'] ) && '' !== $row['model_id'] ? $row['model_id'] : null,
+			storePlatform: isset( $row['store_platform'] ) && is_string( $row['store_platform'] ) && '' !== $row['store_platform'] ? $row['store_platform'] : null,
 		);
 	}
 
@@ -163,6 +169,7 @@ final class Run {
 			'follow_up_of'          => $this->followUpOf,
 			'model_provider'        => $this->modelProvider,
 			'model_id'              => $this->modelId,
+			'store_platform'        => $this->storePlatform,
 		);
 	}
 }

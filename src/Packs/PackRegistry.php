@@ -46,7 +46,17 @@ final class PackRegistry {
 	 * closed on it as `unknown_verb`. That verb-map obligation is NOT
 	 * enforced here; only the namespace-governance half is (S19).
 	 */
-	private const AS_GOVERNED_NAMESPACES = array( 'core/', 'woocommerce/' );
+	private const AS_GOVERNED_NAMESPACES = array( 'core/' );
+
+	/**
+	 * `core/` plus every non-polyfill namespace of a registered store platform
+	 * (`woocommerce/`, and `fluent-cart/` / `surecart/` once those register).
+	 *
+	 * @return list<string>
+	 */
+	private static function asGovernedNamespaces(): array {
+		return array_merge( self::AS_GOVERNED_NAMESPACES, \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::governedNamespaces() );
+	}
 
 	/**
 	 * Build the registry from the `senroflux_packs` filter: name => Pack. Every
@@ -94,7 +104,7 @@ final class PackRegistry {
 	 *
 	 * S19 (0.3): also refuses a pack if any entry BEFORE the last isn't AS-governed.
 	 * In Agent Safety mode the executor has no gate of its own — the only
-	 * governance is AS's permission wrap over `self::AS_GOVERNED_NAMESPACES`
+	 * governance is AS's permission wrap over `self::asGovernedNamespaces()`
 	 * plus whatever a pack declares in its own {@see Pack::governedNamespaces()}.
 	 * `namespaceCompatible()` checks input property names only, so a pack
 	 * declaring an earlier namespace neither AS nor the pack itself governs
@@ -131,7 +141,7 @@ final class PackRegistry {
 		$earlier          = array_slice( $namespaces, 0, -1 );
 
 		foreach ( $earlier as $namespace ) {
-			if ( in_array( $namespace, self::AS_GOVERNED_NAMESPACES, true ) ) {
+			if ( in_array( $namespace, self::asGovernedNamespaces(), true ) ) {
 				continue;
 			}
 

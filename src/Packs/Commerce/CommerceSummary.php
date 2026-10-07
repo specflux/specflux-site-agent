@@ -96,6 +96,11 @@ final class CommerceSummary {
 			return $summary;
 		}
 
+		$custom = \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::resolve()->approvalSummary( $resolved, self::baseName( $verb ), $input );
+		if ( null !== $custom ) {
+			return $custom;
+		}
+
 		return self::build( $summary, $resolved, self::baseName( $verb ), $input );
 	}
 

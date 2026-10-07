@@ -69,8 +69,11 @@ final class ToolExecutor {
 	 *   pack rule over an ability ANOTHER plugin registers and this class
 	 *   never owns (e.g. WooCommerce's `product-update`). Null = no opinion
 	 *   (a direct-allow run, or a pack that declares none).
+	 * @param callable(string,array<string,mixed>):array<string,mixed>|null $shape
+	 *   C4: the pack's native-input shaper ({@see \Specflux\SenroFlux\Packs\Pack::shapeInput()}),
+	 *   run after validation and approval, just before the ability sees the input.
 	 */
-	public function call( string $ability_name, mixed $args = null, ?BuiltinGate $gate = null, mixed $validate = null ): ToolOutcome {
+	public function call( string $ability_name, mixed $args = null, ?BuiltinGate $gate = null, mixed $validate = null, mixed $shape = null ): ToolOutcome {
 		if ( ! function_exists( 'wp_get_ability' ) ) {
 			return ToolOutcome::unknownTool( $ability_name );
 		}
@@ -101,6 +104,13 @@ final class ToolExecutor {
 				'' !== $gate->verb ? $gate->verb : $ability_name,
 				(string) $gate->tier
 			);
+		}
+
+		// C4: a pack-shaped input becomes the native ability's input, after the
+		// pack's own validation and approval and before the ability sees it.
+		if ( is_callable( $shape ) && is_array( $args ) ) {
+			$shaped = $shape( $ability_name, $args );
+			$args   = is_array( $shaped ) ? $shaped : $args;
 		}
 
 		$permission = $ability->check_permissions( $args );

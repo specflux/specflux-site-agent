@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Packs\Commerce;
 
+use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\RunStore;
 use Specflux\SenroFlux\Run\Tracker;
@@ -177,15 +178,38 @@ final class Abilities {
 			return;
 		}
 
-		self::registerSetProductImage();
-		self::registerCouponCreate();
-		self::registerCouponEnable();
-		self::registerOrdersRefund();
-		self::registerShippingZoneSave();
-		self::registerTaxRateSave();
-		self::registerProductsCatalogue();
-		self::registerStoreReport();
-		self::registerSaveStoreReport();
+		// Only the polyfills some registered platform asks for (C4-0). A
+		// registered-but-inactive platform still counts, so the Woo set is
+		// registered exactly as before, WooCommerce active or not.
+		$needed = array();
+		foreach ( StorePlatforms::all() as $platform ) {
+			$needed = array_merge( $needed, $platform->polyfills() );
+		}
+
+		foreach ( self::registrars() as $template => $registrar ) {
+			if ( in_array( $template, $needed, true ) ) {
+				self::$registrar();
+			}
+		}
+	}
+
+	/**
+	 * Polyfill template => registrar method, in registration order.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function registrars(): array {
+		return array(
+			'set-product-image'  => 'registerSetProductImage',
+			'coupon-create'      => 'registerCouponCreate',
+			'coupon-enable'      => 'registerCouponEnable',
+			'orders-refund'      => 'registerOrdersRefund',
+			'shipping-zone-save' => 'registerShippingZoneSave',
+			'tax-rate-save'      => 'registerTaxRateSave',
+			'products-catalogue' => 'registerProductsCatalogue',
+			'store-report'       => 'registerStoreReport',
+			'save-store-report'  => 'registerSaveStoreReport',
+		);
 	}
 
 	// ------------------------------------------------------------------
