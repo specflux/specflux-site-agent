@@ -284,6 +284,7 @@ final class Plugin {
 		// is harmless with WooCommerce absent, and the pack itself never
 		// reaches the model's tool set unless it was registered on
 		// `senroflux_packs` above (WooCommerce active).
+		\Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartPlatform::boot();
 		\Specflux\SenroFlux\Packs\Commerce\Abilities::boot();
 		\Specflux\SenroFlux\Packs\Pages\PublishSummary::boot();
 		// Stage 14 (AS-15/S19): the commerce pack's own approval-summary
