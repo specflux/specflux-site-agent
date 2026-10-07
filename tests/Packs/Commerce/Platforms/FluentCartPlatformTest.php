@@ -125,11 +125,14 @@ final class FluentCartPlatformTest extends TestCase {
 	// Role map and resolution
 	// ------------------------------------------------------------------
 
-	public function test_it_maps_every_pack_role_except_the_two_woo_only_ones(): void {
+	public function test_it_maps_every_pack_role_except_the_woo_only_ones(): void {
 		$pack_roles = array_keys( $this->pack()->roleVerbs() );
 		$mapped     = array_keys( $this->platform->roleMap() );
 
-		$this->assertSame( array( 'catalogue', 'order-note' ), array_values( array_diff( $pack_roles, $mapped ) ) );
+		$this->assertSame(
+			array( 'catalogue', 'order-note', 'order-status', 'product-trash', 'stock', 'variation-price', 'sale-schedule' ),
+			array_values( array_diff( $pack_roles, $mapped ) )
+		);
 		$this->assertSame( array(), array_diff( $mapped, $pack_roles ), 'no role the pack does not know' );
 	}
 
@@ -273,8 +276,12 @@ final class FluentCartPlatformTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_every_role_verb_has_a_tier_and_the_gate_tiers_are_right(): void {
-		$pack = $this->pack();
-		foreach ( $pack->roleVerbs() as $verbs ) {
+		$pack   = $this->pack();
+		$mapped = array_keys( $this->platform->roleMap() );
+		foreach ( $pack->roleVerbs() as $role => $verbs ) {
+			if ( ! in_array( $role, $mapped, true ) ) {
+				continue; // A Woo-only role: this platform never resolves it.
+			}
 			foreach ( $verbs as $verb ) {
 				$this->assertArrayHasKey( $verb, $this->platform->verbTiers(), $verb );
 			}
