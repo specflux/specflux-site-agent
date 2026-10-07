@@ -255,6 +255,16 @@ composer check   # phpcs (WordPress-Core + Extra) · phpstan L8 · phpunit
 
 CI runs the same gates plus the WordPress Plugin Check suite.
 
+### Parity test environment variables
+
+The tier-parity tests diff SenroFlux against SenroGate's copies. With the variables unset they skip locally (and fail under `CI=true`), so CI must point all three at the SenroGate checkout:
+
+| Variable | Points at (inside the SenroGate checkout) |
+| --- | --- |
+| `SENROFLUX_PARITY_SIBLING` | `plugin/tests/Fixtures/commerce-tier-parity.json` |
+| `SENROFLUX_FLUENTCART_CATALOG` | `plugin/src/Integrations/FluentCart/FluentCartVerbCatalog.php` |
+| `SENROFLUX_SURECART_SENROGATE_DIR` | `plugin/src/Integrations/SureCart` (a directory, not the checkout root) |
+
 ## Upgrading from 0.2
 
 0.3 has five breaking changes. See `readme.txt`'s Changelog for the full list; in short:
