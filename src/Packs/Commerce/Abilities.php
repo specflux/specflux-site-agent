@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Packs\Commerce;
 
+use Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartAbilities;
 use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
 use Specflux\SenroFlux\Packs\Commerce\Platforms\Woo\WriteInput;
 use Specflux\SenroFlux\Run\Budget;
@@ -188,8 +189,16 @@ final class Abilities {
 		}
 
 		foreach ( self::registrars() as $template => $registrar ) {
+			if ( ! in_array( $template, $needed, true ) ) {
+				continue;
+			}
+			self::$registrar();
+		}
+
+		// FluentCart's polyfills (C4-F): their own registrars, same `needed` rule.
+		foreach ( FluentCartAbilities::templates() as $template ) {
 			if ( in_array( $template, $needed, true ) ) {
-				self::$registrar();
+				FluentCartAbilities::register( $template );
 			}
 		}
 	}
@@ -214,6 +223,16 @@ final class Abilities {
 			'variation-price-update' => 'registerVariationPriceUpdate',
 			'sale-schedule'          => 'registerSaleSchedule',
 		);
+	}
+
+	/**
+	 * Whether this run's `refunds` budget is already spent (the same check the
+	 * WooCommerce refund polyfill makes); fails open with no run in flight.
+	 *
+	 * @internal Shared with the FluentCart refund polyfill.
+	 */
+	public static function refundBudgetSpent(): bool {
+		return self::refundsExhausted();
 	}
 
 	// ------------------------------------------------------------------
@@ -1838,16 +1857,18 @@ final class Abilities {
 	}
 
 	/**
-	 * The number of PRIOR successful `orders-refund` calls in this run,
-	 * derived from the persisted step history via the shared
-	 * {@see Budget::spentCount()} rule (same mechanism `images` uses).
+	 * The number of PRIOR successful refund calls in this run (WooCommerce's
+	 * `orders-refund` and FluentCart's `fluentcart-orders-refund` polyfills
+	 * share the one `refunds` key), derived from the persisted step history via
+	 * the shared {@see Budget::spentCount()} rule (same mechanism `images` uses).
 	 */
 	private static function spentRefunds(): int {
 		if ( null === self::$current_run_id || null === self::$store ) {
 			return 0;
 		}
 
-		return Budget::spentCount( self::$store, self::$current_run_id, 'orders-refund' );
+		return Budget::spentCount( self::$store, self::$current_run_id, 'orders-refund' )
+			+ Budget::spentCount( self::$store, self::$current_run_id, 'fluentcart-orders-refund' );
 	}
 
 	/**
