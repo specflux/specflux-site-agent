@@ -209,6 +209,19 @@ final class Abilities {
 			'products-catalogue' => 'registerProductsCatalogue',
 			'store-report'       => 'registerStoreReport',
 			'save-store-report'  => 'registerSaveStoreReport',
+			\Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartProductStatus::TEMPLATE => 'registerSureCartProductStatus',
+		);
+	}
+
+	/** `senroflux/surecart-product-status` (C4-S): SureCart's own update ability cannot change status. */
+	private static function registerSureCartProductStatus(): void {
+		\Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartProductStatus::register(
+			self::CATEGORY,
+			array(
+				'readonly'    => false,
+				'destructive' => false,
+				'idempotent'  => true,
+			)
 		);
 	}
 

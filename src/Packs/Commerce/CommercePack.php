@@ -188,7 +188,7 @@ final class CommercePack extends Pack {
 	 * @return array<string,list<string>>
 	 */
 	public function roleVerbs(): array {
-		return array(
+		$verbs = array(
 			'read'           => array( 'commerce/product-read' ),
 			'catalogue'      => array( 'commerce/catalogue-read' ),
 			'create'         => array( 'commerce/product-create-draft', 'commerce/product-publish' ),
@@ -206,6 +206,34 @@ final class CommercePack extends Pack {
 			'store-report'   => array( 'commerce/store-report' ),
 			'report-save'    => array( 'commerce/report-save' ),
 		);
+
+		// Roles only some platforms have (C4-S). Listed only when the platform
+		// maps them, so a platform without them (WooCommerce: its product-update
+		// carries price and status itself) keeps exactly the table above.
+		$platform_only = array(
+			// A price is its own object on SureCart, not a product field.
+			'price'       => array( 'commerce/product-update', 'commerce/price-change' ),
+			'status'      => array( 'commerce/product-update', 'commerce/product-publish' ),
+			// The coupon's customer-facing code is a second step on SureCart.
+			'coupon-code' => array( 'commerce/coupon-draft' ),
+		);
+		$mapped = $this->platform()->roleMap();
+		foreach ( $platform_only as $role => $role_verbs ) {
+			if ( isset( $mapped[ $role ] ) ) {
+				$verbs[ $role ] = $role_verbs;
+			}
+		}
+
+		// Only the roles this platform has: a role it does not map would be
+		// grantable and resolve to an ability nobody registers.
+		$ordered = array();
+		foreach ( array_keys( $mapped ) as $role ) {
+			if ( isset( $verbs[ $role ] ) ) {
+				$ordered[ $role ] = $verbs[ $role ];
+			}
+		}
+
+		return $ordered;
 	}
 
 	/**
