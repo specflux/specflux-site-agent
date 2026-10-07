@@ -189,22 +189,27 @@ final class CommercePack extends Pack {
 	 */
 	public function roleVerbs(): array {
 		return array(
-			'read'           => array( 'commerce/product-read' ),
-			'catalogue'      => array( 'commerce/catalogue-read' ),
-			'create'         => array( 'commerce/product-create-draft', 'commerce/product-publish' ),
-			'update'         => array( 'commerce/product-update', 'commerce/price-change', 'commerce/product-publish' ),
-			'image'          => array( 'commerce/product-image' ),
-			'search'         => array( 'commerce/media-search' ),
-			'image-generate' => array( 'commerce/image-generate' ),
-			'coupon-create'  => array( 'commerce/coupon-draft' ),
-			'coupon-enable'  => array( 'commerce/coupon-enable' ),
-			'order-read'     => array( 'commerce/order-read' ),
-			'order-note'     => array( 'commerce/order-note-private', 'commerce/order-note-customer' ),
-			'refund'         => array( 'commerce/refund' ),
-			'shipping-write' => array( 'commerce/shipping-write' ),
-			'tax-write'      => array( 'commerce/tax-write' ),
-			'store-report'   => array( 'commerce/store-report' ),
-			'report-save'    => array( 'commerce/report-save' ),
+			'read'            => array( 'commerce/product-read' ),
+			'catalogue'       => array( 'commerce/catalogue-read' ),
+			'create'          => array( 'commerce/product-create-draft', 'commerce/product-publish' ),
+			'update'          => array( 'commerce/product-update', 'commerce/price-change', 'commerce/product-publish' ),
+			'image'           => array( 'commerce/product-image' ),
+			'search'          => array( 'commerce/media-search' ),
+			'image-generate'  => array( 'commerce/image-generate' ),
+			'coupon-create'   => array( 'commerce/coupon-draft' ),
+			'coupon-enable'   => array( 'commerce/coupon-enable' ),
+			'order-read'      => array( 'commerce/order-read' ),
+			'order-note'      => array( 'commerce/order-note-private', 'commerce/order-note-customer' ),
+			'refund'          => array( 'commerce/refund' ),
+			'shipping-write'  => array( 'commerce/shipping-write' ),
+			'tax-write'       => array( 'commerce/tax-write' ),
+			'store-report'    => array( 'commerce/store-report' ),
+			'report-save'     => array( 'commerce/report-save' ),
+			'order-status'    => array( 'commerce/order-status', 'commerce/order-status-notify' ),
+			'product-trash'   => array( 'commerce/product-trash', 'commerce/product-delete-force' ),
+			'stock'           => array( 'commerce/stock-adjust' ),
+			'variation-price' => array( 'commerce/price-change' ),
+			'sale-schedule'   => array( 'commerce/price-change' ),
 		);
 	}
 
@@ -238,7 +243,9 @@ final class CommercePack extends Pack {
 			'commerce/order-read',
 			'commerce/order-note-private',
 			'commerce/order-note-customer',
-			'commerce/refund' => ReportLookup::ORDER_PREFIX,
+			'commerce/refund',
+			'commerce/order-status',
+			'commerce/order-status-notify' => ReportLookup::ORDER_PREFIX,
 			'commerce/shipping-write' => ReportLookup::ZONE_PREFIX,
 			'commerce/tax-write' => ReportLookup::TAX_RATE_PREFIX,
 			'commerce/report-save' => ReportLookup::PAGE_PREFIX,
@@ -295,7 +302,7 @@ final class CommercePack extends Pack {
 				$this->catalogueRulesBody(),
 				false,
 				SkillSource::Pack,
-				'1'
+				'2'
 			),
 			new Skill(
 				'commerce/operations-rules',
@@ -303,7 +310,7 @@ final class CommercePack extends Pack {
 				$this->operationsRulesBody(),
 				false,
 				SkillSource::Pack,
-				'1'
+				'2'
 			),
 		);
 	}
@@ -317,6 +324,8 @@ final class CommercePack extends Pack {
 				'State every price in the store\'s own currency, with its own number of decimal places — never invent a currency or round differently from what the store already shows.',
 				'Product descriptions and short descriptions may use ONLY these HTML tags: p, ul, ol, li, strong, em, a, h3. A description is at most 1,500 words. Anything outside that tag list, or an unsafe link scheme, is refused whole — it is never trimmed or rewritten for you, so write within the rule the first time.',
 				'To add or replace a product\'s image, use an existing media library attachment that already has alt text — an attachment with no alt text, or one that is not an image, is refused. A library image\'s attachment id comes from commerce/media-search.',
+				'Variable products keep their prices on the variations: change a variation\'s price with variation-price-update (name the parent product_id and the variation_id), never by editing the parent. A sale is a sale price plus optional start and end dates in the store\'s timezone — use sale-schedule with a sale_price below the regular price; an empty sale_price clears it. Both are price changes and ask a human first.',
+				'To remove a product, trash it with product-delete — it is always a trash, reversible, and never a permanent delete: a call with force set is refused whole.',
 				'Coupons are created as drafts and enabled as a separate step. A coupon code that already exists is refused — check first if you are not sure it is free. Enabling a coupon you created earlier in this same run can fail if the coupon changed since you created it; re-read it before enabling in that case.',
 			)
 		);
@@ -328,6 +337,8 @@ final class CommercePack extends Pack {
 			array(
 				'Refunds and customer-visible order notes ask a human every single time, however a plan was approved — they are never pre-approved in bulk like an ordinary Tier-2 action.',
 				'At most one refund per run by default.',
+				'Changing an order\'s status with order-update-status asks a human first when the new status emails the customer or moves stock (pending, processing, on-hold, completed, cancelled, refunded); it is never undone by setting the old status back. Give the status without the wc- prefix and read the order first.',
+				'Stock changes (stock-adjust) always ask a human: they change what can be sold. Prefer increase/decrease over set when stock moves with orders, state the quantity you expect afterwards, and use stock_status only for a product that does not manage a quantity.',
 				'A store report is read-only: producing one never writes anything, and saving it as a page is a separate, explicit step.',
 			)
 		);

@@ -22,6 +22,15 @@ parameters:
             path: src/Packs/Commerce/Abilities.php
             count: 8
         -
+            # WooCommerce is not installed in this checkout, so the product
+            # objects wc_get_product() hands the C4-W polyfills (stock-adjust,
+            # variation-price-update, sale-schedule) are untyped `object`s. Every
+            # call is on the WC_Product CRUD surface and is reached only after
+            # wcProduct() has returned a real product object.
+            message: '#^Call to an undefined method object::(get_manage_stock|set_stock_status|save|get_stock_quantity|get_stock_status|is_type|get_parent_id|get_id|get_regular_price|get_sale_price|set_regular_price|set_sale_price|set_date_on_sale_from|set_date_on_sale_to)\(\)\.$#'
+            path: src/Packs/Commerce/Abilities.php
+            count: 27
+        -
             # wpdb::prepare()'s stub requires `@phpstan-param literal-string
             # $query`, but every prepared statement interpolates this plugin's
             # OWN computed table names into an otherwise-literal SQL template

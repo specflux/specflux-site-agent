@@ -82,6 +82,11 @@ final class CommercePackTest extends TestCase {
 				'commerce/tax-write'            => 2,
 				'commerce/store-report'         => 0,
 				'commerce/report-save'          => 2,
+				'commerce/order-status'         => 1,
+				'commerce/order-status-notify'  => 2,
+				'commerce/product-trash'        => 1,
+				'commerce/product-delete-force' => 2,
+				'commerce/stock-adjust'         => 2,
 			),
 			( new CommercePack() )->verbMap()
 		);
@@ -354,8 +359,8 @@ final class CommercePackTest extends TestCase {
 
 	public function test_unmapped_ability_keeps_its_id_as_the_verb(): void {
 		$this->assertSame(
-			'woocommerce/product-delete',
-			( new CommercePack() )->verbFor( 'woocommerce/product-delete', array( 'id' => 1 ) )
+			'woocommerce/orders-create',
+			( new CommercePack() )->verbFor( 'woocommerce/orders-create', array( 'status' => 'processing' ) )
 		);
 	}
 
@@ -444,7 +449,7 @@ final class CommercePackTest extends TestCase {
 		$this->assertContains( 'commerce/operations-rules', $ids );
 
 		foreach ( $skills as $skill ) {
-			$this->assertSame( '1', $skill->version );
+			$this->assertSame( '2', $skill->version );
 			$this->assertSame( SkillSource::Pack, $skill->source );
 		}
 	}

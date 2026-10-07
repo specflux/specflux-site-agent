@@ -62,6 +62,9 @@ final class CommerceSummary {
 		'commerce/shipping-write',
 		'commerce/tax-write',
 		'commerce/report-save',
+		'commerce/order-status-notify',
+		'commerce/product-delete-force',
+		'commerce/stock-adjust',
 	);
 
 	/**
@@ -101,6 +104,11 @@ final class CommerceSummary {
 			return $custom;
 		}
 
+		// A variation is read like any product: by its own id.
+		if ( 'variation-price-update' === self::baseName( $verb ) && isset( $input['variation_id'] ) ) {
+			$input['id'] = $input['variation_id'];
+		}
+
 		return self::build( $summary, $resolved, self::baseName( $verb ), $input );
 	}
 
@@ -127,6 +135,8 @@ final class CommerceSummary {
 			'commerce/shipping-write' => self::shippingCard( $input ),
 			'commerce/tax-write' => self::taxCard( $input ),
 			'commerce/report-save' => self::reportSaveCard( $input ),
+			'commerce/order-status-notify' => self::orderStatusCard( $summary, $input ),
+			'commerce/stock-adjust' => self::stockCard( $summary, $input ),
 			default => $summary,
 		};
 	}
@@ -166,6 +176,63 @@ final class CommerceSummary {
 		$row .= sprintf( ' — current %s', implode( ', ', $current ) );
 		if ( array() !== $proposed ) {
 			$row .= sprintf( ' — proposed %s', implode( ', ', $proposed ) );
+		}
+		// A scheduled sale: show the window (store timezone), or that the sale is being cleared.
+		foreach ( array(
+			'date_on_sale_from' => 'from',
+			'date_on_sale_to'   => 'to',
+		) as $key => $word ) {
+			if ( isset( $input[ $key ] ) && is_string( $input[ $key ] ) && '' !== $input[ $key ] ) {
+				$row .= sprintf( ' — sale %s %s', $word, esc_html( $input[ $key ] ) );
+			}
+		}
+
+		return $row;
+	}
+
+	/**
+	 * `order-update-status` to a status that emails the customer or moves stock.
+	 *
+	 * @param array<string,mixed> $input Call input.
+	 */
+	private static function orderStatusCard( string $summary, array $input ): string {
+		if ( ! isset( $input['id'] ) || ! is_numeric( $input['id'] ) || ! function_exists( 'wc_get_order' ) ) {
+			return $summary;
+		}
+		$order = wc_get_order( (int) $input['id'] );
+		if ( ! is_object( $order ) ) {
+			return $summary;
+		}
+
+		$current = self::call( $order, 'get_status' );
+		$target  = is_string( $input['status'] ?? null ) ? $input['status'] : '';
+
+		return sprintf(
+			'Change order #%d status from %s to %s — this can email the customer or change stock, and setting the old status back does not undo it',
+			(int) $input['id'],
+			esc_html( is_string( $current ) ? $current : 'unknown' ),
+			esc_html( $target )
+		);
+	}
+
+	/**
+	 * `stock-adjust`: current stock beside the proposed change.
+	 *
+	 * @param array<string,mixed> $input Call input.
+	 */
+	private static function stockCard( string $summary, array $input ): string {
+		$product = self::product( $input );
+		if ( null === $product ) {
+			return $summary;
+		}
+
+		$stock = self::call( $product, 'get_stock_quantity' );
+		$row   = sprintf( 'Change stock for &quot;%s&quot;', esc_html( self::productTitle( $input, $product ) ) );
+		$row  .= sprintf( ' — current %s', null === $stock ? 'not tracked' : esc_html( (string) $stock ) );
+		if ( isset( $input['stock_status'] ) && is_string( $input['stock_status'] ) ) {
+			$row .= sprintf( ' — proposed status %s', esc_html( $input['stock_status'] ) );
+		} elseif ( isset( $input['mode'], $input['quantity'] ) && is_string( $input['mode'] ) && is_scalar( $input['quantity'] ) ) {
+			$row .= sprintf( ' — proposed %s %s', esc_html( $input['mode'] ), esc_html( (string) $input['quantity'] ) );
 		}
 
 		return $row;

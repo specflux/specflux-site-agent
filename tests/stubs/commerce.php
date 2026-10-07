@@ -716,6 +716,62 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 		public function get_short_description(): string {
 			return (string) ( $this->row()->short_description ?? '' );
 		}
+
+		// C4-W write surface (stock, variation price, sale schedule): setters
+		// write the row `save()` keeps, a fake of WC CRUD, nothing more.
+		public function get_parent_id(): int {
+			return (int) ( $this->row()->parent_id ?? 0 );
+		}
+
+		public function is_type( string $type ): bool {
+			return $type === $this->get_type();
+		}
+
+		public function get_manage_stock(): bool {
+			return (bool) ( $this->row()->manage_stock ?? false );
+		}
+
+		public function get_date_on_sale_from(): ?string {
+			return $this->row()->date_on_sale_from ?? null;
+		}
+
+		public function get_date_on_sale_to(): ?string {
+			return $this->row()->date_on_sale_to ?? null;
+		}
+
+		private function put( string $prop, mixed $value ): void {
+			if ( ! isset( $GLOBALS['senroflux_test_product_rows'][ $this->id ] ) ) {
+				$GLOBALS['senroflux_test_product_rows'][ $this->id ] = (object) array();
+			}
+			$GLOBALS['senroflux_test_product_rows'][ $this->id ]->$prop = $value;
+			$GLOBALS['senroflux_test_product_saves'][]                  = array( $this->id, $prop );
+		}
+
+		public function set_regular_price( string $v ): void {
+			$this->put( 'regular_price', $v );
+		}
+
+		public function set_sale_price( string $v ): void {
+			$this->put( 'sale_price', $v );
+		}
+
+		public function set_stock_status( string $v ): void {
+			$this->put( 'stock_status', $v );
+		}
+
+		public function set_date_on_sale_from( ?string $v ): void {
+			$this->put( 'date_on_sale_from', $v );
+		}
+
+		public function set_date_on_sale_to( ?string $v ): void {
+			$this->put( 'date_on_sale_to', $v );
+		}
+
+		public function save(): int {
+			$GLOBALS['senroflux_test_product_saves'][] = array( $this->id, 'save' );
+
+			return $this->id;
+		}
 	}
 }
 
@@ -728,6 +784,24 @@ if ( ! function_exists( 'wc_get_product' ) ) {
 		$stock = $GLOBALS['senroflux_test_products'][ $id ] ?? null;
 
 		return new WC_Product( $id, null === $stock ? null : (int) $stock );
+	}
+}
+
+if ( ! function_exists( 'wc_update_product_stock' ) ) {
+	function wc_update_product_stock( WC_Product $product, int $quantity, string $operation = 'set' ): int {
+		$current = (int) $product->get_stock_quantity();
+		$new     = match ( $operation ) {
+			'increase' => $current + $quantity,
+			'decrease' => $current - $quantity,
+			default    => $quantity,
+		};
+		if ( ! isset( $GLOBALS['senroflux_test_product_rows'][ $product->get_id() ] ) ) {
+			$GLOBALS['senroflux_test_product_rows'][ $product->get_id() ] = (object) array();
+		}
+		$GLOBALS['senroflux_test_product_rows'][ $product->get_id() ]->stock_quantity = $new;
+		$GLOBALS['senroflux_test_stock_calls'][]                                      = array( $product->get_id(), $operation, $quantity );
+
+		return $new;
 	}
 }
 
