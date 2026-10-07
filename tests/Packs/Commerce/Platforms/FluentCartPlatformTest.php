@@ -125,14 +125,12 @@ final class FluentCartPlatformTest extends TestCase {
 	// Role map and resolution
 	// ------------------------------------------------------------------
 
-	public function test_it_maps_every_pack_role_except_the_woo_only_ones(): void {
+	public function test_the_pack_lists_only_the_roles_fluentcart_maps(): void {
 		$pack_roles = array_keys( $this->pack()->roleVerbs() );
 		$mapped     = array_keys( $this->platform->roleMap() );
 
-		$this->assertSame(
-			array( 'catalogue', 'order-note', 'order-status', 'product-trash', 'stock', 'variation-price', 'sale-schedule' ),
-			array_values( array_diff( $pack_roles, $mapped ) )
-		);
+		// The pack lists only the roles its platform maps (a role no platform maps is never grantable).
+		$this->assertSame( array(), array_values( array_diff( $pack_roles, $mapped ) ) );
 		$this->assertSame( array(), array_diff( $mapped, $pack_roles ), 'no role the pack does not know' );
 	}
 

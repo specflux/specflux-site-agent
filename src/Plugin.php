@@ -135,6 +135,16 @@ final class Plugin {
 		}
 		$this->governed = true;
 
+		// C4-S: SureCart joins WooCommerce as a store platform. Hooked before
+		// anything asks which platforms exist (the polyfill registration, the
+		// pack gate just below, the governed-namespace contribution).
+		add_filter(
+			'senroflux_store_platforms',
+			static fn ( array $platforms ): array => array_merge( $platforms, array( new \Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartPlatform() ) ),
+			10,
+			1
+		);
+
 		$pages_pack = $this->pages_pack();
 		$posts_pack = $this->posts_pack();
 		$site_pack  = $this->site_pack();

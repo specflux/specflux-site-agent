@@ -40,8 +40,10 @@ interface StorePlatform {
 	public function isActive(): bool;
 
 	/**
-	 * Why {@see isActive()} is false: `not_installed` or `below_min_version`.
-	 * Null while active.
+	 * Why {@see isActive()} is false: `not_installed` or `below_min_version`,
+	 * or a platform-specific reason when the platform is installed but its
+	 * abilities are not usable (SureCart: `abilities_api_missing`,
+	 * `store_not_connected`, `abilities_disabled`). Null while active.
 	 */
 	public function inactiveReason(): ?string;
 

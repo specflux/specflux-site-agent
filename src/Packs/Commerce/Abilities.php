@@ -222,6 +222,19 @@ final class Abilities {
 			'stock-adjust'           => 'registerStockAdjust',
 			'variation-price-update' => 'registerVariationPriceUpdate',
 			'sale-schedule'          => 'registerSaleSchedule',
+			\Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartProductStatus::TEMPLATE => 'registerSureCartProductStatus',
+		);
+	}
+
+	/** `senroflux/surecart-product-status` (C4-S): SureCart's own update ability cannot change status. */
+	private static function registerSureCartProductStatus(): void {
+		\Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartProductStatus::register(
+			self::CATEGORY,
+			array(
+				'readonly'    => false,
+				'destructive' => false,
+				'idempotent'  => true,
+			)
 		);
 	}
 
