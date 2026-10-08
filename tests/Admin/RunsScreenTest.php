@@ -732,7 +732,6 @@ final class RunsScreenTest extends TestCase {
 		$this->assertContains( 'admin_post_senroflux_approval_decision', $hooks );
 		$this->assertContains( 'admin_init', $hooks, 'the old tools.php URL redirect (S10)' );
 		$this->assertContains( 'wp_ajax_senroflux_setup_panel', $hooks );
-		$this->assertContains( 'wp_ajax_senroflux_dismiss_agent_safety_check', $hooks );
 		$this->assertContains( 'wp_ajax_senroflux_setup_brief', $hooks );
 		$this->assertContains( 'admin_notices', $hooks, 'the one-time activation notice (S10)' );
 	}
@@ -1082,25 +1081,6 @@ final class RunsScreenTest extends TestCase {
 			$this->assertFalse( $json->success );
 			$this->assertSame( 403, $json->status );
 		}
-	}
-
-	public function test_handle_dismiss_agent_safety_check_records_the_dismissal_for_the_current_user_only(): void {
-		Plugin::set_dependency_probe( false );
-		$GLOBALS['senroflux_test_current_user_id'] = 5;
-
-		$screen = new RunsScreen();
-		$_POST  = array( 'nonce' => 'x' );
-
-		try {
-			$screen->handleDismissAgentSafetyCheck();
-			$this->fail( 'handleDismissAgentSafetyCheck() returned without sending a JSON response.' );
-		} catch ( SenroFluxJsonResponse $json ) {
-			$this->assertTrue( $json->success );
-			$this->assertStringNotContainsString( 'senroflux/agent-safety', $json->data['html'] );
-		}
-
-		$this->assertTrue( Checks::agentSafetyDismissedBy( 5 ) );
-		$this->assertFalse( Checks::agentSafetyDismissedBy( 6 ), 'a different user is unaffected' );
 	}
 
 	/**

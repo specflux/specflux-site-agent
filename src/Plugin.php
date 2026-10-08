@@ -395,11 +395,10 @@ final class Plugin {
 			( new \Specflux\SenroFlux\Admin\PrivacyPolicy() )->register();
 		}
 
-		// 0.3 S3: Agent Safety's absence is advisory only — runs still start
-		// and tick without it, in GateMode::BuiltIn. S11 places that advisory
-		// SOLELY in the Runs-screen setup panel (Checks::agentSafetyAdvisory(),
-		// rendered by RunsScreen::renderSetupPanel()) — never as a notice on
-		// every admin screen (defect 3: it used to show on the Dashboard too).
+		// 0.3 S3: Agent Safety's absence is not fail-closed — runs still start
+		// and tick without it, in GateMode::BuiltIn. The "install SenroGate"
+		// nudge lives only in the guided setup panel ({@see Onboarding}), never
+		// as a notice on every admin screen (defect 3).
 	}
 
 	/**
@@ -535,7 +534,7 @@ final class Plugin {
 		// Start button. Advisory checks (Agent Safety) never block. This runs
 		// for BOTH the direct-allow and pack paths; a pack's OWN checks are
 		// asked separately below, by preflight().
-		$harness_failure = Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) );
+		$harness_failure = Checks::firstBlockingFailure( Checks::harnessChecks() );
 		if ( null !== $harness_failure ) {
 			return new WP_Error(
 				$harness_failure->errorCode(),

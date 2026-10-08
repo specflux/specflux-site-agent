@@ -62,7 +62,7 @@ final class DependencyCheckTest extends TestCase {
 		// runtime wires up (HTTP surfaces, init hooks) exactly as it would
 		// with Agent Safety present. It does NOT register a site-wide
 		// notice: per S11 the advisory lives ONLY in the Runs-screen setup
-		// panel ({@see \Specflux\SenroFlux\Setup\Checks::agentSafetyAdvisory}).
+		// panel (guided setup, {@see \Specflux\SenroFlux\Setup\Onboarding}).
 		$this->assertContains(
 			'rest_api_init',
 			array_keys( $GLOBALS['senroflux_test_actions'] ),

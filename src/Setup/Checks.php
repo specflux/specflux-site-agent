@@ -28,9 +28,6 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Checks {
 
-	/** User-meta key: 1 once dismissed, per user, never re-armed (S11). */
-	public const AGENT_SAFETY_DISMISSED_META = 'senroflux_agent_safety_check_dismissed';
-
 	/** Test seam: force the provider-configured probe. Null restores reality. */
 	private static ?bool $provider_probe = null;
 
@@ -40,20 +37,13 @@ final class Checks {
 	}
 
 	/**
-	 * The harness's own checks, in render order: the provider check, then (for
-	 * a viewer who hasn't dismissed it) the Agent Safety advisory.
+	 * The harness's own checks, in render order.
 	 *
-	 * @param int $user_id The viewer.
 	 * @return list<SetupCheck>
 	 */
-	public static function harnessChecks( int $user_id ): array {
+	public static function harnessChecks(): array {
 		$checks   = array();
 		$checks[] = self::providerCheck();
-
-		$agent_safety = self::agentSafetyAdvisory( $user_id );
-		if ( null !== $agent_safety ) {
-			$checks[] = $agent_safety;
-		}
 
 		$awaiting = self::passthroughAwaitingReview();
 		if ( null !== $awaiting ) {
@@ -72,7 +62,7 @@ final class Checks {
 	 * @return list<SetupCheck>
 	 */
 	public static function forPack( Pack $pack, int $user_id ): array {
-		return array_merge( self::harnessChecks( $user_id ), $pack->setupChecks( $user_id ) );
+		return array_merge( self::harnessChecks(), $pack->setupChecks( $user_id ) );
 	}
 
 	/**
@@ -165,35 +155,6 @@ final class Checks {
 	}
 
 	/**
-	 * `senroflux/agent-safety` (advisory, harness): null once Agent Safety is
-	 * present, or once this viewer has dismissed it (per-user, never re-armed).
-	 *
-	 * @param int $user_id The viewer.
-	 */
-	public static function agentSafetyAdvisory( int $user_id ): ?SetupCheck {
-		if ( Plugin::instance()->available() ) {
-			return null;
-		}
-
-		if ( self::agentSafetyDismissedBy( $user_id ) ) {
-			return null;
-		}
-
-		return new SetupCheck(
-			'senroflux/agent-safety',
-			SetupCheck::ADVISORY,
-			false,
-			__( 'Install Agent Tollgate for approval and audit governance on every write.', 'senroflux' ),
-			function_exists( 'admin_url' )
-				? admin_url( 'plugin-install.php?tab=plugin-information&plugin=agent-safety' )
-				: null,
-			'install_plugins',
-			__( 'Ask an administrator to install the Agent Tollgate plugin.', 'senroflux' ),
-			'senroflux_agent_safety_missing'
-		);
-	}
-
-	/**
 	 * `senroflux/passthrough-review` (advisory, harness): null unless the site
 	 * runs in SenroGate mode and N enabled abilities from other plugins are
 	 * hidden from runs until SenroGate reviews them (0.4 S6).
@@ -243,21 +204,5 @@ final class Checks {
 		}
 
 		return function_exists( 'admin_url' ) ? admin_url( 'tools.php?page=agent-safety-abilities' ) : null;
-	}
-
-	/** Has this user dismissed the Agent Safety advisory? Never re-arms. */
-	public static function agentSafetyDismissedBy( int $user_id ): bool {
-		if ( ! function_exists( 'get_user_meta' ) ) {
-			return false;
-		}
-
-		return (bool) get_user_meta( $user_id, self::AGENT_SAFETY_DISMISSED_META, true );
-	}
-
-	/** Record this user's dismissal of the Agent Safety advisory. */
-	public static function dismissAgentSafetyFor( int $user_id ): void {
-		if ( function_exists( 'update_user_meta' ) ) {
-			update_user_meta( $user_id, self::AGENT_SAFETY_DISMISSED_META, 1 );
-		}
 	}
 }

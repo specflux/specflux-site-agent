@@ -96,7 +96,6 @@ class RunsScreen {
 		add_action( 'admin_post_senroflux_approval_decision', array( $this, 'handleApprovalDecision' ) );
 		add_action( 'admin_post_senroflux_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
 		add_action( 'wp_ajax_senroflux_setup_panel', array( $this, 'handleSetupPanel' ) );
-		add_action( 'wp_ajax_senroflux_dismiss_agent_safety_check', array( $this, 'handleDismissAgentSafetyCheck' ) );
 		add_action( 'wp_ajax_senroflux_setup_brief', array( $this, 'handleSetupBrief' ) );
 		add_action( 'admin_notices', array( $this, 'maybeRenderActivationNotice' ) );
 		add_filter( ConsumerPolicy::FILTER, array( $this, 'registerAdminConsumer' ) );
@@ -450,7 +449,7 @@ class RunsScreen {
 	 * here: they already shape {@see runnablePacks()}.
 	 */
 	protected function startBlocked( int $user_id ): bool {
-		if ( null !== Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) ) ) {
+		if ( null !== Checks::firstBlockingFailure( Checks::harnessChecks() ) ) {
 			return true;
 		}
 
@@ -870,8 +869,7 @@ class RunsScreen {
 	}
 
 	// ------------------------------------------------------------------
-	// Setup panel (0.3 S11): the harness's own checks (provider, Agent
-	// Safety advisory). Pack-level checks (`<pack>/capability`,
+	// Setup panel (0.3 S11): the harness's own checks (provider, ability review). Pack-level checks (`<pack>/capability`,
 	// `<pack>/binding`) render inline in the new-run form's pack picker
 	// (stage 8's per-pack preflight notice) — this panel is the harness's
 	// half of the SAME evaluator ({@see Checks}).
@@ -887,8 +885,8 @@ class RunsScreen {
 	 */
 	private function renderSetupPanel( int $user_id ): string {
 		$html = '<div id="senroflux-setup-panel" class="senroflux-setup-panel">';
-		foreach ( Checks::harnessChecks( $user_id ) as $check ) {
-			if ( $check->isBlocking() || 'senroflux/agent-safety' === $check->id() ) {
+		foreach ( Checks::harnessChecks() as $check ) {
+			if ( $check->isBlocking() ) {
 				continue;
 			}
 			$html .= $this->renderSetupCheckNotice( $check, $user_id );
@@ -898,7 +896,7 @@ class RunsScreen {
 		return $html;
 	}
 
-	/** One check's notice: an error for a failing blocking check, a dismissible warning for the advisory. */
+	/** One check's notice: an error for a failing blocking check, a warning for an advisory. */
 	private function renderSetupCheckNotice( SetupCheck $check, int $user_id ): string {
 		$css_class = $check->isBlocking() ? 'notice-error' : 'notice-warning';
 		$message   = $check->messageFor( $user_id );
@@ -912,10 +910,6 @@ class RunsScreen {
 			);
 		}
 
-		// Only the Agent Safety advisory carries a dismissal (S11: "per-user
-		// dismissal in user meta"); no other check gets a Dismiss button.
-		$dismiss = 'senroflux/agent-safety' === $check->id() ? $this->renderDismissButton() : '';
-
 		// The "inline" class matters as much as "notice" does: it keeps the
 		// warning/error look core's own CSS gives `.notice`, but core's own
 		// admin JS skips `.notice.inline` when it relocates every other
@@ -923,21 +917,11 @@ class RunsScreen {
 		// it, one copy of every check ends up duplicated outside this panel,
 		// and a stale copy can linger there after the panel re-renders.
 		return sprintf(
-			'<div class="notice %1$s inline senroflux-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p>%5$s</div>',
+			'<div class="notice %1$s inline senroflux-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p></div>',
 			esc_attr( $css_class ),
 			esc_attr( $check->id() ),
 			esc_html( $message ),
-			$link, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
-			$dismiss // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr()/esc_html() below.
-		);
-	}
-
-	/** The Agent Safety advisory's own "Dismiss" button (nonce-protected, current user only). */
-	private function renderDismissButton(): string {
-		return sprintf(
-			'<p><button type="button" class="button senroflux-dismiss-check" data-nonce="%s">%s</button></p>',
-			esc_attr( wp_create_nonce( 'senroflux_dismiss_agent_safety_check' ) ),
-			esc_html__( 'Dismiss', 'senroflux' )
+			$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
 		);
 	}
 
@@ -957,7 +941,7 @@ class RunsScreen {
 		$pack     = sanitize_text_field( wp_unslash( $_POST['pack'] ?? '' ) );
 		$pack_obj = '' !== $pack ? PackRegistry::fromFilters()->get( $pack ) : null;
 
-		$checks         = null !== $pack_obj ? Checks::forPack( $pack_obj, $user_id ) : Checks::harnessChecks( $user_id );
+		$checks         = null !== $pack_obj ? Checks::forPack( $pack_obj, $user_id ) : Checks::harnessChecks();
 		$start_disabled = null !== Checks::firstBlockingFailure( $checks ) || Onboarding::oldPluginBlocks( $user_id );
 
 		wp_send_json_success(
@@ -1006,22 +990,6 @@ class RunsScreen {
 		}
 
 		wp_send_json_success( array( 'steps' => Onboarding::steps( get_current_user_id() ) ) );
-	}
-
-	/**
-	 * admin-ajax: dismiss the Agent Safety advisory for the CURRENT user only
-	 * (S11: per-user dismissal, never re-arms).
-	 */
-	public function handleDismissAgentSafetyCheck(): void {
-		check_ajax_referer( 'senroflux_dismiss_agent_safety_check', 'nonce' );
-
-		if ( ! current_user_can( $this->capability() ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ), 403 );
-		}
-
-		Checks::dismissAgentSafetyFor( get_current_user_id() );
-
-		wp_send_json_success( array( 'html' => $this->renderSetupPanel( get_current_user_id() ) ) );
 	}
 
 	/**

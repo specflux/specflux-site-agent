@@ -367,38 +367,4 @@
 	}
 
 	window.addEventListener( 'focus', refreshPanel );
-
-	// Delegated: the panel is replaced wholesale on refresh, so a
-	// live-bound listener on `document` survives that swap.
-	document.addEventListener( 'click', function ( event ) {
-		var button = event.target.closest && event.target.closest( '.senroflux-dismiss-check' );
-		if ( ! button ) {
-			return;
-		}
-
-		var body = new URLSearchParams();
-		body.set( 'action', 'senroflux_dismiss_agent_safety_check' );
-		body.set( 'nonce', button.getAttribute( 'data-nonce' ) || '' );
-
-		fetch( settings.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString(),
-		} )
-			.then( function ( response ) {
-				return response.json();
-			} )
-			.then( function ( json ) {
-				if ( json && json.success && json.data && typeof json.data.html === 'string' ) {
-					var next = document.getElementById( 'senroflux-setup-panel' );
-					if ( next ) {
-						next.outerHTML = json.data.html;
-					}
-				}
-			} )
-			.catch( function () {
-				// Silent: worst case the dismissed notice stays until reload.
-			} );
-	} );
 }() );

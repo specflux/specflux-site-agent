@@ -66,36 +66,6 @@ final class ChecksTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// senroflux/agent-safety
-	// ------------------------------------------------------------------
-
-	public function test_agent_safety_advisory_is_null_when_agent_safety_is_available(): void {
-		Plugin::set_dependency_probe( true );
-
-		$this->assertNull( Checks::agentSafetyAdvisory( 1 ) );
-	}
-
-	public function test_agent_safety_advisory_appears_when_absent_and_not_dismissed(): void {
-		Plugin::set_dependency_probe( false );
-
-		$check = Checks::agentSafetyAdvisory( 1 );
-
-		$this->assertNotNull( $check );
-		$this->assertSame( 'senroflux/agent-safety', $check->id() );
-		$this->assertSame( SetupCheck::ADVISORY, $check->severity() );
-		$this->assertFalse( $check->isBlocking() );
-	}
-
-	public function test_agent_safety_advisory_dismissal_is_per_user_and_never_rearms(): void {
-		Plugin::set_dependency_probe( false );
-
-		Checks::dismissAgentSafetyFor( 1 );
-
-		$this->assertNull( Checks::agentSafetyAdvisory( 1 ), 'dismissing user no longer sees it' );
-		$this->assertNotNull( Checks::agentSafetyAdvisory( 2 ), 'a different user still sees it' );
-	}
-
-	// ------------------------------------------------------------------
 	// forPack() / firstBlockingFailure()
 	// ------------------------------------------------------------------
 
