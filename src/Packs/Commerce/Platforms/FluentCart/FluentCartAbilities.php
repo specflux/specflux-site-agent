@@ -175,7 +175,9 @@ final class FluentCartAbilities {
 			),
 			array( 'product_id', 'attachment_id' ),
 			'products/edit',
-			array( self::class, 'executeSetProductImage' )
+			array( self::class, 'executeSetProductImage' ),
+			false,
+			array( self::class, 'maySetProductImage' )
 		);
 	}
 
@@ -315,8 +317,9 @@ final class FluentCartAbilities {
 	 * @param string                           $permission FluentCart permission string.
 	 * @param callable                         $execute    `fn( array $input ): array|WP_Error`.
 	 * @param bool                             $read_only   Read-only ability.
+	 * @param (callable(array<string,mixed>):bool)|null $object_gate Extra per-object check, run after the FluentCart permission.
 	 */
-	private static function define( string $template, string $label, string $description, array $properties, array $required, string $permission, callable $execute, bool $read_only = false ): void {
+	private static function define( string $template, string $label, string $description, array $properties, array $required, string $permission, callable $execute, bool $read_only = false, ?callable $object_gate = null ): void {
 		wp_register_ability(
 			strtolower( 'senroflux/' . $template ),
 			array(
@@ -336,10 +339,12 @@ final class FluentCartAbilities {
 				'execute_callback'    => static function ( $input = array() ) use ( $execute ) {
 					return $execute( is_array( $input ) ? $input : array() );
 				},
-				'permission_callback' => static function ( $input = array() ) use ( $permission ) {
-					unset( $input );
+				'permission_callback' => static function ( $input = array() ) use ( $permission, $object_gate ) {
+					if ( ! self::can( $permission ) ) {
+						return false;
+					}
 
-					return self::can( $permission );
+					return null === $object_gate || true === $object_gate( is_array( $input ) ? $input : array() );
 				},
 				'meta'                => array(
 					'annotations' => array(
@@ -606,6 +611,24 @@ final class FluentCartAbilities {
 		$result = FluentCartRest::call( 'POST', '/products/variants/' . $variant_id, array( 'variants' => $variant ) );
 
 		return $result instanceof WP_Error ? $result : true;
+	}
+
+	/**
+	 * Per-object gate for set-product-image, which writes post meta directly
+	 * (not through FluentCart's REST routes): edit on this product and read on
+	 * this attachment.
+	 *
+	 * @param array<string,mixed> $input Call input.
+	 */
+	public static function maySetProductImage( array $input ): bool {
+		$product_id    = (int) ( $input['product_id'] ?? 0 );
+		$attachment_id = (int) ( $input['attachment_id'] ?? 0 );
+
+		return $product_id > 0
+			&& $attachment_id > 0
+			&& function_exists( 'current_user_can' )
+			&& current_user_can( 'edit_post', $product_id )
+			&& current_user_can( 'read_post', $attachment_id );
 	}
 
 	/**

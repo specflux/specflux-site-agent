@@ -3,7 +3,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import TierBadge from './TierBadge';
 import ApprovalSummary from './ApprovalSummary';
 import ApprovalDiff from './ApprovalDiff';
-import { planApprovalCount } from '../utils';
+import { humanizeVerb, planApprovalCount } from '../utils';
 
 const HEADINGS = {
 	question: __( 'Question for you', 'senroflux' ),
@@ -273,8 +273,17 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 				{ steps.map( ( step, index ) => (
 					<li key={ index }>
 						<span data-senroflux-content dir="auto">{ step.text }</span>
-						{ Array.isArray( step.verbs ) &&
-							step.verbs.map( ( verb ) => <TierBadge key={ verb } gateMode={ gateMode } tier={ step.tier } /> ) }
+						{ /* One badge per step: step.tier is the highest tier among its verbs. */ }
+						<TierBadge gateMode={ gateMode } tier={ step.tier } />
+						{ Array.isArray( step.verbs ) && step.verbs.length > 0 && (
+							<span className="senroflux-plan-actions" data-testid="plan-step-actions">
+								{ sprintf(
+									/* translators: %s: comma-separated list of the actions a plan step will use, e.g. "Create post, Update post". */
+									__( 'Uses: %s', 'senroflux' ),
+									[ ...new Set( step.verbs.map( humanizeVerb ) ) ].join( ', ' )
+								) }
+							</span>
+						) }
 						{ Array.isArray( step.objects ) && step.objects.length > 0 && (
 							<ul className="senroflux-plan-objects">
 								{ step.objects.map( ( object ) => (
