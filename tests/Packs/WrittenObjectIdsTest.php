@@ -13,6 +13,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tests\Packs;
 
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Specflux\SenroFlux\Packs\Commerce\CommercePack;
@@ -67,6 +68,18 @@ final class WrittenObjectIdsTest extends TestCase {
 			'site media-stock-import'   => array( $site, 'site/media-stock-import', array(), array( 'attachment_id' => 9 ), 'attachment:9' ),
 			'site set-featured-image'   => array( $site, 'site/set-featured-image', array(), array( 'post_id' => 8 ), '8' ),
 			'site update-navigation'    => array( $site, 'site/update-navigation', array(), array(), 'site-navigation' ),
+			'posts trash-post'          => array( $posts, 'posts/trash-post', array(), array( 'id' => 4 ), '4' ),
+			'posts restore-post'        => array( $posts, 'posts/restore-post', array(), array( 'id' => 4 ), '4' ),
+			'posts set-post-meta'       => array( $posts, 'posts/set-post-meta', array(), array( 'post_id' => 4 ), '4' ),
+			'posts restore-revision'    => array( $posts, 'posts/restore-revision', array(), array( 'post_id' => 4 ), '4' ),
+			'pages trash-post'          => array( $pages, 'pages/trash-post', array(), array( 'id' => 4 ), '4' ),
+			'pages restore-post'        => array( $pages, 'pages/restore-post', array(), array( 'id' => 4 ), '4' ),
+			'pages set-post-meta'       => array( $pages, 'pages/set-post-meta', array(), array( 'post_id' => 4 ), '4' ),
+			'pages restore-revision'    => array( $pages, 'pages/restore-revision', array(), array( 'post_id' => 4 ), '4' ),
+			'site trash-post'           => array( $site, 'site/trash-post', array(), array( 'id' => 4 ), '4' ),
+			'site restore-post'         => array( $site, 'site/restore-post', array(), array( 'id' => 4 ), '4' ),
+			'site set-post-meta'        => array( $site, 'site/set-post-meta', array(), array( 'post_id' => 4 ), '4' ),
+			'site restore-revision'     => array( $site, 'site/restore-revision', array(), array( 'post_id' => 4 ), '4' ),
 			'commerce product-create'   => array( $shop, 'commerce/product-create-draft', array(), array( 'product' => array( 'id' => 31 ) ), '31' ),
 			'commerce product-update'   => array( $shop, 'commerce/product-update', array( 'id' => 31 ), array( 'product' => array( 'id' => 31 ) ), '31' ),
 			'commerce price-change'     => array( $shop, 'commerce/price-change', array( 'id' => 31 ), array( 'product' => array( 'id' => 31 ) ), '31' ),
@@ -147,6 +160,11 @@ final class WrittenObjectIdsTest extends TestCase {
 		foreach ( array( new PostsPack(), new PagesPack(), new SitePack(), new CommercePack() ) as $pack ) {
 			foreach ( $pack->verbMap() as $verb => $tier ) {
 				if ( $tier < 1 ) {
+					continue;
+				}
+				// K5 breadth verbs that write a comment, user, option or menu item
+				// (not a post) track nothing by design: see ToolBreadthTest.
+				if ( ToolBreadth::UNTRACKED === $pack->objectIdKey( $verb ) ) {
 					continue;
 				}
 				$this->assertTrue(

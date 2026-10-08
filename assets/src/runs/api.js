@@ -105,7 +105,7 @@ export function startRun( goal, config, pack, model, followUpOf ) {
 /**
  * admin-ajax `senroflux_setup_panel` (0.3 S11, "refresh on window focus"):
  * the setup panel's markup plus the whole start state — `{ html,
- * start_enabled, packs, unavailable_packs }`. Same nonce/capability as every
+ * start_enabled, packs, unavailable_packs, steps }`. Same nonce/capability as every
  * other write, but read-only: it changes nothing on the server.
  */
 export function fetchSetupState( config ) {
@@ -113,14 +113,13 @@ export function fetchSetupState( config ) {
 }
 
 /**
- * admin-ajax `senroflux_dismiss_agent_safety_check` (0.3 S11): record the
- * current user's dismissal of the Agent Safety advisory (user meta, never
- * re-armed). The nonce is the one the panel's own Dismiss button carries
- * (`data-nonce`), not the screen's run nonce. Returns `{ html }`, the panel
- * without the advisory.
+ * admin-ajax `senroflux_setup_brief` (guided setup, step "site brief"): save
+ * the site brief (`action` 'save', with `brief`) or skip the step ('skip').
+ * Administrators only; a too-long brief is refused, never truncated. Returns
+ * `{ steps }`, the refreshed setup steps.
  */
-export function dismissAdvisory( config ) {
-	return postAjax( 'senroflux_dismiss_agent_safety_check', {}, config );
+export function saveSetupBrief( action, brief, config ) {
+	return postAjax( 'senroflux_setup_brief', { brief_action: action, brief }, config );
 }
 
 /** admin-ajax `senroflux_tick`: {run_id, step_count, resume?} -> RunState. */

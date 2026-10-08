@@ -20,7 +20,10 @@ use Specflux\SenroFlux\Packs\Pack;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\Runner;
 use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SenroFlux\Run\SiteBrief;
 use Specflux\SenroFlux\Setup\Checks;
+use Specflux\SenroFlux\Setup\Onboarding;
+use Specflux\SenroFlux\Setup\SetupCheck;
 use Specflux\SenroFlux\Tools\ToolExecutor;
 use SenroFluxJsonResponse;
 use WP_Error;
@@ -32,6 +35,12 @@ final class RunsScreenTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
+		Onboarding::setPluginProbe(
+			array(
+				'installed' => array(),
+				'active'    => array(),
+			)
+		);
 		$GLOBALS['senroflux_test_user_caps']       = array( 'manage_options' => true );
 		$GLOBALS['senroflux_test_current_user_id'] = 1;
 		$GLOBALS['senroflux_test_actions']         = array();
@@ -54,6 +63,7 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
+		Onboarding::setPluginProbe( null );
 		remove_all_filters( 'senroflux_runs_capability' );
 		remove_all_filters( 'senroflux_packs' );
 		remove_all_filters( 'senroflux_can_tick' );
@@ -722,7 +732,7 @@ final class RunsScreenTest extends TestCase {
 		$this->assertContains( 'admin_post_senroflux_approval_decision', $hooks );
 		$this->assertContains( 'admin_init', $hooks, 'the old tools.php URL redirect (S10)' );
 		$this->assertContains( 'wp_ajax_senroflux_setup_panel', $hooks );
-		$this->assertContains( 'wp_ajax_senroflux_dismiss_agent_safety_check', $hooks );
+		$this->assertContains( 'wp_ajax_senroflux_setup_brief', $hooks );
 		$this->assertContains( 'admin_notices', $hooks, 'the one-time activation notice (S10)' );
 	}
 
@@ -842,9 +852,14 @@ final class RunsScreenTest extends TestCase {
 	// S11: the setup panel (harness checks) + its two ajax endpoints
 	// ------------------------------------------------------------------
 
-	public function test_the_setup_panel_shows_the_agent_safety_advisory_when_absent(): void {
+	/**
+	 * Guided setup: the server-rendered container no longer repeats what the
+	 * React "Set up SenroFlux" panel says (no provider, no SenroGate), so a
+	 * missing provider and an absent SenroGate render no server notice.
+	 */
+	public function test_the_server_panel_no_longer_duplicates_the_react_steps(): void {
 		Plugin::set_dependency_probe( false );
-		Checks::setProviderProbe( true );
+		Checks::setProviderProbe( false );
 		$this->seedRunnerGraph();
 		$this->registerFakePack( true );
 
@@ -852,11 +867,10 @@ final class RunsScreenTest extends TestCase {
 		( new RunsScreen() )->render();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'senroflux-setup-panel', $html );
-		$this->assertStringContainsString( 'data-check-id="senroflux/agent-safety"', $html );
-		$this->assertStringContainsString( 'senroflux-dismiss-check', $html );
-		// The React root still mounts below a merely-advisory panel (S11:
-		// "a blocked screen still renders the empty state").
+		$this->assertStringContainsString( 'id="senroflux-setup-panel"', $html );
+		$this->assertStringNotContainsString( 'senroflux-setup-check', $html );
+		$this->assertStringNotContainsString( 'data-check-id', $html );
+		// The React root still mounts (S11: a blocked screen still renders).
 		$this->assertStringContainsString( '<div id="senroflux-runs-root">', $html );
 
 		Checks::setProviderProbe( true ); // suite-wide default, not the real registry.
@@ -867,26 +881,20 @@ final class RunsScreenTest extends TestCase {
 	 * every `.wrap .notice` element below the page heading EXCEPT
 	 * `.notice.inline` — a setup-check notice left as a bare `.notice`
 	 * therefore gets pulled out of `#senroflux-setup-panel` and shown a
-	 * second time (and, after the panel's own focus refresh re-renders it,
-	 * a stale relocated copy can linger).
+	 * second time. The advisory notices still rendered server-side keep it.
 	 */
 	public function test_setup_check_notices_carry_the_inline_class_core_skips(): void {
-		Plugin::set_dependency_probe( false );
-		Checks::setProviderProbe( true );
-		$this->seedRunnerGraph();
-		$this->registerFakePack( true );
+		$advisory = new SetupCheck( 'senroflux/passthrough-review', SetupCheck::ADVISORY, false, 'Review abilities.', null, null, 'Ask an administrator.', 'x' );
+		$method   = new \ReflectionMethod( RunsScreen::class, 'renderSetupCheckNotice' );
+		$method->setAccessible( true );
 
-		ob_start();
-		( new RunsScreen() )->render();
-		$html = (string) ob_get_clean();
+		$html = (string) $method->invoke( new RunsScreen(), $advisory, 1 );
 
 		$this->assertMatchesRegularExpression(
 			'/<div class="notice [^"]*\binline\b[^"]*senroflux-setup-check"/',
 			$html,
 			'a setup-check notice must carry the "inline" class core skips when relocating .wrap .notice elements'
 		);
-
-		Checks::setProviderProbe( true ); // suite-wide default, not the real registry.
 	}
 
 	public function test_the_setup_panel_is_empty_when_everything_is_clear(): void {
@@ -924,6 +932,141 @@ final class RunsScreenTest extends TestCase {
 		}
 	}
 
+	public function test_handle_setup_panel_and_assets_carry_the_guided_setup_steps(): void {
+		Checks::setProviderProbe( true );
+		$_POST = array( 'nonce' => 'x' );
+
+		try {
+			( new RunsScreen() )->handleSetupPanel();
+			$this->fail( 'handleSetupPanel() returned without sending a JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertSame( 'provider', $json->data['steps'][0]['id'] );
+		}
+
+		( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
+		$steps = $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['setupSteps'] ?? null;
+		$this->assertIsArray( $steps );
+		$this->assertSame( 'provider', $steps[0]['id'] );
+	}
+
+	public function test_the_old_agent_safety_plugin_beside_senrogate_blocks_start(): void {
+		$both = array( 'agent-safety/agent-safety.php', 'senrogate/senrogate.php' );
+		Onboarding::setPluginProbe(
+			array(
+				'installed' => $both,
+				'active'    => $both,
+			)
+		);
+
+		try {
+			( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
+			$this->assertTrue( $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['startBlocked'] );
+
+			$_POST = array( 'nonce' => 'x' );
+			try {
+				( new RunsScreen() )->handleSetupPanel();
+				$this->fail( 'no JSON response.' );
+			} catch ( SenroFluxJsonResponse $json ) {
+				$this->assertFalse( $json->data['start_enabled'] );
+			}
+
+			Onboarding::setPluginProbe(
+				array(
+					'installed' => $both,
+					'active'    => array( 'senrogate/senrogate.php' ),
+				)
+			);
+			( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
+			$this->assertFalse( $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['startBlocked'] );
+		} finally {
+			Onboarding::setPluginProbe(
+				array(
+					'installed' => array(),
+					'active'    => array(),
+				)
+			);
+		}
+	}
+
+	public function test_handle_setup_brief_saves_and_skips_for_an_admin(): void {
+		$GLOBALS['senroflux_test_options'] = array();
+
+		$_POST = array(
+			'nonce'        => 'x',
+			'brief_action' => 'save',
+			'brief'        => 'We sell bicycles in Leeds.',
+		);
+		try {
+			( new RunsScreen() )->handleSetupBrief();
+			$this->fail( 'no JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertTrue( $json->success );
+		}
+		$this->assertSame( 'We sell bicycles in Leeds.', SiteBrief::get() );
+
+		$GLOBALS['senroflux_test_options'] = array();
+		$_POST                             = array(
+			'nonce'        => 'x',
+			'brief_action' => 'skip',
+		);
+		try {
+			( new RunsScreen() )->handleSetupBrief();
+			$this->fail( 'no JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertTrue( $json->success );
+		}
+		$this->assertSame( 1, get_option( Onboarding::BRIEF_SKIPPED_OPTION ) );
+		$this->assertSame( '', SiteBrief::get(), 'skipping writes no brief' );
+	}
+
+	public function test_handle_setup_brief_refuses_an_over_long_brief_and_an_unknown_action(): void {
+		$GLOBALS['senroflux_test_options'] = array();
+
+		$_POST = array(
+			'nonce'        => 'x',
+			'brief_action' => 'save',
+			'brief'        => str_repeat( 'a', SiteBrief::MAX_CHARS + 1 ),
+		);
+		try {
+			( new RunsScreen() )->handleSetupBrief();
+			$this->fail( 'no JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertFalse( $json->success );
+			$this->assertSame( 400, $json->status );
+		}
+		$this->assertSame( '', SiteBrief::get(), 'nothing was saved' );
+
+		$_POST = array(
+			'nonce'        => 'x',
+			'brief_action' => 'wipe',
+		);
+		try {
+			( new RunsScreen() )->handleSetupBrief();
+			$this->fail( 'no JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertFalse( $json->success );
+		}
+	}
+
+	public function test_handle_setup_brief_refuses_without_manage_options(): void {
+		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['senroflux_test_options']   = array();
+		$_POST                               = array(
+			'nonce'        => 'x',
+			'brief_action' => 'save',
+			'brief'        => 'Sneaky.',
+		);
+
+		try {
+			( new RunsScreen() )->handleSetupBrief();
+			$this->fail( 'no JSON response.' );
+		} catch ( SenroFluxJsonResponse $json ) {
+			$this->assertFalse( $json->success );
+			$this->assertSame( 403, $json->status );
+		}
+		$this->assertSame( '', SiteBrief::get() );
+	}
+
 	public function test_handle_setup_panel_refuses_without_the_capability(): void {
 		remove_all_filters( 'senroflux_runs_capability' );
 		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
@@ -938,25 +1081,6 @@ final class RunsScreenTest extends TestCase {
 			$this->assertFalse( $json->success );
 			$this->assertSame( 403, $json->status );
 		}
-	}
-
-	public function test_handle_dismiss_agent_safety_check_records_the_dismissal_for_the_current_user_only(): void {
-		Plugin::set_dependency_probe( false );
-		$GLOBALS['senroflux_test_current_user_id'] = 5;
-
-		$screen = new RunsScreen();
-		$_POST  = array( 'nonce' => 'x' );
-
-		try {
-			$screen->handleDismissAgentSafetyCheck();
-			$this->fail( 'handleDismissAgentSafetyCheck() returned without sending a JSON response.' );
-		} catch ( SenroFluxJsonResponse $json ) {
-			$this->assertTrue( $json->success );
-			$this->assertStringNotContainsString( 'senroflux/agent-safety', $json->data['html'] );
-		}
-
-		$this->assertTrue( Checks::agentSafetyDismissedBy( 5 ) );
-		$this->assertFalse( Checks::agentSafetyDismissedBy( 6 ), 'a different user is unaffected' );
 	}
 
 	/**

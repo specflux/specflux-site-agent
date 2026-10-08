@@ -284,11 +284,31 @@ final class Plugin {
 						1
 					);
 				}
+
+				// One role binding that unlocks pages, posts and site together.
+				$bundle = \Specflux\SenroFlux\Packs\ContentBundle::agentSafetyPack( $pages_pack, $posts_pack, $site_pack );
+				if ( null !== $bundle ) {
+					add_filter(
+						'agent_safety_pack_registry',
+						static function ( $registry ) use ( $bundle ) {
+							if ( is_object( $registry ) && method_exists( $registry, 'register' ) ) {
+								$registry->register( $bundle );
+							}
+
+							return $registry;
+						},
+						10,
+						1
+					);
+				}
 			},
 			5
 		);
 		\Specflux\SenroFlux\Packs\Content\Abilities::boot();
 		\Specflux\SenroFlux\Packs\Content\Media::boot();
+		// 0.5 K5: tool breadth — post list/trash/revisions/meta and comment moderation.
+		\Specflux\SenroFlux\Packs\Content\PostTools::boot();
+		\Specflux\SenroFlux\Packs\Content\Comments::boot();
 		// S19: the commerce pack's own polyfill abilities. Registered
 		// unconditionally like the other registrars above — `wp_register_ability`
 		// is harmless with WooCommerce absent, and the pack itself never
@@ -310,6 +330,11 @@ final class Plugin {
 		\Specflux\SenroFlux\Packs\Site\FrontPage::boot();
 		// 0.3 quality feature 5: the style-variation abilities.
 		\Specflux\SenroFlux\Packs\Site\Style::boot();
+		// 0.5 K5: users, settings, classic menus, plugin and theme inventory.
+		\Specflux\SenroFlux\Packs\Site\Users::boot();
+		\Specflux\SenroFlux\Packs\Site\Settings::boot();
+		\Specflux\SenroFlux\Packs\Site\Menus::boot();
+		\Specflux\SenroFlux\Packs\Site\Inventory::boot();
 		// 0.3 S4: the pages pack's vocabulary/validator plug into the shared
 		// content registrar under its own slug — `list-patterns` and the write
 		// abilities resolve THIS pair only while a 'pages' run is ticking (see
@@ -378,11 +403,10 @@ final class Plugin {
 			( new \Specflux\SenroFlux\Admin\PrivacyPolicy() )->register();
 		}
 
-		// 0.3 S3: Agent Safety's absence is advisory only — runs still start
-		// and tick without it, in GateMode::BuiltIn. S11 places that advisory
-		// SOLELY in the Runs-screen setup panel (Checks::agentSafetyAdvisory(),
-		// rendered by RunsScreen::renderSetupPanel()) — never as a notice on
-		// every admin screen (defect 3: it used to show on the Dashboard too).
+		// 0.3 S3: Agent Safety's absence is not fail-closed — runs still start
+		// and tick without it, in GateMode::BuiltIn. The "install SenroGate"
+		// nudge lives only in the guided setup panel ({@see Onboarding}), never
+		// as a notice on every admin screen (defect 3).
 	}
 
 	/**
@@ -518,7 +542,7 @@ final class Plugin {
 		// Start button. Advisory checks (Agent Safety) never block. This runs
 		// for BOTH the direct-allow and pack paths; a pack's OWN checks are
 		// asked separately below, by preflight().
-		$harness_failure = Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) );
+		$harness_failure = Checks::firstBlockingFailure( Checks::harnessChecks() );
 		if ( null !== $harness_failure ) {
 			return new WP_Error(
 				$harness_failure->errorCode(),

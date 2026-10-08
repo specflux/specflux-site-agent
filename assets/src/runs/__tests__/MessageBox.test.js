@@ -233,7 +233,7 @@ describe( 'MessageBox blocked by a blocking setup check (stage 22b, J1)', () => 
 		render( <MessageBox state="idle" onSend={ jest.fn() } packs={ packs } startBlocked /> );
 
 		const start = screen.getByRole( 'button', { name: 'Start run' } );
-		const hint = screen.getByText( /Finish the setup notice above/ );
+		const hint = screen.getByText( /Finish the setup steps above/ );
 		expect( start.getAttribute( 'aria-describedby' ) ).toBe( hint.id );
 	} );
 
@@ -245,7 +245,7 @@ describe( 'MessageBox blocked by a blocking setup check (stage 22b, J1)', () => 
 		rerender( <MessageBox state="idle" onSend={ jest.fn() } packs={ packs } startBlocked={ false } /> );
 
 		expect( screen.getByRole( 'button', { name: 'Start run' } ) ).not.toBeDisabled();
-		expect( screen.queryByText( /Finish the setup notice above/ ) ).not.toBeInTheDocument();
+		expect( screen.queryByText( /Finish the setup steps above/ ) ).not.toBeInTheDocument();
 	} );
 } );
 
@@ -299,5 +299,146 @@ describe( 'MessageBox follow-up mode (stage 22b, S20)', () => {
 
 		expect( screen.getByPlaceholderText( 'Describe what you want done…' ) ).toHaveValue( '' );
 		expect( screen.getByRole( 'button', { name: 'Start run' } ) ).toBeDisabled();
+	} );
+} );
+
+describe( 'MessageBox Start tooltip names the blocking setup step', () => {
+	const onePack = [ { name: 'pages', label: 'pages' } ];
+	const startButton = () => screen.getByRole( 'button', { name: 'Start run' } );
+	const type = () =>
+		fireEvent.change( screen.getByPlaceholderText( 'Describe what you want done…' ), { target: { value: 'Write a page' } } );
+
+	it( 'names the model step when no provider is connected', () => {
+		render(
+			<MessageBox
+				state="idle"
+				onSend={ jest.fn() }
+				packs={ onePack }
+				startBlocked
+				blockingStep={ { number: 1, title: 'Connect a model' } }
+			/>
+		);
+		type();
+
+		const reason = 'Finish step 1, Connect a model, in Set up SenroFlux to start a run.';
+		expect( startButton() ).toBeDisabled();
+		expect( startButton() ).toHaveAttribute( 'title', reason );
+		expect( startButton().parentElement ).toHaveAttribute( 'title', reason );
+		expect( screen.getByText( reason ) ).toBeInTheDocument();
+	} );
+
+	it( 'names the old-plugin step', () => {
+		render(
+			<MessageBox
+				state="idle"
+				onSend={ jest.fn() }
+				packs={ onePack }
+				startBlocked
+				blockingStep={ { number: 3, title: 'Clear the old Agent Safety plugin' } }
+			/>
+		);
+		type();
+
+		expect( startButton() ).toHaveAttribute(
+			'title',
+			'Finish step 3, Clear the old Agent Safety plugin, in Set up SenroFlux to start a run.'
+		);
+	} );
+
+	it( 'names the role step when no pack is runnable', () => {
+		render(
+			<MessageBox
+				state="idle"
+				onSend={ jest.fn() }
+				packs={ [] }
+				blockingStep={ { number: 4, title: 'Allow SenroFlux for your role' } }
+			/>
+		);
+		type();
+
+		expect( startButton() ).toBeDisabled();
+		expect( startButton() ).toHaveAttribute(
+			'title',
+			'Finish step 4, Allow SenroFlux for your role, in Set up SenroFlux to start a run.'
+		);
+	} );
+
+	it( 'has no tooltip when Start is only waiting for text or a pack choice', () => {
+		render(
+			<MessageBox
+				state="idle"
+				onSend={ jest.fn() }
+				packs={ [
+					{ name: 'pages', label: 'pages' },
+					{ name: 'site', label: 'site' },
+				] }
+				blockingStep={ null }
+			/>
+		);
+		type();
+
+		expect( startButton() ).toBeDisabled();
+		expect( startButton() ).not.toHaveAttribute( 'title' );
+	} );
+
+	it( 'has no tooltip when a blocking step exists but Start is not blocked and a pack is runnable', () => {
+		render(
+			<MessageBox state="idle" onSend={ jest.fn() } packs={ onePack } blockingStep={ { number: 1, title: 'Connect a model' } } />
+		);
+		type();
+
+		expect( startButton() ).not.toBeDisabled();
+		expect( startButton() ).not.toHaveAttribute( 'title' );
+	} );
+} );
+
+describe( 'MessageBox starter goal prefill', () => {
+	const packs = [
+		{ name: 'pages', label: 'pages' },
+		{ name: 'posts', label: 'posts' },
+	];
+
+	it( 'fills the goal box and picks the goal\'s pack without starting a run', () => {
+		const onSend = jest.fn();
+		render( <MessageBox state="idle" onSend={ onSend } packs={ packs } prefill={ { key: 1, text: 'Write an About page', pack: 'posts' } } /> );
+
+		expect( screen.getByPlaceholderText( 'Describe what you want done…' ) ).toHaveValue( 'Write an About page' );
+		expect( screen.getByLabelText( 'Pack' ) ).toHaveValue( 'posts' );
+		expect( onSend ).not.toHaveBeenCalled();
+	} );
+
+	it( 'refills on a new pick but keeps later typing otherwise', () => {
+		const { rerender } = render(
+			<MessageBox state="idle" onSend={ jest.fn() } packs={ packs } prefill={ { key: 1, text: 'First', pack: 'pages' } } />
+		);
+		const box = screen.getByPlaceholderText( 'Describe what you want done…' );
+		fireEvent.change( box, { target: { value: 'First, edited' } } );
+
+		rerender( <MessageBox state="idle" onSend={ jest.fn() } packs={ packs } prefill={ { key: 1, text: 'First', pack: 'pages' } } /> );
+		expect( box ).toHaveValue( 'First, edited' );
+
+		rerender( <MessageBox state="idle" onSend={ jest.fn() } packs={ packs } prefill={ { key: 2, text: 'Second', pack: 'pages' } } /> );
+		expect( box ).toHaveValue( 'Second' );
+	} );
+} );
+
+describe( 'MessageBox pack-unavailable notices name the fix', () => {
+	it( 'merges packs refused for the same reason into one line', () => {
+		const reason = 'Bind Administrator to SenroFlux content in SenroGate (Tools > Agent Capability Packs), then come back here.';
+		render(
+			<MessageBox
+				state="idle"
+				onSend={ jest.fn() }
+				packs={ [] }
+				unavailablePacks={ [
+					{ name: 'pages', reason },
+					{ name: 'posts', reason },
+					{ name: 'site', reason },
+				] }
+			/>
+		);
+
+		expect( screen.getByText( `pages, posts, site packs unavailable: ${ reason }` ) ).toBeInTheDocument();
+		expect( screen.getAllByRole( 'listitem' ) ).toHaveLength( 1 );
 	} );
 } );

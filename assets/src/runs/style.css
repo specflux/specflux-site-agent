@@ -1265,3 +1265,166 @@
 .senroflux-diff-proposed {
 	min-inline-size: 0;
 }
+
+/* Guided setup: the "Set up SenroFlux" panel above the app. Logical
+ * properties only; colours follow wp-admin's own notice palette. */
+.senroflux-setup-steps {
+	margin-block: 0 12px;
+	padding: 12px 16px;
+	border: 1px solid #dcdcde;
+	border-inline-start: 4px solid #2271b1;
+	background: #fff;
+}
+
+.senroflux-setup-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.senroflux-setup-head h2 {
+	margin: 0 0 8px;
+	font-size: 16px;
+}
+
+.senroflux-setup-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.senroflux-setup-step {
+	padding-block: 10px;
+	border-block-start: 1px solid #f0f0f1;
+}
+
+.senroflux-setup-step--pass {
+	color: #50575e;
+}
+
+.senroflux-setup-step--fail {
+	border-inline-start: 3px solid #d63638;
+	padding-inline-start: 10px;
+}
+
+.senroflux-setup-step--todo {
+	color: #1d2327;
+}
+
+.senroflux-setup-step-head {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.senroflux-setup-status {
+	padding: 1px 6px;
+	border-radius: 3px;
+	background: #f0f0f1;
+	font-size: 12px;
+}
+
+.senroflux-setup-step--fail .senroflux-setup-status {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.senroflux-setup-step--pass .senroflux-setup-status {
+	background: #edfaef;
+	color: #1a4d2e;
+}
+
+.senroflux-setup-why,
+.senroflux-setup-detail,
+.senroflux-setup-ask {
+	margin: 4px 0;
+}
+
+.senroflux-setup-detail,
+.senroflux-setup-error {
+	color: #8a2424;
+}
+
+.senroflux-setup-ask {
+	font-style: italic;
+}
+
+.senroflux-setup-action {
+	margin-block-start: 4px;
+}
+
+.senroflux-setup-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-block: 6px;
+}
+
+.senroflux-setup-card {
+	flex: 1 1 220px;
+	padding: 8px 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.senroflux-setup-card p {
+	margin: 4px 0;
+}
+
+.senroflux-setup-card--current {
+	border-color: #2271b1;
+}
+
+.senroflux-setup-current {
+	color: #1a4d2e;
+	font-weight: 600;
+}
+
+.senroflux-setup-brief label {
+	display: block;
+	font-weight: 600;
+}
+
+.senroflux-setup-brief-input {
+	width: 100%;
+}
+
+.senroflux-setup-count {
+	margin: 2px 0;
+	color: #50575e;
+	font-size: 12px;
+}
+
+.senroflux-setup-goals {
+	margin: 6px 0 0;
+	padding-inline-start: 18px;
+}
+
+.senroflux-setup-collapsed {
+	margin-block: 0 12px;
+}
+
+.senroflux-setup-chip {
+	padding: 2px 10px;
+	border: 1px solid #1a4d2e;
+	border-radius: 12px;
+	background: #edfaef;
+	color: #1a4d2e;
+	cursor: pointer;
+}
+
+.senroflux-setup-firstrun {
+	margin-block-start: 8px;
+	padding: 8px 12px;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+.senroflux-setup-firstrun p {
+	margin: 0;
+}
+
+.senroflux-start-wrap {
+	display: inline-block;
+}

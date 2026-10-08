@@ -83,6 +83,10 @@ function flattenModelChoices( modelChoices ) {
  * @param {Object}   [props.modelChoices] `senrofluxRunsConfig.modelChoices` — `{ providerId: { name, models: [{id, name}] } }`, only configured providers.
  * @param {boolean}  [props.startBlocked] A blocking setup check fails (no model provider, J1): Start is disabled
  *                                        and says why. The server-rendered setup panel above the app names the fix.
+ * @param {?{number:number,title:string}} [props.blockingStep] The guided-setup step that fails and blocks starting
+ *                                        (first failing blocking step). Start's tooltip and the line under it name it.
+ * @param {?{key:number,text:string,pack:string}} [props.prefill] A starter goal picked in the setup panel: fills the
+ *                                        goal box (and picks its pack when runnable). `key` changes on every pick.
  * @param {?{runId:number,pack:string}} [props.followUp] A follow-up run is being started from a finished run
  *                                        (0.3 S20): the pack is locked to that run's, and `onSend` gets its id as a 4th argument.
  * @param {Function} [props.onCancelFollowUp] `() => void` — leaves follow-up mode.
@@ -95,11 +99,23 @@ export default function MessageBox( {
 	unavailablePacks,
 	modelChoices,
 	startBlocked,
+	blockingStep,
+	prefill,
 	followUp,
 	onCancelFollowUp,
 } ) {
 	const packList = Array.isArray( packs ) ? packs : [];
-	const unavailableList = Array.isArray( unavailablePacks ) ? unavailablePacks : [];
+	// Packs refused for the same reason read as one line ("pages, posts, site
+	// packs unavailable: Bind Administrator to SenroFlux content in SenroGate…").
+	const unavailableList = [];
+	( Array.isArray( unavailablePacks ) ? unavailablePacks : [] ).forEach( ( p ) => {
+		const same = unavailableList.find( ( entry ) => entry.reason === p.reason );
+		if ( same ) {
+			same.names.push( p.name );
+		} else {
+			unavailableList.push( { reason: p.reason, names: [ p.name ] } );
+		}
+	} );
 	const [ text, setText ] = useState( initialText || '' );
 	const [ pack, setPack ] = useState( () => ( 1 === packList.length ? packList[ 0 ].name : '' ) );
 	const [ modelIndex, setModelIndex ] = useState( AUTOMATIC_VALUE );
@@ -145,6 +161,34 @@ export default function MessageBox( {
 		}
 	}, [ followUp ] );
 
+	// A starter goal from the setup panel fills the box. It never starts a run.
+	const prefillKey = prefill ? prefill.key : null;
+	useEffect( () => {
+		if ( ! prefill ) {
+			return;
+		}
+		setText( prefill.text );
+		if ( prefill.pack && packList.some( ( p ) => p.name === prefill.pack ) ) {
+			setPack( prefill.pack );
+		}
+		if ( textRef.current ) {
+			textRef.current.focus();
+		}
+		// Only a new pick (its key) refills; later edits to the box are kept.
+	}, [ prefillKey ] );
+
+	// Why Start is greyed, named by the setup step to finish. Only when a
+	// setup step is the cause: a blocking check, or no runnable pack at all.
+	const blockedBySetup = Boolean( blockingStep ) && ( Boolean( startBlocked ) || 0 === packList.length );
+	const blockedReason = blockedBySetup
+		? sprintf(
+				/* translators: 1: setup step number. 2: setup step title, e.g. "Connect a model". */
+				__( 'Finish step %1$d, %2$s, in Set up SenroFlux to start a run.', 'senroflux' ),
+				blockingStep.number,
+				blockingStep.title
+		  )
+		: '';
+
 	const placeholder =
 		'parked' === state
 			? __( 'Answer the card above to continue', 'senroflux' )
@@ -188,13 +232,16 @@ export default function MessageBox( {
 		<div className="senroflux-message-box-wrap">
 			{ unavailableList.length > 0 && (
 				<ul className="senroflux-unavailable-packs">
-					{ unavailableList.map( ( p ) => (
-						<li key={ p.name }>
+					{ unavailableList.map( ( entry ) => (
+						<li key={ entry.names.join( ',' ) }>
 							{ sprintf(
-								/* translators: 1: a capability pack's name, e.g. "widgets". 2: why it can't run right now. */
-								__( '%1$s pack unavailable: %2$s', 'senroflux' ),
-								p.name,
-								p.reason
+								1 === entry.names.length
+									? /* translators: 1: a capability pack's name, e.g. "widgets". 2: why it can't run right now, and how to fix it. */
+									  __( '%1$s pack unavailable: %2$s', 'senroflux' )
+									: /* translators: 1: capability pack names, e.g. "pages, posts". 2: why they can't run right now, and how to fix it. */
+									  __( '%1$s packs unavailable: %2$s', 'senroflux' ),
+								entry.names.join( ', ' ),
+								entry.reason
 							) }
 						</li>
 					) ) }
@@ -274,19 +321,23 @@ export default function MessageBox( {
 						}
 					} }
 				/>
-				<button
-					type="button"
-					className="button button-primary"
-					disabled={ startDisabled || '' === text.trim() }
-					aria-describedby={ startBlocked ? 'senroflux-start-blocked' : undefined }
-					onClick={ submit }
-				>
-					{ __( 'Start run', 'senroflux' ) }
-				</button>
+				{ /* A disabled button swallows hover, so the tooltip rides on a wrapper too. */ }
+				<span className="senroflux-start-wrap" title={ blockedReason || undefined }>
+					<button
+						type="button"
+						className="button button-primary"
+						disabled={ startDisabled || '' === text.trim() }
+						title={ blockedReason || undefined }
+						aria-describedby={ startBlocked || blockedBySetup ? 'senroflux-start-blocked' : undefined }
+						onClick={ submit }
+					>
+						{ __( 'Start run', 'senroflux' ) }
+					</button>
+				</span>
 			</div>
-			{ startBlocked && (
+			{ ( startBlocked || blockedBySetup ) && (
 				<p id="senroflux-start-blocked" className="senroflux-start-blocked">
-					{ __( 'Finish the setup notice above to start a run.', 'senroflux' ) }
+					{ blockedReason || __( 'Finish the setup steps above to start a run.', 'senroflux' ) }
 				</p>
 			) }
 		</div>

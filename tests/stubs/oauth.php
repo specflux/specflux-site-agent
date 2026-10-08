@@ -53,12 +53,6 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 		return true;
 	}
 }
-if ( ! function_exists( 'wp_get_current_user' ) ) {
-	/** Not used by the OAuth code under test. */
-	function wp_get_current_user(): object {
-		return (object) array( 'ID' => get_current_user_id() );
-	}
-}
 
 if ( ! class_exists( 'SenroFlux_Test_Header_Response', false ) ) {
 	/** REST response double that records headers. */

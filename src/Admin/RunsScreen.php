@@ -34,8 +34,10 @@ use Specflux\SenroFlux\Packs\Pack;
 use Specflux\SenroFlux\Packs\PackRegistry;
 use Specflux\SenroFlux\Run\Report;
 use Specflux\SenroFlux\Run\RunStatus;
+use Specflux\SenroFlux\Run\SiteBrief;
 use Specflux\SenroFlux\Run\StepKind;
 use Specflux\SenroFlux\Setup\Checks;
+use Specflux\SenroFlux\Setup\Onboarding;
 use Specflux\SenroFlux\Setup\SetupCheck;
 use Specflux\SenroFlux\Tools\VerbTier;
 use WP_Error;
@@ -95,7 +97,7 @@ class RunsScreen {
 		add_action( 'admin_post_senroflux_approval_decision', array( $this, 'handleApprovalDecision' ) );
 		add_action( 'admin_post_senroflux_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
 		add_action( 'wp_ajax_senroflux_setup_panel', array( $this, 'handleSetupPanel' ) );
-		add_action( 'wp_ajax_senroflux_dismiss_agent_safety_check', array( $this, 'handleDismissAgentSafetyCheck' ) );
+		add_action( 'wp_ajax_senroflux_setup_brief', array( $this, 'handleSetupBrief' ) );
 		add_action( 'admin_notices', array( $this, 'maybeRenderActivationNotice' ) );
 		add_filter( ConsumerPolicy::FILTER, array( $this, 'registerAdminConsumer' ) );
 	}
@@ -313,6 +315,9 @@ class RunsScreen {
 				// above the app names the fix; this is the app's half. It is
 				// refreshed on window focus through `senroflux_setup_panel`.
 				'startBlocked'       => $this->startBlocked( get_current_user_id() ),
+				// Guided setup: the "Set up SenroFlux" panel's steps, computed
+				// per viewer ({@see Onboarding::steps()}) and refreshed on focus.
+				'setupSteps'         => Onboarding::steps( get_current_user_id() ),
 				// Per-run model choice: only currently-configured
 				// providers/models, grouped by provider — the new-run form's
 				// select and the run header's display name both read this
@@ -445,7 +450,14 @@ class RunsScreen {
 	 * here: they already shape {@see runnablePacks()}.
 	 */
 	protected function startBlocked( int $user_id ): bool {
-		return null !== Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) );
+		if ( null !== Checks::firstBlockingFailure( Checks::harnessChecks() ) ) {
+			return true;
+		}
+
+		// The old Agent Safety plugin beside SenroGate: the panel's step 3.
+		// The binding step (4) needs no entry here; it already empties
+		// {@see runnablePacks()}.
+		return Onboarding::oldPluginBlocks( $user_id );
 	}
 
 	/**
@@ -867,27 +879,24 @@ class RunsScreen {
 	}
 
 	// ------------------------------------------------------------------
-	// Setup panel (0.3 S11): the harness's own checks (provider, Agent
-	// Safety advisory). Pack-level checks (`<pack>/capability`,
+	// Setup panel (0.3 S11): the harness's own checks (provider, ability review). Pack-level checks (`<pack>/capability`,
 	// `<pack>/binding`) render inline in the new-run form's pack picker
 	// (stage 8's per-pack preflight notice) — this panel is the harness's
 	// half of the SAME evaluator ({@see Checks}).
 	// ------------------------------------------------------------------
 
 	/**
-	 * The setup panel markup: one notice per harness check that is either
-	 * failing (blocking) or showing (advisory, undismissed). Empty string
-	 * when everything is clear.
+	 * The server-rendered notices above the app: ADVISORY harness checks only
+	 * (an ability awaiting review). Every blocking check, and the "install
+	 * SenroGate" nudge, now lives in the React "Set up SenroFlux" panel
+	 * ({@see Onboarding}), so the same problem is never said twice. Always
+	 * emits the `#senroflux-setup-panel` container, which the screen swaps on
+	 * window focus.
 	 */
 	private function renderSetupPanel( int $user_id ): string {
-		$checks = Checks::harnessChecks( $user_id );
-		if ( array() === $checks ) {
-			return '';
-		}
-
 		$html = '<div id="senroflux-setup-panel" class="senroflux-setup-panel">';
-		foreach ( $checks as $check ) {
-			if ( $check->isBlocking() && $check->passed() ) {
+		foreach ( Checks::harnessChecks() as $check ) {
+			if ( $check->isBlocking() ) {
 				continue;
 			}
 			$html .= $this->renderSetupCheckNotice( $check, $user_id );
@@ -897,7 +906,7 @@ class RunsScreen {
 		return $html;
 	}
 
-	/** One check's notice: an error for a failing blocking check, a dismissible warning for the advisory. */
+	/** One check's notice: an error for a failing blocking check, a warning for an advisory. */
 	private function renderSetupCheckNotice( SetupCheck $check, int $user_id ): string {
 		$css_class = $check->isBlocking() ? 'notice-error' : 'notice-warning';
 		$message   = $check->messageFor( $user_id );
@@ -911,10 +920,6 @@ class RunsScreen {
 			);
 		}
 
-		// Only the Agent Safety advisory carries a dismissal (S11: "per-user
-		// dismissal in user meta"); no other check gets a Dismiss button.
-		$dismiss = 'senroflux/agent-safety' === $check->id() ? $this->renderDismissButton() : '';
-
 		// The "inline" class matters as much as "notice" does: it keeps the
 		// warning/error look core's own CSS gives `.notice`, but core's own
 		// admin JS skips `.notice.inline` when it relocates every other
@@ -922,21 +927,11 @@ class RunsScreen {
 		// it, one copy of every check ends up duplicated outside this panel,
 		// and a stale copy can linger there after the panel re-renders.
 		return sprintf(
-			'<div class="notice %1$s inline senroflux-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p>%5$s</div>',
+			'<div class="notice %1$s inline senroflux-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p></div>',
 			esc_attr( $css_class ),
 			esc_attr( $check->id() ),
 			esc_html( $message ),
-			$link, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
-			$dismiss // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr()/esc_html() below.
-		);
-	}
-
-	/** The Agent Safety advisory's own "Dismiss" button (nonce-protected, current user only). */
-	private function renderDismissButton(): string {
-		return sprintf(
-			'<p><button type="button" class="button senroflux-dismiss-check" data-nonce="%s">%s</button></p>',
-			esc_attr( wp_create_nonce( 'senroflux_dismiss_agent_safety_check' ) ),
-			esc_html__( 'Dismiss', 'senroflux' )
+			$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
 		);
 	}
 
@@ -956,12 +951,13 @@ class RunsScreen {
 		$pack     = sanitize_text_field( wp_unslash( $_POST['pack'] ?? '' ) );
 		$pack_obj = '' !== $pack ? PackRegistry::fromFilters()->get( $pack ) : null;
 
-		$checks         = null !== $pack_obj ? Checks::forPack( $pack_obj, $user_id ) : Checks::harnessChecks( $user_id );
-		$start_disabled = null !== Checks::firstBlockingFailure( $checks );
+		$checks         = null !== $pack_obj ? Checks::forPack( $pack_obj, $user_id ) : Checks::harnessChecks();
+		$start_disabled = null !== Checks::firstBlockingFailure( $checks ) || Onboarding::oldPluginBlocks( $user_id );
 
 		wp_send_json_success(
 			array(
 				'html'              => $this->renderSetupPanel( $user_id ),
+				'steps'             => Onboarding::steps( $user_id ),
 				'start_enabled'     => ! $start_disabled,
 				// Stage 22b: the whole start state, so the screen refreshes
 				// the pack picker (and its "unavailable" notices) on focus
@@ -973,19 +969,37 @@ class RunsScreen {
 	}
 
 	/**
-	 * admin-ajax: dismiss the Agent Safety advisory for the CURRENT user only
-	 * (S11: per-user dismissal, never re-arms).
+	 * admin-ajax: save or skip the site brief from the setup panel's step 5.
+	 * Same nonce as every Runs-screen write; `manage_options` like the
+	 * suggestion card's Save. A too-long brief is refused, never truncated.
 	 */
-	public function handleDismissAgentSafetyCheck(): void {
-		check_ajax_referer( 'senroflux_dismiss_agent_safety_check', 'nonce' );
+	public function handleSetupBrief(): void {
+		check_ajax_referer( 'senroflux_run', 'nonce' );
 
-		if ( ! current_user_can( $this->capability() ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ), 403 );
 		}
 
-		Checks::dismissAgentSafetyFor( get_current_user_id() );
+		$action = sanitize_key( wp_unslash( $_POST['brief_action'] ?? '' ) );
 
-		wp_send_json_success( array( 'html' => $this->renderSetupPanel( get_current_user_id() ) ) );
+		if ( 'skip' === $action ) {
+			update_option( Onboarding::BRIEF_SKIPPED_OPTION, 1, false );
+		} elseif ( 'save' === $action ) {
+			$saved = SiteBrief::set( sanitize_textarea_field( wp_unslash( $_POST['brief'] ?? '' ) ) );
+			if ( is_wp_error( $saved ) ) {
+				wp_send_json_error(
+					array(
+						'code'    => $saved->get_error_code(),
+						'message' => $saved->get_error_message(),
+					),
+					400
+				);
+			}
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Unknown action.', 'senroflux' ) ), 400 );
+		}
+
+		wp_send_json_success( array( 'steps' => Onboarding::steps( get_current_user_id() ) ) );
 	}
 
 	/**

@@ -137,7 +137,7 @@ final class PluginProviderCheckTest extends TestCase {
 		Checks::setProviderProbe( false );
 		$this->seedRunnerGraph();
 
-		$panel_failure = Checks::firstBlockingFailure( Checks::harnessChecks( 1 ) );
+		$panel_failure = Checks::firstBlockingFailure( Checks::harnessChecks() );
 		$this->assertNotNull( $panel_failure );
 
 		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'senroflux/read-content' ) );

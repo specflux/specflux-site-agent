@@ -397,11 +397,27 @@ if ( ! function_exists( 'get_terms' ) ) {
 
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	/**
-	 * Test knob: $GLOBALS['senroflux_test_post_types'][$type] = a `cap` object
-	 * (create_posts, publish_posts). Unset means "unknown type" (null), which
-	 * callers answer with the core defaults.
+	 * Test knob: $GLOBALS['senroflux_test_post_types'][$type] = a type object
+	 * with a `cap` object (create_posts, publish_posts), or a bare
+	 * show_in_rest flag (post-tools.php seeds post/page that way). Unset means
+	 * "unknown type" (null), which callers answer with the core defaults.
 	 */
 	function get_post_type_object( string $post_type ): ?object {
-		return $GLOBALS['senroflux_test_post_types'][ $post_type ] ?? null;
+		$type = $GLOBALS['senroflux_test_post_types'][ $post_type ] ?? null;
+		if ( null === $type || is_object( $type ) ) {
+			return $type;
+		}
+
+		// A bare show_in_rest flag: expand it with core's default caps.
+		return (object) array(
+			'name'         => $post_type,
+			'show_in_rest' => (bool) $type,
+			'cap'          => (object) array(
+				'edit_posts'    => 'edit_' . $post_type . 's',
+				'create_posts'  => 'edit_' . $post_type . 's',
+				'publish_posts' => 'publish_' . $post_type . 's',
+				'delete_posts'  => 'delete_' . $post_type . 's',
+			),
+		);
 	}
 }

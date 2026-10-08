@@ -15,6 +15,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tests\Packs\Pages;
 
+use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
 use Specflux\SenroFlux\Packs\Pages\PagesPack;
 use Specflux\SenroFlux\Plugin;
@@ -63,7 +64,7 @@ final class PagesPackTest extends TestCase {
 	}
 
 	public function test_roles_map_to_templates(): void {
-		$roles = ( new PagesPack() )->roles();
+		$roles = BreadthFilter::strip( ( new PagesPack() )->roles() );
 
 		$this->assertSame(
 			array(
@@ -109,7 +110,7 @@ final class PagesPackTest extends TestCase {
 				'pages/update-live'        => 2,
 				'pages/publish'            => 2,
 			),
-			( new PagesPack() )->verbMap()
+			BreadthFilter::strip( ( new PagesPack() )->verbMap() )
 		);
 	}
 
@@ -277,7 +278,7 @@ final class PagesPackTest extends TestCase {
 				'stock-search' => 'upload_files',
 				'stock-import' => 'upload_files',
 			),
-			$pack->roleCapabilities()
+			BreadthFilter::strip( $pack->roleCapabilities() )
 		);
 	}
 
@@ -398,7 +399,7 @@ final class PagesPackTest extends TestCase {
 				'senroflux/stock-image-search' => 0,
 				'senroflux/stock-image-import' => 1,
 			),
-			( new PagesPack() )->agentSafetyVerbMap()
+			BreadthFilter::strip( ( new PagesPack() )->agentSafetyVerbMap() )
 		);
 	}
 }
