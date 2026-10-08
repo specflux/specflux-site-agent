@@ -53,10 +53,10 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 	}
 
 	/** Register a DCR client and return its id. */
-	protected function dcr( array $uris = array( self::CALLBACK ), string $ip = '203.0.113.9' ): string {
+	protected function dcr( array $uris = array( self::CALLBACK ), string $ip = '203.0.113.9', string $name = 'Claude' ): string {
 		$result = Registration::handle(
 			array(
-				'client_name'   => 'Claude',
+				'client_name'   => $name,
 				'redirect_uris' => $uris,
 			),
 			$ip

@@ -140,6 +140,9 @@ final class Store {
 		if ( ! is_array( $data ) ) {
 			return null;
 		}
+		// Single use relies on delete_transient() returning true for exactly one caller. That holds on the
+		// database path and on compliant persistent object caches (atomic per-key delete); an object-cache
+		// drop-in whose delete always returns true would weaken it.
 		if ( true !== delete_transient( $key ) ) {
 			return null; // Someone else redeemed it first.
 		}
@@ -319,6 +322,8 @@ final class Store {
 		$hash = OAuth::hash( $token );
 		$rec  = self::peekRefresh( $token );
 		if ( null !== $rec ) {
+			// Same assumption as consumeCode(): delete_option() returns true for exactly one caller
+			// (atomic DELETE; compliant object caches). An always-true drop-in would weaken rotation.
 			if ( true !== delete_option( 'senroflux_or_' . $hash ) ) {
 				return array(
 					'status' => 'reuse',

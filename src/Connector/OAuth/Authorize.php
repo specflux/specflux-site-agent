@@ -214,17 +214,20 @@ final class Authorize {
 		if ( RedirectUri::isLoopback( $redirect ) ) {
 			$notes .= '<p class="warn">' . esc_html( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.' ) . '</p>';
 		}
-		if ( $client->document ) {
-			$notes .= '<p class="meta">' . esc_html( 'App identity published at: ' . (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) . '</p>';
-		}
-
 		$write = $can_write
 			? '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html( 'Read and write' ) . '</strong> ' . esc_html( 'It can also ask to change things. Changes still follow this site\'s approval rules.' ) . '</label>'
 			: '';
 
+		// A dynamically registered client picks its own name, so the name proves nothing: say so, and
+		// make the redirect host (which the client cannot choose freely) the dominant line.
+		$identity = $client->document
+			? '<p class="meta">' . esc_html( 'Verified by ' . (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) . '</p>'
+			: '<p class="meta unverified">' . esc_html( 'Not verified. This name was chosen by the app itself.' ) . '</p>';
+
 		$body = '<h1>' . esc_html( 'Connect ' . $client->name . '?' ) . '</h1>'
+			. $identity
+			. '<div class="host">' . esc_html( 'After you approve, you\'ll be sent to' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
 			. '<p>' . esc_html( 'This app is asking to use SenroFlux on this site.' ) . '</p>'
-			. '<div class="host">' . esc_html( 'After you choose, you will be sent back to' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
 			. $notes
 			. '<form method="post" action="' . esc_url( OAuth::authorizeUrl() ) . '">'
 			. $hidden
@@ -261,7 +264,7 @@ final class Authorize {
 			. 'body{font:16px/1.5 system-ui,sans-serif;background:#f0f0f1;color:#1d2327;margin:0;padding:2rem}'
 			. 'main{max-width:30rem;margin:0 auto;background:#fff;padding:2rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.15)}'
 			. 'h1{font-size:1.3rem;margin-top:0}.host{background:#f6f7f7;border:1px solid #c3c4c7;padding:.75rem 1rem;border-radius:6px;margin:1rem 0}'
-			. '.host strong{font-size:1.15rem}.warn{background:#fcf0f1;border-left:4px solid #d63638;padding:.5rem .75rem}.meta{color:#50575e;font-size:.9rem}'
+			. '.host strong{font-size:1.5rem;word-break:break-all}.warn{background:#fcf0f1;border-left:4px solid #d63638;padding:.5rem .75rem}.meta{color:#50575e;font-size:.9rem}'
 			. 'fieldset{border:0;padding:0;margin:1rem 0}label{display:block;margin:.5rem 0}'
 			. 'button{font:inherit;padding:.5rem 1.25rem;border-radius:4px;border:1px solid #2271b1;background:#fff;color:#2271b1;cursor:pointer}'
 			. 'button.primary{background:#2271b1;color:#fff}</style></head><body><main>' . $body . '</main></body></html>';
