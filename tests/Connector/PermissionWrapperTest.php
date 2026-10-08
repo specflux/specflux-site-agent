@@ -180,4 +180,42 @@ final class PermissionWrapperTest extends ConnectorTestCase {
 
 		$this->assertSame( $args, Gate::wrapAbilityArgs( $args, 'senroflux/write-thing' ) );
 	}
+
+	public function test_a_call_senrogate_parks_is_logged_as_waiting_once(): void {
+		$this->serve( Connection::SCOPE_READ_WRITE );
+
+		$result = ( $this->wrapped( 'senroflux/write-thing', new WP_Error( 'approval_required', 'needs human approval' ) ) )( array() );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$rows = $this->rows();
+		$this->assertCount( 1, $rows );
+		$this->assertSame( ActivityLog::WAITING, $rows[0]['outcome'] );
+	}
+
+	public function test_another_inner_error_is_logged_as_refused(): void {
+		$this->serve( Connection::SCOPE_READ_WRITE );
+
+		( $this->wrapped( 'senroflux/write-thing', new WP_Error( 'agent_safety_denied', 'no' ) ) )( array() );
+
+		$rows = $this->rows();
+		$this->assertCount( 1, $rows );
+		$this->assertSame( ActivityLog::REFUSED, $rows[0]['outcome'] );
+	}
+
+	public function test_an_inner_false_is_logged_as_refused(): void {
+		$this->serve( Connection::SCOPE_READ_WRITE );
+
+		$this->assertFalse( ( $this->wrapped( 'senroflux/write-thing', false ) )( array() ) );
+
+		$rows = $this->rows();
+		$this->assertCount( 1, $rows );
+		$this->assertSame( ActivityLog::REFUSED, $rows[0]['outcome'] );
+	}
+
+	public function test_an_inner_pass_leaves_logging_to_the_pre_call_hook(): void {
+		$this->serve( Connection::SCOPE_READ_WRITE );
+
+		$this->assertTrue( ( $this->wrapped( 'senroflux/write-thing', true ) )( array() ) );
+		$this->assertSame( array(), $this->rows() );
+	}
 }

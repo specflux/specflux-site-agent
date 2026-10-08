@@ -26,6 +26,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Gate {
 
+	/** SenroGate's WP_Error code for a call parked for human approval (Verdict::error()). */
+	private const SENROGATE_PENDING_CODE = 'approval_required';
+
 	/** Is this the adapter server SenroFlux created? */
 	private static function isOurs( mixed $server ): bool {
 		return is_object( $server ) && method_exists( $server, 'get_server_id' ) && Connector::SERVER_ID === $server->get_server_id();
@@ -271,7 +274,21 @@ final class Gate {
 				return $refusal;
 			}
 
-			return $inner( ...$input );
+			$result = $inner( ...$input );
+
+			// A governance plugin (SenroGate) refused or parked the call here;
+			// the adapter then errors before `mcp_adapter_pre_tool_call`, so
+			// preCall() never sees it. Log it once, now. Calls that pass
+			// are logged by preCall() instead.
+			if ( $result instanceof WP_Error || false === $result ) {
+				ActivityLog::record(
+					$connection,
+					$name,
+					$result instanceof WP_Error && self::SENROGATE_PENDING_CODE === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
+				);
+			}
+
+			return $result;
 		};
 
 		return $args;
