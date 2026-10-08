@@ -30,18 +30,22 @@ abstract class ConnectorTestCase extends TestCase {
 	protected const UUID = '11111111-2222-3333-4444-555555555555';
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['senroflux_test_options']         = array();
-		$GLOBALS['senroflux_test_user_meta']       = array();
-		$GLOBALS['senroflux_test_abilities']       = array();
-		$GLOBALS['senroflux_test_user_caps']       = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array();
-		$GLOBALS['senroflux_test_current_user_id'] = self::USER;
-		$GLOBALS['senroflux_test_app_password']    = null;
-		$GLOBALS['senroflux_test_multisite']       = false;
-		$GLOBALS['senroflux_test_bad_nonce']       = false;
-		$GLOBALS['senroflux_test_redirect']        = '';
-		$_POST                                     = array();
+		$GLOBALS['senroflux_test_filters']               = array();
+		$GLOBALS['senroflux_test_options']               = array();
+		$GLOBALS['senroflux_test_user_meta']             = array();
+		$GLOBALS['senroflux_test_abilities']             = array();
+		$GLOBALS['senroflux_test_user_caps']             = array( 'manage_options' => true );
+		$GLOBALS['senroflux_test_user_caps_by_id']       = array();
+		$GLOBALS['senroflux_test_current_user_id']       = self::USER;
+		$GLOBALS['senroflux_test_app_password']          = null;
+		$GLOBALS['senroflux_test_multisite']             = false;
+		$GLOBALS['senroflux_test_bad_nonce']             = false;
+		$GLOBALS['senroflux_test_redirect']              = '';
+		$GLOBALS['senroflux_test_app_passwords']         = array();
+		$GLOBALS['senroflux_test_users']                 = array( self::USER => (object) array( 'user_login' => 'editor' ) );
+		$GLOBALS['senroflux_test_remote_post_responses'] = array();
+		$GLOBALS['senroflux_test_remote_post_calls']     = array();
+		$_POST = array();
 		Plugin::reset();
 		Plugin::set_dependency_probe( false ); // Built-in mode unless a test says otherwise.
 		Connector::set_adapter_version_probe( null );

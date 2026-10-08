@@ -49,6 +49,8 @@ require_once __DIR__ . '/stubs/ai-client-prompt-builder.php';
 require_once __DIR__ . '/stubs/admin.php';
 // HTTP-surface shims (S9/S17): wp_send_json_*, check_ajax_referer, REST doubles.
 require_once __DIR__ . '/stubs/http.php';
+// Connect screen (K3): application passwords and an offline wp_remote_post().
+require_once __DIR__ . '/stubs/connector-admin.php';
 // Connector (K1): fake mcp-adapter adapter/server/tool (never the real class names).
 require_once __DIR__ . '/stubs/mcp-adapter.php';
 require_once __DIR__ . '/Connector/ConnectorTestCase.php';
