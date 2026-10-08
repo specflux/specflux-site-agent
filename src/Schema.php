@@ -41,9 +41,10 @@ final class Schema {
 	 * `model_id` — the per-run model pin, pinned at start() and
 	 * never updated afterwards, like `gate_mode`; both NULL means automatic
 	 * selection, which is also what every older row reads back as; 9 adds the
-	 * connector activity table (0.4 K4).
+	 * connector activity table (0.4 K4); 10 widens its `uuid` to fit an OAuth
+	 * connection's `oauth:<grant id>` (38 characters).
 	 */
-	public const DB_VERSION = 9;
+	public const DB_VERSION = 10;
 
 	/**
 	 * Runs table name for this site.
@@ -282,7 +283,7 @@ final class Schema {
 			array(
 				'id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT',
 				'created_at DATETIME NOT NULL',
-				'uuid VARCHAR(36) NOT NULL',
+				'uuid VARCHAR(64) NOT NULL',
 				'user_id BIGINT(20) UNSIGNED NOT NULL',
 				'ability VARCHAR(191) NOT NULL',
 				'outcome VARCHAR(16) NOT NULL',

@@ -13,8 +13,10 @@ use Specflux\SenroFlux\Connector\ActivityLog;
 use Specflux\SenroFlux\Connector\Connection;
 use Specflux\SenroFlux\Connector\ConnectScreen;
 use Specflux\SenroFlux\Connector\Gate;
+use Specflux\SenroFlux\Connector\OAuth\Store;
 use Specflux\SenroFlux\Connector\RateLimit;
 use Specflux\SenroFlux\Run\Clock;
+use Specflux\SenroFlux\Schema;
 use WP_Error;
 
 final class ActivityTest extends ConnectorTestCase {
@@ -190,5 +192,13 @@ final class ActivityTest extends ConnectorTestCase {
 		$this->assertStringContainsString( self::WRITE, $html );
 		$this->assertStringContainsString( 'Waiting for approval', $html );
 		$this->assertStringNotContainsString( 'hunter2', $html );
+	}
+
+	public function test_the_uuid_column_fits_an_oauth_connection_id(): void {
+		// OAuth connections are keyed 'oauth:<grant id>'; MySQL refuses a longer value, so the row is lost.
+		$this->assertSame( 1, preg_match( '/uuid VARCHAR\((\d+)\)/', Schema::activityColumns(), $m ) );
+		$grant = Store::createGrant( self::USER, 'client', 'senroflux:read', 'http://example.test/wp-json/senroflux/mcp', 'hash' );
+
+		$this->assertGreaterThanOrEqual( strlen( 'oauth:' . $grant ), (int) $m[1] );
 	}
 }

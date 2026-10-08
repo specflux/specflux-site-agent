@@ -25,7 +25,7 @@ final class SchemaUpgradeTest extends TestCase {
 	}
 
 	public function test_schema_version_is_five(): void {
-		$this->assertSame( 9, Schema::DB_VERSION );
+		$this->assertSame( 10, Schema::DB_VERSION );
 	}
 
 	/** @return list<string> The 0.2-0.3 columns every current runs table carries. */
@@ -65,13 +65,13 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 9, get_option( 'senroflux_db_version' ) );
+		$this->assertSame( 10, get_option( 'senroflux_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['senroflux_test_dbdelta_queries'], 'runs + steps + activity statements' );
 	}
 
 	public function test_maybe_upgrade_is_idempotent_at_the_current_version(): void {
 		$db = new wpdb();
-		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 9;
+		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 10;
 
 		Schema::maybe_upgrade( $db );
 
@@ -84,7 +84,7 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 9, get_option( 'senroflux_db_version' ) );
+		$this->assertSame( 10, get_option( 'senroflux_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['senroflux_test_dbdelta_queries'] );
 
 		// dbDelta is idempotent by design: re-running the SAME statements is
@@ -137,9 +137,19 @@ final class SchemaUpgradeTest extends TestCase {
 		$this->assertFalse( get_option( 'senroflux_legacy_run_watermark', false ) );
 	}
 
-	public function test_an_already_current_install_writes_no_watermark_and_does_not_rerun_dbdelta(): void {
+	public function test_a_version_9_install_reruns_dbdelta_to_widen_the_activity_uuid(): void {
 		$db = new wpdb();
 		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 9;
+
+		Schema::maybe_upgrade( $db );
+
+		$this->assertSame( 10, get_option( 'senroflux_db_version' ) );
+		$this->assertStringContainsString( 'uuid VARCHAR(64) NOT NULL', implode( "\n", $GLOBALS['senroflux_test_dbdelta_queries'] ) );
+	}
+
+	public function test_an_already_current_install_writes_no_watermark_and_does_not_rerun_dbdelta(): void {
+		$db = new wpdb();
+		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 10;
 		$db->varQueue = array( 5, 99 );
 
 		Schema::maybe_upgrade( $db );
