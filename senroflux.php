@@ -117,6 +117,9 @@ function senroflux_deactivate(): void {
 	if ( class_exists( \Specflux\SenroFlux\Connector\ActivityLog::class ) ) {
 		\Specflux\SenroFlux\Connector\ActivityLog::unschedule();
 	}
+	if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+		wp_clear_scheduled_hook( 'senroflux_oauth_gc' );
+	}
 }
 
 // Runtime autoloader for THIS PLUGIN'S OWN CLASSES ONLY (S2): deliberately a

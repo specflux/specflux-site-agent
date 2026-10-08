@@ -38,6 +38,10 @@ foreach ( array(
 	'senroflux_setup_brief_skipped',
 	'senroflux_use_theme_patterns',
 	'senroflux_uninstall_delete_data',
+	'senroflux_connector_enabled',
+	'senroflux_connector_approvals',
+	'senroflux_oauth_clients',
+	'senroflux_oauth_grants',
 ) as $senroflux_option ) {
 	delete_option( $senroflux_option );
 }
@@ -49,13 +53,21 @@ foreach ( array( 'senroflux_activation_notice', 'senroflux_image_generation_unav
 // Per-user and per-run keys: one pending-brief transient per user id, one tick
 // lock per run id. Transients live in the options table unless an external
 // object cache holds them (those expire on their own).
-foreach ( array( 'senroflux_brief_pending_', 'senroflux_lock_' ) as $senroflux_prefix ) {
+foreach ( array( 'senroflux_brief_pending_', 'senroflux_lock_', 'senroflux_rl_', 'senroflux_oauth_rl_', 'senroflux_oauth_cimd_', 'senroflux_oac_', 'senroflux_oau_', 'senroflux_oat_' ) as $senroflux_prefix ) {
 	foreach ( array( '_transient_', '_transient_timeout_' ) as $senroflux_kind ) {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- opt-in uninstall removing this plugin's own prefixed transients; nothing to cache.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $senroflux_kind . $senroflux_prefix ) . '%' ) );
 	}
 }
 
+// Connector approval grants and OAuth clients, grants, refresh tokens and
+// rotated-token tombstones: one option per hash or id.
+foreach ( array( 'senroflux_cxa_', 'senroflux_oc_', 'senroflux_og_', 'senroflux_or_', 'senroflux_ox_' ) as $senroflux_prefix ) {
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- opt-in uninstall removing this plugin's own prefixed options; nothing to cache.
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $senroflux_prefix ) . '%' ) );
+}
+
 delete_metadata( 'user', 0, 'senroflux_agent_safety_check_dismissed', '', true );
+delete_metadata( 'user', 0, 'senroflux_connections', '', true );
 delete_post_meta_by_key( '_senroflux_stock_source_id' );
 delete_post_meta_by_key( '_senroflux_style_variation' );
