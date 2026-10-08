@@ -3,7 +3,7 @@
 Agent runs for WordPress. SenroFlux runs a resumable, multi-step agent loop inside the
 logged-in WordPress session: Abilities are the tools, the WordPress AI Client is the model
 layer, and every governed call is gated and approved by
-[Agent Tollgate](https://github.com/stephen1204paul/agent-tollgate) when it's active, or by
+[SenroGate](https://github.com/stephen1204paul/senrogate) when it's active, or by
 SenroFlux's own built-in minimal gate when it isn't.
 
 First consumer: [Specflux Marketing Analytics Chat](https://wordpress.org/plugins/specflux-marketing-analytics-chat/).
@@ -15,12 +15,12 @@ Current version: `0.3.0` (see `Version:` in `senroflux.php`).
 - WordPress 7.0+ (Abilities API + AI Client)
 - PHP 8.1+
 - Not supported on multisite — the plugin refuses to activate.
-- **Agent Safety** is optional. When active, every governed call goes through its gate
+- **SenroGate** is optional. When active, every governed call goes through its gate
   (packs, tiers, approvals) and audit trail. When it isn't, SenroFlux falls back to a
   built-in minimal gate (0.3 S3): every call that changes the site still pauses for a
   person to approve it on SenroFlux's own Runs screen; reads do not. A run's gate mode is
   resolved once at `start()` and pinned — if the environment's mode changes mid-run
-  (Agent Safety gets activated/deactivated), the run fails cleanly with
+  (SenroGate gets activated/deactivated), the run fails cleanly with
   `gate_mode_changed` instead of silently switching enforcement.
 
 ## Consumers
@@ -39,7 +39,7 @@ no Jetpack Autoloader manifests, so nothing in its dev dependencies can shadow
 WordPress core's bundled AI Client SDK on a site where another plugin boots the
 Jetpack Autoloader. `senroflux_ungoverned` is reserved for two narrower cases: no
 WordPress session, and a third-party HTTP consumer starting or ticking a
-built-in-mode run — not "Agent Safety is missing," which is now a supported
+built-in-mode run — not "SenroGate is missing," which is now a supported
 configuration (see Requirements above).
 
 ## Bundled packs
@@ -74,7 +74,7 @@ One goal, pursued on behalf of one logged-in user, across many model turns and t
    at most one model turn plus that turn's tool calls. `$resume` is `null` except when
    resolving a park (see below); its shape must match the run's current park kind or the
    call fails with `resume_mismatch`.
-3. Every tool call passes the run's gate first — Agent Safety's (packs → tiers →
+3. Every tool call passes the run's gate first — SenroGate's (packs → tiers →
    approvals) when it's active, or SenroFlux's own built-in minimal gate otherwise (see
    "Requirements" above). A run can also stop mid-tick at three other points:
    - **Approval park** (`status = awaiting_approval`) - a governed call the gate blocked;
@@ -85,7 +85,7 @@ One goal, pursued on behalf of one logged-in user, across many model turns and t
    - **Plan park** (`status = awaiting_plan`) - the model called `senroflux/propose-plan`;
      resolve with `[ 'plan' => [ 'action' => 'accept' | 'accept_preapprove' | 'veto', 'note' => '...' ] ]`.
      `accept_preapprove` only succeeds when the `senroflux_enable_preapproval` filter returns
-     `true` and Agent Safety exposes a grants API; otherwise it 400s with `preapproval_disabled`.
+     `true` and SenroGate exposes a grants API; otherwise it 400s with `preapproval_disabled`.
      Once a plan is accepted, its verb set is a fence: a Tier ≥ 1 call outside it is refused
      (`not_in_plan`) without being counted against the tool-call budget, and a call made before
      any plan is accepted is refused with `plan_required`, also uncounted.
@@ -99,7 +99,7 @@ One goal, pursued on behalf of one logged-in user, across many model turns and t
    remaining questions, and a run whose last plan was vetoed at `max_plans` cancels with
    `plan_rejected`.
 
-Runs are session-bound and never execute in the background. In Agent Safety mode, its audit
+Runs are session-bound and never execute in the background. In SenroGate mode, its audit
 chain - not the steps table - is the authoritative record of what executed; in built-in mode
 the steps table and run report are authoritative.
 
@@ -137,7 +137,7 @@ if ( function_exists( 'senroflux' )
     // Resolve a park (shape must match the current park kind):
     $state = senroflux()->tick( $run_id, $step_count, array( 'action' => 'approve' ) );
 
-    // Approvals are Agent Safety's, not SenroFlux's:
+    // Approvals are SenroGate's, not SenroFlux's:
     agent_safety()->approvals()->approve( $approval_id, get_current_user_id() );
 }
 ```
@@ -167,10 +167,10 @@ accepts `allow`: the tool surface for HTTP-started runs comes entirely from the
 | `senroflux_system_instruction` | No | Post-process the fully rendered system-instruction string before it is sent to the model. |
 | `senroflux_skills_max_tokens` | No | Ceiling (rough token estimate) on the rendered skills block; exceeding it fails `start()`/preflight with `skills_too_large`. |
 | `senroflux_tool_result_max_bytes` | No | Payload cap handed back to the model per tool result (default 32 KB). |
-| `senroflux_verb_map` | No | `(array $map, int $run_id)` - contributes to Agent Safety's verb classification for a run's calls. |
+| `senroflux_verb_map` | No | `(array $map, int $run_id)` - contributes to SenroGate's verb classification for a run's calls. |
 | `senroflux_can_tick` | No (Consumer rules) | `(bool $can, Run $run)` - who may advance a run (defaults to owner-only). |
 | `senroflux_runs_capability` | No | Capability required to view/use the Runs screen (default `manage_options`). |
-| `senroflux_enable_preapproval` | No | Off by default. When `true` (and Agent Safety exposes a grants API), a plan may be accepted with pre-approval, minting Agent Safety grants for its Tier-2 verbs. |
+| `senroflux_enable_preapproval` | No | Off by default. When `true` (and SenroGate exposes a grants API), a plan may be accepted with pre-approval, minting SenroGate grants for its Tier-2 verbs. |
 | `senroflux_packs` | Yes | Registers packs beyond the bundled pages pack. |
 | `senroflux_model_gateway` | No | Swap the model seam (testing/hosting edge cases). |
 | `senroflux_language_name` | No | `(array $names)` - display names used when telling the model the conversation/content locale. |
@@ -227,11 +227,11 @@ A fixture third-party pack built from only the symbols above lives in
 resolves its roles and gets its verbs tiered, and that it references no non-`@api` SenroFlux
 symbol.
 
-The bundled pages pack also registers itself with **Agent Safety**, via
+The bundled pages pack also registers itself with **SenroGate**, via
 `agent_safety_pack_registry`, `agent_safety_governed_namespaces` (adds its `senroflux/`
 polyfill namespace) and `agent_safety_verb_map` (classifies its create/update/publish calls
 by tier), and hooks `agent_safety_approval_summary` (`PublishSummary`) to render a
-human-readable preview on the Agent Safety pending-approvals screen for its Tier-2 publish
+human-readable preview on the SenroGate pending-approvals screen for its Tier-2 publish
 calls.
 
 ## Pages pack refusal codes
@@ -272,7 +272,7 @@ The tier-parity tests diff SenroFlux against SenroGate's copies. With the variab
 1. `update-post` is draft-state edits only now; publishing goes through the new
    `publish-post` ability.
 2. `create-post` refuses on a slug/title collision (`slug_collision`, 409).
-3. Agent Safety is optional, not required - a built-in gate takes over when it's absent.
+3. SenroGate is optional, not required - a built-in gate takes over when it's absent.
 4. A run still parked or running under 0.2 at the moment of upgrade fails on its next tick
    ("started under 0.2") instead of continuing.
 5. `GET /runs` (and the Runs screen's list) is scoped to what the current viewer may see or

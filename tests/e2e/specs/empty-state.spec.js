@@ -17,7 +17,7 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 		await assertNoSeriousA11y( page, 'empty state' );
 	} );
 
-	// Guided setup replaced the dismissible "install Agent Tollgate" notice: the
+	// Guided setup replaced the dismissible "install SenroGate" notice: the
 	// choice of approval mode is step 2 of the Set up SenroFlux panel, and a
 	// finished setup collapses to a chip. (Updated without a wp-env run.)
 	test( 'the setup panel offers SenroGate as a choice instead of a dismissible notice', async ( { page } ) => {
