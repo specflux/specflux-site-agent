@@ -123,7 +123,7 @@ final class Discovery {
 		if ( ! Connector::enabled() || ! isset( $_SERVER['REQUEST_URI'] ) || ! is_string( $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
-		$path = (string) wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed, compared, never output.
+		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed, compared, never output.
 		$home = rtrim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
 		if ( '' !== $home && str_starts_with( $path, $home . '/' ) ) {
 			$path = substr( $path, strlen( $home ) );
@@ -136,7 +136,7 @@ final class Discovery {
 			return;
 		}
 
-		$method = isset( $_SERVER['REQUEST_METHOD'] ) && is_string( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( $_SERVER['REQUEST_METHOD'] ) : 'GET'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) && is_string( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		self::send( $doc, $method );
 	}
 

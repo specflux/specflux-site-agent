@@ -130,7 +130,7 @@ final class OAuth {
 
 	/** The client address as PHP saw it. Proxies: override with the `senroflux_oauth_client_ip` filter. */
 	public static function clientIp(): string {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		/** Filters the address DCR rate limits use (only filter this behind a trusted reverse proxy). `@internal`. */
 		$ip = apply_filters( 'senroflux_oauth_client_ip', $ip );
 

@@ -105,9 +105,13 @@ final class ActivityLog {
 
 		$table = Schema::activityTable( $wpdb );
 		$limit = max( 1, min( 200, $limit ) );
-		$where = null === $uuid ? '' : $wpdb->prepare( ' WHERE uuid = %s', $uuid ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared on this line.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- trusted table name and an int limit.
-		$rows = $wpdb->get_results( "SELECT * FROM {$table}{$where} ORDER BY created_at DESC, id DESC LIMIT {$limit}", ARRAY_A );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the activity table is this plugin's own; a bounded read.
+		if ( null === $uuid ) {
+			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY created_at DESC, id DESC LIMIT %d', $table, $limit ), ARRAY_A );
+		} else {
+			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE uuid = %s ORDER BY created_at DESC, id DESC LIMIT %d', $table, $uuid, $limit ), ARRAY_A );
+		}
+		// phpcs:enable
 
 		$out = array();
 		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
@@ -131,7 +135,7 @@ final class ActivityLog {
 		}
 
 		$cutoff = gmdate( 'Y-m-d H:i:s', Clock::now() - self::RETENTION_DAYS * DAY_IN_SECONDS );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- trusted table name; the cutoff is bound by prepare().
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . Schema::activityTable( $wpdb ) . ' WHERE created_at < %s', $cutoff ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the activity table is this plugin's own; the table is an identifier and the cutoff is bound.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', Schema::activityTable( $wpdb ), $cutoff ) );
 	}
 }

@@ -36,8 +36,8 @@ final class FluentCartLookup {
 		}
 
 		$name = $wpdb->prefix . $table;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- a fixed FluentCart table name (never user input), one row by id, read once per approval card or report row.
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$name} WHERE id = %d", $id ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $name is $wpdb->prefix plus a fixed FluentCart table literal from the callers (never user input), bound as %i; one row by id, read once per approval card or report row.
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $name, $id ), ARRAY_A );
 
 		return is_array( $row ) ? $row : null;
 	}

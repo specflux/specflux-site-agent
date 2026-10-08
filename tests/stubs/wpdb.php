@@ -68,6 +68,8 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			}
 
 			$quoted = (string) preg_replace( '/(?<!%)%s/', "'%s'", $query );
+			// `%i` (identifier) renders bare here; real wpdb backtick-quotes it.
+			$quoted = (string) preg_replace( '/(?<!%)%i/', '%s', $quoted );
 
 			return vsprintf( $quoted, $args );
 		}

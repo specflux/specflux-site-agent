@@ -935,16 +935,17 @@ final class FluentCartAbilities {
 		$from_sql = gmdate( 'Y-m-d H:i:s', $from_ts );
 		$to_sql   = gmdate( 'Y-m-d H:i:s', $to_ts );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fixed FluentCart table names (never user input); a read-only aggregate nothing else exposes.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table names are $wpdb->prefix plus a constant, bound as %i identifiers; a read-only aggregate nothing else exposes.
 		$rows         = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT currency, COUNT(*) AS order_count, COALESCE(SUM(total_paid), 0) AS gross, COALESCE(SUM(total_refund), 0) AS refunds FROM {$orders} WHERE total_paid > 0 AND created_at >= %s AND created_at <= %s GROUP BY currency",
+				'SELECT currency, COUNT(*) AS order_count, COALESCE(SUM(total_paid), 0) AS gross, COALESCE(SUM(total_refund), 0) AS refunds FROM %i WHERE total_paid > 0 AND created_at >= %s AND created_at <= %s GROUP BY currency',
+				$orders,
 				$from_sql,
 				$to_sql
 			),
 			ARRAY_A
 		);
-		$out_of_stock = $wpdb->get_results( "SELECT DISTINCT post_id FROM {$variants} WHERE stock_status = 'out-of-stock' ORDER BY post_id ASC LIMIT 50", ARRAY_A );
+		$out_of_stock = $wpdb->get_results( $wpdb->prepare( "SELECT DISTINCT post_id FROM %i WHERE stock_status = 'out-of-stock' ORDER BY post_id ASC LIMIT 50", $variants ), ARRAY_A );
 		// phpcs:enable
 
 		$count    = 0;

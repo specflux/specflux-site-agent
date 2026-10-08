@@ -116,7 +116,7 @@ final class Bearer {
 		$header = '';
 		foreach ( array( 'HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION' ) as $key ) {
 			if ( isset( $_SERVER[ $key ] ) && is_string( $_SERVER[ $key ] ) && '' !== $_SERVER[ $key ] ) {
-				$header = $_SERVER[ $key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- matched against a strict pattern below.
+				$header = wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- matched against a strict pattern below.
 				break;
 			}
 		}
@@ -148,7 +148,7 @@ final class Bearer {
 		if ( 'index.php' !== ( $GLOBALS['pagenow'] ?? '' ) ) {
 			return false;
 		}
-		$script = isset( $_SERVER['SCRIPT_FILENAME'] ) && is_string( $_SERVER['SCRIPT_FILENAME'] ) ? $_SERVER['SCRIPT_FILENAME'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared, never used.
+		$script = isset( $_SERVER['SCRIPT_FILENAME'] ) && is_string( $_SERVER['SCRIPT_FILENAME'] ) ? wp_unslash( $_SERVER['SCRIPT_FILENAME'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared, never used.
 		if ( '' === $script || 'index.php' !== basename( $script ) ) {
 			return false;
 		}
@@ -175,7 +175,7 @@ final class Bearer {
 		$route = '/' . Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE;
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- routing decision only; the value is compared, never used.
-		$param = $_GET['rest_route'] ?? $_POST['rest_route'] ?? null;
+		$param = isset( $_GET['rest_route'] ) ? wp_unslash( $_GET['rest_route'] ) : ( isset( $_POST['rest_route'] ) ? wp_unslash( $_POST['rest_route'] ) : null );
 		// phpcs:enable
 		if ( null !== $param ) {
 			return is_string( $param ) && rtrim( $param, '/\\' ) === $route;
@@ -185,7 +185,7 @@ final class Bearer {
 		if ( ! str_ends_with( $resource_path, $route ) || ! isset( $_SERVER['REQUEST_URI'] ) || ! is_string( $_SERVER['REQUEST_URI'] ) ) {
 			return false; // Plain permalinks: only the rest_route form above can match.
 		}
-		$path = (string) wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		return rtrim( $path, '/' ) === rtrim( $resource_path, '/' );
 	}

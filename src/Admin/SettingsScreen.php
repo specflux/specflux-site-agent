@@ -191,8 +191,10 @@ class SettingsScreen {
 		}
 
 		$enabled = array();
-		if ( isset( $_POST['senroflux_pt_enabled'] ) && is_array( $_POST['senroflux_pt_enabled'] ) ) {
-			foreach ( wp_unslash( $_POST['senroflux_pt_enabled'] ) as $name ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every element is sanitize_text_field()'d in the loop below.
+		$posted_enabled = isset( $_POST['senroflux_pt_enabled'] ) ? wp_unslash( $_POST['senroflux_pt_enabled'] ) : null;
+		if ( is_array( $posted_enabled ) ) {
+			foreach ( $posted_enabled as $name ) {
 				if ( is_string( $name ) ) {
 					$enabled[] = sanitize_text_field( $name );
 				}
@@ -200,8 +202,10 @@ class SettingsScreen {
 		}
 
 		$read = array();
-		if ( isset( $_POST['senroflux_pt_mode'] ) && is_array( $_POST['senroflux_pt_mode'] ) ) {
-			foreach ( wp_unslash( $_POST['senroflux_pt_mode'] ) as $name => $mode ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every key and value is sanitized in the loop below.
+		$posted_mode = isset( $_POST['senroflux_pt_mode'] ) ? wp_unslash( $_POST['senroflux_pt_mode'] ) : null;
+		if ( is_array( $posted_mode ) ) {
+			foreach ( $posted_mode as $name => $mode ) {
 				if ( is_string( $name ) && is_string( $mode ) ) {
 					$read[ sanitize_text_field( $name ) ] = sanitize_key( $mode );
 				}
