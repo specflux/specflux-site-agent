@@ -40,9 +40,10 @@ final class Schema {
 	 * NULL means an ordinary (non-follow-up) run; 7 adds `model_provider` and
 	 * `model_id` — the per-run model pin, pinned at start() and
 	 * never updated afterwards, like `gate_mode`; both NULL means automatic
-	 * selection, which is also what every older row reads back as.
+	 * selection, which is also what every older row reads back as; 9 adds the
+	 * connector activity table (0.4 K4).
 	 */
-	public const DB_VERSION = 8;
+	public const DB_VERSION = 9;
 
 	/**
 	 * Runs table name for this site.
@@ -59,7 +60,14 @@ final class Schema {
 	}
 
 	/**
-	 * Create/upgrade both tables via dbDelta().
+	 * Connector activity table name for this site (0.4 K4).
+	 */
+	public static function activityTable( wpdb $db ): string {
+		return $db->prefix . 'senroflux_connector_activity';
+	}
+
+	/**
+	 * Create/upgrade all tables via dbDelta().
 	 *
 	 * @return void
 	 */
@@ -68,14 +76,16 @@ final class Schema {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		}
 
-		$charset = $db->get_charset_collate();
-		$runs    = self::runsTable( $db );
-		$steps   = self::stepsTable( $db );
+		$charset  = $db->get_charset_collate();
+		$runs     = self::runsTable( $db );
+		$steps    = self::stepsTable( $db );
+		$activity = self::activityTable( $db );
 
 		dbDelta(
 			array(
 				"CREATE TABLE {$runs} (\n" . self::runsColumns() . "\n) {$charset}",
 				"CREATE TABLE {$steps} (\n" . self::stepsColumns() . "\n) {$charset}",
+				"CREATE TABLE {$activity} (\n" . self::activityColumns() . "\n) {$charset}",
 			)
 		);
 	}
@@ -171,13 +181,14 @@ final class Schema {
 	}
 
 	/**
-	 * Drop both tables (uninstall only).
+	 * Drop the tables (uninstall only).
 	 *
 	 * @return void
 	 */
 	public static function uninstall( wpdb $db ): void {
 		$runs  = self::runsTable( $db );
 		$steps = self::stepsTable( $db );
+		$db->query( 'DROP TABLE IF EXISTS ' . self::activityTable( $db ) ); // phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
 		$db->query( "DROP TABLE IF EXISTS {$steps}" ); // phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
 		$db->query( "DROP TABLE IF EXISTS {$runs}" ); // phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
 	}
@@ -257,6 +268,27 @@ final class Schema {
 				'PRIMARY KEY  (id)',
 				'UNIQUE KEY run_seq (run_id, seq)',
 				'KEY approval_id (approval_id)',
+			)
+		);
+	}
+
+	/**
+	 * Connector activity columns: who called what and how it ended. Never the
+	 * arguments, never the result.
+	 */
+	public static function activityColumns(): string {
+		return implode(
+			",\n",
+			array(
+				'id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT',
+				'created_at DATETIME NOT NULL',
+				'uuid VARCHAR(36) NOT NULL',
+				'user_id BIGINT(20) UNSIGNED NOT NULL',
+				'ability VARCHAR(191) NOT NULL',
+				'outcome VARCHAR(16) NOT NULL',
+				'PRIMARY KEY  (id)',
+				'KEY created_at (created_at)',
+				'KEY uuid (uuid)',
 			)
 		);
 	}

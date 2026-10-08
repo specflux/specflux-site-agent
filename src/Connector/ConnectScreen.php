@@ -134,6 +134,7 @@ final class ConnectScreen {
 
 		self::renderCards();
 		self::renderConnections();
+		self::renderActivity();
 		echo '</div>';
 	}
 
@@ -315,6 +316,61 @@ final class ConnectScreen {
 			self::renderConnectionForm( 'senroflux_connection_scope', $uuid, Connection::SCOPE_READ_WRITE === $entry['scope'] ? Connection::SCOPE_READ : Connection::SCOPE_READ_WRITE, Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Make read only', 'senroflux' ) : __( 'Allow writes', 'senroflux' ) );
 			self::renderConnectionForm( 'senroflux_connection_revoke', $uuid, '', __( 'Revoke', 'senroflux' ) );
 			echo '</td></tr>';
+		}
+		echo '</tbody></table>';
+	}
+
+	/** The last 50 calls, optionally for one connection. */
+	private static function renderActivity(): void {
+		$user_id  = get_current_user_id();
+		$registry = Connections::forUser( $user_id );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
+		$filter = isset( $_GET['connection'] ) && is_string( $_GET['connection'] ) ? sanitize_text_field( wp_unslash( $_GET['connection'] ) ) : '';
+		$filter = isset( $registry[ $filter ] ) ? $filter : '';
+		$names  = array();
+		foreach ( WP_Application_Passwords::get_user_application_passwords( $user_id ) as $item ) {
+			if ( is_array( $item ) && isset( $item['uuid'] ) ) {
+				$names[ (string) $item['uuid'] ] = (string) ( $item['name'] ?? '' );
+			}
+		}
+
+		echo '<h2>' . esc_html__( 'Recent activity', 'senroflux' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'The last 50 calls from AI apps, kept for 30 days. Only what was called and how it ended is kept, never the details of the request or its result.', 'senroflux' ) . '</p>';
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '"><input type="hidden" name="page" value="' . esc_attr( self::SLUG ) . '">';
+		echo '<p><label>' . esc_html__( 'Connection', 'senroflux' ) . ' <select name="connection">';
+		printf( '<option value="">%s</option>', esc_html__( 'All', 'senroflux' ) );
+		foreach ( array_intersect_key( $names, $registry ) as $uuid => $name ) {
+			printf( '<option value="%s"%s>%s</option>', esc_attr( $uuid ), selected( $filter, $uuid, false ), esc_html( $name ) );
+		}
+		echo '</select></label> <button type="submit" class="button">' . esc_html__( 'Filter', 'senroflux' ) . '</button></p></form>';
+
+		$rows = ActivityLog::recent( 50, '' === $filter ? null : $filter );
+		if ( array() === $rows ) {
+			echo '<p>' . esc_html__( 'No calls yet.', 'senroflux' ) . '</p>';
+
+			return;
+		}
+
+		$outcomes = array(
+			ActivityLog::RAN     => __( 'Ran', 'senroflux' ),
+			ActivityLog::WAITING => __( 'Waiting for approval', 'senroflux' ),
+			ActivityLog::REFUSED => __( 'Refused', 'senroflux' ),
+			ActivityLog::ERROR   => __( 'Error', 'senroflux' ),
+		);
+		echo '<table class="widefat striped"><thead><tr>';
+		foreach ( array( __( 'Time', 'senroflux' ), __( 'Connection', 'senroflux' ), __( 'User', 'senroflux' ), __( 'Tool', 'senroflux' ), __( 'Outcome', 'senroflux' ) ) as $heading ) {
+			echo '<th>' . esc_html( $heading ) . '</th>';
+		}
+		echo '</tr></thead><tbody>';
+		foreach ( $rows as $row ) {
+			$user = get_userdata( $row['user_id'] );
+			echo '<tr>';
+			echo '<td>' . esc_html( (string) wp_date( 'Y-m-d H:i:s', (int) strtotime( $row['created_at'] . ' UTC' ) ) ) . '</td>';
+			echo '<td>' . esc_html( $names[ $row['uuid'] ] ?? '' ) . ' <code>' . esc_html( substr( $row['uuid'], 0, 8 ) ) . '</code></td>';
+			echo '<td>' . esc_html( is_object( $user ) && isset( $user->user_login ) ? (string) $user->user_login : '#' . $row['user_id'] ) . '</td>';
+			echo '<td><code>' . esc_html( $row['ability'] ) . '</code></td>';
+			echo '<td>' . esc_html( $outcomes[ $row['outcome'] ] ?? $row['outcome'] ) . '</td>';
+			echo '</tr>';
 		}
 		echo '</tbody></table>';
 	}

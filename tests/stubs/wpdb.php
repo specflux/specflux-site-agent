@@ -96,6 +96,19 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				return 1;
 			}
 
+			// Emulate the connector activity prune (K4): DELETE ... WHERE created_at < 'ts'.
+			if ( preg_match( "/^DELETE FROM (\\S+) WHERE created_at < '([^']+)'$/", $query, $m ) ) {
+				$before                = count( $this->tables[ $m[1] ] ?? array() );
+				$this->tables[ $m[1] ] = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => (string) $row['created_at'] >= $m[2]
+					)
+				);
+
+				return $before - count( $this->tables[ $m[1] ] );
+			}
+
 			return $this->queryReturn;
 		}
 
@@ -168,6 +181,26 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				);
 
 				return array_slice( $rows, 0, max( 1, (int) $m[2] ) );
+			}
+
+			// Connector activity (K4): newest first, optionally one connection.
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/^SELECT \\* FROM (\\S+?)(?: WHERE uuid = '([^']*)')? ORDER BY created_at DESC, id DESC LIMIT (\\d+)$/", $query, $m )
+			) {
+				$rows = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => '' === $m[2] || (string) $row['uuid'] === $m[2]
+					)
+				);
+				usort(
+					$rows,
+					static fn ( array $a, array $b ): int => array( (string) $b['created_at'], (int) $b['id'] ) <=> array( (string) $a['created_at'], (int) $a['id'] )
+				);
+
+				return array_slice( $rows, 0, (int) $m[3] );
 			}
 
 			if (

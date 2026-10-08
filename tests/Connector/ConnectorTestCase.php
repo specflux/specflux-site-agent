@@ -45,7 +45,9 @@ abstract class ConnectorTestCase extends TestCase {
 		$GLOBALS['senroflux_test_users']                 = array( self::USER => (object) array( 'user_login' => 'editor' ) );
 		$GLOBALS['senroflux_test_remote_post_responses'] = array();
 		$GLOBALS['senroflux_test_remote_post_calls']     = array();
-		$_POST = array();
+		$_POST                          = array();
+		$GLOBALS['wpdb']                = new \wpdb();
+		$GLOBALS['senroflux_test_cron'] = array();
 		Plugin::reset();
 		Plugin::set_dependency_probe( false ); // Built-in mode unless a test says otherwise.
 		Connector::set_adapter_version_probe( null );

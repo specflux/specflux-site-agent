@@ -95,3 +95,37 @@ if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
 		return is_array( $response ) ? (string) ( $response['body'] ?? '' ) : '';
 	}
 }
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	/** Cron shim: `$GLOBALS['senroflux_test_cron'][hook] = array{time,recurrence}`. */
+	function wp_next_scheduled( string $hook ): int|false {
+		return $GLOBALS['senroflux_test_cron'][ $hook ]['time'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+	function wp_schedule_event( int $timestamp, string $recurrence, string $hook ): bool {
+		$GLOBALS['senroflux_test_cron'][ $hook ] = array(
+			'time'       => $timestamp,
+			'recurrence' => $recurrence,
+		);
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	function wp_clear_scheduled_hook( string $hook ): int {
+		$had = isset( $GLOBALS['senroflux_test_cron'][ $hook ] ) ? 1 : 0;
+		unset( $GLOBALS['senroflux_test_cron'][ $hook ] );
+
+		return $had;
+	}
+}

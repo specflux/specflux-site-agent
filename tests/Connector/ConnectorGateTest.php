@@ -289,7 +289,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 	public function test_pending_entries_are_capped(): void {
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 		for ( $i = 0; $i < Approvals::MAX_PENDING + 5; ++$i ) {
-			Clock::useFixed( 1_800_000_000 + $i );
+			Clock::useFixed( 1_800_000_000 + $i * 60 ); // A minute apart: clear of the rate limit.
 			$this->call( self::WRITE, array( 'n' => $i ) );
 		}
 

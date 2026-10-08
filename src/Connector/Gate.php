@@ -107,12 +107,76 @@ final class Gate {
 
 		$connection = Connector::authorise();
 		$ability    = is_object( $tool ) ? self::abilityOfTool( $tool ) : null;
+		$result     = self::decide( $args, $connection, $ability );
+
+		// A call that goes on is recorded after it runs ({@see afterCall()});
+		// one stopped here is recorded now, as waiting or refused.
+		if ( $result instanceof WP_Error && null !== $connection ) {
+			ActivityLog::record(
+				$connection,
+				$ability ?? ( is_string( $tool_name ) ? $tool_name : '' ),
+				'senroflux_connector_awaiting_approval' === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * `mcp_adapter_tool_call_result` callback: record how an allowed call ended.
+	 * The result passes through untouched; its contents are never read or kept.
+	 *
+	 * @param mixed  $result    The execution result.
+	 * @param mixed  $args      The call's arguments (unused).
+	 * @param string $tool_name The tool name.
+	 * @param mixed  $tool      The adapter tool.
+	 * @param mixed  $server    The adapter server.
+	 * @return mixed
+	 */
+	public static function afterCall( mixed $result, mixed $args = null, mixed $tool_name = '', mixed $tool = null, mixed $server = null ): mixed {
+		unset( $args );
+		if ( ! self::isOurs( $server ) ) {
+			return $result;
+		}
+
+		$connection = Connector::authorise();
+		if ( null !== $connection ) {
+			$ability = is_object( $tool ) ? self::abilityOfTool( $tool ) : null;
+			ActivityLog::record( $connection, $ability ?? ( is_string( $tool_name ) ? $tool_name : '' ), $result instanceof WP_Error ? ActivityLog::ERROR : ActivityLog::RAN );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * The decision for one call on SenroFlux's server.
+	 *
+	 * @param mixed           $args       The call's arguments.
+	 * @param Connection|null $connection The request's connection.
+	 * @param string|null     $ability    The ability behind the tool.
+	 * @return mixed The arguments to proceed, or a WP_Error.
+	 */
+	private static function decide( mixed $args, ?Connection $connection, ?string $ability ): mixed {
 		if ( null === $connection || null === $ability ) {
 			return self::denied( 'senroflux_connector_denied', __( 'This connection is not allowed to use SenroFlux.', 'senroflux' ) );
 		}
 
 		$call = is_array( $args ) ? $args : array();
 		$mode = Plugin::currentGateMode();
+
+		if ( GateMode::BuiltIn === $mode ) {
+			$wait = RateLimit::hit( $connection->uuid );
+			if ( null !== $wait ) {
+				return self::denied(
+					'senroflux_connector_rate_limited',
+					sprintf(
+						/* translators: %d: seconds to wait. */
+						_n( 'Too many calls: this connection is limited to 60 a minute. Wait %d second and try again.', 'Too many calls: this connection is limited to 60 a minute. Wait %d seconds and try again.', $wait, 'senroflux' ),
+						$wait
+					)
+				);
+			}
+		}
 
 		// Re-checked at call time: a client can name any tool, listed or not.
 		if ( ! ExposureSet::visibleTo( $ability, $connection, $mode ) ) {

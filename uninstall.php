@@ -26,7 +26,7 @@ if ( true !== $senroflux_delete_data && '1' !== $senroflux_delete_data ) {
 	return;
 }
 
-foreach ( array( 'senroflux_steps', 'senroflux_runs' ) as $senroflux_table ) {
+foreach ( array( 'senroflux_steps', 'senroflux_runs', 'senroflux_connector_activity' ) as $senroflux_table ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- opt-in uninstall dropping a table this plugin owns; nothing to cache.
 	$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . $senroflux_table ) );
 }
