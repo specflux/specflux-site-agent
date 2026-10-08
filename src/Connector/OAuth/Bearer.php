@@ -38,9 +38,6 @@ final class Bearer {
 	/** A bearer token was presented on the MCP route but did not validate. */
 	private static bool $rejected = false;
 
-	/** The first dispatch of a request is the real one; later ones are internal sub-requests. */
-	private static bool $dispatched = false;
-
 	public static function register(): void {
 		// After core's application-password check (priority 20): never override an existing user.
 		add_filter( 'determine_current_user', array( self::class, 'authenticate' ), 21 );
@@ -51,9 +48,8 @@ final class Bearer {
 
 	/** Test seam: forget per-request state. */
 	public static function reset(): void {
-		self::$active     = null;
-		self::$rejected   = false;
-		self::$dispatched = false;
+		self::$active   = null;
+		self::$rejected = false;
 	}
 
 	/**
@@ -216,7 +212,7 @@ final class Bearer {
 	}
 
 	/**
-	 * `rest_pre_dispatch`: the second layer. An OAuth-authenticated request may only reach the MCP route.
+	 * `rest_pre_dispatch`: the second layer. An OAuth-authenticated request may only dispatch the MCP route.
 	 *
 	 * @param mixed $result  Short-circuit value so far.
 	 * @param mixed $server  REST server.
@@ -225,14 +221,15 @@ final class Bearer {
 	 */
 	public static function guardDispatch( $result, $server = null, $request = null ) {
 		unset( $server );
-		if ( null === self::$active || self::$dispatched || ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
+		if ( null === self::$active || ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
 			return $result;
 		}
-		self::$dispatched = true;
+		// Every dispatch, not just the first: batch sub-requests, `_embed` and internal
+		// `rest_do_request()` calls must not run under the token either. $active stays set so the
+		// in-flight MCP request keeps its identity; only the sub-dispatch is refused.
 		if ( rtrim( (string) $request->get_route(), '/' ) === '/' . Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE ) {
 			return $result;
 		}
-		self::$active = null;
 
 		return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to do that.', array( 'status' => 403 ) );
 	}

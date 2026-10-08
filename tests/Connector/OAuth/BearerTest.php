@@ -60,25 +60,19 @@ final class BearerTest extends OAuthTestCase {
 		$this->assertSame( self::USER, Bearer::authenticate( 0 ), 'The plain-permalink form of the MCP route works.' );
 	}
 
-	public function test_dispatch_guard_blocks_an_oauth_request_to_any_other_route(): void {
-		$t = $this->tokens();
-		$this->asMcpRequest( $t['body']['access_token'] );
-		Bearer::authenticate( 0 );
-
-		$blocked = Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) );
-		$this->assertInstanceOf( \WP_Error::class, $blocked );
-		$this->assertSame( 403, $blocked->get_error_data()['status'] ?? 403 );
-		$this->assertNull( $this->connectionFor( self::USER ), 'The token no longer yields a connection.' );
-	}
-
-	public function test_dispatch_guard_lets_the_mcp_route_and_internal_subrequests_through(): void {
+	public function test_dispatch_guard_validates_every_dispatch_while_a_token_is_active(): void {
 		$t = $this->tokens();
 		$this->asMcpRequest( $t['body']['access_token'] );
 		Bearer::authenticate( 0 );
 
 		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/senroflux/mcp' ) ) );
-		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wc/v3/products' ) ), 'Later dispatches are the route handler\'s own sub-requests.' );
-		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) ) );
+		$blocked = Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) );
+		$this->assertInstanceOf( \WP_Error::class, $blocked, 'A later sub-dispatch is refused.' );
+		$this->assertSame( 403, $blocked->get_error_data()['status'] ?? 0 );
+		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/batch/v1' ) ) );
+		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wc/v3/products' ) ) );
+		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/senroflux/mcp' ) ), 'Refusing a sub-dispatch does not break the in-flight MCP request.' );
+		$this->assertNotNull( $this->connectionFor( self::USER ), 'The token still yields its connection.' );
 	}
 
 	public function test_dispatch_guard_does_nothing_for_other_authentication(): void {
