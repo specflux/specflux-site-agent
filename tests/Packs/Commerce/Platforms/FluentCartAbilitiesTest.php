@@ -147,6 +147,35 @@ final class FluentCartAbilitiesTest extends TestCase {
 		$this->assertFalse( FluentCartAbilities::can( 'coupons/manage' ) );
 	}
 
+	public function test_set_product_image_permission_is_checked_per_product_and_attachment(): void {
+		$ability = wp_get_ability( 'senroflux/fluentcart-set-product-image' );
+		$input   = array(
+			'product_id'    => 50,
+			'attachment_id' => 60,
+		);
+
+		// FluentCart's own gate alone is not enough.
+		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		$this->assertFalse( $ability?->check_permissions( $input ), 'no edit on the product' );
+
+		$GLOBALS['senroflux_test_user_caps'] = array(
+			'manage_options' => true,
+			'edit_post'      => true,
+			'read_post'      => true,
+		);
+		$this->assertTrue( $ability?->check_permissions( $input ) );
+
+		$GLOBALS['senroflux_test_user_caps']['edit_post:50'] = false;
+		$this->assertFalse( $ability?->check_permissions( $input ), 'no edit on THIS product' );
+
+		$GLOBALS['senroflux_test_user_caps']['edit_post:50'] = true;
+		$GLOBALS['senroflux_test_user_caps']['read_post:60'] = false;
+		$this->assertFalse( $ability?->check_permissions( $input ), 'cannot read THIS attachment' );
+
+		$GLOBALS['senroflux_test_user_caps']['read_post:60'] = true;
+		$this->assertFalse( $ability?->check_permissions( array() ), 'naming no object' );
+	}
+
 	// ------------------------------------------------------------------
 	// Reads
 	// ------------------------------------------------------------------

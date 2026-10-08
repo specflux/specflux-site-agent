@@ -1820,6 +1820,33 @@ final class Abilities {
 		return current_user_can( $cap ); // phpcs:ignore WordPress.WP.Capabilities.Unknown -- a WooCommerce post type capability.
 	}
 
+	/**
+	 * Per-object gate for the product-write polyfills: the user must be able
+	 * to edit every product or variation the call names (`id`, or `product_id`
+	 * plus `variation_id`). A call that names no object is refused.
+	 *
+	 * @param array<string,mixed> $input Call input.
+	 */
+	private static function mayEditTargets( array $input ): bool {
+		$ids = array();
+		foreach ( array( 'id', 'product_id', 'variation_id' ) as $key ) {
+			if ( isset( $input[ $key ] ) && is_numeric( $input[ $key ] ) ) {
+				$ids[] = (int) $input[ $key ];
+			}
+		}
+		if ( array() === $ids ) {
+			return false;
+		}
+
+		foreach ( $ids as $id ) {
+			if ( $id <= 0 || ! current_user_can( 'edit_post', $id ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	private static function postType( int $id ): string {
 		if ( 0 === $id || ! function_exists( 'get_post' ) ) {
 			return '';
@@ -2168,10 +2195,12 @@ final class Abilities {
 					return $exec( is_array( $input ) ? $input : array() );
 				},
 				'permission_callback' => static function ( $input = array() ) {
-					unset( $input );
-
 					// phpcs:ignore WordPress.WP.Capabilities.Unknown -- a real WooCommerce capability; unknown only to phpcs's core capability list.
-					return function_exists( 'current_user_can' ) && current_user_can( 'manage_woocommerce' );
+					if ( ! function_exists( 'current_user_can' ) || ! current_user_can( 'manage_woocommerce' ) ) {
+						return false;
+					}
+
+					return self::mayEditTargets( is_array( $input ) ? $input : array() );
 				},
 				'meta'                => self::meta(
 					array(

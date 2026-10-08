@@ -589,13 +589,44 @@ final class WooWriteRolesTest extends TestCase {
 			)
 		);
 
-		foreach ( array( 'stock-adjust', 'variation-price-update', 'sale-schedule' ) as $name ) {
-			$ability = wp_get_ability( 'senroflux/' . $name );
-			$this->assertTrue( $ability->check_permissions( array() ), $name );
-			$GLOBALS['senroflux_test_user_caps'] = array();
-			$this->assertNotTrue( $ability->check_permissions( array() ), $name );
-			$GLOBALS['senroflux_test_user_caps'] = array( 'manage_woocommerce' => true );
+		$inputs = array(
+			'stock-adjust'           => array( 'id' => 5 ),
+			'variation-price-update' => array(
+				'product_id'   => 5,
+				'variation_id' => 6,
+			),
+			'sale-schedule'          => array( 'id' => 5 ),
+		);
+		foreach ( $inputs as $name => $input ) {
+			$ability                             = wp_get_ability( 'senroflux/' . $name );
+			$GLOBALS['senroflux_test_user_caps'] = array(
+				'manage_woocommerce' => true,
+				'edit_post'          => true,
+			);
+			$this->assertTrue( $ability->check_permissions( $input ), $name );
+
+			// No store capability.
+			$GLOBALS['senroflux_test_user_caps'] = array( 'edit_post' => true );
+			$this->assertNotTrue( $ability->check_permissions( $input ), $name . ' without manage_woocommerce' );
+
+			// Store capability but no edit on the named object (each id in turn).
+			foreach ( array_filter( $input ) as $key => $id ) {
+				$GLOBALS['senroflux_test_user_caps'] = array(
+					'manage_woocommerce' => true,
+					'edit_post'          => true,
+					'edit_post:' . $id   => false,
+				);
+				$this->assertNotTrue( $ability->check_permissions( $input ), $name . ' without edit on ' . $key );
+			}
+
+			// Store capability and edit, but no object named.
+			$GLOBALS['senroflux_test_user_caps'] = array(
+				'manage_woocommerce' => true,
+				'edit_post'          => true,
+			);
+			$this->assertNotTrue( $ability->check_permissions( array() ), $name . ' naming nothing' );
 		}
+		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_woocommerce' => true );
 	}
 
 	// ------------------------------------------------------------------
