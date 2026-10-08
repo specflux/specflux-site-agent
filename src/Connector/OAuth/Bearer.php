@@ -38,9 +38,6 @@ final class Bearer {
 	/** A bearer token was presented on the MCP route but did not validate. */
 	private static bool $rejected = false;
 
-	/** The first dispatch of a request is the real one; later ones are internal sub-requests. */
-	private static bool $dispatched = false;
-
 	public static function register(): void {
 		// After core's application-password check (priority 20): never override an existing user.
 		add_filter( 'determine_current_user', array( self::class, 'authenticate' ), 21 );
@@ -51,9 +48,8 @@ final class Bearer {
 
 	/** Test seam: forget per-request state. */
 	public static function reset(): void {
-		self::$active     = null;
-		self::$rejected   = false;
-		self::$dispatched = false;
+		self::$active   = null;
+		self::$rejected = false;
 	}
 
 	/**
@@ -133,11 +129,49 @@ final class Bearer {
 	}
 
 	/**
+	 * Is this PHP request served by the site's front controller (`index.php` in ABSPATH)?
+	 *
+	 * A positive allowlist of the entry point. `?rest_route=` is honoured by REST routing only,
+	 * so without this a token could ride `admin-ajax.php?rest_route=/senroflux/mcp` (or
+	 * admin-post.php, wp-login.php, xmlrpc.php, wp-cron.php, any wp-admin page) past layer 2,
+	 * which only sees REST dispatches. `REST_REQUEST` cannot be used: it is not yet defined
+	 * when `determine_current_user` resolves the user.
+	 */
+	private static function entryIsFrontController(): bool {
+		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || defined( 'IFRAME_REQUEST' ) ) {
+			return false;
+		}
+		if ( ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return false;
+		}
+		// core sets $pagenow from PHP_SELF in wp-includes/vars.php, before any plugin loads.
+		if ( 'index.php' !== ( $GLOBALS['pagenow'] ?? '' ) ) {
+			return false;
+		}
+		$script = isset( $_SERVER['SCRIPT_FILENAME'] ) && is_string( $_SERVER['SCRIPT_FILENAME'] ) ? $_SERVER['SCRIPT_FILENAME'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared, never used.
+		if ( '' === $script || 'index.php' !== basename( $script ) ) {
+			return false;
+		}
+		$dir = trailingslashit( wp_normalize_path( dirname( $script ) ) );
+		if ( trailingslashit( wp_normalize_path( ABSPATH ) ) === $dir ) {
+			return true;
+		}
+		// Symlinked docroots: compare resolved paths, only when both resolve.
+		$real_dir  = realpath( dirname( $script ) );
+		$real_root = realpath( ABSPATH );
+
+		return false !== $real_dir && false !== $real_root && trailingslashit( wp_normalize_path( $real_dir ) ) === trailingslashit( wp_normalize_path( $real_root ) );
+	}
+
+	/**
 	 * Is the REST route this request will dispatch exactly the MCP route?
 	 *
 	 * Mirrors WordPress: a `rest_route` query/body parameter wins over the path.
 	 */
 	public static function onMcpRoute(): bool {
+		if ( ! self::entryIsFrontController() ) {
+			return false;
+		}
 		$route = '/' . Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE;
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- routing decision only; the value is compared, never used.
@@ -178,7 +212,7 @@ final class Bearer {
 	}
 
 	/**
-	 * `rest_pre_dispatch`: the second layer. An OAuth-authenticated request may only reach the MCP route.
+	 * `rest_pre_dispatch`: the second layer. An OAuth-authenticated request may only dispatch the MCP route.
 	 *
 	 * @param mixed $result  Short-circuit value so far.
 	 * @param mixed $server  REST server.
@@ -187,14 +221,15 @@ final class Bearer {
 	 */
 	public static function guardDispatch( $result, $server = null, $request = null ) {
 		unset( $server );
-		if ( null === self::$active || self::$dispatched || ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
+		if ( null === self::$active || ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
 			return $result;
 		}
-		self::$dispatched = true;
+		// Every dispatch, not just the first: batch sub-requests, `_embed` and internal
+		// `rest_do_request()` calls must not run under the token either. $active stays set so the
+		// in-flight MCP request keeps its identity; only the sub-dispatch is refused.
 		if ( rtrim( (string) $request->get_route(), '/' ) === '/' . Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE ) {
 			return $result;
 		}
-		self::$active = null;
 
 		return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to do that.', array( 'status' => 403 ) );
 	}

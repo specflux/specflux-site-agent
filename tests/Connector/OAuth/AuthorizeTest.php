@@ -48,6 +48,45 @@ final class AuthorizeTest extends OAuthTestCase {
 		$this->assertStringContainsString( 'name="_wpnonce"', $page->body );
 	}
 
+	public function test_dynamically_registered_client_is_marked_not_verified_and_the_host_leads(): void {
+		$page = $this->get();
+
+		$this->assertStringContainsString( 'Not verified', $page->body );
+		$this->assertStringNotContainsString( 'Verified by', $page->body );
+		$this->assertStringContainsString( '<br><strong>claude.ai</strong>', $page->body );
+		$this->assertStringContainsString( 'be sent to<br>', $page->body );
+		$this->assertLessThan( strpos( $page->body, 'This app is asking' ), strpos( $page->body, 'class="host"' ), 'Host comes before the description.' );
+	}
+
+	public function test_dcr_client_name_is_escaped_in_the_consent_markup(): void {
+		$id   = $this->dcr( array( self::CALLBACK ), '203.0.113.10', '<script>alert(1)</script>Claude' );
+		$page = Authorize::run( 'GET', $this->authParams( $id, $this->challenge ) );
+
+		$this->assertSame( 200, $page->status );
+		$this->assertStringNotContainsString( '<script>alert(1)', $page->body );
+		$this->assertStringContainsString( 'Not verified', $page->body );
+	}
+
+	public function test_metadata_document_client_shows_who_verified_it(): void {
+		$url = 'https://app.example/oauth/client.json';
+		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+			'response' => array( 'code' => 200 ),
+			'body'     => wp_json_encode(
+				array(
+					'client_id'     => $url,
+					'client_name'   => 'Example App',
+					'redirect_uris' => array( self::CALLBACK ),
+				)
+			),
+		);
+		$page = Authorize::run( 'GET', $this->authParams( $url, $this->challenge ) );
+
+		$this->assertSame( 200, $page->status );
+		$this->assertStringContainsString( 'Verified by app.example', $page->body );
+		$this->assertStringNotContainsString( 'Not verified', $page->body );
+		$this->assertStringContainsString( '<strong>claude.ai</strong>', $page->body );
+	}
+
 	public function test_read_only_request_offers_no_write_choice(): void {
 		$page = $this->get( array( 'scope' => 'senroflux:read' ) );
 
