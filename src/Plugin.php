@@ -284,6 +284,23 @@ final class Plugin {
 						1
 					);
 				}
+
+				// One role binding that unlocks pages, posts and site together.
+				$bundle = \Specflux\SenroFlux\Packs\ContentBundle::agentSafetyPack( $pages_pack, $posts_pack, $site_pack );
+				if ( null !== $bundle ) {
+					add_filter(
+						'agent_safety_pack_registry',
+						static function ( $registry ) use ( $bundle ) {
+							if ( is_object( $registry ) && method_exists( $registry, 'register' ) ) {
+								$registry->register( $bundle );
+							}
+
+							return $registry;
+						},
+						10,
+						1
+					);
+				}
 			},
 			5
 		);
