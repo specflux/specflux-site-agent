@@ -35,6 +35,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 		$GLOBALS['senroflux_test_remote_get_responses'] = array();
 		$_GET = array();
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['REQUEST_URI'] );
+		$this->asFrontController();
 		$this->enableConnector();
 		Clock::useFixed( self::T0 );
 		Bearer::reset();
@@ -47,6 +48,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 		$_GET = array();
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REQUEST_URI'] );
 		$GLOBALS['senroflux_test_logged_in'] = true;
+		unset( $GLOBALS['senroflux_test_is_admin'], $GLOBALS['senroflux_test_doing_ajax'], $GLOBALS['senroflux_test_doing_cron'], $GLOBALS['pagenow'], $_SERVER['SCRIPT_FILENAME'] );
 		parent::tearDown();
 	}
 
@@ -165,6 +167,13 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 	}
 
 	/** Pretend the request is the MCP route with this bearer token. */
+	/** Make the request look like it is served by ABSPATH/index.php (the only entry a token may use). */
+	protected function asFrontController(): void {
+		$GLOBALS['pagenow']         = 'index.php';
+		$_SERVER['SCRIPT_FILENAME'] = ABSPATH . 'index.php';
+		unset( $GLOBALS['senroflux_test_is_admin'], $GLOBALS['senroflux_test_doing_ajax'], $GLOBALS['senroflux_test_doing_cron'] );
+	}
+
 	protected function asMcpRequest( ?string $token, string $path = '/wp-json/senroflux/mcp' ): void {
 		Bearer::reset();
 		$_SERVER['REQUEST_URI'] = $path;

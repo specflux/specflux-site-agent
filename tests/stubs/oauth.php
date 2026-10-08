@@ -15,6 +15,37 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
 		return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 	}
 }
+// Entry-point knobs: senroflux_test_is_admin, senroflux_test_doing_ajax, senroflux_test_doing_cron (globals).
+if ( ! function_exists( 'is_admin' ) ) {
+	/** Test knob. */
+	function is_admin(): bool {
+		return ! empty( $GLOBALS['senroflux_test_is_admin'] );
+	}
+}
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	/** Test knob. */
+	function wp_doing_ajax(): bool {
+		return ! empty( $GLOBALS['senroflux_test_doing_ajax'] );
+	}
+}
+if ( ! function_exists( 'wp_doing_cron' ) ) {
+	/** Test knob. */
+	function wp_doing_cron(): bool {
+		return ! empty( $GLOBALS['senroflux_test_doing_cron'] );
+	}
+}
+if ( ! function_exists( 'wp_normalize_path' ) ) {
+	/** Forward slashes, collapsed. */
+	function wp_normalize_path( string $path ): string {
+		return preg_replace( '|(?<=.)/+|', '/', str_replace( '\\', '/', $path ) );
+	}
+}
+if ( ! function_exists( 'trailingslashit' ) ) {
+	/** Exactly one trailing slash. */
+	function trailingslashit( string $value ): string {
+		return rtrim( $value, '/\\' ) . '/';
+	}
+}
 if ( ! function_exists( 'home_url' ) ) {
 	/** Test site root. */
 	function home_url( string $path = '' ): string {

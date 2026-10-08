@@ -85,6 +85,69 @@ final class BearerTest extends OAuthTestCase {
 		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) ) );
 	}
 
+	/** @return array<string,array{0:string,1:array<string,mixed>}> */
+	public static function non_front_controller_entries(): array {
+		return array(
+			'admin-ajax (is_admin true)' => array(
+				ABSPATH . 'wp-admin/admin-ajax.php',
+				array(
+					'senroflux_test_is_admin'   => true,
+					'senroflux_test_doing_ajax' => true,
+				),
+			),
+			'is_admin only'              => array( ABSPATH . 'index.php', array( 'senroflux_test_is_admin' => true ) ),
+			'doing ajax only'            => array( ABSPATH . 'index.php', array( 'senroflux_test_doing_ajax' => true ) ),
+			'doing cron'                 => array( ABSPATH . 'index.php', array( 'senroflux_test_doing_cron' => true ) ),
+			'wp-cron.php'                => array( ABSPATH . 'wp-cron.php', array() ),
+			'wp-login.php'               => array( ABSPATH . 'wp-login.php', array() ),
+			'admin-post.php'             => array( ABSPATH . 'wp-admin/admin-post.php', array() ),
+			'xmlrpc.php'                 => array( ABSPATH . 'xmlrpc.php', array() ),
+			'wp-comments-post.php'       => array( ABSPATH . 'wp-comments-post.php', array() ),
+			'index.php outside ABSPATH'  => array( '/var/www/other/index.php', array() ),
+			'index.php in a subdir'      => array( ABSPATH . 'wp-admin/index.php', array() ),
+			'pagenow is wp-login'        => array( ABSPATH . 'index.php', array( 'pagenow' => 'wp-login.php' ) ),
+			'no script filename'         => array( '', array() ),
+		);
+	}
+
+	/**
+	 * @dataProvider non_front_controller_entries
+	 * @param array<string,mixed> $globals
+	 */
+	public function test_token_is_refused_outside_the_front_controller( string $script, array $globals ): void {
+		foreach ( array( '/wp-json/senroflux/mcp', '/' ) as $uri ) {
+			$t = $this->tokens();
+			$this->asMcpRequest( $t['body']['access_token'], $uri );
+			if ( '/' === $uri ) {
+				$_GET['rest_route'] = '/senroflux/mcp';
+			}
+			$_SERVER['SCRIPT_FILENAME'] = $script;
+			foreach ( $globals as $key => $value ) {
+				$GLOBALS[ $key ] = $value; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- test knobs.
+			}
+
+			$this->assertSame( 0, Bearer::authenticate( 0 ), $uri );
+			$this->assertNull( $this->connectionFor( self::USER ) );
+		}
+	}
+
+	public function test_token_is_accepted_on_the_front_controller_in_both_url_forms(): void {
+		$t = $this->tokens();
+		$this->asMcpRequest( $t['body']['access_token'] );
+		$this->assertSame( self::USER, Bearer::authenticate( 0 ), 'Pretty permalinks.' );
+
+		$this->asMcpRequest( $t['body']['access_token'], '/' );
+		$_GET['rest_route'] = '/senroflux/mcp';
+		$this->assertSame( self::USER, Bearer::authenticate( 0 ), '?rest_route= form.' );
+
+		$this->asMcpRequest( $t['body']['access_token'], '/' );
+		unset( $_GET['rest_route'] );
+		$_POST['rest_route'] = '/senroflux/mcp';
+		$user                = Bearer::authenticate( 0 );
+		unset( $_POST['rest_route'] );
+		$this->assertSame( self::USER, $user, 'POSTed rest_route on the front controller.' );
+	}
+
 	public function test_garbage_and_wrong_shapes_authenticate_nobody(): void {
 		$t = $this->tokens();
 		foreach ( array(
