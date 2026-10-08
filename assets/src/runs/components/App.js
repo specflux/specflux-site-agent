@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { listRuns, getRun, startRun, tickRun, cancelRun, resolveSuggestion, fetchSetupState, dismissAdvisory } from '../api';
+import { listRuns, getRun, startRun, tickRun, cancelRun, resolveSuggestion, fetchSetupState, dismissAdvisory, saveSetupBrief } from '../api';
 import { isParkedStatus, isTerminalStatus, latestPreviewable, runsForTab, sameRunId } from '../utils';
 import RunList from './RunList';
 import Chat from './Chat';
 import EmptyState from './EmptyState';
 import MessageBox from './MessageBox';
 import PreviewPane from './PreviewPane';
+import SetupPanel, { firstBlockingStep } from './SetupPanel';
 
 /**
  * Add the brief suggestions a tick's new steps created to the shown list, in
@@ -82,7 +83,10 @@ export default function App( { config } ) {
 		packs: config.packs || [],
 		unavailablePacks: config.unavailablePacks || [],
 		startBlocked: Boolean( config.startBlocked ),
+		steps: Array.isArray( config.setupSteps ) ? config.setupSteps : [],
 	} );
+	// A starter goal picked in the setup panel; `key` makes a repeat pick refill the box.
+	const [ prefill, setPrefill ] = useState( null );
 	// The finished run a follow-up is being started from (S20), or null.
 	const [ followUp, setFollowUp ] = useState( null );
 
@@ -125,11 +129,12 @@ export default function App( { config } ) {
 				} else if ( panel && '' === state.html ) {
 					panel.innerHTML = '';
 				}
-				setSetup( {
+				setSetup( ( previous ) => ( {
 					packs: Array.isArray( state.packs ) ? state.packs : [],
 					unavailablePacks: Array.isArray( state.unavailable_packs ) ? state.unavailable_packs : [],
 					startBlocked: false === state.start_enabled,
-				} );
+					steps: Array.isArray( state.steps ) ? state.steps : previous.steps,
+				} ) );
 			} )
 			// A failed refresh keeps the last known state: never flip Start on a transport blip.
 			.catch( () => {} )
@@ -183,6 +188,19 @@ export default function App( { config } ) {
 		document.addEventListener( 'click', onClick );
 		return () => document.removeEventListener( 'click', onClick );
 	}, [] );
+
+	// Step "site brief": save or skip, then take the refreshed steps the server returns.
+	const applySteps = ( result ) => {
+		if ( aliveRef.current && result && Array.isArray( result.steps ) ) {
+			setSetup( ( previous ) => ( { ...previous, steps: result.steps } ) );
+		}
+	};
+	const handleSaveBrief = ( text ) => saveSetupBrief( 'save', text, ajaxConfig ).then( applySteps );
+	const handleSkipBrief = () => saveSetupBrief( 'skip', '', ajaxConfig ).then( applySteps );
+	const handlePickGoal = ( goal ) => {
+		setFollowUp( null );
+		setPrefill( ( previous ) => ( { key: ( previous ? previous.key : 0 ) + 1, text: goal.text, pack: goal.pack } ) );
+	};
 
 	const refreshList = useCallback( () => {
 		listRuns().then( ( result ) => {
@@ -454,6 +472,13 @@ export default function App( { config } ) {
 	const hasPreview = Boolean( runDetail && latestPreviewable( runDetail.steps ) );
 
 	return (
+		<>
+		<SetupPanel
+			steps={ setup.steps }
+			onSaveBrief={ handleSaveBrief }
+			onSkipBrief={ handleSkipBrief }
+			onPickGoal={ handlePickGoal }
+		/>
 		<div className={ 'senroflux-runs-app' + ( hasPreview ? ' senroflux-runs-app--with-preview' : '' ) }>
 			<RunList
 				runs={ runs }
@@ -511,11 +536,14 @@ export default function App( { config } ) {
 					unavailablePacks={ setup.unavailablePacks }
 					modelChoices={ config.modelChoices || {} }
 					startBlocked={ setup.startBlocked }
+					blockingStep={ firstBlockingStep( setup.steps ) }
+					prefill={ prefill }
 					followUp={ followUp }
 					onCancelFollowUp={ () => setFollowUp( null ) }
 				/>
 			</main>
 			{ hasPreview && <PreviewPane steps={ runDetail.steps } userId={ config.userId } /> }
 		</div>
+		</>
 	);
 }

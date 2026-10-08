@@ -105,11 +105,21 @@ export function startRun( goal, config, pack, model, followUpOf ) {
 /**
  * admin-ajax `senroflux_setup_panel` (0.3 S11, "refresh on window focus"):
  * the setup panel's markup plus the whole start state — `{ html,
- * start_enabled, packs, unavailable_packs }`. Same nonce/capability as every
+ * start_enabled, packs, unavailable_packs, steps }`. Same nonce/capability as every
  * other write, but read-only: it changes nothing on the server.
  */
 export function fetchSetupState( config ) {
 	return postAjax( 'senroflux_setup_panel', {}, config );
+}
+
+/**
+ * admin-ajax `senroflux_setup_brief` (guided setup, step "site brief"): save
+ * the site brief (`action` 'save', with `brief`) or skip the step ('skip').
+ * Administrators only; a too-long brief is refused, never truncated. Returns
+ * `{ steps }`, the refreshed setup steps.
+ */
+export function saveSetupBrief( action, brief, config ) {
+	return postAjax( 'senroflux_setup_brief', { brief_action: action, brief }, config );
 }
 
 /**

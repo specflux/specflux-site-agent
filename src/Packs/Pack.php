@@ -13,6 +13,7 @@ use Specflux\SenroFlux\Packs\Content\Abilities;
 use Specflux\SenroFlux\Plugin;
 use Specflux\SenroFlux\Run\GateMode;
 use Specflux\SenroFlux\Setup\Checks;
+use Specflux\SenroFlux\Setup\Onboarding;
 use Specflux\SenroFlux\Setup\SetupCheck;
 use Specflux\SenroFlux\Skills\Skill;
 use Specflux\SenroFlux\Skills\SkillSet;
@@ -908,22 +909,39 @@ abstract class Pack {
 			return new SetupCheck( $this->name() . '/binding', SetupCheck::BLOCKING, null === $error, $message, null, null, $message, $code );
 		}
 
+		$role = Onboarding::roleLabel( $user_id );
+		if ( ContentBundle::covers( $this->name() ) ) {
+			$fix_message = sprintf(
+				/* translators: %s: a user role, e.g. "Administrator". */
+				__( 'Bind %s to SenroFlux content in SenroGate (Tools > Agent Capability Packs), then come back here.', 'senroflux' ),
+				$role
+			);
+			$blocked = Onboarding::askToBindMessage( $role );
+			$url     = Onboarding::bindUrl( $user_id );
+		} else {
+			$fix_message = sprintf(
+				/* translators: 1: a user role, e.g. "Administrator". 2: capability pack name, e.g. "commerce". */
+				__( 'Turn on the %2$s pack for %1$s in SenroGate (Tools > Agent Capability Packs), then come back here.', 'senroflux' ),
+				$role,
+				$this->name()
+			);
+			$blocked = sprintf(
+				/* translators: 1: a user role, e.g. "Editor". 2: capability pack name, e.g. "commerce". */
+				__( 'Ask an administrator to turn on the %2$s pack for %1$s in SenroGate.', 'senroflux' ),
+				$role,
+				$this->name()
+			);
+			$url = admin_url( 'tools.php?page=' . Onboarding::PACKS_PAGE );
+		}
+
 		return new SetupCheck(
 			$this->name() . '/binding',
 			SetupCheck::BLOCKING,
 			false,
-			sprintf(
-				/* translators: %s: capability pack name, e.g. "posts". */
-				__( 'The %s pack is not turned on for your account. Turn it on for your role in Tools > Agent Capability Packs.', 'senroflux' ),
-				$this->name()
-			),
-			admin_url( 'tools.php?page=agent-safety-packs' ),
+			$fix_message,
+			$url,
 			'manage_options',
-			sprintf(
-				/* translators: %s: capability pack name, e.g. "posts". */
-				__( 'The %s pack is not turned on for your account. Ask a site administrator to turn it on.', 'senroflux' ),
-				$this->name()
-			),
+			$blocked,
 			$code
 		);
 	}

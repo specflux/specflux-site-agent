@@ -33,8 +33,10 @@ use Specflux\SenroFlux\Packs\Pack;
 use Specflux\SenroFlux\Packs\PackRegistry;
 use Specflux\SenroFlux\Run\Report;
 use Specflux\SenroFlux\Run\RunStatus;
+use Specflux\SenroFlux\Run\SiteBrief;
 use Specflux\SenroFlux\Run\StepKind;
 use Specflux\SenroFlux\Setup\Checks;
+use Specflux\SenroFlux\Setup\Onboarding;
 use Specflux\SenroFlux\Setup\SetupCheck;
 use Specflux\SenroFlux\Tools\VerbTier;
 use WP_Error;
@@ -95,6 +97,7 @@ class RunsScreen {
 		add_action( 'admin_post_senroflux_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
 		add_action( 'wp_ajax_senroflux_setup_panel', array( $this, 'handleSetupPanel' ) );
 		add_action( 'wp_ajax_senroflux_dismiss_agent_safety_check', array( $this, 'handleDismissAgentSafetyCheck' ) );
+		add_action( 'wp_ajax_senroflux_setup_brief', array( $this, 'handleSetupBrief' ) );
 		add_action( 'admin_notices', array( $this, 'maybeRenderActivationNotice' ) );
 		add_filter( ConsumerPolicy::FILTER, array( $this, 'registerAdminConsumer' ) );
 	}
@@ -312,6 +315,9 @@ class RunsScreen {
 				// above the app names the fix; this is the app's half. It is
 				// refreshed on window focus through `senroflux_setup_panel`.
 				'startBlocked'       => $this->startBlocked( get_current_user_id() ),
+				// Guided setup: the "Set up SenroFlux" panel's steps, computed
+				// per viewer ({@see Onboarding::steps()}) and refreshed on focus.
+				'setupSteps'         => Onboarding::steps( get_current_user_id() ),
 				// Per-run model choice: only currently-configured
 				// providers/models, grouped by provider — the new-run form's
 				// select and the run header's display name both read this
@@ -444,7 +450,14 @@ class RunsScreen {
 	 * here: they already shape {@see runnablePacks()}.
 	 */
 	protected function startBlocked( int $user_id ): bool {
-		return null !== Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) );
+		if ( null !== Checks::firstBlockingFailure( Checks::harnessChecks( $user_id ) ) ) {
+			return true;
+		}
+
+		// The old Agent Safety plugin beside SenroGate: the panel's step 3.
+		// The binding step (4) needs no entry here; it already empties
+		// {@see runnablePacks()}.
+		return Onboarding::oldPluginBlocks( $user_id );
 	}
 
 	/**
@@ -865,19 +878,17 @@ class RunsScreen {
 	// ------------------------------------------------------------------
 
 	/**
-	 * The setup panel markup: one notice per harness check that is either
-	 * failing (blocking) or showing (advisory, undismissed). Empty string
-	 * when everything is clear.
+	 * The server-rendered notices above the app: ADVISORY harness checks only
+	 * (an ability awaiting review). Every blocking check, and the "install
+	 * SenroGate" nudge, now lives in the React "Set up SenroFlux" panel
+	 * ({@see Onboarding}), so the same problem is never said twice. Always
+	 * emits the `#senroflux-setup-panel` container, which the screen swaps on
+	 * window focus.
 	 */
 	private function renderSetupPanel( int $user_id ): string {
-		$checks = Checks::harnessChecks( $user_id );
-		if ( array() === $checks ) {
-			return '';
-		}
-
 		$html = '<div id="senroflux-setup-panel" class="senroflux-setup-panel">';
-		foreach ( $checks as $check ) {
-			if ( $check->isBlocking() && $check->passed() ) {
+		foreach ( Checks::harnessChecks( $user_id ) as $check ) {
+			if ( $check->isBlocking() || 'senroflux/agent-safety' === $check->id() ) {
 				continue;
 			}
 			$html .= $this->renderSetupCheckNotice( $check, $user_id );
@@ -947,11 +958,12 @@ class RunsScreen {
 		$pack_obj = '' !== $pack ? PackRegistry::fromFilters()->get( $pack ) : null;
 
 		$checks         = null !== $pack_obj ? Checks::forPack( $pack_obj, $user_id ) : Checks::harnessChecks( $user_id );
-		$start_disabled = null !== Checks::firstBlockingFailure( $checks );
+		$start_disabled = null !== Checks::firstBlockingFailure( $checks ) || Onboarding::oldPluginBlocks( $user_id );
 
 		wp_send_json_success(
 			array(
 				'html'              => $this->renderSetupPanel( $user_id ),
+				'steps'             => Onboarding::steps( $user_id ),
 				'start_enabled'     => ! $start_disabled,
 				// Stage 22b: the whole start state, so the screen refreshes
 				// the pack picker (and its "unavailable" notices) on focus
@@ -960,6 +972,40 @@ class RunsScreen {
 				'unavailable_packs' => $this->unavailablePacks(),
 			)
 		);
+	}
+
+	/**
+	 * admin-ajax: save or skip the site brief from the setup panel's step 5.
+	 * Same nonce as every Runs-screen write; `manage_options` like the
+	 * suggestion card's Save. A too-long brief is refused, never truncated.
+	 */
+	public function handleSetupBrief(): void {
+		check_ajax_referer( 'senroflux_run', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ), 403 );
+		}
+
+		$action = sanitize_key( wp_unslash( $_POST['brief_action'] ?? '' ) );
+
+		if ( 'skip' === $action ) {
+			update_option( Onboarding::BRIEF_SKIPPED_OPTION, 1, false );
+		} elseif ( 'save' === $action ) {
+			$saved = SiteBrief::set( sanitize_textarea_field( wp_unslash( $_POST['brief'] ?? '' ) ) );
+			if ( is_wp_error( $saved ) ) {
+				wp_send_json_error(
+					array(
+						'code'    => $saved->get_error_code(),
+						'message' => $saved->get_error_message(),
+					),
+					400
+				);
+			}
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Unknown action.', 'senroflux' ) ), 400 );
+		}
+
+		wp_send_json_success( array( 'steps' => Onboarding::steps( get_current_user_id() ) ) );
 	}
 
 	/**

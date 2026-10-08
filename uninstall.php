@@ -35,6 +35,7 @@ foreach ( array(
 	'senroflux_db_version',
 	'senroflux_legacy_run_watermark',
 	'senroflux_site_brief',
+	'senroflux_setup_brief_skipped',
 	'senroflux_use_theme_patterns',
 	'senroflux_uninstall_delete_data',
 ) as $senroflux_option ) {

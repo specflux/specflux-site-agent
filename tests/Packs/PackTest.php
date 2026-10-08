@@ -235,12 +235,15 @@ final class PackTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $admin );
 		$this->assertSame( 'pack_unbound', $admin->get_error_code() );
 		$this->assertStringContainsString( 'Tools > Agent Capability Packs', $admin->get_error_message() );
+		$this->assertStringContainsString( 'in SenroGate', $admin->get_error_message() );
 		$this->assertStringNotContainsString( '`', $admin->get_error_message() );
 
+		$GLOBALS['senroflux_test_user_caps']       = array(); // No fallback to a leaked current-user knob.
 		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
 		$author                                    = $pack->preflight( 9 );
 		$this->assertInstanceOf( WP_Error::class, $author );
-		$this->assertStringContainsString( 'Ask a site administrator', $author->get_error_message() );
+		$this->assertStringContainsString( 'Ask an administrator to turn on the', $author->get_error_message() );
+		$this->assertStringContainsString( 'in SenroGate', $author->get_error_message() );
 		$this->assertStringNotContainsString( '`', $author->get_error_message() );
 	}
 

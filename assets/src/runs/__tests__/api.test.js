@@ -4,7 +4,7 @@
  * looked for a `pack` field before this fix).
  */
 
-import { startRun, fetchSetupState, tickRun } from '../api';
+import { startRun, fetchSetupState, tickRun, saveSetupBrief } from '../api';
 
 describe( 'startRun', () => {
 	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
@@ -123,6 +123,31 @@ describe( 'fetchSetupState (stage 22b, J1)', () => {
 		expect( body.get( 'action' ) ).toBe( 'senroflux_setup_panel' );
 		expect( body.get( 'nonce' ) ).toBe( 'abc123' );
 		expect( state.start_enabled ).toBe( true );
+	} );
+} );
+
+describe( 'saveSetupBrief (guided setup)', () => {
+	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+
+	it( 'posts the save action with the brief and returns the refreshed steps', async () => {
+		global.fetch = jest.fn().mockResolvedValue( { json: () => Promise.resolve( { success: true, data: { steps: [ { id: 'provider' } ] } } ) } );
+
+		const result = await saveSetupBrief( 'save', 'We sell bicycles.', config );
+
+		const body = new URLSearchParams( global.fetch.mock.calls[ 0 ][ 1 ].body.toString() );
+		expect( body.get( 'action' ) ).toBe( 'senroflux_setup_brief' );
+		expect( body.get( 'brief_action' ) ).toBe( 'save' );
+		expect( body.get( 'brief' ) ).toBe( 'We sell bicycles.' );
+		expect( result.steps ).toHaveLength( 1 );
+	} );
+
+	it( 'throws the server\'s message when the brief is refused', async () => {
+		global.fetch = jest.fn().mockResolvedValue( {
+			status: 400,
+			json: () => Promise.resolve( { success: false, data: { code: 'brief_too_long', message: 'Too long.' } } ),
+		} );
+
+		await expect( saveSetupBrief( 'save', 'x', config ) ).rejects.toThrow( 'Too long.' );
 	} );
 } );
 
