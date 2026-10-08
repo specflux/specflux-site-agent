@@ -55,26 +55,26 @@ final class Authorize {
 	 */
 	public static function run( string $method, array $in ): Page {
 		if ( ! Connector::enabled() ) {
-			return self::error( 'This site is not accepting app connections.', 404 );
+			return self::error( __( 'This site is not accepting app connections.', 'senroflux' ), 404 );
 		}
 		if ( ! is_user_logged_in() ) {
 			// Not a redirect to the client: this goes to WordPress's own login and comes straight back.
 			return 'POST' === $method
-				? self::error( 'Your session expired. Start the connection again from the app.', 403 )
+				? self::error( __( 'Your session expired. Start the connection again from the app.', 'senroflux' ), 403 )
 				: new Page( 302, '', wp_login_url( self::returnUrl( $in ) ) );
 		}
 		if ( ! current_user_can( Connector::capability() ) ) {
-			return self::error( 'Your account is not allowed to connect apps to this site. Ask a site administrator.', 403 );
+			return self::error( __( 'Your account is not allowed to connect apps to this site. Ask a site administrator.', 'senroflux' ), 403 );
 		}
 
 		// 1. Who is asking, and where may we send the browser? Failures here never redirect.
 		$client = Clients::resolve( self::str( $in, 'client_id' ) );
 		if ( null === $client ) {
-			return self::error( 'This app is not recognised. Start the connection again from the app.', 400 );
+			return self::error( __( 'This app is not recognised. Start the connection again from the app.', 'senroflux' ), 400 );
 		}
 		$redirect = self::str( $in, 'redirect_uri' );
 		if ( '' === $redirect || ! $client->allowsRedirect( $redirect ) ) {
-			return self::error( 'The app asked to return to an address it has not registered, so the request was stopped.', 400 );
+			return self::error( __( 'The app asked to return to an address it has not registered, so the request was stopped.', 'senroflux' ), 400 );
 		}
 
 		// 2. The redirect target is now trusted: further errors go back to the client (RFC 6749 §4.1.2.1).
@@ -110,7 +110,7 @@ final class Authorize {
 		// 3. The decision. Without a valid nonce this is a forged cross-site POST: refuse, do not redirect.
 		$nonce = self::str( $in, '_wpnonce' );
 		if ( '' === $nonce || false === wp_verify_nonce( $nonce, $nonce_action ) ) {
-			return self::error( 'This request could not be verified. Start the connection again from the app.', 403 );
+			return self::error( __( 'This request could not be verified. Start the connection again from the app.', 'senroflux' ), 403 );
 		}
 		if ( 'approve' !== self::str( $in, 'decision' ) ) {
 			return self::fail( $redirect, 'access_denied', $state );
@@ -185,7 +185,7 @@ final class Authorize {
 	private static function error( string $message, int $status ): Page {
 		return new Page(
 			$status,
-			self::document( 'Cannot connect', '<h1>' . esc_html( 'Cannot connect this app' ) . '</h1><p>' . esc_html( $message ) . '</p>' ),
+			self::document( __( 'Cannot connect', 'senroflux' ), '<h1>' . esc_html__( 'Cannot connect this app', 'senroflux' ) . '</h1><p>' . esc_html( $message ) . '</p>' ),
 			null,
 			self::securityHeaders()
 		);
@@ -212,34 +212,34 @@ final class Authorize {
 
 		$notes = '';
 		if ( RedirectUri::isLoopback( $redirect ) ) {
-			$notes .= '<p class="warn">' . esc_html( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.' ) . '</p>';
+			$notes .= '<p class="warn">' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'senroflux' ) . '</p>';
 		}
 		$write = $can_write
-			? '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html( 'Read and write' ) . '</strong> ' . esc_html( 'It can also ask to change things. Changes still follow this site\'s approval rules.' ) . '</label>'
+			? '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'senroflux' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'senroflux' ) . '</label>'
 			: '';
 
 		// A dynamically registered client picks its own name, so the name proves nothing: say so, and
 		// make the redirect host (which the client cannot choose freely) the dominant line.
 		$identity = $client->document
-			? '<p class="meta">' . esc_html( 'Verified by ' . (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) . '</p>'
-			: '<p class="meta unverified">' . esc_html( 'Not verified. This name was chosen by the app itself.' ) . '</p>';
+			? '<p class="meta">' . esc_html( sprintf( /* translators: %s: host name of the app's verified client metadata document. */ __( 'Verified by %s', 'senroflux' ), (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) ) . '</p>'
+			: '<p class="meta unverified">' . esc_html__( 'Not verified. This name was chosen by the app itself.', 'senroflux' ) . '</p>';
 
-		$body = '<h1>' . esc_html( 'Connect ' . $client->name . '?' ) . '</h1>'
+		$body = '<h1>' . esc_html( sprintf( /* translators: %s: name of the app asking to connect. */ __( 'Connect %s?', 'senroflux' ), $client->name ) ) . '</h1>'
 			. $identity
-			. '<div class="host">' . esc_html( 'After you approve, you\'ll be sent to' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
-			. '<p>' . esc_html( 'This app is asking to use SenroFlux on this site.' ) . '</p>'
+			. '<div class="host">' . esc_html__( 'After you approve, you\'ll be sent to', 'senroflux' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
+			. '<p>' . esc_html__( 'This app is asking to use SenroFlux on this site.', 'senroflux' ) . '</p>'
 			. $notes
 			. '<form method="post" action="' . esc_url( OAuth::authorizeUrl() ) . '">'
 			. $hidden
-			. '<fieldset><legend>' . esc_html( 'What may it do?' ) . '</legend>'
-			. '<label><input type="radio" name="grant" value="read" checked> <strong>' . esc_html( 'Read only' ) . '</strong> ' . esc_html( 'It can look at pages, posts, media and settings.' ) . '</label>'
+			. '<fieldset><legend>' . esc_html__( 'What may it do?', 'senroflux' ) . '</legend>'
+			. '<label><input type="radio" name="grant" value="read" checked> <strong>' . esc_html__( 'Read only', 'senroflux' ) . '</strong> ' . esc_html__( 'It can look at pages, posts, media and settings.', 'senroflux' ) . '</label>'
 			. $write
 			. '</fieldset>'
-			. '<p><button type="submit" name="decision" value="approve" class="primary">' . esc_html( 'Approve' ) . '</button> '
-			. '<button type="submit" name="decision" value="deny">' . esc_html( 'Deny' ) . '</button></p>'
+			. '<p><button type="submit" name="decision" value="approve" class="primary">' . esc_html__( 'Approve', 'senroflux' ) . '</button> '
+			. '<button type="submit" name="decision" value="deny">' . esc_html__( 'Deny', 'senroflux' ) . '</button></p>'
 			. '</form>';
 
-		return new Page( 200, self::document( 'Connect an app', $body ), null, self::securityHeaders() );
+		return new Page( 200, self::document( __( 'Connect an app', 'senroflux' ), $body ), null, self::securityHeaders() );
 	}
 
 	/**
