@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tools;
 
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use Specflux\SenroFlux\Passthrough\Passthrough;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\Run;
@@ -76,6 +77,13 @@ final class ToolRegistry {
 			// standing invitation the run can never honour, and a live model
 			// burned whole turns discovering that the hard way.
 			if ( $images_exhausted && self::GENERATE_IMAGE_ABILITY === $name ) {
+				continue;
+			}
+
+			// Tool breadth is connector-only: ~22 more tools would slow and
+			// cost every site run, so a run never gets one (and a model that
+			// names one gets unknown_tool), whatever the allow-list says.
+			if ( ToolBreadth::isBreadthAbility( $name ) ) {
 				continue;
 			}
 

@@ -216,6 +216,21 @@ final class ToolBreadth {
 	}
 
 	/**
+	 * Is this ability id one of the breadth abilities, in a namespace a pack
+	 * resolves them through (`senroflux/` polyfill or `core/`)? Used to keep
+	 * them out of in-admin runs; the connector does not consult it.
+	 *
+	 * @param string $ability Ability id.
+	 */
+	public static function isBreadthAbility( string $ability ): bool {
+		$parts = explode( '/', $ability, 2 );
+
+		return 2 === count( $parts )
+			&& in_array( $parts[0], array( 'senroflux', 'core' ), true )
+			&& in_array( $parts[1], self::allTemplates(), true );
+	}
+
+	/**
 	 * @param list<string> $groups Group names.
 	 * @return array<string,array{0:string,1:string,2:int,3:string,4:list<string>,5:string}>
 	 */

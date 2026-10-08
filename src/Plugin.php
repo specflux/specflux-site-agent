@@ -17,6 +17,7 @@ use Specflux\SenroFlux\Model\ImageCapability;
 use Specflux\SenroFlux\Present\ResultPresenter;
 use Specflux\SenroFlux\Model\ModelGatewayInterface;
 use Specflux\SenroFlux\Packs\ObjectLookup;
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Run\GateMode;
 use Specflux\SenroFlux\Run\Report;
@@ -604,6 +605,10 @@ final class Plugin {
 				}
 				$allow = array_values( array_diff( $allow, $withheld_abilities ) );
 			}
+
+			// Tool breadth is connector-only: drop it from the run's allow-list
+			// (ToolRegistry refuses it too, so a hand-built allow can't bring it back).
+			$allow = array_values( array_filter( $allow, static fn ( $ability ): bool => ! ToolBreadth::isBreadthAbility( (string) $ability ) ) );
 
 			// The allow-list is fixed; the pin lives on the run row from here.
 			$pack_obj->useRunPlatform( null );
