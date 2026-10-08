@@ -68,3 +68,10 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Mcp_Adapter', false ) ) {
 		}
 	}
 }
+
+if ( ! function_exists( 'get_userdata' ) ) {
+	/** Same fixture lookup the blocks stub uses: $GLOBALS['senroflux_test_users'][id]. */
+	function get_userdata( int $id ): mixed {
+		return $GLOBALS['senroflux_test_users'][ $id ] ?? false;
+	}
+}

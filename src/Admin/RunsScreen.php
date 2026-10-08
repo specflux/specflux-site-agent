@@ -27,6 +27,7 @@ namespace Specflux\SenroFlux\Admin;
 
 use Specflux\SenroFlux\Plugin;
 use Specflux\SenroFlux\Approval\GrantBridge;
+use Specflux\SenroFlux\Connector\ApprovalsScreen;
 use Specflux\SenroFlux\Http\ConsumerPolicy;
 use Specflux\SenroFlux\Model\ModelChoice;
 use Specflux\SenroFlux\Packs\Pack;
@@ -65,7 +66,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class RunsScreen {
 
-	private const SLUG = 'senroflux-runs';
+	public const SLUG = 'senroflux-runs';
 
 	/**
 	 * The consumer id label for admin-started runs (S13). Public (0.3 S3): the
@@ -844,6 +845,15 @@ class RunsScreen {
 
 		echo '<div class="wrap">';
 		printf( '<h1>%s</h1>', esc_html__( 'SenroFlux', 'senroflux' ) );
+
+		// K2: the "From AI apps" tab (calls parked by the MCP connector in built-in mode).
+		ApprovalsScreen::renderTabs();
+		if ( ApprovalsScreen::requested() ) {
+			ApprovalsScreen::render();
+			echo '</div>';
+
+			return;
+		}
 
 		echo $this->renderSetupPanel( get_current_user_id() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-escaped fragment.
 

@@ -65,6 +65,7 @@ final class Connector {
 		add_action( 'mcp_adapter_init', array( self::class, 'createServer' ) );
 		add_filter( 'mcp_adapter_tools_list', array( Gate::class, 'filterTools' ), 10, 3 );
 		add_filter( 'mcp_adapter_pre_tool_call', array( Gate::class, 'preCall' ), 10, 4 );
+		ApprovalsScreen::register();
 	}
 
 	/** Sanitise the posted value to a bool. */

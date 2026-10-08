@@ -10,6 +10,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Connector;
 
 use Specflux\SenroFlux\Plugin;
+use Specflux\SenroFlux\Run\GateMode;
 use Specflux\SenroFlux\Tools\VerbTier;
 use WP_Error;
 
@@ -123,7 +124,63 @@ final class Gate {
 			return self::denied( 'senroflux_connector_read_only', __( 'This connection is read-only. Ask the site owner to give it read and write access.', 'senroflux' ) );
 		}
 
-		return $args;
+		return GateMode::BuiltIn === $mode ? self::builtInDecision( $args, $connection, $ability, $call ) : $args;
+	}
+
+	/**
+	 * Built-in mode (SenroGate absent): reads run; anything else parks until
+	 * a site admin approves that exact call, then runs once.
+	 *
+	 * The adapter can only pass a call on or short-circuit it with a WP_Error,
+	 * so a parked call reaches the client as an error result whose message
+	 * tells the agent what to ask for and to repeat the call afterwards.
+	 *
+	 * @param mixed               $args       The call's arguments, returned to let it run.
+	 * @param Connection          $connection The request's connection.
+	 * @param string              $ability    The ability behind the tool.
+	 * @param array<string,mixed> $call       The arguments as an array.
+	 */
+	private static function builtInDecision( mixed $args, Connection $connection, string $ability, array $call ): mixed {
+		$tier = Tiering::forCall( $ability, $call, GateMode::BuiltIn );
+		if ( VerbTier::TIER_0 === $tier ) {
+			return $args;
+		}
+
+		// Refused outright, never parked: commerce writes need SenroGate (a
+		// call can tier above its listed ceiling), and the connector's own
+		// settings are not for an AI app to change.
+		if ( Tiering::needsSenroGate( $ability ) ) {
+			return self::denied( 'senroflux_connector_needs_senrogate', __( 'Changes to the store need the SenroGate plugin. This site does not have it, so this call is refused.', 'senroflux' ) );
+		}
+		if ( self::touchesConnectorSettings( $call ) ) {
+			return self::denied( 'senroflux_connector_settings', __( 'AI apps cannot change the connector\'s own settings.', 'senroflux' ) );
+		}
+
+		$hash = Approvals::hash( $connection->userId, $connection->uuid, $ability, $call );
+		if ( Approvals::consume( $hash ) ) {
+			return $args;
+		}
+		Approvals::park( $connection->userId, $connection->uuid, $ability, $call );
+
+		return new WP_Error(
+			'senroflux_connector_awaiting_approval',
+			sprintf(
+				/* translators: %s: wp-admin URL of the approvals tab. */
+				__( 'This change was not made. It needs the site owner\'s approval first. Ask them to open %s and approve it, then repeat exactly the same call. The approval works once, for 15 minutes.', 'senroflux' ),
+				ApprovalsScreen::url()
+			)
+		);
+	}
+
+	/**
+	 * Do the arguments name one of the connector's own options or records?
+	 *
+	 * @param array<string,mixed> $call The call's arguments.
+	 */
+	private static function touchesConnectorSettings( array $call ): bool {
+		$haystack = strtolower( (string) wp_json_encode( $call ) );
+
+		return str_contains( $haystack, 'senroflux_connector' ) || str_contains( $haystack, Connections::META_KEY );
 	}
 
 	/** A refusal the adapter returns to the client as the tool's error. */
