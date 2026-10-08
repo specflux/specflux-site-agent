@@ -71,7 +71,12 @@ export default function App( { config } ) {
 	const initialRunId = config.initialRunId ? Number( config.initialRunId ) : null;
 	const [ selectedRunId, setSelectedRunId ] = useState( initialRunId );
 	const [ runDetail, setRunDetail ] = useState( null );
-	const [ busy, setBusy ] = useState( false );
+	// Which run a request is in flight for: a run id, 0 while a new run is
+	// still being created (no id yet), null when nothing is in flight. Scoped
+	// per run so a tick still running for run A never disables Accept/Approve
+	// on a parked run B the viewer has switched to.
+	const [ busyRunId, setBusyRunId ] = useState( null );
+	const busy = null !== busyRunId && ( 0 === busyRunId || sameRunId( busyRunId, selectedRunId ) );
 	const [ tickCount, setTickCount ] = useState( 0 );
 	const [ actionError, setActionError ] = useState( '' );
 	// The start state — which packs are runnable, and whether a BLOCKING setup
@@ -297,7 +302,7 @@ export default function App( { config } ) {
 
 	const driveTicks = useCallback(
 		( runId, stepCount, resume ) => {
-			setBusy( true );
+			setBusyRunId( runId );
 			setActionError( '' );
 
 			const step = ( id, count, body, iteration ) => {
@@ -326,7 +331,7 @@ export default function App( { config } ) {
 				} )
 				.finally( () => {
 					if ( aliveRef.current ) {
-						setBusy( false );
+						setBusyRunId( ( current ) => ( sameRunId( current, runId ) ? null : current ) );
 					}
 				} );
 		},
@@ -335,7 +340,7 @@ export default function App( { config } ) {
 
 	const handleStart = useCallback(
 		( goal, pack, model, followUpOf ) => {
-			setBusy( true );
+			setBusyRunId( 0 );
 			setActionError( '' );
 			startRun( goal, ajaxConfig, pack, model, followUpOf )
 				.then( ( state ) => {
@@ -350,7 +355,7 @@ export default function App( { config } ) {
 				} )
 				.catch( ( error ) => {
 					if ( aliveRef.current ) {
-						setBusy( false );
+						setBusyRunId( null );
 						setActionError( error.message || __( 'Could not start the run.', 'senroflux' ) );
 					}
 				} );
@@ -373,7 +378,7 @@ export default function App( { config } ) {
 			return;
 		}
 		const runId = runDetail.run.id;
-		setBusy( true );
+		setBusyRunId( runId );
 		setActionError( '' );
 		cancelRun( runId, ajaxConfig )
 			.then( ( state ) => {
@@ -386,7 +391,7 @@ export default function App( { config } ) {
 			} )
 			.finally( () => {
 				if ( aliveRef.current ) {
-					setBusy( false );
+					setBusyRunId( ( current ) => ( sameRunId( current, runId ) ? null : current ) );
 				}
 			} );
 		// eslint-disable-next-line react-hooks/exhaustive-deps
