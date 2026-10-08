@@ -207,6 +207,42 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
+	public function test_a_second_spend_fails_even_if_the_list_entry_is_stale(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+		$this->call( self::WRITE, array( 'x' => 1 ) );
+		$hash = $this->hash( array( 'x' => 1 ) );
+		Approvals::approve( $hash );
+		$stale = get_option( Approvals::OPTION );
+
+		$this->assertTrue( Approvals::consume( $hash ) );
+		update_option( Approvals::OPTION, $stale ); // A racer's write put the list entry back.
+
+		$this->assertFalse( Approvals::consume( $hash ) );
+	}
+
+	public function test_an_expired_grant_cannot_be_spent_and_is_removed(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+		$this->call( self::WRITE, array( 'x' => 1 ) );
+		$hash = $this->hash( array( 'x' => 1 ) );
+		Approvals::approve( $hash );
+		Clock::useFixed( 1_800_000_000 + Approvals::APPROVAL_TTL + 1 );
+
+		$this->assertFalse( Approvals::consume( $hash ) );
+		$this->assertFalse( get_option( Approvals::GRANT_PREFIX . $hash ) );
+	}
+
+	public function test_deny_removes_the_grant(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+		$this->call( self::WRITE, array( 'x' => 1 ) );
+		$hash = $this->hash( array( 'x' => 1 ) );
+		Approvals::approve( $hash );
+		$this->assertNotFalse( get_option( Approvals::GRANT_PREFIX . $hash ) );
+
+		Approvals::deny( $hash );
+
+		$this->assertFalse( get_option( Approvals::GRANT_PREFIX . $hash ) );
+	}
+
 	public function test_a_read_only_connection_never_reaches_parking(): void {
 		$this->connectAs( Connection::SCOPE_READ );
 

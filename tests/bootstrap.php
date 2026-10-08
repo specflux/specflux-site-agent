@@ -571,6 +571,9 @@ if ( ! function_exists( 'update_option' ) ) {
 if ( ! function_exists( 'delete_option' ) ) {
 	/** Test knob: options backed by an in-memory array. */
 	function delete_option( string $option ): bool {
+		if ( ! array_key_exists( $option, $GLOBALS['senroflux_test_options'] ) ) {
+			return false; // Like core: nothing deleted, nothing to report.
+		}
 		unset( $GLOBALS['senroflux_test_options'][ $option ] );
 
 		return true;

@@ -26,6 +26,9 @@ final class Approvals {
 	/** Option holding hash => entry. */
 	public const OPTION = 'senroflux_connector_approvals';
 
+	/** Prefix of the per-approval grant option; the suffix is the call's hash. */
+	public const GRANT_PREFIX = 'senroflux_cxa_';
+
 	/** An approval can be spent within this many seconds of being granted. */
 	public const APPROVAL_TTL = 900;
 
@@ -102,6 +105,8 @@ final class Approvals {
 
 		$entries[ $hash ]['approved'] = Clock::now();
 		self::save( $entries );
+		// The grant is what is spent: one row, deleted by exactly one caller.
+		update_option( self::GRANT_PREFIX . $hash, $entries[ $hash ]['approved'], false );
 
 		return true;
 	}
@@ -111,6 +116,7 @@ final class Approvals {
 		$entries = self::entries();
 		unset( $entries[ $hash ] );
 		self::save( $entries );
+		delete_option( self::GRANT_PREFIX . $hash );
 	}
 
 	/**
@@ -119,15 +125,22 @@ final class Approvals {
 	 * @param string $hash The call's hash.
 	 */
 	public static function consume( string $hash ): bool {
-		$entries = self::entries();
-		if ( ! isset( $entries[ $hash ] ) || $entries[ $hash ]['approved'] <= 0 ) {
+		$key     = self::GRANT_PREFIX . $hash;
+		$granted = (int) get_option( $key, 0 );
+
+		// A DELETE that removes the row succeeds for one caller only, so two
+		// concurrent identical calls cannot both spend one approval.
+		if ( $granted <= 0 || ! delete_option( $key ) ) {
 			return false;
 		}
 
-		unset( $entries[ $hash ] );
-		self::save( $entries );
+		$entries = self::entries();
+		if ( isset( $entries[ $hash ] ) ) {
+			unset( $entries[ $hash ] );
+			self::save( $entries );
+		}
 
-		return true;
+		return Clock::now() - $granted <= self::APPROVAL_TTL;
 	}
 
 	/**
@@ -162,6 +175,9 @@ final class Approvals {
 			$approved = (int) ( $entry['approved'] ?? 0 );
 			$expired  = $approved > 0 ? $now - $approved > self::APPROVAL_TTL : $now - $created > self::PENDING_TTL;
 			if ( $expired ) {
+				if ( $approved > 0 ) {
+					delete_option( self::GRANT_PREFIX . $hash );
+				}
 				continue;
 			}
 			$clean[ $hash ] = array(
