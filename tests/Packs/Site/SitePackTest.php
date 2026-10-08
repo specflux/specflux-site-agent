@@ -11,6 +11,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tests\Packs\Site;
 
+use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
 use Specflux\SenroFlux\Packs\Site\SitePack;
 use Specflux\SenroFlux\Plugin;
@@ -130,7 +131,7 @@ final class SitePackTest extends TestCase {
 				'stock-search' => 'upload_files',
 				'stock-import' => 'upload_files',
 			),
-			$pack->roleCapabilities()
+			BreadthFilter::strip( $pack->roleCapabilities() )
 		);
 	}
 

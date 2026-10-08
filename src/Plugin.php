@@ -306,6 +306,9 @@ final class Plugin {
 		);
 		\Specflux\SenroFlux\Packs\Content\Abilities::boot();
 		\Specflux\SenroFlux\Packs\Content\Media::boot();
+		// 0.5 K5: tool breadth — post list/trash/revisions/meta and comment moderation.
+		\Specflux\SenroFlux\Packs\Content\PostTools::boot();
+		\Specflux\SenroFlux\Packs\Content\Comments::boot();
 		// S19: the commerce pack's own polyfill abilities. Registered
 		// unconditionally like the other registrars above — `wp_register_ability`
 		// is harmless with WooCommerce absent, and the pack itself never
@@ -327,6 +330,11 @@ final class Plugin {
 		\Specflux\SenroFlux\Packs\Site\FrontPage::boot();
 		// 0.3 quality feature 5: the style-variation abilities.
 		\Specflux\SenroFlux\Packs\Site\Style::boot();
+		// 0.5 K5: users, settings, classic menus, plugin and theme inventory.
+		\Specflux\SenroFlux\Packs\Site\Users::boot();
+		\Specflux\SenroFlux\Packs\Site\Settings::boot();
+		\Specflux\SenroFlux\Packs\Site\Menus::boot();
+		\Specflux\SenroFlux\Packs\Site\Inventory::boot();
 		// 0.3 S4: the pages pack's vocabulary/validator plug into the shared
 		// content registrar under its own slug — `list-patterns` and the write
 		// abilities resolve THIS pair only while a 'pages' run is ticking (see

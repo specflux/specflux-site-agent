@@ -11,6 +11,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tests\Packs\Posts;
 
+use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Packs\Pages\PagesPack;
@@ -131,7 +132,7 @@ final class PostsPackTest extends TestCase {
 				'stock-search' => 'upload_files',
 				'stock-import' => 'upload_files',
 			),
-			$pack->roleCapabilities()
+			BreadthFilter::strip( $pack->roleCapabilities() )
 		);
 	}
 

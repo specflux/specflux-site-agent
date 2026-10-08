@@ -150,7 +150,7 @@ final class ContentBundleTest extends TestCase {
 
 		foreach ( $bundle->allow as $ability ) {
 			$this->assertStringNotContainsString( 'product', $ability );
-			$this->assertStringNotContainsString( 'order', $ability );
+			$this->assertStringNotContainsString( 'order', str_replace( 'reorder-menu-items', '', $ability ) );
 		}
 	}
 

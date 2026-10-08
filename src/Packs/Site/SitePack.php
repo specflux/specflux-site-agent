@@ -22,6 +22,7 @@ namespace Specflux\SenroFlux\Packs\Site;
 
 use Specflux\SenroFlux\Packs\Content\Media;
 use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Skills\Skill;
 use Specflux\SenroFlux\Skills\SkillSource;
@@ -63,7 +64,7 @@ final class SitePack extends Pack {
 				// 0.3 quality feature 5: the style-variation pair.
 				'read-style'   => 'read-style',
 				'set-style'    => 'set-style',
-			)
+			) + ToolBreadth::roles( array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) )
 		);
 	}
 
@@ -124,7 +125,7 @@ final class SitePack extends Pack {
 			'stock-image-import' => array( 'id', 'alt' ),
 			'read-style'         => array(),
 			'set-style'          => array( 'slug' ),
-			default              => array(),
+			default => ToolBreadth::inputProperties( $template, array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) ),
 		};
 	}
 
@@ -178,7 +179,7 @@ final class SitePack extends Pack {
 			'stock-image-import' => 'site/media-stock-import',
 			'read-style'         => 'site/read-style',
 			'set-style'          => 'site/set-style',
-			default              => $ability,
+			default => ToolBreadth::verbFor( 'site', $this->baseName( $ability ), array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) ) ?? $ability,
 		};
 	}
 
@@ -232,7 +233,7 @@ final class SitePack extends Pack {
 			'site/media-stock-import' => 1,
 			'site/read-style'         => 0,
 			'site/set-style'          => 2,
-		);
+		) + ToolBreadth::verbMap( 'site', array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) );
 	}
 
 	/**
@@ -296,7 +297,7 @@ final class SitePack extends Pack {
 			'site/media-generate',
 			'site/media-stock-import' => 'attachment_id',
 			'site/set-featured-image' => 'post_id',
-			default => parent::objectIdKey( $verb ),
+			default => ToolBreadth::objectIdKey( $verb, array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) ) ?? parent::objectIdKey( $verb ),
 		};
 	}
 
@@ -336,7 +337,7 @@ final class SitePack extends Pack {
 			'read-media'   => 'upload_files',
 			'stock-search' => 'upload_files',
 			'stock-import' => 'upload_files',
-		);
+		) + ToolBreadth::roleCapabilities( array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) );
 	}
 
 	/**
@@ -382,7 +383,7 @@ final class SitePack extends Pack {
 			'stock-import' => array( 'site/media-stock-import' ),
 			'read-style'   => array( 'site/read-style' ),
 			'set-style'    => array( 'site/set-style' ),
-		);
+		) + ToolBreadth::roleVerbs( 'site', array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS, ToolBreadth::SITE ) );
 	}
 
 	/**

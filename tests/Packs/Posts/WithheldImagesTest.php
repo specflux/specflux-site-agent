@@ -11,6 +11,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Tests\Packs\Posts;
 
+use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
 use Specflux\SenroFlux\Packs\Pack;
 use Specflux\SenroFlux\Packs\Pages\PagesPack;
@@ -57,7 +58,7 @@ final class WithheldImagesTest extends TestCase {
 
 	public function test_every_pack_withholds_every_image_role_from_an_account_without_upload_files(): void {
 		foreach ( array( new PostsPack(), new PagesPack(), new SitePack() ) as $pack ) {
-			$caps = $pack->roleCapabilities();
+			$caps = BreadthFilter::strip( $pack->roleCapabilities() );
 			foreach ( self::IMAGE_ROLES as $role ) {
 				$this->assertSame( 'upload_files', $caps[ $role ] ?? null, $pack->name() . ' ' . $role );
 			}
@@ -81,7 +82,9 @@ final class WithheldImagesTest extends TestCase {
 		$this->assertContains( 'senroflux/create-post', $allow );
 		$this->assertContains( 'senroflux/set-terms', $allow );
 		$this->assertContains( 'senroflux/list-terms', $allow );
-		$this->assertEqualsCanonicalizing( self::IMAGE_ROLES, $withheld );
+		// A Contributor also lacks the K5 comment-moderation capability; only the image roles are named in the notice.
+		$this->assertEqualsCanonicalizing( self::IMAGE_ROLES, array_values( array_intersect( $withheld, self::IMAGE_ROLES ) ) );
+		$this->assertContains( 'approve-comment', $withheld );
 		$this->assertSame( 'Images are off for this run — your account can\'t upload files.', $pack->withheldRoleNotice( $withheld ) );
 	}
 

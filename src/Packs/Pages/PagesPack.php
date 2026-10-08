@@ -22,6 +22,7 @@ namespace Specflux\SenroFlux\Packs\Pages;
 
 use Specflux\SenroFlux\Packs\Content\Media;
 use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Skills\Skill;
 use Specflux\SenroFlux\Skills\SkillSource;
@@ -61,7 +62,7 @@ final class PagesPack extends Pack {
 				// `generate` (spends the images budget) and `no_image_reason`.
 				'stock-search' => 'stock-image-search',
 				'stock-import' => 'stock-image-import',
-			)
+			) + ToolBreadth::roles( array( ToolBreadth::CONTENT ) )
 		);
 	}
 
@@ -117,7 +118,7 @@ final class PagesPack extends Pack {
 			'read-media'         => array( 'attachment_id' ),
 			'stock-image-search' => array( 'query' ),
 			'stock-image-import' => array( 'id', 'alt' ),
-			default              => array(),
+			default => ToolBreadth::inputProperties( $template, array( ToolBreadth::CONTENT ) ),
 		};
 	}
 
@@ -182,7 +183,7 @@ final class PagesPack extends Pack {
 			// S9: an ability this pack does not name keeps the ability id as
 			// its verb, which no entry of verbMap() answers — the fence then
 			// fails closed on it.
-			default           => $ability,
+			default => ToolBreadth::verbFor( 'pages', $this->baseName( $ability ), array( ToolBreadth::CONTENT ) ) ?? $ability,
 		};
 	}
 
@@ -230,7 +231,7 @@ final class PagesPack extends Pack {
 			'pages/media-stock-import' => 1,
 			'pages/update-live'        => 2,
 			'pages/publish'            => 2,
-		);
+		) + ToolBreadth::verbMap( 'pages', array( ToolBreadth::CONTENT ) );
 	}
 
 	/**
@@ -263,7 +264,7 @@ final class PagesPack extends Pack {
 			'read-media'   => array( 'pages/read-media' ),
 			'stock-search' => array( 'pages/media-stock-search' ),
 			'stock-import' => array( 'pages/media-stock-import' ),
-		);
+		) + ToolBreadth::roleVerbs( 'pages', array( ToolBreadth::CONTENT ) );
 	}
 
 	/**
@@ -283,7 +284,7 @@ final class PagesPack extends Pack {
 			'pages/media-generate',
 			'pages/media-stock-import' => 'attachment_id',
 			'pages/set-featured-image' => 'post_id',
-			default => parent::objectIdKey( $verb ),
+			default => ToolBreadth::objectIdKey( $verb, array( ToolBreadth::CONTENT ) ) ?? parent::objectIdKey( $verb ),
 		};
 	}
 
@@ -324,7 +325,7 @@ final class PagesPack extends Pack {
 			'read-media'   => 'upload_files',
 			'stock-search' => 'upload_files',
 			'stock-import' => 'upload_files',
-		);
+		) + ToolBreadth::roleCapabilities( array( ToolBreadth::CONTENT ) );
 	}
 
 	/**

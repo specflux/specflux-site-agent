@@ -21,6 +21,7 @@ namespace Specflux\SenroFlux\Packs\Posts;
 
 use Specflux\SenroFlux\Packs\Content\Media;
 use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SenroFlux\Packs\ToolBreadth;
 use Specflux\SenroFlux\Run\Budget;
 use Specflux\SenroFlux\Skills\Skill;
 use Specflux\SenroFlux\Skills\SkillSource;
@@ -56,7 +57,7 @@ final class PostsPack extends Pack {
 				'list-terms'   => 'list-terms',
 				'stock-search' => 'stock-image-search',
 				'stock-import' => 'stock-image-import',
-			)
+			) + ToolBreadth::roles( array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) )
 		);
 	}
 
@@ -133,7 +134,7 @@ final class PostsPack extends Pack {
 			'list-terms'         => array( 'taxonomy', 'search' ),
 			'stock-image-search' => array( 'query' ),
 			'stock-image-import' => array( 'id', 'alt' ),
-			default              => array(),
+			default => ToolBreadth::inputProperties( $template, array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) ),
 		};
 	}
 
@@ -186,7 +187,7 @@ final class PostsPack extends Pack {
 			'list-terms'         => 'posts/list-terms',
 			'stock-image-search' => 'posts/media-stock-search',
 			'stock-image-import' => 'posts/media-stock-import',
-			default              => $ability,
+			default => ToolBreadth::verbFor( 'posts', $this->baseName( $ability ), array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) ) ?? $ability,
 		};
 	}
 
@@ -242,7 +243,7 @@ final class PostsPack extends Pack {
 			'posts/update-live'        => 2,
 			'posts/publish'            => 2,
 			'posts/schedule'           => 2,
-		);
+		) + ToolBreadth::verbMap( 'posts', array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) );
 	}
 
 	/**
@@ -278,7 +279,7 @@ final class PostsPack extends Pack {
 			'list-terms'   => array( 'posts/list-terms' ),
 			'stock-search' => array( 'posts/media-stock-search' ),
 			'stock-import' => array( 'posts/media-stock-import' ),
-		);
+		) + ToolBreadth::roleVerbs( 'posts', array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) );
 	}
 
 	/**
@@ -301,7 +302,7 @@ final class PostsPack extends Pack {
 			'posts/create-term' => 'term_id',
 			'posts/set-terms',
 			'posts/set-featured-image' => 'post_id',
-			default => parent::objectIdKey( $verb ),
+			default => ToolBreadth::objectIdKey( $verb, array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) ) ?? parent::objectIdKey( $verb ),
 		};
 	}
 
@@ -348,7 +349,7 @@ final class PostsPack extends Pack {
 			'read-media'   => 'upload_files',
 			'stock-search' => 'upload_files',
 			'stock-import' => 'upload_files',
-		);
+		) + ToolBreadth::roleCapabilities( array( ToolBreadth::CONTENT, ToolBreadth::COMMENTS ) );
 	}
 
 	/**
