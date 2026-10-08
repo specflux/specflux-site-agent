@@ -207,6 +207,30 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
+	public function test_a_post_that_merely_mentions_a_setting_name_is_not_refused(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+
+		$result = $this->call( self::WRITE, array( 'content' => 'How the senroflux_connector_enabled option works' ) );
+
+		$this->assertSame( 'senroflux_connector_awaiting_approval', $result->get_error_code() );
+	}
+
+	public function test_a_nested_setting_name_is_refused_whatever_its_case(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+
+		$result = $this->call( self::WRITE, array( 'meta' => array( array( 'key' => '  SenroFlux_Connections ' ) ) ) );
+
+		$this->assertSame( 'senroflux_connector_settings', $result->get_error_code() );
+	}
+
+	public function test_a_grant_option_name_is_refused(): void {
+		$this->connectAs( Connection::SCOPE_READ_WRITE );
+
+		$result = $this->call( self::WRITE, array( 'option' => Approvals::GRANT_PREFIX . str_repeat( 'a', 64 ) ) );
+
+		$this->assertSame( 'senroflux_connector_settings', $result->get_error_code() );
+	}
+
 	public function test_a_second_spend_fails_even_if_the_list_entry_is_stale(): void {
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 		$this->call( self::WRITE, array( 'x' => 1 ) );

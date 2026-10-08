@@ -173,14 +173,30 @@ final class Gate {
 	}
 
 	/**
-	 * Do the arguments name one of the connector's own options or records?
+	 * Does any string value in the arguments, at any depth, equal one of the
+	 * connector's own option or meta names? Prose that merely mentions a name
+	 * (a post about the connector) is fine; naming the record is not.
 	 *
-	 * @param array<string,mixed> $call The call's arguments.
+	 * @param mixed $value The call's arguments, or any nested value.
 	 */
-	private static function touchesConnectorSettings( array $call ): bool {
-		$haystack = strtolower( (string) wp_json_encode( $call ) );
+	private static function touchesConnectorSettings( mixed $value ): bool {
+		if ( is_array( $value ) ) {
+			foreach ( $value as $item ) {
+				if ( self::touchesConnectorSettings( $item ) ) {
+					return true;
+				}
+			}
 
-		return str_contains( $haystack, 'senroflux_connector' ) || str_contains( $haystack, Connections::META_KEY );
+			return false;
+		}
+		if ( ! is_string( $value ) ) {
+			return false;
+		}
+
+		$name = strtolower( trim( $value ) );
+
+		return in_array( $name, array( Connector::OPTION, Connections::META_KEY, Approvals::OPTION ), true )
+			|| str_starts_with( $name, Approvals::GRANT_PREFIX );
 	}
 
 	/** A refusal the adapter returns to the client as the tool's error. */
