@@ -48,6 +48,21 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		return array_values( WP_Application_Passwords::get_user_application_passwords( self::USER ) );
 	}
 
+	public function test_the_submenu_is_added_after_the_senroflux_parent_menu(): void {
+		$GLOBALS['senroflux_test_action_priorities'] = array();
+		ConnectScreen::register();
+
+		$priorities = array();
+		foreach ( $GLOBALS['senroflux_test_action_priorities']['admin_menu'] ?? array() as $entry ) {
+			if ( array( ConnectScreen::class, 'menu' ) === $entry[0] ) {
+				$priorities[] = $entry[1];
+			}
+		}
+
+		// RunsScreen adds the parent at the default 10.
+		$this->assertSame( array( 20 ), $priorities );
+	}
+
 	public function test_the_screen_explains_each_missing_requirement(): void {
 		$this->assertStringContainsString( 'switched off', $this->html() );
 

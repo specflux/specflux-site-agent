@@ -240,13 +240,15 @@ if ( ! function_exists( 'add_action' ) ) {
 	$GLOBALS['senroflux_test_actions'] = array();
 
 	/**
-	 * Recording shim: $GLOBALS['senroflux_test_actions'][$hook][] = callback.
+	 * Recording shim: $GLOBALS['senroflux_test_actions'][$hook][] = callback,
+	 * and $GLOBALS['senroflux_test_action_priorities'][$hook][] = [callback, priority].
 	 *
 	 * @param mixed ...$args Hook args.
 	 * @return bool
 	 */
 	function add_action( ...$args ): bool {
-		$GLOBALS['senroflux_test_actions'][ (string) $args[0] ][] = $args[1] ?? null;
+		$GLOBALS['senroflux_test_actions'][ (string) $args[0] ][]           = $args[1] ?? null;
+		$GLOBALS['senroflux_test_action_priorities'][ (string) $args[0] ][] = array( $args[1] ?? null, (int) ( $args[2] ?? 10 ) );
 
 		return true;
 	}

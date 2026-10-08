@@ -37,7 +37,9 @@ final class ConnectScreen {
 
 	/** Hook the menu and the two admin-post handlers. */
 	public static function register(): void {
-		add_action( 'admin_menu', array( self::class, 'menu' ) );
+		// After RunsScreen adds the SenroFlux parent at 10: a submenu added before its
+		// parent gets a bare-slug URL and becomes the parent's own link.
+		add_action( 'admin_menu', array( self::class, 'menu' ), 20 );
 		add_action( 'admin_post_senroflux_connection_scope', array( self::class, 'handleScope' ) );
 		add_action( 'admin_post_senroflux_connection_revoke', array( self::class, 'handleRevoke' ) );
 	}
