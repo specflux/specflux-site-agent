@@ -51,6 +51,7 @@ abstract class ConnectorTestCase extends TestCase {
 		Plugin::reset();
 		Plugin::set_dependency_probe( false ); // Built-in mode unless a test says otherwise.
 		Connector::set_adapter_version_probe( null );
+		Connector::set_serving( null );
 		ExposureSet::reset();
 		Clock::reset();
 	}
@@ -58,6 +59,7 @@ abstract class ConnectorTestCase extends TestCase {
 	protected function tearDown(): void {
 		Plugin::reset();
 		Connector::set_adapter_version_probe( null );
+		Connector::set_serving( null );
 		ExposureSet::reset();
 		Clock::reset();
 		$GLOBALS['senroflux_test_app_password'] = null;

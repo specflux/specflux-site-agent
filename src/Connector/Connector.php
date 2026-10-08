@@ -60,10 +60,16 @@ final class Connector {
 	/** Test seam: a forced adapter version ('' = absent), or null for the real check. */
 	private static ?string $adapter_version_probe = null;
 
+	/** The connection authorised for this request's MCP route, if any. */
+	private static ?Connection $serving = null;
+
 	/** Hook the connector. The hooks do nothing for another plugin's server. */
 	public static function register(): void {
 		add_action( 'mcp_adapter_init', array( self::class, 'createServer' ) );
 		add_filter( 'mcp_adapter_tools_list', array( Gate::class, 'filterTools' ), 10, 3 );
+		// Priority 20: after SenroGate's wrapper (10), so ours is outermost. Abilities
+		// register on `wp_abilities_api_init` (init), long after plugins_loaded.
+		add_filter( 'wp_register_ability_args', array( Gate::class, 'wrapAbilityArgs' ), 20, 2 );
 		add_filter( 'mcp_adapter_pre_tool_call', array( Gate::class, 'preCall' ), 10, 4 );
 		add_filter( 'mcp_adapter_tool_call_result', array( Gate::class, 'afterCall' ), 10, 5 );
 		ActivityLog::register();
@@ -154,7 +160,23 @@ final class Connector {
 	public static function permission( mixed $request = null ): bool {
 		unset( $request );
 
-		return null !== self::authorise();
+		self::$serving = self::authorise();
+
+		return null !== self::$serving;
+	}
+
+	/**
+	 * The connection this request is serving on SenroFlux's MCP route, set by
+	 * {@see permission()} and null everywhere else (harness runs, other
+	 * servers, cron, CLI).
+	 */
+	public static function serving(): ?Connection {
+		return self::$serving;
+	}
+
+	/** Test seam: forget (or force) the connection being served. */
+	public static function set_serving( ?Connection $connection = null ): void {
+		self::$serving = $connection;
 	}
 
 	/**

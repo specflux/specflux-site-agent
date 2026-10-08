@@ -20,8 +20,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Narrows what one connection sees (`mcp_adapter_tools_list`) and decides
  * every call (`mcp_adapter_pre_tool_call`), for SenroFlux's server only. Both
- * re-resolve the connection from the request's own authentication; nothing is
- * remembered between them, so neither can be primed by a client.
+ * re-resolve the connection from the request's own authentication; nothing a
+ * client sends can prime them. {@see wrapAbilityArgs()} runs the same refusals
+ * earlier, at ability permission time, for the one connection being served.
  */
 final class Gate {
 
@@ -165,30 +166,115 @@ final class Gate {
 		$mode = Plugin::currentGateMode();
 
 		if ( GateMode::BuiltIn === $mode ) {
-			$wait = RateLimit::hit( $connection->uuid );
-			if ( null !== $wait ) {
-				return self::denied(
-					'senroflux_connector_rate_limited',
-					sprintf(
-						/* translators: %d: seconds to wait. */
-						_n( 'Too many calls: this connection is limited to 60 a minute. Wait %d second and try again.', 'Too many calls: this connection is limited to 60 a minute. Wait %d seconds and try again.', $wait, 'senroflux' ),
-						$wait
-					)
-				);
+			$limited = self::rateLimited( $connection );
+			if ( null !== $limited ) {
+				return $limited;
 			}
 		}
 
+		$refusal = self::refusal( $call, $connection, $ability, $mode );
+		if ( null !== $refusal ) {
+			return $refusal;
+		}
+
+		return GateMode::BuiltIn === $mode ? self::builtInDecision( $args, $connection, $ability, $call ) : $args;
+	}
+
+	/** The rate-limit refusal for this connection's call, or null when it is under the limit. */
+	private static function rateLimited( Connection $connection ): ?WP_Error {
+		$wait = RateLimit::hit( $connection->uuid );
+		if ( null === $wait ) {
+			return null;
+		}
+
+		return self::denied(
+			'senroflux_connector_rate_limited',
+			sprintf(
+				/* translators: %d: seconds to wait. */
+				_n( 'Too many calls: this connection is limited to 60 a minute. Wait %d second and try again.', 'Too many calls: this connection is limited to 60 a minute. Wait %d seconds and try again.', $wait, 'senroflux' ),
+				$wait
+			)
+		);
+	}
+
+	/**
+	 * The one place the connector decides a call must be refused outright:
+	 * exposure, read-only scope, and (built-in mode) commerce writes and the
+	 * connector's own settings. Used by {@see preCall()} and by the ability
+	 * permission wrapper, so the two cannot drift.
+	 *
+	 * @param array<string,mixed> $call       The call's arguments.
+	 * @param Connection          $connection The request's connection.
+	 * @param string              $ability    The ability behind the tool.
+	 * @param GateMode            $mode       The gate mode.
+	 */
+	private static function refusal( array $call, Connection $connection, string $ability, GateMode $mode ): ?WP_Error {
 		// Re-checked at call time: a client can name any tool, listed or not.
 		if ( ! ExposureSet::visibleTo( $ability, $connection, $mode ) ) {
 			return self::denied( 'senroflux_connector_unavailable', __( 'This tool is not available to this connection.', 'senroflux' ) );
 		}
 
 		// The list shows a tool by its ceiling; the call is tiered by its arguments.
-		if ( Tiering::forCall( $ability, $call, $mode ) > VerbTier::TIER_0 && ! $connection->mayWrite() ) {
+		$tier = Tiering::forCall( $ability, $call, $mode );
+		if ( $tier > VerbTier::TIER_0 && ! $connection->mayWrite() ) {
 			return self::denied( 'senroflux_connector_read_only', __( 'This connection is read-only. Ask the site owner to give it read and write access.', 'senroflux' ) );
 		}
 
-		return GateMode::BuiltIn === $mode ? self::builtInDecision( $args, $connection, $ability, $call ) : $args;
+		// Built-in mode: commerce writes need SenroGate (a call can tier above
+		// its listed ceiling), and the connector's own settings are not for an
+		// AI app to change. Refused outright, never parked.
+		if ( GateMode::BuiltIn === $mode && VerbTier::TIER_0 !== $tier ) {
+			if ( Tiering::needsSenroGate( $ability ) ) {
+				return self::denied( 'senroflux_connector_needs_senrogate', __( 'Changes to the store need the SenroGate plugin. This site does not have it, so this call is refused.', 'senroflux' ) );
+			}
+			if ( self::touchesConnectorSettings( $call ) ) {
+				return self::denied( 'senroflux_connector_settings', __( 'AI apps cannot change the connector\'s own settings.', 'senroflux' ) );
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * `wp_register_ability_args` callback (priority 20, after SenroGate's 10, so
+	 * this wrapper is outermost): the adapter runs an ability's permission
+	 * callback BEFORE `mcp_adapter_pre_tool_call`, and a governance plugin may
+	 * file an approval request inside that callback. So on SenroFlux's own MCP
+	 * route the refusals run first; anywhere else this is a pure pass-through.
+	 *
+	 * @param mixed  $args The ability's registration arguments.
+	 * @param string $name The ability name.
+	 * @return mixed
+	 */
+	public static function wrapAbilityArgs( mixed $args, mixed $name = '' ): mixed {
+		if ( ! is_array( $args ) || ! is_string( $name ) || '' === $name || ! isset( $args['permission_callback'] ) || ! is_callable( $args['permission_callback'] ) ) {
+			return $args;
+		}
+
+		$inner = $args['permission_callback'];
+
+		$args['permission_callback'] = static function ( mixed ...$input ) use ( $inner, $name ): mixed {
+			$connection = Connector::serving();
+			if ( null === $connection ) {
+				return $inner( ...$input );
+			}
+
+			$call = is_array( $input[0] ?? null ) ? $input[0] : array();
+			$mode = Plugin::currentGateMode();
+
+			$refusal = self::refusal( $call, $connection, $name, $mode );
+			if ( null !== $refusal ) {
+				// A flood of refused calls still counts against the limit.
+				$refusal = ( GateMode::BuiltIn === $mode ? self::rateLimited( $connection ) : null ) ?? $refusal;
+				ActivityLog::record( $connection, $name, ActivityLog::REFUSED );
+
+				return $refusal;
+			}
+
+			return $inner( ...$input );
+		};
+
+		return $args;
 	}
 
 	/**
@@ -208,16 +294,6 @@ final class Gate {
 		$tier = Tiering::forCall( $ability, $call, GateMode::BuiltIn );
 		if ( VerbTier::TIER_0 === $tier ) {
 			return $args;
-		}
-
-		// Refused outright, never parked: commerce writes need SenroGate (a
-		// call can tier above its listed ceiling), and the connector's own
-		// settings are not for an AI app to change.
-		if ( Tiering::needsSenroGate( $ability ) ) {
-			return self::denied( 'senroflux_connector_needs_senrogate', __( 'Changes to the store need the SenroGate plugin. This site does not have it, so this call is refused.', 'senroflux' ) );
-		}
-		if ( self::touchesConnectorSettings( $call ) ) {
-			return self::denied( 'senroflux_connector_settings', __( 'AI apps cannot change the connector\'s own settings.', 'senroflux' ) );
 		}
 
 		$hash = Approvals::hash( $connection->userId, $connection->uuid, $ability, $call );
