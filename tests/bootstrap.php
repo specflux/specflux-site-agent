@@ -49,6 +49,11 @@ require_once __DIR__ . '/stubs/ai-client-prompt-builder.php';
 require_once __DIR__ . '/stubs/admin.php';
 // HTTP-surface shims (S9/S17): wp_send_json_*, check_ajax_referer, REST doubles.
 require_once __DIR__ . '/stubs/http.php';
+// Connect screen (K3): application passwords and an offline wp_remote_post().
+require_once __DIR__ . '/stubs/connector-admin.php';
+// Connector (K1): fake mcp-adapter adapter/server/tool (never the real class names).
+require_once __DIR__ . '/stubs/mcp-adapter.php';
+require_once __DIR__ . '/Connector/ConnectorTestCase.php';
 
 // The global senroflux() locator (function_exists-guarded, same as main).
 require_once dirname( __DIR__ ) . '/src/api.php';
@@ -350,9 +355,13 @@ if ( ! function_exists( 'wp_nonce_url' ) ) {
 }
 
 if ( ! function_exists( 'check_admin_referer' ) ) {
-	/** No-op shim. */
+	/** No-op shim; $GLOBALS['senroflux_test_bad_nonce'] makes it die like core does. */
 	function check_admin_referer( string $action ): bool {
 		unset( $action );
+
+		if ( ! empty( $GLOBALS['senroflux_test_bad_nonce'] ) ) {
+			wp_die( 'The link you followed has expired.' );
+		}
 
 		return true;
 	}
@@ -564,6 +573,9 @@ if ( ! function_exists( 'update_option' ) ) {
 if ( ! function_exists( 'delete_option' ) ) {
 	/** Test knob: options backed by an in-memory array. */
 	function delete_option( string $option ): bool {
+		if ( ! array_key_exists( $option, $GLOBALS['senroflux_test_options'] ) ) {
+			return false; // Like core: nothing deleted, nothing to report.
+		}
 		unset( $GLOBALS['senroflux_test_options'][ $option ] );
 
 		return true;
@@ -581,3 +593,22 @@ if ( ! function_exists( 'delete_option' ) ) {
 // through to the real, unconfigured `wordpress/php-ai-client` registry and
 // strand every OTHER test file that runs afterwards in the same process).
 \Specflux\SenroFlux\Setup\Checks::setProviderProbe( true );
+
+// K1: the connector resolves the request's connection from core's REST
+// auth. Test knob: $GLOBALS['senroflux_test_app_password'] is the application
+// password UUID the request authenticated with (null = a cookie session).
+if ( ! function_exists( 'rest_get_authenticated_app_password' ) ) {
+	/** Knob-backed stand-in for core's helper. */
+	function rest_get_authenticated_app_password(): ?string {
+		$uuid = $GLOBALS['senroflux_test_app_password'] ?? null;
+
+		return is_string( $uuid ) ? $uuid : null;
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	/** Identity-ish shim. */
+	function rest_url( string $path = '' ): string {
+		return 'http://example.test/wp-json/' . ltrim( $path, '/' );
+	}
+}

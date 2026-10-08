@@ -1,0 +1,246 @@
+<?php
+/**
+ * The Connect screen: creating, listing, re-scoping and revoking connections.
+ *
+ * @package SenroFlux
+ */
+
+declare ( strict_types = 1 );
+
+namespace Specflux\SenroFlux\Tests\Connector;
+
+use Specflux\SenroFlux\Connector\ClientConfig;
+use Specflux\SenroFlux\Connector\Connection;
+use Specflux\SenroFlux\Connector\ConnectScreen;
+use Specflux\SenroFlux\Connector\Connections;
+use Specflux\SenroFlux\Connector\Connector;
+use WP_Application_Passwords;
+
+final class ConnectScreenTest extends ConnectorTestCase {
+
+	private const PLAIN = 'abcdefghijklmnopqrstuvwx';
+
+	private function html(): string {
+		ob_start();
+		try {
+			ConnectScreen::render();
+		} catch ( \Throwable $e ) {
+			ob_end_clean();
+			throw $e;
+		}
+
+		return (string) ob_get_clean();
+	}
+
+	/** Submit the create form and return the page. */
+	private function create( string $client, string $scope = '' ): string {
+		$_POST = array(
+			'senroflux_connect_action' => 'create',
+			'client'                   => $client,
+			'scope'                    => $scope,
+		);
+
+		return $this->html();
+	}
+
+	/** @return list<array<string,mixed>> */
+	private function passwords(): array {
+		return array_values( WP_Application_Passwords::get_user_application_passwords( self::USER ) );
+	}
+
+	public function test_the_screen_explains_each_missing_requirement(): void {
+		$this->assertStringContainsString( 'switched off', $this->html() );
+
+		update_option( Connector::OPTION, '1' );
+		$this->assertStringContainsString( 'not installed', $this->html() );
+
+		Connector::set_adapter_version_probe( '0.6.0' );
+		$this->assertStringContainsString( 'version 0.6.0', $this->html() );
+
+		$this->enableConnector();
+		$GLOBALS['senroflux_test_multisite'] = true;
+		$this->assertStringContainsString( 'multisite', $this->html() );
+	}
+
+	public function test_an_unavailable_screen_creates_nothing(): void {
+		$this->create( ClientConfig::CURSOR );
+
+		$this->assertSame( array(), $this->passwords() );
+		$this->assertSame( array(), Connections::forUser( self::USER ) );
+	}
+
+	public function test_creating_a_connection_registers_it_read_only_by_default_and_shows_the_config(): void {
+		$this->enableConnector();
+
+		$html = $this->create( ClientConfig::CURSOR );
+
+		$items = $this->passwords();
+		$this->assertCount( 1, $items );
+		$this->assertSame( 'SenroFlux – Cursor', $items[0]['name'] );
+		$this->assertSame( array( $items[0]['uuid'] => array( 'scope' => Connection::SCOPE_READ ) ), Connections::forUser( self::USER ) );
+		$this->assertStringContainsString( '&quot;mcpServers&quot;', $html );
+		$this->assertStringContainsString( ClientConfig::authorization( 'editor', self::PLAIN ), $html );
+		$this->assertStringContainsString( 'Copy', $html );
+		$this->assertStringContainsString( 'Test connection', $html );
+	}
+
+	public function test_read_and_write_is_stored_when_chosen(): void {
+		$this->enableConnector();
+
+		$this->create( ClientConfig::VS_CODE, Connection::SCOPE_READ_WRITE );
+
+		$this->assertSame( Connection::SCOPE_READ_WRITE, array_values( Connections::forUser( self::USER ) )[0]['scope'] );
+	}
+
+	public function test_the_plain_password_is_not_stored_anywhere_we_write(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR );
+
+		$stored = (string) wp_json_encode( array( $GLOBALS['senroflux_test_options'], $GLOBALS['senroflux_test_user_meta'] ) );
+		$this->assertStringNotContainsString( self::PLAIN, $stored );
+		$this->assertStringNotContainsString( 'abcd efgh', $stored );
+	}
+
+	public function test_an_unknown_client_creates_nothing(): void {
+		$this->enableConnector();
+
+		$html = $this->create( 'evil' );
+
+		$this->assertSame( array(), $this->passwords() );
+		$this->assertStringContainsString( 'Pick an app', $html );
+	}
+
+	public function test_a_bad_nonce_creates_nothing(): void {
+		$this->enableConnector();
+		$GLOBALS['senroflux_test_bad_nonce'] = true;
+
+		try {
+			$this->create( ClientConfig::CURSOR );
+			$this->fail( 'Expected the nonce check to die.' );
+		} catch ( \RuntimeException $e ) {
+			$this->assertNotSame( '', $e->getMessage() );
+		}
+
+		$this->assertSame( array(), $this->passwords() );
+	}
+
+	public function test_a_user_without_the_capability_sees_nothing(): void {
+		$this->enableConnector();
+		$GLOBALS['senroflux_test_user_caps'] = array();
+
+		$this->assertSame( '', $this->html() );
+	}
+
+	public function test_the_oauth_cards_say_coming_soon(): void {
+		$this->enableConnector();
+
+		$html = $this->html();
+
+		$this->assertStringContainsString( 'ChatGPT', $html );
+		$this->assertStringContainsString( 'Claude (web, desktop and mobile)', $html );
+		$this->assertStringContainsString( 'Coming soon: needs sign-in support.', $html );
+	}
+
+	public function test_the_list_shows_label_scope_and_last_used(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR, Connection::SCOPE_READ_WRITE );
+		$_POST = array();
+		$GLOBALS['senroflux_test_app_passwords'][ self::USER ][0]['last_used'] = 1_800_003_600;
+
+		$html = $this->html();
+
+		$this->assertStringContainsString( 'SenroFlux – Cursor', $html );
+		$this->assertStringContainsString( 'Read and write', $html );
+		$this->assertStringNotContainsString( 'Never', $html );
+		$this->assertStringContainsString( 'Revoke', $html );
+	}
+
+	public function test_scope_change_updates_the_registry(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR );
+		$uuid  = (string) array_key_first( Connections::forUser( self::USER ) );
+		$_POST = array(
+			'uuid'  => $uuid,
+			'scope' => Connection::SCOPE_READ_WRITE,
+		);
+
+		ConnectScreen::handleScope();
+
+		$this->assertSame( Connection::SCOPE_READ_WRITE, Connections::forUser( self::USER )[ $uuid ]['scope'] );
+	}
+
+	public function test_revoke_deletes_the_application_password_and_the_registry_entry(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR );
+		$uuid  = (string) array_key_first( Connections::forUser( self::USER ) );
+		$_POST = array( 'uuid' => $uuid );
+
+		ConnectScreen::handleRevoke();
+
+		$this->assertSame( array(), $this->passwords() );
+		$this->assertSame( array(), Connections::forUser( self::USER ) );
+	}
+
+	public function test_revoke_ignores_a_connection_that_is_not_yours(): void {
+		$this->enableConnector();
+		Connections::add( 99, 'someone-elses', Connection::SCOPE_READ );
+		$_POST = array( 'uuid' => 'someone-elses' );
+
+		ConnectScreen::handleRevoke();
+
+		$this->assertArrayHasKey( 'someone-elses', Connections::forUser( 99 ) );
+	}
+
+	public function test_a_revoke_without_the_capability_dies_and_changes_nothing(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR );
+		$uuid                                = (string) array_key_first( Connections::forUser( self::USER ) );
+		$_POST                               = array( 'uuid' => $uuid );
+		$GLOBALS['senroflux_test_user_caps'] = array();
+
+		$this->expectException( \RuntimeException::class );
+		try {
+			ConnectScreen::handleRevoke();
+		} finally {
+			$this->assertArrayHasKey( $uuid, Connections::forUser( self::USER ) );
+		}
+	}
+
+	public function test_test_connection_sends_the_credential_and_reports_the_failure_category(): void {
+		$this->enableConnector();
+		$this->create( ClientConfig::CURSOR );
+		$uuid = (string) array_key_first( Connections::forUser( self::USER ) );
+		$GLOBALS['senroflux_test_remote_post_responses'] = array(
+			array(
+				'response' => array( 'code' => 401 ),
+				'body'     => '',
+			),
+		);
+		$_POST = array(
+			'senroflux_connect_action' => 'test',
+			'client'                   => ClientConfig::CURSOR,
+			'uuid'                     => $uuid,
+			'password'                 => self::PLAIN,
+		);
+
+		$html = $this->html();
+
+		$this->assertStringContainsString( 'refused the credential', $html );
+		$this->assertSame( ClientConfig::authorization( 'editor', self::PLAIN ), $GLOBALS['senroflux_test_remote_post_calls'][0]['args']['headers']['Authorization'] );
+	}
+
+	public function test_test_connection_for_an_unregistered_uuid_makes_no_request(): void {
+		$this->enableConnector();
+		$_POST = array(
+			'senroflux_connect_action' => 'test',
+			'client'                   => ClientConfig::CURSOR,
+			'uuid'                     => 'nope',
+			'password'                 => self::PLAIN,
+		);
+
+		$html = $this->html();
+
+		$this->assertStringContainsString( 'no longer exists', $html );
+		$this->assertSame( array(), $GLOBALS['senroflux_test_remote_post_calls'] );
+	}
+}

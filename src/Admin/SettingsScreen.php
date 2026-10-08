@@ -21,11 +21,11 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SenroFlux\Admin;
 
+use Specflux\SenroFlux\Connector\Connector;
 use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
 use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
 use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
 use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
-use Specflux\SenroFlux\Passthrough\ExternalExposure;
 use Specflux\SenroFlux\Passthrough\Passthrough;
 use Specflux\SenroFlux\Plugin;
 use Specflux\SenroFlux\Run\GateMode;
@@ -50,8 +50,8 @@ class SettingsScreen {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_post_senroflux_save_brief', array( $this, 'handleSave' ) );
 		add_action( 'admin_post_senroflux_save_passthrough', array( $this, 'handleSavePassthrough' ) );
-		add_action( 'admin_post_senroflux_save_external', array( $this, 'handleSaveExternal' ) );
 		add_action( 'admin_post_senroflux_save_store_platform', array( $this, 'handleSaveStorePlatform' ) );
+		add_action( 'admin_post_senroflux_save_connector', array( $this, 'handleSaveConnector' ) );
 	}
 
 	/**
@@ -217,18 +217,18 @@ class SettingsScreen {
 		$this->redirectPassthrough( null );
 	}
 
-	/** admin-post handler: save the "external AI apps" switch (0.4 S8). */
-	public function handleSaveExternal(): void {
-		check_admin_referer( 'senroflux_save_external' );
+	/** admin-post handler: save the "Allow AI apps to connect" switch (K1). */
+	public function handleSaveConnector(): void {
+		check_admin_referer( 'senroflux_save_connector' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
 			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
 		}
 
-		$posted = isset( $_POST[ ExternalExposure::OPTION ] ) && is_string( $_POST[ ExternalExposure::OPTION ] )
-			? sanitize_text_field( wp_unslash( $_POST[ ExternalExposure::OPTION ] ) )
+		$posted = isset( $_POST[ Connector::OPTION ] ) && is_string( $_POST[ Connector::OPTION ] )
+			? sanitize_text_field( wp_unslash( $_POST[ Connector::OPTION ] ) )
 			: '0';
-		update_option( ExternalExposure::OPTION, ExternalExposure::sanitize( $posted ) ? '1' : '0' );
+		update_option( Connector::OPTION, Connector::sanitize( $posted ) ? '1' : '0' );
 
 		$this->redirectPassthrough( null );
 	}
@@ -322,35 +322,55 @@ class SettingsScreen {
 		echo '</form>';
 
 		$this->renderStorePlatform();
-		$this->renderExternal();
+		$this->renderConnector();
 		$this->renderPassthrough();
 
 		echo '</div>';
 	}
 
-	/** The "external AI apps" switch (0.4 S8). */
-	private function renderExternal(): void {
-		$present = ExternalExposure::senrogatePresent();
+	/** The "Allow AI apps to connect" switch (K1). */
+	private function renderConnector(): void {
+		$version = Connector::adapterVersion();
+		$ready   = Connector::adapterReady();
 
-		echo '<hr><h2>' . esc_html__( 'External AI apps', 'senroflux' ) . '</h2>';
+		echo '<hr><h2>' . esc_html__( 'AI apps', 'senroflux' ) . '</h2>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="senroflux_save_external">';
-		wp_nonce_field( 'senroflux_save_external' );
+		echo '<input type="hidden" name="action" value="senroflux_save_connector">';
+		wp_nonce_field( 'senroflux_save_connector' );
 		printf(
 			'<p><label><input type="checkbox" name="%1$s" value="1"%2$s%3$s> %4$s</label></p>',
-			esc_attr( ExternalExposure::OPTION ),
-			checked( ExternalExposure::effective(), true, false ),
-			disabled( $present, false, false ),
-			esc_html__( 'Let external AI apps use SenroFlux\'s abilities', 'senroflux' )
+			esc_attr( Connector::OPTION ),
+			checked( Connector::stored(), true, false ),
+			disabled( $ready, false, false ),
+			esc_html__( 'Allow AI apps to connect', 'senroflux' )
 		);
-		echo '<p class="description">' . esc_html__( 'Calls from external apps get SenroGate\'s tiers and approvals, not SenroFlux\'s plan, budgets or report.', 'senroflux' ) . '</p>';
-		if ( ! $present ) {
-			echo '<p class="description">' . esc_html__( 'This needs SenroGate. Install and activate it to turn this on; until then SenroFlux\'s abilities stay unavailable to external apps.', 'senroflux' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Lets apps such as Claude, ChatGPT or Cursor use SenroFlux\'s tools, each through an application password you create here. Off until you turn it on.', 'senroflux' ) . '</p>';
+		if ( ! $ready ) {
+			echo '<p class="description">' . esc_html(
+				null === $version
+					? sprintf(
+						/* translators: %s: the minimum MCP Adapter version. */
+						__( 'This needs the MCP Adapter plugin (version %s or newer) from WordPress.org. Install and activate it to turn this on.', 'senroflux' ),
+						Connector::MIN_ADAPTER_VERSION
+					)
+					: sprintf(
+						/* translators: 1: installed MCP Adapter version, 2: minimum version. */
+						__( 'The MCP Adapter plugin is version %1$s; SenroFlux needs %2$s or newer. Update it to turn this on.', 'senroflux' ),
+						$version,
+						Connector::MIN_ADAPTER_VERSION
+					)
+			) . '</p>';
+		} else {
+			printf(
+				'<p class="description">%s <code>%s</code></p>',
+				esc_html__( 'Server address:', 'senroflux' ),
+				esc_html( rest_url( Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE ) )
+			);
 		}
 		printf(
 			'<p><button type="submit" class="button button-primary"%2$s>%1$s</button></p>',
 			esc_html__( 'Save', 'senroflux' ),
-			disabled( $present, false, false )
+			disabled( $ready, false, false )
 		);
 		echo '</form>';
 	}

@@ -2,7 +2,7 @@
 /**
  * Schema tests (0.2 S4, plus the v3 skills_disable_json column, the v4
  * gate_mode column, the v5 withheld_roles_json column, the v6
- * follow_up_of column, and the v7 model_provider/model_id columns, and the v8 store_platform column): the new
+ * follow_up_of column, and the v7 model_provider/model_id columns, the v8 store_platform column, and the v9 connector activity table): the new
  * columns exist, the version option is stamped, and the upgrade is
  * idempotent.
  *
@@ -25,7 +25,7 @@ final class SchemaUpgradeTest extends TestCase {
 	}
 
 	public function test_schema_version_is_five(): void {
-		$this->assertSame( 8, Schema::DB_VERSION );
+		$this->assertSame( 9, Schema::DB_VERSION );
 	}
 
 	/** @return list<string> The 0.2-0.3 columns every current runs table carries. */
@@ -65,13 +65,13 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 8, get_option( 'senroflux_db_version' ) );
-		$this->assertCount( 2, $GLOBALS['senroflux_test_dbdelta_queries'], 'runs + steps statements' );
+		$this->assertSame( 9, get_option( 'senroflux_db_version' ) );
+		$this->assertCount( 3, $GLOBALS['senroflux_test_dbdelta_queries'], 'runs + steps + activity statements' );
 	}
 
 	public function test_maybe_upgrade_is_idempotent_at_the_current_version(): void {
 		$db = new wpdb();
-		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 8;
+		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 9;
 
 		Schema::maybe_upgrade( $db );
 
@@ -84,8 +84,8 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 8, get_option( 'senroflux_db_version' ) );
-		$this->assertCount( 2, $GLOBALS['senroflux_test_dbdelta_queries'] );
+		$this->assertSame( 9, get_option( 'senroflux_db_version' ) );
+		$this->assertCount( 3, $GLOBALS['senroflux_test_dbdelta_queries'] );
 
 		// dbDelta is idempotent by design: re-running the SAME statements is
 		// exactly how a v1 table gains the later columns.
@@ -139,7 +139,7 @@ final class SchemaUpgradeTest extends TestCase {
 
 	public function test_an_already_current_install_writes_no_watermark_and_does_not_rerun_dbdelta(): void {
 		$db = new wpdb();
-		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 8;
+		$GLOBALS['senroflux_test_options']['senroflux_db_version'] = 9;
 		$db->varQueue = array( 5, 99 );
 
 		Schema::maybe_upgrade( $db );

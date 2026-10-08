@@ -69,6 +69,7 @@ if ( ! defined( 'SENROFLUX_API_VERSION' ) ) {
 // THAT load, so the callbacks below must exist even when the autoloader is
 // broken — they guard internally instead (fail safe, not silent).
 register_activation_hook( __FILE__, __NAMESPACE__ . '\senroflux_activate' );
+register_deactivation_hook( __FILE__, __NAMESPACE__ . '\senroflux_deactivate' );
 
 /**
  * Create the runs/steps tables.
@@ -94,11 +95,27 @@ function senroflux_activate(): void {
 		Schema::maybe_upgrade( $wpdb );
 	}
 
+	// 0.4 K4: the daily prune of the connector activity list.
+	if ( class_exists( \Specflux\SenroFlux\Connector\ActivityLog::class ) ) {
+		\Specflux\SenroFlux\Connector\ActivityLog::schedule();
+	}
+
 	// 0.3 S10: no redirect, no site-wide notice — one one-time notice on the
 	// Plugins screen only, rendered by RunsScreen::maybeRenderActivationNotice()
 	// and cleared the first time it shows.
 	if ( function_exists( 'set_transient' ) ) {
 		set_transient( \Specflux\SenroFlux\Admin\RunsScreen::ACTIVATION_NOTICE_TRANSIENT, 1, WEEK_IN_SECONDS );
+	}
+}
+
+/**
+ * Stop the connector's daily activity prune.
+ *
+ * @return void
+ */
+function senroflux_deactivate(): void {
+	if ( class_exists( \Specflux\SenroFlux\Connector\ActivityLog::class ) ) {
+		\Specflux\SenroFlux\Connector\ActivityLog::unschedule();
 	}
 }
 
