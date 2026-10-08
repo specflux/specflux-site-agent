@@ -135,6 +135,8 @@
     <rule ref="PSR1.Files.SideEffects">
         <exclude-pattern>tests/stubs/*</exclude-pattern>
         <exclude-pattern>src/*</exclude-pattern>
+        <!-- OAuth suites require their non-autoloaded base class. -->
+        <exclude-pattern>tests/Connector/OAuth/*</exclude-pattern>
     </rule>
     <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
         <exclude-pattern>tests/bootstrap.php</exclude-pattern>

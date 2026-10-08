@@ -69,6 +69,7 @@ final class Connector {
 		ActivityLog::register();
 		ApprovalsScreen::register();
 		ConnectScreen::register();
+		OAuth\OAuth::register();
 	}
 
 	/** Sanitise the posted value to a bool. */
