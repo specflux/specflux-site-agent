@@ -92,4 +92,24 @@ final class Connections {
 		unset( $registry[ $uuid ] );
 		update_user_meta( $user_id, self::META_KEY, $registry );
 	}
+
+	/** Forget connections whose application password is deleted outside the Connect screen. */
+	public static function register(): void {
+		add_action( 'wp_delete_application_password', array( self::class, 'forgetDeleted' ), 10, 2 );
+	}
+
+	/**
+	 * Core's `wp_delete_application_password` action, also fired per item when all are deleted.
+	 *
+	 * @param int   $user_id User id.
+	 * @param mixed $item    The deleted application password.
+	 */
+	public static function forgetDeleted( int $user_id, mixed $item ): void {
+		$uuid = is_array( $item ) ? ( $item['uuid'] ?? null ) : null;
+		if ( ! is_string( $uuid ) || ! isset( self::forUser( $user_id )[ $uuid ] ) ) {
+			return;
+		}
+
+		self::remove( $user_id, $uuid );
+	}
 }

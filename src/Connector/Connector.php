@@ -72,6 +72,7 @@ final class Connector {
 		add_filter( 'wp_register_ability_args', array( Gate::class, 'wrapAbilityArgs' ), 20, 2 );
 		add_filter( 'mcp_adapter_pre_tool_call', array( Gate::class, 'preCall' ), 10, 4 );
 		add_filter( 'mcp_adapter_tool_call_result', array( Gate::class, 'afterCall' ), 10, 5 );
+		Connections::register();
 		ActivityLog::register();
 		ApprovalsScreen::register();
 		ConnectScreen::register();

@@ -15,6 +15,30 @@ use Specflux\SenroFlux\Connector\Connector;
 
 final class ConnectionsTest extends ConnectorTestCase {
 
+	public function test_deleting_the_application_password_elsewhere_forgets_the_connection(): void {
+		$GLOBALS['senroflux_test_action_priorities'] = array();
+		Connector::register();
+		$hooked = array_column( $GLOBALS['senroflux_test_action_priorities']['wp_delete_application_password'] ?? array(), 0 );
+		$this->assertContains( array( Connections::class, 'forgetDeleted' ), $hooked );
+
+		Connections::add( self::USER, self::UUID );
+		Connections::add( self::USER, 'bbbbbbbb-0000-0000-0000-000000000000' );
+
+		Connections::forgetDeleted( self::USER, array( 'uuid' => self::UUID ) );
+
+		$this->assertSame( array( 'bbbbbbbb-0000-0000-0000-000000000000' ), array_keys( Connections::forUser( self::USER ) ) );
+	}
+
+	public function test_deleting_an_unregistered_application_password_leaves_the_registry_alone(): void {
+		Connections::add( self::USER, self::UUID );
+
+		Connections::forgetDeleted( self::USER, array( 'uuid' => 'not-ours' ) );
+		Connections::forgetDeleted( self::USER, 'not-an-item' );
+		Connections::forgetDeleted( 99, array( 'uuid' => self::UUID ) );
+
+		$this->assertArrayHasKey( self::UUID, Connections::forUser( self::USER ) );
+	}
+
 	public function test_a_cookie_session_is_never_a_connection(): void {
 		$this->enableConnector();
 		Connections::add( self::USER, self::UUID, Connection::SCOPE_READ_WRITE );
