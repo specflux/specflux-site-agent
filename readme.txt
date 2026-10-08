@@ -46,8 +46,12 @@ person to approve it first, unless you install SenroGate and set your own rules.
   revisions, registered post meta), comments (list, reply, moderate), users (list and read; role
   changes are the highest tier), general, reading and discussion settings, menus, read-only
   lists of plugins and themes, media, and WooCommerce, FluentCart or SureCart store tools when
-  those are active (store writes need SenroGate). You can also switch on up to 40 abilities
-  registered by other plugins.
+  those are active (store writes need SenroGate). Trashing a post or page waits for approval,
+  because it takes it off the site. You can also switch on up to 40 abilities registered by
+  other plugins.
+* **Runs inside wp-admin keep a smaller tool set.** The post listing, trash, revision, meta,
+  comment, user, settings, menu and plugin/theme tools are for connected apps only, so runs
+  stay fast.
 
 **Runs inside wp-admin**
 
@@ -347,8 +351,9 @@ New:
   connection, and revoke.
 * Without SenroGate, writes from AI apps wait for approval on the From AI apps tab and
   run once when the app repeats the call.
-* New tools: list, trash and restore posts, revisions, registered post meta, comments, users
-  and roles, site settings, menus, and read-only plugin and theme lists.
+* New tools for connected AI apps: list, trash and restore posts, revisions, registered post
+  meta, comments, users and roles, site settings, menus, and read-only plugin and theme lists.
+  Trashing a post or page needs approval. In-admin runs don't get these tools.
 * Abilities from other plugins: switch on up to 40 under SenroFlux → Settings. They're off by
   default and governed like SenroFlux's own.
 * Result cards instead of raw JSON, a preview pane beside the chat, and current-versus-proposed
