@@ -38,7 +38,10 @@ final class Connections {
 		$user_id = (int) get_current_user_id();
 		$uuid    = rest_get_authenticated_app_password();
 		if ( $user_id <= 0 || ! is_string( $uuid ) || '' === $uuid ) {
-			return null;
+			// Not an application password: an OAuth bearer token may still have signed this request in.
+			$oauth = apply_filters( 'senroflux_connector_connection', null );
+
+			return $oauth instanceof Connection ? $oauth : null;
 		}
 
 		$registry = self::forUser( $user_id );
