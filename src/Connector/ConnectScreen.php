@@ -10,6 +10,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SenroFlux\Connector;
 
 use Specflux\SenroFlux\Admin\RunsScreen;
+use Specflux\SenroFlux\Connector\OAuth\SignedInApps;
 use Specflux\SenroFlux\MultisiteGuard;
 use WP_Application_Passwords;
 use WP_Error;
@@ -64,6 +65,27 @@ final class ConnectScreen {
 	/** The connector's server URL. */
 	public static function serverUrl(): string {
 		return rest_url( Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE );
+	}
+
+	/**
+	 * Why sign-in (OAuth) cannot work on this site, or null when it can.
+	 *
+	 * The bearer guard only recognises the front controller index.php in
+	 * ABSPATH (OAuth\Bearer::entryIsFrontController()), and discovery needs
+	 * pretty permalinks.
+	 */
+	public static function oauthBlocker(): ?string {
+		if ( '' === (string) get_option( 'permalink_structure', '' ) ) {
+			return __( 'Sign-in is not available on this site: it uses plain permalinks. Choose any other structure under Settings > Permalinks, then come back.', 'senroflux' );
+		}
+
+		$home = untrailingslashit( (string) wp_parse_url( home_url(), PHP_URL_PATH ) );
+		$site = untrailingslashit( (string) wp_parse_url( site_url(), PHP_URL_PATH ) );
+		if ( $home !== $site ) {
+			return __( 'Sign-in is not available on this site: WordPress is installed in its own directory, so the sign-in check never sees requests. Use an application-password connection above instead.', 'senroflux' );
+		}
+
+		return null;
 	}
 
 	/** @return array<string,string> client id => label, for the app-password cards. */
@@ -271,12 +293,28 @@ final class ConnectScreen {
 			echo '</form></div>';
 		}
 
-		foreach ( array(
-			__( 'Claude (web, desktop and mobile)', 'senroflux' ),
-			__( 'ChatGPT', 'senroflux' ),
-		) as $label ) {
-			echo '<div class="card" style="margin:0;opacity:.7"><h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
-			echo '<p>' . esc_html__( 'Coming soon: needs sign-in support.', 'senroflux' ) . '</p></div>';
+		$blocker = self::oauthBlocker();
+		$url     = self::serverUrl();
+		$cards   = array(
+			// Menu labels checked against https://claude.com/docs/connectors/custom/remote-mcp
+			// (Customize > Connectors > Add custom connector).
+			__( 'Claude (web, desktop and mobile)', 'senroflux' ) => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'senroflux' ),
+			// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
+			// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
+			__( 'ChatGPT', 'senroflux' ) => __( 'In ChatGPT, go to Plugins, select the plus button, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'senroflux' ),
+		);
+
+		foreach ( $cards as $label => $steps ) {
+			echo '<div class="card" style="margin:0"><h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
+			if ( null !== $blocker ) {
+				echo '<p>' . esc_html( $blocker ) . '</p></div>';
+				continue;
+			}
+			$id = 'senroflux-oauth-url-' . substr( md5( $label ), 0, 6 );
+			echo '<p><code id="' . esc_attr( $id ) . '" style="word-break:break-all">' . esc_html( $url ) . '</code></p>';
+			echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'' . esc_attr( $id ) . '\').textContent)">' . esc_html__( 'Copy URL', 'senroflux' ) . '</button></p>';
+			echo '<p>' . esc_html( $steps ) . '</p>';
+			echo '<p><a href="' . esc_url( SignedInApps::url() ) . '">' . esc_html__( 'Signed-in apps: see or revoke these sign-ins', 'senroflux' ) . '</a></p></div>';
 		}
 
 		echo '</div>';

@@ -49,7 +49,7 @@ if ( ! function_exists( 'trailingslashit' ) ) {
 if ( ! function_exists( 'home_url' ) ) {
 	/** Test site root. */
 	function home_url( string $path = '' ): string {
-		return 'http://example.test' . $path;
+		return ( $GLOBALS['senroflux_test_home_url'] ?? 'http://example.test' ) . $path;
 	}
 }
 if ( ! function_exists( 'untrailingslashit' ) ) {

@@ -20,6 +20,12 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 	private const PLAIN = 'abcdefghijklmnopqrstuvwx';
 
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+		// home_url() and friends, shared with the OAuth tests.
+		require_once dirname( __DIR__ ) . '/stubs/oauth.php';
+	}
+
 	private function html(): string {
 		ob_start();
 		try {
@@ -146,14 +152,46 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertSame( '', $this->html() );
 	}
 
-	public function test_the_oauth_cards_say_coming_soon(): void {
+	public function test_the_oauth_cards_show_the_url_and_the_instructions(): void {
 		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
 
 		$html = $this->html();
 
-		$this->assertStringContainsString( 'ChatGPT', $html );
 		$this->assertStringContainsString( 'Claude (web, desktop and mobile)', $html );
-		$this->assertStringContainsString( 'Coming soon: needs sign-in support.', $html );
+		$this->assertStringContainsString( 'ChatGPT', $html );
+		$this->assertSame( 2, substr_count( $html, esc_html( ConnectScreen::serverUrl() ) . '</code>' ) );
+		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
+		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
+		$this->assertStringContainsString( 'Plugins, select the plus button, then Add custom MCP server', $html );
+		$this->assertStringContainsString( 'page=' . \Specflux\SenroFlux\Connector\OAuth\SignedInApps::SLUG, $html );
+		$this->assertStringNotContainsString( 'Coming soon', $html );
+	}
+
+	public function test_plain_permalinks_show_the_reason_instead_of_the_instructions(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '' );
+
+		$html = $this->html();
+
+		$this->assertSame( 2, substr_count( $html, 'it uses plain permalinks' ) );
+		$this->assertStringNotContainsString( 'Add custom connector', $html );
+		$this->assertStringNotContainsString( 'Coming soon', $html );
+	}
+
+	public function test_wordpress_in_its_own_directory_shows_the_reason_instead_of_the_instructions(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
+		$GLOBALS['senroflux_test_site_url'] = 'http://example.test/wp';
+
+		try {
+			$html = $this->html();
+		} finally {
+			unset( $GLOBALS['senroflux_test_site_url'] );
+		}
+
+		$this->assertSame( 2, substr_count( $html, 'installed in its own directory' ) );
+		$this->assertStringNotContainsString( 'Add custom connector', $html );
 	}
 
 	public function test_the_list_shows_label_scope_and_last_used(): void {

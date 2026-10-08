@@ -555,6 +555,13 @@ if ( ! function_exists( 'dbDelta' ) ) {
 	}
 }
 
+if ( ! function_exists( 'site_url' ) ) {
+	/** Test site URL; override with $GLOBALS['senroflux_test_site_url']. */
+	function site_url( string $path = '' ): string {
+		return ( $GLOBALS['senroflux_test_site_url'] ?? 'http://example.test' ) . $path;
+	}
+}
+
 if ( ! function_exists( 'get_option' ) ) {
 	$GLOBALS['senroflux_test_options'] = array();
 
