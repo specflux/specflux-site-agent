@@ -10,11 +10,13 @@
  * between packs — the {@see ContentBundle} union then needs no change.
  *
  * Tiers follow the existing precedent: reads are 0; reversible writes are 1
- * (trash and restore mirror WooCommerce's soft delete, which is Tier 1; a
- * post-meta write is undone by SenroGate's post-meta capture); anything with a
- * public effect on the site, or that grants access, is 2 (`site/set-front-page`,
+ * (restoring a post, which WordPress brings back as a draft; a post-meta write
+ * is undone by SenroGate's post-meta capture); anything with a public effect
+ * on the site, or that grants access, is 2 (`site/set-front-page`,
  * `site/update-navigation`, publishing, approving a held comment, replying as
- * the site, a role change). There is no hard-delete verb here at all.
+ * the site, a role change). Trashing a post is 2 for every post type: it takes
+ * a live page or post off the site at once, so it needs approval even though
+ * it is reversible (kept simple and fail-closed rather than status-dependent). There is no hard-delete verb here at all.
  *
  * @package SenroFlux
  */
@@ -58,7 +60,7 @@ final class ToolBreadth {
 		return array(
 			self::CONTENT  => array(
 				'list-posts'       => array( 'list-posts', 'list-posts', 0, '', array( 'post_type', 'search', 'status', 'author', 'date_after', 'date_before', 'orderby', 'order', 'page', 'per_page', 'count_only' ), 'id' ),
-				'trash'            => array( 'trash-post', 'trash-post', 1, '', array( 'id' ), 'id' ),
+				'trash'            => array( 'trash-post', 'trash-post', 2, '', array( 'id' ), 'id' ),
 				'restore'          => array( 'restore-post', 'restore-post', 1, '', array( 'id' ), 'id' ),
 				'revisions'        => array( 'list-revisions', 'list-revisions', 0, '', array( 'post_id', 'limit' ), 'post_id' ),
 				// Restoring overwrites the live content of what is usually a

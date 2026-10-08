@@ -31,7 +31,7 @@ final class ToolBreadthTest extends TestCase {
 	/** Ability base name => the tier its verb must carry. */
 	private const TIERS = array(
 		'list-posts'         => 0,
-		'trash-post'         => 1,
+		'trash-post'         => 2,
 		'restore-post'       => 1,
 		'list-revisions'     => 0,
 		'restore-revision'   => 2,
@@ -113,6 +113,16 @@ final class ToolBreadthTest extends TestCase {
 				$this->assertSame( $name . '/' . $template, $verb, 'verb is <pack>/<ability>' );
 				$this->assertSame( self::TIERS[ $template ], VerbTier::tierFor( $verb, $map ), "$verb tier" );
 			}
+		}
+	}
+
+	public function test_trashing_a_post_needs_approval_in_every_pack_but_restoring_does_not(): void {
+		foreach ( array( 'pages', 'posts', 'site' ) as $name ) {
+			$pack = $this->packs()[ $name ];
+			$map  = $pack->verbMap();
+			$this->assertSame( 2, VerbTier::tierFor( $name . '/trash-post', $map ), "$name/trash-post is Tier 2" );
+			$this->assertSame( 1, VerbTier::tierFor( $name . '/restore-post', $map ), "$name/restore-post stays Tier 1" );
+			$this->assertSame( 2, $pack->agentSafetyVerbMap()['senroflux/trash-post'] ?? null, "$name SenroGate classification" );
 		}
 	}
 
