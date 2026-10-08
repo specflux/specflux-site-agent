@@ -70,6 +70,15 @@ final class DiscoveryTest extends OAuthTestCase {
 		$this->assertStringNotContainsString( 'error=', $header );
 	}
 
+	public function test_challenge_offers_both_scopes_so_the_consent_screen_can_offer_write(): void {
+		// Clients request the challenge's scope verbatim; read-only here would
+		// leave the consent screen with no "Read and write" choice.
+		$response = new SenroFlux_Test_Header_Response( 401 );
+		Bearer::challenge( $response, null, new SenroFlux_Test_Route_Request( '/senroflux/mcp' ) );
+
+		$this->assertStringContainsString( 'scope="senroflux:read senroflux:write"', $response->headers['WWW-Authenticate'] );
+	}
+
 	public function test_challenge_for_a_bad_token_says_invalid_token(): void {
 		$this->asMcpRequest( str_repeat( 'a', 64 ) );
 		$this->assertSame( 0, Bearer::authenticate( 0 ) );

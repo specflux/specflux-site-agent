@@ -214,7 +214,8 @@ final class Discovery {
 			}
 		}
 		$parts[] = 'resource_metadata="' . self::metadataUrl() . '"';
-		$parts[] = 'scope="' . OAuth::SCOPE_READ . '"';
+		// Clients request this verbatim; the consent screen still defaults to read only.
+		$parts[] = 'scope="' . implode( ' ', OAuth::supportedScopes() ) . '"';
 
 		return 'Bearer ' . implode( ', ', $parts );
 	}
