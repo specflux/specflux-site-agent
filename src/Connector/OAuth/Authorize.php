@@ -100,11 +100,10 @@ final class Authorize {
 		if ( '' !== trim( self::str( $in, 'scope' ) ) && array() === $requested ) {
 			return self::fail( $redirect, 'invalid_scope', $state );
 		}
-		$can_write = array() === $requested || in_array( OAuth::SCOPE_WRITE, $requested, true );
 
 		$nonce_action = self::nonceAction( $client->id, $challenge );
 		if ( 'POST' !== $method ) {
-			return self::consent( $client, $redirect, $in, $nonce_action, $can_write );
+			return self::consent( $client, $redirect, $in, $nonce_action );
 		}
 
 		// 3. The decision. Without a valid nonce this is a forged cross-site POST: refuse, do not redirect.
@@ -116,7 +115,9 @@ final class Authorize {
 			return self::fail( $redirect, 'access_denied', $state );
 		}
 
-		$scope = ( $can_write && 'write' === self::str( $in, 'grant' ) ) ? OAuth::SCOPE_READ . ' ' . OAuth::SCOPE_WRITE : OAuth::SCOPE_READ;
+		// The person approving decides, not the app: Claude.ai asks for read only even when write is
+		// advertised (RFC 6749 §3.3 lets the server grant a different scope; the token response says which).
+		$scope = 'write' === self::str( $in, 'grant' ) ? OAuth::SCOPE_READ . ' ' . OAuth::SCOPE_WRITE : OAuth::SCOPE_READ;
 		$code  = OAuth::secret();
 		Store::putCode(
 			$code,
@@ -198,9 +199,8 @@ final class Authorize {
 	 * @param string              $redirect     Validated redirect URI.
 	 * @param array<string,mixed> $in           Parameters, echoed back as hidden fields.
 	 * @param string              $nonce_action Nonce action.
-	 * @param bool                $can_write    Whether the app asked for write.
 	 */
-	private static function consent( Client $client, string $redirect, array $in, string $nonce_action, bool $can_write ): Page {
+	private static function consent( Client $client, string $redirect, array $in, string $nonce_action ): Page {
 		$host   = RedirectUri::displayHost( $redirect );
 		$hidden = '';
 		foreach ( array( 'client_id', 'redirect_uri', 'response_type', 'code_challenge', 'code_challenge_method', 'state', 'resource', 'scope' ) as $key ) {
@@ -214,9 +214,7 @@ final class Authorize {
 		if ( RedirectUri::isLoopback( $redirect ) ) {
 			$notes .= '<p class="warn">' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'senroflux' ) . '</p>';
 		}
-		$write = $can_write
-			? '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'senroflux' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'senroflux' ) . '</label>'
-			: '';
+		$write = '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'senroflux' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'senroflux' ) . '</label>';
 
 		// A dynamically registered client picks its own name, so the name proves nothing: say so, and
 		// make the redirect host (which the client cannot choose freely) the dominant line.

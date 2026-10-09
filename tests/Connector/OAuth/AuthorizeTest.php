@@ -87,10 +87,13 @@ final class AuthorizeTest extends OAuthTestCase {
 		$this->assertStringContainsString( '<strong>claude.ai</strong>', $page->body );
 	}
 
-	public function test_read_only_request_offers_no_write_choice(): void {
+	public function test_a_read_only_request_still_offers_write_with_read_checked(): void {
+		// Claude.ai asks for read only whatever the server advertises; the site owner decides.
 		$page = $this->get( array( 'scope' => 'senroflux:read' ) );
 
-		$this->assertStringNotContainsString( 'value="write"', $page->body );
+		$this->assertStringContainsString( 'value="write"', $page->body );
+		$this->assertStringContainsString( 'value="read" checked', $page->body );
+		$this->assertStringNotContainsString( 'value="write" checked', $page->body );
 	}
 
 	public function test_consent_page_forbids_framing(): void {
@@ -239,7 +242,7 @@ final class AuthorizeTest extends OAuthTestCase {
 		$this->assertArrayNotHasKey( 'code', $q );
 	}
 
-	public function test_write_is_granted_only_when_chosen_and_requested(): void {
+	public function test_write_is_granted_only_when_chosen(): void {
 		$read = $this->exchange( $this->obtainCode( 'read' ) );
 		$this->assertSame( 'senroflux:read', $read['body']['scope'] );
 
@@ -256,7 +259,7 @@ final class AuthorizeTest extends OAuthTestCase {
 				'client'   => $this->client,
 			)
 		);
-		$this->assertSame( 'senroflux:read', $exchange['body']['scope'], 'A forged grant=write cannot exceed what the app asked for.' );
+		$this->assertSame( 'senroflux:read senroflux:write', $exchange['body']['scope'], 'The person approving may grant write even when the app asked for read.' );
 	}
 
 	public function test_state_is_returned_url_encoded(): void {
