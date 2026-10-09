@@ -301,7 +301,8 @@ final class ConnectScreen {
 			__( 'Claude (web, desktop and mobile)', 'senroflux' ) => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'senroflux' ),
 			// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
 			// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
-			__( 'ChatGPT', 'senroflux' ) => __( 'In ChatGPT, go to Plugins, select the plus button, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'senroflux' ),
+			// Seen live 2026-10-09 on a Free account: Plugins > Add > Add custom MCP server, no developer mode.
+			__( 'ChatGPT', 'senroflux' ) => __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'senroflux' ),
 		);
 
 		foreach ( $cards as $label => $steps ) {

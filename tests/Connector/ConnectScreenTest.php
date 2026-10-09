@@ -163,7 +163,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertSame( 2, substr_count( $html, esc_html( ConnectScreen::serverUrl() ) . '</code>' ) );
 		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
 		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
-		$this->assertStringContainsString( 'Plugins, select the plus button, then Add custom MCP server', $html );
+		$this->assertStringContainsString( 'Plugins, open the Add menu, then Add custom MCP server', $html );
 		$this->assertStringContainsString( 'page=' . \Specflux\SenroFlux\Connector\OAuth\SignedInApps::SLUG, $html );
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}
