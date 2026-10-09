@@ -209,7 +209,11 @@ final class Clients {
 				return null;
 			}
 		}
-		if ( isset( $doc['token_endpoint_auth_method'] ) && 'none' !== $doc['token_endpoint_auth_method'] ) {
+		// Public clients only. A document that prefers client authentication but also supports none
+		// (ChatGPT's) is taken as public: discovery advertises none only, and PKCE is always required.
+		$supported = $doc['token_endpoint_auth_methods_supported'] ?? null;
+		if ( isset( $doc['token_endpoint_auth_method'] ) && 'none' !== $doc['token_endpoint_auth_method']
+			&& ! ( is_array( $supported ) && in_array( 'none', $supported, true ) ) ) {
 			return null;
 		}
 		$name = self::cleanName( $doc['client_name'] ?? '' );

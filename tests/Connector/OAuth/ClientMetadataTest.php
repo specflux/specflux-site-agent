@@ -81,6 +81,33 @@ final class ClientMetadataTest extends OAuthTestCase {
 		$this->assertNull( Clients::resolve( self::URL ) );
 	}
 
+	public function test_document_preferring_client_authentication_but_supporting_none_is_accepted(): void {
+		// ChatGPT's document: private_key_jwt preferred, none supported. The token endpoint advertises none only.
+		$this->queue(
+			$this->doc(
+				array(
+					'token_endpoint_auth_method' => 'private_key_jwt',
+					'token_endpoint_auth_methods_supported' => array( 'none', 'private_key_jwt' ),
+				)
+			)
+		);
+
+		$this->assertNotNull( Clients::resolve( self::URL ) );
+	}
+
+	public function test_document_supporting_only_client_authentication_is_refused(): void {
+		$this->queue(
+			$this->doc(
+				array(
+					'token_endpoint_auth_method' => 'private_key_jwt',
+					'token_endpoint_auth_methods_supported' => array( 'private_key_jwt' ),
+				)
+			)
+		);
+
+		$this->assertNull( Clients::resolve( self::URL ) );
+	}
+
 	public function test_non_200_and_non_json_and_oversized_are_refused(): void {
 		$this->queue( $this->doc(), 404 );
 		$this->assertNull( Clients::resolve( 'https://a.example/x.json' ) );
