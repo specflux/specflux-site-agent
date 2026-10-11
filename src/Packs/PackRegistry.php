@@ -145,7 +145,7 @@ final class PackRegistry {
 					esc_html(
 						sprintf(
 							/* translators: 1: pack name, 2: ungoverned namespace */
-							__( 'The pack "%1$s" was refused: abilityNamespaces() lists "%2$s" before its last entry, but Specflux Agent Governance does not govern it and the pack does not declare it in governedNamespaces().', 'specflux-site-agent' ),
+							__( 'The pack "%1$s" was refused: abilityNamespaces() lists "%2$s" before its last entry, but Belayline Agent Governance does not govern it and the pack does not declare it in governedNamespaces().', 'specflux-site-agent' ),
 							$pack->name(),
 							$namespace
 						)
@@ -238,7 +238,7 @@ final class PackRegistry {
 		}
 
 		add_filter(
-			'agent_safety_governed_namespaces',
+			'belayline_governed_namespaces',
 			static function ( $namespaces ): array {
 				$namespaces = is_array( $namespaces ) ? $namespaces : array();
 
@@ -249,7 +249,7 @@ final class PackRegistry {
 		);
 
 		add_filter(
-			'agent_safety_verb_map',
+			'belayline_verb_map',
 			static function ( $map ): array {
 				$map = is_array( $map ) ? $map : array();
 

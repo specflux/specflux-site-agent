@@ -176,12 +176,12 @@ final class Checks {
 			'specflux/agent-safety',
 			SetupCheck::ADVISORY,
 			false,
-			__( 'Install Specflux Agent Governance for approval and audit governance on every write.', 'specflux-site-agent' ),
+			__( 'Install Belayline Agent Governance for approval and audit governance on every write.', 'specflux-site-agent' ),
 			function_exists( 'admin_url' )
-				? admin_url( 'plugin-install.php?tab=plugin-information&plugin=agent-safety' )
+				? admin_url( 'plugin-install.php?tab=plugin-information&plugin=belayline-agent-governance' )
 				: null,
 			'install_plugins',
-			__( 'Ask an administrator to install the Specflux Agent Governance plugin.', 'specflux-site-agent' ),
+			__( 'Ask an administrator to install the Belayline Agent Governance plugin.', 'specflux-site-agent' ),
 			'specflux_site_agent_agent_safety_missing'
 		);
 	}

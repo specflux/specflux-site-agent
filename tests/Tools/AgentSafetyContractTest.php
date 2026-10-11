@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\AgentSafety\Plugin\Tests\Fixtures\VerdictErrorFixture;
+use Belayline\Plugin\Tests\Fixtures\VerdictErrorFixture;
 use Specflux\SiteAgent\Tools\ToolExecutor;
 use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;

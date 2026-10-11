@@ -5,7 +5,7 @@
  *
  * TARGET REPO PATH: src/Packs/Commerce/CommerceSummary.php
  *
- * Hooks `agent_safety_approval_summary` (same seam as
+ * Hooks `belayline_approval_summary` (same seam as
  * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}) for the commerce
  * pack's eight Tier-2 verbs and renders SERVER-READ state BESIDE the call's
  * own arguments, per SPEC-SITE-AGENT-1.0.md S19's approval-cards list:
@@ -45,7 +45,7 @@ final class CommerceSummary {
 	 * The Agent Safety approval-summary filter (AS-11), shared with
 	 * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}.
 	 */
-	public const HOOK = 'agent_safety_approval_summary';
+	public const HOOK = 'belayline_approval_summary';
 
 	/**
 	 * The commerce pack verbs this builder enriches — every Tier-2 row of

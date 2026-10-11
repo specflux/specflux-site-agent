@@ -12,7 +12,7 @@
 
 declare ( strict_types = 1 );
 
-namespace Specflux\AgentSafety\Plugin\Support;
+namespace Belayline\Plugin\Support;
 
 if ( ! class_exists( CorrelationConflict::class ) ) {
 	/**

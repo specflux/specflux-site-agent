@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * S6: the inline approve is a second caller of the SAME code path Agent
- * Safety's Pending Actions page uses. Feature-detects agent_safety()->approvals()
+ * Safety's Pending Actions page uses. Feature-detects belayline()->approvals()
  * (Agent Safety >= 0.3 with AS-10); when absent — an older Agent Safety, or a
  * broken autoloader there — approve() reports failure and the consumer falls
  * back to the review URL: the human approves on wp-admin, and the next tick's
@@ -32,11 +32,11 @@ class ApprovalBridge {
 	 *              already resolved (the by-reference retry still works then).
 	 */
 	public function approve( string $approval_id, int $user_id ): bool {
-		if ( ! function_exists( 'agent_safety' ) ) {
+		if ( ! function_exists( 'belayline' ) ) {
 			return false;
 		}
 
-		$container = agent_safety();
+		$container = belayline();
 		if ( null === $container || null === $container->approvals() ) {
 			return false;
 		}
@@ -48,8 +48,8 @@ class ApprovalBridge {
 	 * Is the programmatic approvals API present at all?
 	 */
 	public function isAvailable(): bool {
-		return function_exists( 'agent_safety' )
-			&& null !== agent_safety()
-			&& null !== agent_safety()->approvals();
+		return function_exists( 'belayline' )
+			&& null !== belayline()
+			&& null !== belayline()->approvals();
 	}
 }

@@ -195,10 +195,10 @@ describe( 'ReportView gate mode, withheld roles and grants', () => {
 		expect( screen.getByText( 'Approvals for this run are recorded only on this page.' ) ).toBeInTheDocument();
 	} );
 
-	it( 'names Specflux Agent Governance mode and carries no built-in line', () => {
+	it( 'names Belayline Agent Governance mode and carries no built-in line', () => {
 		render( <ReportView report={ { ...baseReport, gate_mode: 'agent_safety' } } steps={ [] } /> );
 
-		expect( screen.getByText( /Gate mode:/ ) ).toHaveTextContent( 'Specflux Agent Governance' );
+		expect( screen.getByText( /Gate mode:/ ) ).toHaveTextContent( 'Belayline Agent Governance' );
 		expect( screen.queryByText( /recorded only on this page/ ) ).not.toBeInTheDocument();
 	} );
 
@@ -212,7 +212,7 @@ describe( 'ReportView gate mode, withheld roles and grants', () => {
 		expect( screen.queryByText( /Withheld roles:/ ) ).not.toBeInTheDocument();
 	} );
 
-	it( 'lists grants with their expiry in Specflux Agent Governance mode', () => {
+	it( 'lists grants with their expiry in Belayline Agent Governance mode', () => {
 		const report = {
 			...baseReport,
 			gate_mode: 'agent_safety',

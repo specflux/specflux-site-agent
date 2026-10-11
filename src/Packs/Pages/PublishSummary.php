@@ -4,7 +4,7 @@
  *
  * TARGET REPO PATH: src/Packs/Pages/PublishSummary.php
  *
- * Hooks `agent_safety_approval_summary` (S14 AS-11): for the Tier-2 verbs
+ * Hooks `belayline_approval_summary` (S14 AS-11): for the Tier-2 verbs
  * `pages/publish` and `pages/update-live` it returns a rich HTML row — the
  * AS-11 side then renders it through `wp_kses($summary, ['a' => ['href' =>
  * true]])`, so ONLY `<a href>` survives; a `<script>` in an input is stripped
@@ -43,7 +43,7 @@ final class PublishSummary {
 	/**
 	 * The Agent Safety approval-summary filter (AS-11).
 	 */
-	public const HOOK = 'agent_safety_approval_summary';
+	public const HOOK = 'belayline_approval_summary';
 
 	/**
 	 * The verbs this builder enriches.

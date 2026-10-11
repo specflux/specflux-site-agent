@@ -45,7 +45,7 @@ final class Plugin {
 	 * loaded and its seams are wired", which is the property runs actually
 	 * depend on.
 	 */
-	public const AGENT_SAFETY_MARKER = 'Specflux\AgentSafety\Plugin\Hooks\AbilityPermissionGate';
+	public const AGENT_SAFETY_MARKER = 'Belayline\Plugin\Hooks\AbilityPermissionGate';
 
 	/** Singleton instance. */
 	private static ?self $instance = null;
@@ -117,7 +117,7 @@ final class Plugin {
 	 * Register the packs and hand their governance data to Agent Safety.
 	 *
 	 * Split out of {@see boot()} and run EARLIER for one reason: Agent Safety
-	 * reads `agent_safety_governed_namespaces` and `agent_safety_verb_map`
+	 * reads `belayline_governed_namespaces` and `belayline_verb_map`
 	 * inside its own `plugins_loaded` priority-0 bootstrap, while Specflux Site Agent
 	 * boots at priority 5. A pack registered in `boot()` would therefore be
 	 * ungoverned — the gate would return early for every `specflux/*` ability
@@ -258,7 +258,7 @@ final class Plugin {
 						continue;
 					}
 					add_filter(
-						'agent_safety_pack_registry',
+						'belayline_pack_registry',
 						static function ( $registry ) use ( $as_pack ) {
 							if ( is_object( $registry ) && method_exists( $registry, 'register' ) ) {
 								$registry->register( $as_pack );
@@ -285,7 +285,7 @@ final class Plugin {
 		// Stage 14 (AS-15/S19): the commerce pack's own approval-summary
 		// builder, plus the sibling covering the new Tier-2 content calls
 		// (posts publish, site navigation, front page) — same
-		// `agent_safety_approval_summary` hook, each inert for verbs it
+		// `belayline_approval_summary` hook, each inert for verbs it
 		// does not own.
 		\Specflux\SiteAgent\Packs\Commerce\CommerceSummary::boot();
 		\Specflux\SiteAgent\Packs\Site\ContentSummary::boot();

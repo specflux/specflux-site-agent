@@ -482,7 +482,7 @@ final class CommercePackTest extends TestCase {
 	}
 
 	public function test_agent_safety_pack_is_null_when_class_absent(): void {
-		if ( class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( class_exists( \Belayline\Packs\Pack::class ) ) {
 			$this->markTestSkipped( 'Agent Safety core is loaded in this environment.' );
 		}
 

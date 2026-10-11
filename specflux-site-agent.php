@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Specflux Site Agent
  * Plugin URI:        https://github.com/specflux/specflux-site-agent
- * Description:       Resumable, browser-driven multi-step agent runs inside the logged-in WordPress session — Abilities as tools, governed by Specflux Agent Governance when active or a built-in approval gate otherwise.
+ * Description:       Resumable, browser-driven multi-step agent runs inside the logged-in WordPress session — Abilities as tools, governed by Belayline Agent Governance when active or a built-in approval gate otherwise.
  * Version:           0.3.3
  * Author:            Stephen Paul Samynathan
  * Author URI:        https://www.specflux.com/author/stephen/
@@ -129,8 +129,8 @@ require_once __DIR__ . '/src/api.php';
 
 /**
  * Register the packs and their Agent Safety governance BEFORE Agent Safety's
- * own wiring: it reads `agent_safety_governed_namespaces` and
- * `agent_safety_verb_map` inside its plugins_loaded priority-0 bootstrap, so a
+ * own wiring: it reads `belayline_governed_namespaces` and
+ * `belayline_verb_map` inside its plugins_loaded priority-0 bootstrap, so a
  * pack wired at our boot priority below would never be governed at all.
  */
 add_action(

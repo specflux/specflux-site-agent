@@ -52,7 +52,7 @@ function EditLink( { object } ) {
 /** The "Built-in approvals" / "Agent Safety" half of the gate-mode line. */
 function gateModeLabel( gateMode ) {
 	return 'agent_safety' === gateMode
-		? __( 'Specflux Agent Governance', 'specflux-site-agent' )
+		? __( 'Belayline Agent Governance', 'specflux-site-agent' )
 		: __( 'Built-in approvals', 'specflux-site-agent' );
 }
 

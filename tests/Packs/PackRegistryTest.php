@@ -31,16 +31,16 @@ final class PackRegistryTest extends TestCase {
 		Plugin::reset();
 		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
-		remove_all_filters( 'agent_safety_governed_namespaces' );
-		remove_all_filters( 'agent_safety_verb_map' );
+		remove_all_filters( 'belayline_governed_namespaces' );
+		remove_all_filters( 'belayline_verb_map' );
 		$GLOBALS['specflux_site_agent_test_abilities'] = array();
 	}
 
 	protected function tearDown(): void {
 		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
-		remove_all_filters( 'agent_safety_governed_namespaces' );
-		remove_all_filters( 'agent_safety_verb_map' );
+		remove_all_filters( 'belayline_governed_namespaces' );
+		remove_all_filters( 'belayline_verb_map' );
 		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_doing_it_wrong'] );
 		Plugin::reset();
 	}
@@ -662,13 +662,13 @@ final class PackRegistryTest extends TestCase {
 
 		PackRegistry::contributeToAgentSafety();
 
-		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'agent_safety_governed_namespaces', array( 'core/' ) ) );
+		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'belayline_governed_namespaces', array( 'core/' ) ) );
 		$this->assertSame(
 			array(
 				'core/read-content'     => 0,
 				'specflux/update-thing' => 2,
 			),
-			$this->applyAgentSafetyFilter( 'agent_safety_verb_map', array( 'core/read-content' => 0 ) )
+			$this->applyAgentSafetyFilter( 'belayline_verb_map', array( 'core/read-content' => 0 ) )
 		);
 	}
 
@@ -690,16 +690,16 @@ final class PackRegistryTest extends TestCase {
 		PackRegistry::contributeToAgentSafety();
 
 		// Another contributor already answered for this ability: leave it be.
-		$map = $this->applyAgentSafetyFilter( 'agent_safety_verb_map', array( 'specflux/update-thing' => 1 ) );
+		$map = $this->applyAgentSafetyFilter( 'belayline_verb_map', array( 'specflux/update-thing' => 1 ) );
 		$this->assertSame( array( 'specflux/update-thing' => 1 ), $map );
 	}
 
 	public function test_plugin_govern_registers_the_pages_pack_governance(): void {
 		Plugin::instance()->govern();
 
-		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'agent_safety_governed_namespaces', array() ) );
+		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'belayline_governed_namespaces', array() ) );
 
-		$map = $this->applyAgentSafetyFilter( 'agent_safety_verb_map', array() );
+		$map = $this->applyAgentSafetyFilter( 'belayline_verb_map', array() );
 		$this->assertSame( 0, $map['specflux/read-content'] ?? null );
 		$this->assertSame( 1, $map['specflux/create-post'] ?? null );
 		// 0.3 S4: update-post is draft-state edits only now (Tier 1); the

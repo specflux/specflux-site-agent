@@ -298,7 +298,7 @@ final class RunnerTest extends TestCase {
 		$this->assertSame( 'awaiting_approval', $result['run']['status'] );
 		$this->assertSame( 'apr_park1', $result['ui']['approval']['approval_id'] ?? '' );
 		$this->assertSame( 'agsafe-smoke/blocked', $result['ui']['approval']['verb'] ?? '' );
-		$this->assertStringContainsString( 'agent-safety-pending', (string) ( $result['ui']['approval']['review_url'] ?? '' ) );
+		$this->assertStringContainsString( 'belayline-pending', (string) ( $result['ui']['approval']['review_url'] ?? '' ) );
 
 		// A parked run without an action simply REMAINS parked (S6: the
 		// consumer polls by ticking until the grant exists).
@@ -664,7 +664,7 @@ final class RunnerTest extends TestCase {
 
 		// The write itself succeeded.
 		$write_message              = ( new UserMessage(
-			array( new MessagePart( new FunctionResponse( 'call_w', 'agsafe_smoke_write', array( 'ok' => true ) ) ) )
+			array( new MessagePart( new FunctionResponse( 'call_w', 'belayline_smoke_write', array( 'ok' => true ) ) ) )
 		) )->toArray();
 		$write_message['plan_verb'] = 'agsafe-smoke/write';
 		$this->store->appendStep( $run_id, StepKind::ToolResult, $write_message, 'wpab__agsafe-smoke__write', null, 'ok' );

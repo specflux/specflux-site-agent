@@ -548,11 +548,11 @@ final class PostsPack extends Pack {
 	 * @return object|null null when the Agent Safety pack class is absent.
 	 */
 	public function agentSafetyPack(): ?object {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return null;
 		}
 
-		return new \Specflux\AgentSafety\Packs\Pack(
+		return new \Belayline\Packs\Pack(
 			name: 'posts',
 			allow: $this->allowList(),
 			approvalByClass: array( 'tier2' => true ),
@@ -568,13 +568,13 @@ final class PostsPack extends Pack {
 	 * @return WP_Error|null null when bound, else pack_unbound.
 	 */
 	protected function agentSafetyBindingError( int $user_id ): ?WP_Error {
-		if ( ! function_exists( 'agent_safety' ) || null === agent_safety() ) {
+		if ( ! function_exists( 'belayline' ) || null === belayline() ) {
 			return $this->packUnboundError();
 		}
 
-		if ( ! class_exists( \Specflux\AgentSafety\Plugin\Support\PackResolver::class )
-			|| ! class_exists( \Specflux\AgentSafety\Packs\Pack::class )
-			|| ! class_exists( \Specflux\AgentSafety\Policy\Tier::class )
+		if ( ! class_exists( \Belayline\Plugin\Support\PackResolver::class )
+			|| ! class_exists( \Belayline\Packs\Pack::class )
+			|| ! class_exists( \Belayline\Policy\Tier::class )
 		) {
 			return $this->packUnboundError();
 		}
@@ -590,7 +590,7 @@ final class PostsPack extends Pack {
 			}
 		}
 
-		if ( ! $resolved->requiresApproval( \Specflux\AgentSafety\Policy\Tier::Irreversible ) ) {
+		if ( ! $resolved->requiresApproval( \Belayline\Policy\Tier::Irreversible ) ) {
 			return $this->packUnboundError();
 		}
 
@@ -598,10 +598,10 @@ final class PostsPack extends Pack {
 	}
 
 	/**
-	 * @return \Specflux\AgentSafety\Packs\Pack|null
+	 * @return \Belayline\Packs\Pack|null
 	 */
-	private function resolveAsPackForUser( int $user_id ): ?\Specflux\AgentSafety\Packs\Pack {
-		$resolver = new \Specflux\AgentSafety\Plugin\Support\PackResolver();
+	private function resolveAsPackForUser( int $user_id ): ?\Belayline\Packs\Pack {
+		$resolver = new \Belayline\Plugin\Support\PackResolver();
 		$registry = $resolver->registry();
 		$bindings = $registry->bindings();
 

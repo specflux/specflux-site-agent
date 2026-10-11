@@ -15,7 +15,7 @@ namespace Specflux\SiteAgent\Tests\Adversarial;
 use PHPUnit\Framework\TestCase;
 use SpecfluxSiteAgent_Test_Fake_Ability;
 use SpecfluxSiteAgent_Test_Grants;
-use Specflux\AgentSafety\Plugin\Support\RequestContext;
+use Belayline\Plugin\Support\RequestContext;
 use Specflux\SiteAgent\Approval\GrantBridge;
 use Specflux\SiteAgent\Model\ModelTurn;
 use Specflux\SiteAgent\Packs\Commerce\CommercePack;

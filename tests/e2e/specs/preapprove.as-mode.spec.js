@@ -7,7 +7,7 @@ const { gotoRuns, waitLoaded, startRun, waitForPark, acceptPlan, waitSettled } =
 /**
  * Proof shakedown (journey J3, S14): the plan card must offer "Accept and
  * pre-approve" whenever `specflux_site_agent_enable_preapproval` AND Agent Safety's
- * `agent_safety_enable_grants` are on — including after a page reload, since
+ * `belayline_enable_grants` are on — including after a page reload, since
  * the plan step's stored message carries only the plan, not the offer — and
  * accepting it must mean no approval park follows for the granted verb.
  *
@@ -15,7 +15,7 @@ const { gotoRuns, waitLoaded, startRun, waitForPark, acceptPlan, waitSettled } =
  * `specflux_site_agent_e2e_preapproval` option (and registers the Tier-2
  * `specflux-e2e/publish-thing` fixture ability, the only tier a grant covers).
  */
-test.describe( 'S14 pre-approval from the plan card (Specflux Agent Governance mode)', () => {
+test.describe( 'S14 pre-approval from the plan card (Belayline Agent Governance mode)', () => {
 	test.afterEach( () => {
 		deleteOption( 'specflux_site_agent_e2e_preapproval' );
 	} );

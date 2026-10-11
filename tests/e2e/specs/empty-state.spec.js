@@ -18,7 +18,7 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 	} );
 
 	// J1: dismiss the Agent Safety advisory, reload, it stays gone.
-	test( 'the Specflux Agent Governance advisory can be dismissed, and stays dismissed after a reload', async ( { page } ) => {
+	test( 'the Belayline Agent Governance advisory can be dismissed, and stays dismissed after a reload', async ( { page } ) => {
 		const meta = 'specflux_site_agent_agent_safety_check_dismissed';
 		// `wp user meta delete` fails when the key is absent; that is fine here.
 		const clear = () => {

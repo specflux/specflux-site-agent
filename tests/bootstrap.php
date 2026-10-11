@@ -34,7 +34,7 @@ if ( ! class_exists( 'WP_Error', false ) ) {
 	require_once __DIR__ . '/stubs/wp-error.php';
 }
 require_once __DIR__ . '/stubs/abilities.php';
-// Agent Safety host surface (S14): the agent_safety() locator, its grants
+// Agent Safety host surface (S14): the belayline() locator, its grants
 // service, and RequestContext's correlation scope. Inert until a test opts in.
 require_once __DIR__ . '/stubs/agent-safety.php';
 require_once __DIR__ . '/stubs/agent-safety-context.php';

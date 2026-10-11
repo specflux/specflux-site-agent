@@ -36,7 +36,7 @@ namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
 use SpecfluxSiteAgent_Test_Fake_Ability;
-use Specflux\AgentSafety\Plugin\Support\RequestContext;
+use Belayline\Plugin\Support\RequestContext;
 use Specflux\SiteAgent\Approval\GrantBridge;
 use Specflux\SiteAgent\Model\ModelTurn;
 use Specflux\SiteAgent\Plugin;
@@ -115,7 +115,7 @@ final class ExpiredGrantTest extends TestCase {
 
 	private static function grantEligible( ?object $grant, string $verb, array $args ): mixed {
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Agent Safety's own hook.
-		return apply_filters( 'agent_safety_grant_eligible', false, $grant, $verb, $args );
+		return apply_filters( 'belayline_grant_eligible', false, $grant, $verb, $args );
 	}
 
 	/**

@@ -13,7 +13,7 @@ namespace Specflux\SiteAgent\Approval;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * S7/S14: the one place Specflux Site Agent talks to `agent_safety()->grants()` and to
+ * S7/S14: the one place Specflux Site Agent talks to `belayline()->grants()` and to
  * `RequestContext::withCorrelation()`.
  *
  * Everything here is feature-detected, because AS-12 ships behind a filter and
@@ -33,7 +33,7 @@ class GrantBridge {
 	 * AS-12; an older build has the class but not the method, so both are
 	 * probed.
 	 */
-	private const REQUEST_CONTEXT = 'Specflux\\AgentSafety\\Plugin\\Support\\RequestContext';
+	private const REQUEST_CONTEXT = 'Belayline\\Plugin\\Support\\RequestContext';
 
 	/**
 	 * The correlation id one run's grants, approvals and audit rows share.
@@ -58,7 +58,7 @@ class GrantBridge {
 
 	/**
 	 * Is pre-approval switched on for this site — the API is present AND
-	 * `agent_safety_enable_grants` is true? A grant issued while the feature is
+	 * `belayline_enable_grants` is true? A grant issued while the feature is
 	 * off is never written, so asking first keeps the harness from offering a
 	 * choice that cannot take effect.
 	 */
@@ -218,15 +218,15 @@ class GrantBridge {
 	}
 
 	/**
-	 * `agent_safety()->grants()`, or null when Agent Safety is absent, too old
+	 * `belayline()->grants()`, or null when Agent Safety is absent, too old
 	 * to expose the service, or built without it.
 	 */
 	private function service(): ?object {
-		if ( ! function_exists( 'agent_safety' ) ) {
+		if ( ! function_exists( 'belayline' ) ) {
 			return null;
 		}
 
-		$container = agent_safety();
+		$container = belayline();
 		if ( ! is_object( $container ) || ! method_exists( $container, 'grants' ) ) {
 			return null;
 		}

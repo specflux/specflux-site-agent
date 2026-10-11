@@ -263,7 +263,7 @@ final class TransientModelErrorTest extends TestCase {
 		$this->store->updateRun( $run_id, array( 'accepted_plan_step_id' => $plan_seq ) );
 
 		$write_message              = ( new UserMessage(
-			array( new MessagePart( new FunctionResponse( 'call_w', 'agsafe_smoke_write', array( 'ok' => true ) ) ) )
+			array( new MessagePart( new FunctionResponse( 'call_w', 'belayline_smoke_write', array( 'ok' => true ) ) ) )
 		) )->toArray();
 		$write_message['plan_verb'] = 'agsafe-smoke/write';
 		$this->store->appendStep( $run_id, StepKind::ToolResult, $write_message, 'wpab__agsafe-smoke__write', null, 'ok' );

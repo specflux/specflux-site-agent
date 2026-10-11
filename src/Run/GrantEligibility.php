@@ -13,7 +13,7 @@ namespace Specflux\SiteAgent\Run;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * S14: `agent_safety_grant_eligible` defaults to FALSE, and this is the only
+ * S14: `belayline_grant_eligible` defaults to FALSE, and this is the only
  * thing that ever answers it true.
  *
  * A grant is per-verb and per-count, never per-object — deliberately, because
@@ -88,7 +88,7 @@ final class GrantEligibility {
 	 * is inert (answers false) until a tick opens a run context.
 	 */
 	public static function boot(): void {
-		add_filter( 'agent_safety_grant_eligible', array( self::class, 'eligible' ), 10, 4 );
+		add_filter( 'belayline_grant_eligible', array( self::class, 'eligible' ), 10, 4 );
 	}
 
 	/**
@@ -124,7 +124,7 @@ final class GrantEligibility {
 	}
 
 	/**
-	 * Answer `agent_safety_grant_eligible`.
+	 * Answer `belayline_grant_eligible`.
 	 *
 	 * Returns a literal bool, never the incoming value: Agent Safety accepts
 	 * only `true`, and a filter may narrow but never widen — so a `true` that

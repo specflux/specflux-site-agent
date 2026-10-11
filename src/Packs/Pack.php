@@ -55,7 +55,7 @@ defined( 'ABSPATH' ) || exit;
  *     plugin/src/Hooks/AbilityPermissionGate.php:113, plugin/src/Verdict/VerdictPipeline.php:70,
  *     src/Gate/Gate.php:31-41). Agent Safety's own core module does exactly
  *     this — `CorePacks` allows `core/read-content` etc. So everything Agent
- *     Safety sees (`agent_safety_governed_namespaces`, `agent_safety_verb_map`,
+ *     Safety sees (`belayline_governed_namespaces`, `belayline_verb_map`,
  *     a `Packs\Pack`'s allow-list, the approval-summary `$verb`) is keyed on
  *     ABILITY IDS, never on `pages/*`.
  * {@see agentSafetyVerbMap()} is the bridge: it collapses the pack verbs a role
@@ -527,7 +527,7 @@ abstract class Pack {
 
 	/**
 	 * The ability namespaces this pack asks Agent Safety to govern, contributed
-	 * to `agent_safety_governed_namespaces`. Only the POLYFILL namespace: a
+	 * to `belayline_governed_namespaces`. Only the POLYFILL namespace: a
 	 * role that resolved to `core/*` is already governed unconditionally by
 	 * Agent Safety's own core module (S9), and re-declaring it here would be a
 	 * second, weaker opinion on the same ability.
@@ -543,7 +543,7 @@ abstract class Pack {
 	}
 
 	/**
-	 * The pack's contribution to `agent_safety_verb_map`: Agent Safety verb
+	 * The pack's contribution to `belayline_verb_map`: Agent Safety verb
 	 * (= polyfill ability id) => tier. Without this, governing the namespace
 	 * would deny every call in it as `unknown_verb` — the gate fails closed on
 	 * unclassified verbs by design (agent-safety README, plugin/agent-safety.php:177).
@@ -698,7 +698,7 @@ abstract class Pack {
 
 	/**
 	 * The Agent Safety pack descriptor (allow/deny/approvalByTier) registered on
-	 * `agent_safety_pack_registry`; null when the pack contributes none. Stage 8
+	 * `belayline_pack_registry`; null when the pack contributes none. Stage 8
 	 * fills the pages pack's; the base contributes nothing. `@api` (S23).
 	 */
 	public function agentSafetyPack(): ?object {
@@ -743,7 +743,7 @@ abstract class Pack {
 	 * tier 2. Returns true, or a WP_Error (`skills_too_large` from the ceiling,
 	 * or `pack_unbound`).
 	 *
-	 * The binding check is NOT conditional on `function_exists('agent_safety')`:
+	 * The binding check is NOT conditional on `function_exists('belayline')`:
 	 * Agent Safety is a hard runtime dependency (S2) and the Capability Pack IS
 	 * the governance seam, so a missing seam is a refusal, never a gated pass.
 	 * Answering that question is each pack's own job — see
@@ -860,7 +860,7 @@ abstract class Pack {
 				__( 'The %s pack is not turned on for your account. Turn it on for your role in Tools > Agent Capability Packs.', 'specflux-site-agent' ),
 				$this->name()
 			),
-			admin_url( 'tools.php?page=agent-safety-packs' ),
+			admin_url( 'tools.php?page=belayline-packs' ),
 			'manage_options',
 			sprintf(
 				/* translators: %s: capability pack name, e.g. "posts". */
@@ -873,7 +873,7 @@ abstract class Pack {
 
 	/** The `<pack>/agent-safety-required` setup check (built-in mode, {@see requiresAgentSafety()}). */
 	private function agentSafetyRequiredCheck(): SetupCheck {
-		$message = __( 'This pack requires the Specflux Agent Governance plugin to be active.', 'specflux-site-agent' );
+		$message = __( 'This pack requires the Belayline Agent Governance plugin to be active.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			$this->name() . '/agent-safety-required',

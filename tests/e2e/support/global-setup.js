@@ -97,7 +97,7 @@ async function setupFor( gateMode, storageStatePath ) {
 
 	if ( 'agent_safety' === gateMode ) {
 		activateAgentSafety();
-		wpCli( [ 'option', 'update', 'agsafe_pack_bindings', '{"role:administrator":"specflux-e2e-pack","role:editor":"specflux-e2e-pack"}', '--format=json' ] );
+		wpCli( [ 'option', 'update', 'belayline_pack_bindings', '{"role:administrator":"specflux-e2e-pack","role:editor":"specflux-e2e-pack"}', '--format=json' ] );
 	} else {
 		deactivateAgentSafety();
 	}

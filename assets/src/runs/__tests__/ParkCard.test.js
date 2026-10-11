@@ -38,7 +38,7 @@ describe( 'the plan card pre-approve radio', () => {
 		expect( screen.getByText( /without asking again/i ) ).toBeInTheDocument();
 	} );
 
-	it( 'is hidden while Specflux Agent Governance grants are off (preapprove_available: false)', () => {
+	it( 'is hidden while Belayline Agent Governance grants are off (preapprove_available: false)', () => {
 		render(
 			<ParkCard
 				kind="plan"

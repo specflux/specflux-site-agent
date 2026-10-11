@@ -14,13 +14,13 @@ const {
 	waitSettled,
 } = require( '../support/actions' );
 
-test.describe( 'S10/S12 full run tour (Specflux Agent Governance mode)', () => {
+test.describe( 'S10/S12 full run tour (Belayline Agent Governance mode)', () => {
 	test.beforeEach( () => {
 		resetRuns();
 		setScript( fullTour() );
 	} );
 
-	test( 'the SAME tour shows the tier badge, because Specflux Agent Governance is the active gate', async ( { page } ) => {
+	test( 'the SAME tour shows the tier badge, because Belayline Agent Governance is the active gate', async ( { page } ) => {
 		await gotoRuns( page );
 		await waitLoaded( page );
 		await startRun( page, 'Build the launch page' );

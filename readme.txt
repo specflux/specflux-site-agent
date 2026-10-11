@@ -22,7 +22,7 @@ its first side-effecting write — and resuming exactly where it left off.
 * **Tools are WordPress Abilities**, restricted per run to an allow-list
   supplied directly by the consumer, or derived from a registered **pack**
   (a named tool surface — pages, posts, site, or commerce, all bundled).
-* **Two gate modes, resolved once per run.** If the **Specflux Agent Governance** plugin
+* **Two gate modes, resolved once per run.** If the **Belayline Agent Governance** plugin
   is active, every call is governed by its gate (packs, tiers, approvals)
   and audit trail. Without it, Specflux Site Agent falls back to a **built-in minimal
   gate**: every call that changes the site still stops for a person to
@@ -56,7 +56,7 @@ its first side-effecting write — and resuming exactly where it left off.
 
 1. Install and activate Specflux Site Agent. It works standalone with a built-in
    approval gate.
-2. Optionally install and activate **Specflux Agent Governance** for its full audit
+2. Optionally install and activate **Belayline Agent Governance** for its full audit
    trail, tiered approvals, and cross-plugin governance — Specflux Site Agent detects
    it automatically and switches gate modes on the next run started after
    activation.
@@ -76,12 +76,12 @@ unknown block) refuses the whole write. Specflux Site Agent does this itself rat
 than relying on WordPress's HTML filtering, because administrators are
 allowed unfiltered HTML.
 
-= Does it work without Specflux Agent Governance? =
+= Does it work without Belayline Agent Governance? =
 
-Yes. Specflux Agent Governance is optional, not required. If it isn't active, Specflux Site Agent
+Yes. Belayline Agent Governance is optional, not required. If it isn't active, Specflux Site Agent
 uses its own built-in minimal gate: every call that changes the site still
 stops for a person to approve it on Specflux Site Agent's Runs screen before it runs;
-read-only calls do not. Installing Specflux Agent Governance later adds its full audit
+read-only calls do not. Installing Belayline Agent Governance later adds its full audit
 trail, tiered approval thresholds, and governance shared across other
 plugins — new runs pick it up automatically.
 
@@ -265,7 +265,7 @@ Fixed:
 
 New:
 
-* Two gate modes: Specflux Agent Governance when active, otherwise a built-in minimal
+* Two gate modes: Belayline Agent Governance when active, otherwise a built-in minimal
   gate that still pauses every governed write for human approval on the
   Runs screen. A run's mode is pinned at start.
 * Three new packs alongside pages: posts, site (navigation, front page,
@@ -300,9 +300,9 @@ New:
 * `specflux/create-post` now refuses `slug_collision` (409) when a
   non-trashed page or post of the same type already holds the requested
   slug, or matches the title case-insensitively.
-* Specflux Agent Governance is no longer a hard requirement. 0.2 always failed closed
+* Belayline Agent Governance is no longer a hard requirement. 0.2 always failed closed
   without it; 0.3 falls back to a built-in minimal gate instead (see the
-  FAQ above). If you relied on `specflux_site_agent_ungoverned` meaning "Specflux Agent Governance
+  FAQ above). If you relied on `specflux_site_agent_ungoverned` meaning "Belayline Agent Governance
   is missing," check the run's `gate_mode` instead.
 * A run still parked or running under 0.2 at the moment you upgrade to 0.3
   fails on its next tick with reason "started under 0.2" instead of
@@ -346,4 +346,4 @@ Tightens permission checks on media, store report and coupon abilities; fixes tr
 Sanitizes the JSON payloads of the admin-ajax endpoints; fixes the Openverse terms link.
 
 = 0.3.0 =
-Breaking: update-post no longer publishes (use publish-post); create-post refuses slug/title collisions; Specflux Agent Governance is optional; runs still parked under 0.2 fail on their next tick; run list is per viewer; see the changelog.
+Breaking: update-post no longer publishes (use publish-post); create-post refuses slug/title collisions; Belayline Agent Governance is optional; runs still parked under 0.2 fail on their next tick; run list is per viewer; see the changelog.

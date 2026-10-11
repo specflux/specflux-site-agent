@@ -3,7 +3,7 @@
  * The Runs-screen approval card carries the packs' human summary.
  *
  * Live proof shakedown (bug 8): the pack summary builders were hooked only
- * into Agent Safety's `agent_safety_approval_summary` filter, so only Agent
+ * into Agent Safety's `belayline_approval_summary` filter, so only Agent
  * Safety's own Pending Agent Actions page showed "current beside proposed";
  * the Runs-screen card printed the verb and raw argument JSON. The park
  * payload (`Runner::approvalUi()`) and the run detail
@@ -258,7 +258,7 @@ final class ApprovalSummaryTest extends TestCase {
 
 	public function test_summary_markup_is_reduced_to_text_and_plain_links(): void {
 		add_filter(
-			'agent_safety_approval_summary',
+			'belayline_approval_summary',
 			static fn (): string => 'Go <script>alert(1)</script><img src=x onerror=alert(2)> <a href="javascript:alert(3)" onclick="x()">bad</a> <a href="https://example.test/p" onclick="x()">ok</a> &quot;t&quot;',
 			20,
 			3

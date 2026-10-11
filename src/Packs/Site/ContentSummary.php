@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Builds the AS-15 content-pack approval summaries.
  *
- * Hooks the same `agent_safety_approval_summary` filter (AS-11/AS-15) for
+ * Hooks the same `belayline_approval_summary` filter (AS-11/AS-15) for
  * four cases:
  *
  *   - `specflux/create-post` and `specflux/update-post` when the call
@@ -45,7 +45,7 @@ defined( 'ABSPATH' ) || exit;
  * for anything that is not a `post`, so a page's card is left exactly as
  * PublishSummary already built it, and a post's card is filed by THIS
  * class's own final row — which fully replaces whatever PublishSummary
- * produced, because `agent_safety_approval_summary` is a plain string
+ * produced, because `belayline_approval_summary` is a plain string
  * filter and the last matching callback's return value wins.
  *
  * PROVENANCE RULE (same discipline as PublishSummary/CommerceSummary):
@@ -60,7 +60,7 @@ final class ContentSummary {
 	/**
 	 * The Agent Safety approval-summary filter (AS-11/AS-15).
 	 */
-	public const HOOK = 'agent_safety_approval_summary';
+	public const HOOK = 'belayline_approval_summary';
 
 	/**
 	 * Wire the hook (call once, from the composition root).

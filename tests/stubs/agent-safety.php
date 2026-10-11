@@ -4,7 +4,7 @@
  *
  * Agent Safety is a separate plugin and is NOT a composer dependency, so the
  * suite has to supply the two symbols Specflux Site Agent feature-detects: the global
- * `agent_safety()` locator and `RequestContext`'s static correlation scope.
+ * `belayline()` locator and `RequestContext`'s static correlation scope.
  * Both are recording doubles with knobs — none of Agent Safety's own logic is
  * reproduced here, only the shape of its contract:
  *
@@ -18,23 +18,23 @@ declare ( strict_types = 1 );
 
 $GLOBALS['specflux_site_agent_test_agent_safety'] = $GLOBALS['specflux_site_agent_test_agent_safety'] ?? null;
 
-if ( ! function_exists( 'agent_safety' ) ) {
+if ( ! function_exists( 'belayline' ) ) {
 	/**
 	 * The plugin locator Agent Safety exposes. Null = plugin absent.
 	 */
-	function agent_safety(): ?object {
+	function belayline(): ?object {
 		return $GLOBALS['specflux_site_agent_test_agent_safety'] ?? null;
 	}
 }
 
 if ( ! class_exists( 'SpecfluxSiteAgent_Test_Grants' ) ) {
 	/**
-	 * Stands in for `agent_safety()->grants()`: records what the harness asked
+	 * Stands in for `belayline()->grants()`: records what the harness asked
 	 * for, and refuses everything the real service refuses.
 	 */
 	class SpecfluxSiteAgent_Test_Grants {
 
-		/** Mirrors the `agent_safety_enable_grants` switch. */
+		/** Mirrors the `belayline_enable_grants` switch. */
 		public bool $enabled = true;
 
 		/** @var list<array<string,mixed>> Every issue() call that was accepted. */

@@ -50,7 +50,7 @@ final class GateModeTest extends TestCase {
 			$this->store,
 			new ToolExecutor(),
 			$this->gateway,
-			// Real bridge: `agent_safety()` defaults to null in bare PHPUnit
+			// Real bridge: `belayline()` defaults to null in bare PHPUnit
 			// (tests/stubs/agent-safety.php), so isAvailable() is false here —
 			// exactly the "Agent Safety absent" state built-in mode assumes.
 			new ApprovalBridge(),
@@ -189,7 +189,7 @@ final class GateModeTest extends TestCase {
 
 	public function test_the_park_tick_carries_the_packs_approval_summary(): void {
 		add_filter(
-			'agent_safety_approval_summary',
+			'belayline_approval_summary',
 			static fn ( string $summary, string $verb ): string => 'agsafe-smoke/write' === $verb ? 'Write it &quot;now&quot;' : $summary,
 			10,
 			2
@@ -201,7 +201,7 @@ final class GateModeTest extends TestCase {
 		$run                     = $this->store->getRun( $run_id );
 		$this->gateway->script[] = self::callTurn( 'call_w', 'agsafe-smoke/write', array( 'x' => 1 ) );
 		$result                  = $this->runner->tick( $run_id, (int) $run->stepCount, array( 'plan' => array( 'action' => 'accept' ) ) );
-		remove_all_filters( 'agent_safety_approval_summary' );
+		remove_all_filters( 'belayline_approval_summary' );
 
 		$this->assertSame( 'awaiting_approval', $result['run']['status'] );
 		$this->assertSame( 'Write it &quot;now&quot;', $result['ui']['approval']['summary'] );

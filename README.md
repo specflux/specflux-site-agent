@@ -3,7 +3,7 @@
 Agent runs for WordPress. Specflux Site Agent runs a resumable, multi-step agent loop inside the
 logged-in WordPress session: Abilities are the tools, the WordPress AI Client is the model
 layer, and every governed call is gated and approved by
-[Specflux Agent Governance](https://github.com/stephen1204paul/specflux-agent-governance) when it's active, or by
+[Belayline Agent Governance](https://github.com/stephen1204paul/belayline-agent-governance) when it's active, or by
 Specflux Site Agent's own built-in minimal gate when it isn't.
 
 First consumer: [Specflux Marketing Analytics Chat](https://wordpress.org/plugins/specflux-marketing-analytics-chat/).
@@ -79,7 +79,7 @@ One goal, pursued on behalf of one logged-in user, across many model turns and t
    "Requirements" above). A run can also stop mid-tick at three other points:
    - **Approval park** (`status = awaiting_approval`) - a governed call the gate blocked;
      resolve with `tick( $id, $count, [ 'action' => 'approve' | 'reject' ] )`, or (in Agent
-     Safety mode) approve/reject directly via `agent_safety()->approvals()`.
+     Safety mode) approve/reject directly via `belayline()->approvals()`.
    - **Question park** (`status = awaiting_user`) - the model called `specflux/ask-user`;
      resolve with `[ 'answer' => [ 'text' => ..., 'choice' => ... ] ]` or `[ 'skip' => true ]`.
    - **Plan park** (`status = awaiting_plan`) - the model called `specflux/propose-plan`;
@@ -138,7 +138,7 @@ if ( function_exists( 'specflux_site_agent' )
     $state = specflux_site_agent()->tick( $run_id, $step_count, array( 'action' => 'approve' ) );
 
     // Approvals are Agent Safety's, not Specflux Site Agent's:
-    agent_safety()->approvals()->approve( $approval_id, get_current_user_id() );
+    belayline()->approvals()->approve( $approval_id, get_current_user_id() );
 }
 ```
 
@@ -228,9 +228,9 @@ resolves its roles and gets its verbs tiered, and that it references no non-`@ap
 symbol.
 
 The bundled pages pack also registers itself with **Agent Safety**, via
-`agent_safety_pack_registry`, `agent_safety_governed_namespaces` (adds its `specflux/`
-polyfill namespace) and `agent_safety_verb_map` (classifies its create/update/publish calls
-by tier), and hooks `agent_safety_approval_summary` (`PublishSummary`) to render a
+`belayline_pack_registry`, `belayline_governed_namespaces` (adds its `specflux/`
+polyfill namespace) and `belayline_verb_map` (classifies its create/update/publish calls
+by tier), and hooks `belayline_approval_summary` (`PublishSummary`) to render a
 human-readable preview on the Agent Safety pending-approvals screen for its Tier-2 publish
 calls.
 

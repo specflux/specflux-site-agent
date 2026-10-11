@@ -194,9 +194,9 @@ describe( 'the report arrives with the terminal tick', () => {
 	} );
 } );
 
-describe( 'the Specflux Agent Governance advisory Dismiss button (J1)', () => {
+describe( 'the Belayline Agent Governance advisory Dismiss button (J1)', () => {
 	const advisory =
-		'<div id="specflux-site-agent-setup-panel"><div class="notice" data-check-id="specflux/agent-safety"><p>Install Specflux Agent Governance.</p>' +
+		'<div id="specflux-site-agent-setup-panel"><div class="notice" data-check-id="specflux/agent-safety"><p>Install Belayline Agent Governance.</p>' +
 		'<p><button type="button" class="button specflux-site-agent-dismiss-check" data-nonce="dn1">Dismiss</button></p></div></div>';
 
 	beforeEach( () => {

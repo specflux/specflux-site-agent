@@ -529,7 +529,7 @@ final class Runner {
 					// and the existing park stands.
 					$notice = null;
 					if ( $outcome->approvalId !== $approval_id ) {
-						$notice      = __( 'The earlier approval request expired, so Specflux Agent Governance asked again. Approve to continue.', 'specflux-site-agent' );
+						$notice      = __( 'The earlier approval request expired, so Belayline Agent Governance asked again. Approve to continue.', 'specflux-site-agent' );
 						$new_steps[] = $this->appendApprovalStep( $run->id, $outcome, $call, array_values( is_array( $parked['remaining'] ?? null ) ? $parked['remaining'] : array() ), $notice );
 					}
 
@@ -1087,7 +1087,7 @@ final class Runner {
 				// Pending Actions page shows, so the Runs card reads alike.
 				'summary'      => $this->approvalSummary( $call ),
 				'review_url'   => ( ! $built_in && function_exists( 'admin_url' ) )
-					? admin_url( 'tools.php?page=agent-safety-pending' )
+					? admin_url( 'tools.php?page=belayline-pending' )
 					: '',
 			),
 		);
@@ -1100,7 +1100,7 @@ final class Runner {
 
 	/**
 	 * The human approval summary for a parked call, through the same
-	 * `agent_safety_approval_summary` filter Agent Safety applies. Specflux Site Agent
+	 * `belayline_approval_summary` filter Agent Safety applies. Specflux Site Agent
 	 * registers its pack builders on it at boot, so this works with Agent
 	 * Safety absent (built-in gate mode). The result is HOST markup built by
 	 * the packs (escaped fragments plus `<a href>` preview/edit links), so it
@@ -1114,7 +1114,7 @@ final class Runner {
 
 		try {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Agent Safety's own filter, applied here so the Runs card matches its queue.
-			$summary = apply_filters( 'agent_safety_approval_summary', '', ToolRegistry::abilityName( (string) $call['name'] ), $args );
+			$summary = apply_filters( 'belayline_approval_summary', '', ToolRegistry::abilityName( (string) $call['name'] ), $args );
 		} catch ( \Throwable ) {
 			// A summary builder reads store state; its failure must never
 			// block the park the human is about to resolve.
@@ -4080,7 +4080,7 @@ final class Runner {
 	 * Is pre-approval offerable? Only when the `specflux_site_agent_enable_preapproval`
 	 * filter is true AND Agent Safety's grants service is both present and
 	 * switched on (S14). The spec's condition is "the service exists"; asking
-	 * it whether `agent_safety_enable_grants` is on as well is the stricter
+	 * it whether `belayline_enable_grants` is on as well is the stricter
 	 * reading (§0.2) and the honest one — with the feature off every issue()
 	 * is a silent no-op, so offering the choice would tell a human they
 	 * pre-approved something when nothing was recorded. `@internal` (S23).

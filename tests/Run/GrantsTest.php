@@ -13,7 +13,7 @@ namespace Specflux\SiteAgent\Tests\Run;
 use PHPUnit\Framework\TestCase;
 use SpecfluxSiteAgent_Test_Fake_Ability;
 use SpecfluxSiteAgent_Test_Grants;
-use Specflux\AgentSafety\Plugin\Support\RequestContext;
+use Belayline\Plugin\Support\RequestContext;
 use Specflux\SiteAgent\Model\ModelTurn;
 use Specflux\SiteAgent\Plugin;
 use Specflux\SiteAgent\Run\Budget;
@@ -177,7 +177,7 @@ final class GrantsTest extends TestCase {
 	 */
 	private static function grantEligible( ?object $grant, string $verb, array $args, bool $incoming = false ): mixed {
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Agent Safety's hook, not this plugin's.
-		return apply_filters( 'agent_safety_grant_eligible', $incoming, $grant, $verb, $args );
+		return apply_filters( 'belayline_grant_eligible', $incoming, $grant, $verb, $args );
 	}
 
 	// ------------------------------------------------------------------
@@ -629,7 +629,7 @@ final class GrantsTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// (d) object binding: agent_safety_grant_eligible
+	// (d) object binding: belayline_grant_eligible
 	// ------------------------------------------------------------------
 
 	public function test_eligibility_is_false_outside_a_tick(): void {

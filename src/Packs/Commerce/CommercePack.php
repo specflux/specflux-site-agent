@@ -479,14 +479,14 @@ final class CommercePack extends Pack {
 
 	/** The `commerce/agent-safety` setup check (S19). */
 	private function agentSafetyCheck(): SetupCheck {
-		$message = __( 'The commerce pack needs the Specflux Agent Governance plugin active — without it, WooCommerce writes have no governance to run under.', 'specflux-site-agent' );
+		$message = __( 'The commerce pack needs the Belayline Agent Governance plugin active — without it, WooCommerce writes have no governance to run under.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			'commerce/agent-safety',
 			SetupCheck::BLOCKING,
 			false,
 			$message,
-			function_exists( 'admin_url' ) ? admin_url( 'plugin-install.php?s=agent-safety&tab=search&type=term' ) : null,
+			function_exists( 'admin_url' ) ? admin_url( 'plugin-install.php?s=belayline-agent-governance&tab=search&type=term' ) : null,
 			'install_plugins',
 			$message,
 			'pack_requires_agent_safety'
@@ -495,17 +495,17 @@ final class CommercePack extends Pack {
 
 	/**
 	 * The Agent Safety pack descriptor (S19), registered on
-	 * `agent_safety_pack_registry`. Same reading as the pages pack's own
+	 * `belayline_pack_registry`. Same reading as the pages pack's own
 	 * (see {@see \Specflux\SiteAgent\Packs\Pages\PagesPack::agentSafetyPack()}
 	 * for the full rationale): `allow` is the RESOLVED ability list, and
 	 * every Tier-2 ability is approval-gated.
 	 */
 	public function agentSafetyPack(): ?object {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return null;
 		}
 
-		return new \Specflux\AgentSafety\Packs\Pack(
+		return new \Belayline\Packs\Pack(
 			name: 'commerce',
 			allow: $this->allowList(),
 			approvalByClass: array( 'tier2' => true ),
@@ -520,13 +520,13 @@ final class CommercePack extends Pack {
 	 * @return WP_Error|null null when bound, else pack_unbound.
 	 */
 	protected function agentSafetyBindingError( int $user_id ): ?WP_Error {
-		if ( ! function_exists( 'agent_safety' ) || null === agent_safety() ) {
+		if ( ! function_exists( 'belayline' ) || null === belayline() ) {
 			return $this->packUnboundError();
 		}
 
-		if ( ! class_exists( \Specflux\AgentSafety\Plugin\Support\PackResolver::class )
-			|| ! class_exists( \Specflux\AgentSafety\Packs\Pack::class )
-			|| ! class_exists( \Specflux\AgentSafety\Policy\Tier::class )
+		if ( ! class_exists( \Belayline\Plugin\Support\PackResolver::class )
+			|| ! class_exists( \Belayline\Packs\Pack::class )
+			|| ! class_exists( \Belayline\Policy\Tier::class )
 		) {
 			return $this->packUnboundError();
 		}
@@ -542,7 +542,7 @@ final class CommercePack extends Pack {
 			}
 		}
 
-		if ( ! $resolved->requiresApproval( \Specflux\AgentSafety\Policy\Tier::Irreversible ) ) {
+		if ( ! $resolved->requiresApproval( \Belayline\Policy\Tier::Irreversible ) ) {
 			return $this->packUnboundError();
 		}
 
@@ -554,10 +554,10 @@ final class CommercePack extends Pack {
 	 * (`user:N` then `role:<slug>`) resolves to a pack, else the registry
 	 * default (fail-closed `default-agent`).
 	 *
-	 * @return \Specflux\AgentSafety\Packs\Pack|null
+	 * @return \Belayline\Packs\Pack|null
 	 */
-	private function resolveAsPackForUser( int $user_id ): ?\Specflux\AgentSafety\Packs\Pack {
-		$resolver = new \Specflux\AgentSafety\Plugin\Support\PackResolver();
+	private function resolveAsPackForUser( int $user_id ): ?\Belayline\Packs\Pack {
+		$resolver = new \Belayline\Plugin\Support\PackResolver();
 		$registry = $resolver->registry();
 		$bindings = $registry->bindings();
 

@@ -375,7 +375,7 @@ add_action(
 // spec sets the option, so every other spec keeps seeing Accept / Veto only.
 if ( '1' === get_option( 'specflux_site_agent_e2e_preapproval', '0' ) ) {
 	add_filter( 'specflux_site_agent_enable_preapproval', '__return_true' );
-	add_filter( 'agent_safety_enable_grants', '__return_true' );
+	add_filter( 'belayline_enable_grants', '__return_true' );
 }
 
 // Specflux Site Agent's OWN tier map (used for the tier badge AND the built-in gate,
@@ -493,7 +493,7 @@ add_action(
 
 // Agent Safety's OWN gate, only consulted when it is the active gate mode.
 add_filter(
-	'agent_safety_governed_namespaces',
+	'belayline_governed_namespaces',
 	static function ( array $namespaces ): array {
 		$namespaces[] = 'specflux-e2e/';
 		return $namespaces;
@@ -501,7 +501,7 @@ add_filter(
 );
 
 add_filter(
-	'agent_safety_verb_map',
+	'belayline_verb_map',
 	static function ( array $map ): array {
 		$map['specflux-e2e/read-thing']    = 0;
 		$map['specflux-e2e/list-things']   = 0;
@@ -513,13 +513,13 @@ add_filter(
 );
 
 add_filter(
-	'agent_safety_pack_registry',
+	'belayline_pack_registry',
 	static function ( $registry ) {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return $registry;
 		}
 		$registry->register(
-			new \Specflux\AgentSafety\Packs\Pack(
+			new \Belayline\Packs\Pack(
 				name: 'specflux-e2e-pack',
 				allow: array( 'specflux-e2e/*' ),
 				approvalByClass: array(
