@@ -9,28 +9,28 @@
  *
  * TARGET REPO PATH: tests/stubs/navigation.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-$GLOBALS['senroflux_test_is_block_theme']          = true;
-$GLOBALS['senroflux_test_header_template_content'] = null;
-$GLOBALS['senroflux_test_nav_fallback']            = null;
-$GLOBALS['senroflux_test_registered_nav_menus']    = array();
-$GLOBALS['senroflux_test_nav_menu_locations']      = array();
-$GLOBALS['senroflux_test_nav_menu_items']          = array();
-$GLOBALS['senroflux_test_next_menu_item_id']       = 500;
+$GLOBALS['specflux_site_agent_test_is_block_theme']          = true;
+$GLOBALS['specflux_site_agent_test_header_template_content'] = null;
+$GLOBALS['specflux_site_agent_test_nav_fallback']            = null;
+$GLOBALS['specflux_site_agent_test_registered_nav_menus']    = array();
+$GLOBALS['specflux_site_agent_test_nav_menu_locations']      = array();
+$GLOBALS['specflux_site_agent_test_nav_menu_items']          = array();
+$GLOBALS['specflux_site_agent_test_next_menu_item_id']       = 500;
 
 if ( ! function_exists( 'wp_is_block_theme' ) ) {
 	function wp_is_block_theme(): bool {
-		return (bool) ( $GLOBALS['senroflux_test_is_block_theme'] ?? true );
+		return (bool) ( $GLOBALS['specflux_site_agent_test_is_block_theme'] ?? true );
 	}
 }
 
 if ( ! function_exists( 'get_stylesheet' ) ) {
 	function get_stylesheet(): string {
-		return 'senroflux-test-theme';
+		return 'specflux-site-agent-test-theme';
 	}
 }
 
@@ -44,7 +44,7 @@ if ( ! function_exists( 'get_block_template' ) ) {
 		if ( 'wp_template_part' !== $template_type || get_stylesheet() . '//header' !== $id ) {
 			return null;
 		}
-		$content = $GLOBALS['senroflux_test_header_template_content'] ?? null;
+		$content = $GLOBALS['specflux_site_agent_test_header_template_content'] ?? null;
 		if ( null === $content ) {
 			return null;
 		}
@@ -59,14 +59,14 @@ if ( ! function_exists( 'get_block_template' ) ) {
 if ( ! class_exists( 'WP_Navigation_Fallback' ) ) {
 	/**
 	 * Test stand-in for core's fallback resolver: answers whatever fixture
-	 * `$GLOBALS['senroflux_test_nav_fallback']` names (or null), never
+	 * `$GLOBALS['specflux_site_agent_test_nav_fallback']` names (or null), never
 	 * creates one — the real class WOULD create one, but this class only
-	 * needs to prove SenroFlux never assumes a ref and instead calls through
+	 * needs to prove Specflux Site Agent never assumes a ref and instead calls through
 	 * to this resolver.
 	 */
 	class WP_Navigation_Fallback {
 		public static function get_fallback(): ?object {
-			$id = $GLOBALS['senroflux_test_nav_fallback'] ?? null;
+			$id = $GLOBALS['specflux_site_agent_test_nav_fallback'] ?? null;
 			if ( null === $id ) {
 				return null;
 			}
@@ -78,13 +78,13 @@ if ( ! class_exists( 'WP_Navigation_Fallback' ) ) {
 
 if ( ! function_exists( 'get_registered_nav_menus' ) ) {
 	function get_registered_nav_menus(): array {
-		return (array) ( $GLOBALS['senroflux_test_registered_nav_menus'] ?? array() );
+		return (array) ( $GLOBALS['specflux_site_agent_test_registered_nav_menus'] ?? array() );
 	}
 }
 
 if ( ! function_exists( 'get_nav_menu_locations' ) ) {
 	function get_nav_menu_locations(): array {
-		return (array) ( $GLOBALS['senroflux_test_nav_menu_locations'] ?? array() );
+		return (array) ( $GLOBALS['specflux_site_agent_test_nav_menu_locations'] ?? array() );
 	}
 }
 
@@ -92,7 +92,7 @@ if ( ! function_exists( 'wp_get_nav_menu_items' ) ) {
 	function wp_get_nav_menu_items( $menu, $args = array() ) {
 		unset( $args );
 		$menu  = (int) $menu;
-		$items = $GLOBALS['senroflux_test_nav_menu_items'][ $menu ] ?? array();
+		$items = $GLOBALS['specflux_site_agent_test_nav_menu_items'][ $menu ] ?? array();
 
 		// Sort by menu_order, mirroring core's own ordering guarantee.
 		usort(
@@ -109,11 +109,11 @@ if ( ! function_exists( 'wp_update_nav_menu_item' ) ) {
 		unset( $fire_after_hooks );
 		$menu_id         = (int) $menu_id;
 		$menu_item_db_id = (int) $menu_item_db_id;
-		if ( isset( $GLOBALS['senroflux_test_nav_item_failure'] ) && ( $menu_item_data['menu-item-title'] ?? '' ) === $GLOBALS['senroflux_test_nav_item_failure'] ) {
+		if ( isset( $GLOBALS['specflux_site_agent_test_nav_item_failure'] ) && ( $menu_item_data['menu-item-title'] ?? '' ) === $GLOBALS['specflux_site_agent_test_nav_item_failure'] ) {
 			return new WP_Error( 'update_nav_menu_item_failed', 'Stubbed failure.' );
 		}
-		$id = 0 !== $menu_item_db_id ? $menu_item_db_id : (int) ( $GLOBALS['senroflux_test_next_menu_item_id'] ?? 500 );
-		$GLOBALS['senroflux_test_next_menu_item_id'] = $id + 1;
+		$id = 0 !== $menu_item_db_id ? $menu_item_db_id : (int) ( $GLOBALS['specflux_site_agent_test_next_menu_item_id'] ?? 500 );
+		$GLOBALS['specflux_site_agent_test_next_menu_item_id'] = $id + 1;
 
 		$item             = new stdClass();
 		$item->ID         = $id;
@@ -122,11 +122,11 @@ if ( ! function_exists( 'wp_update_nav_menu_item' ) ) {
 		$item->object     = (string) ( $menu_item_data['menu-item-object'] ?? '' );
 		$item->object_id  = (int) ( $menu_item_data['menu-item-object-id'] ?? 0 );
 		$position         = (int) ( $menu_item_data['menu-item-position'] ?? 0 );
-		$item->menu_order = 0 !== $position ? $position : count( $GLOBALS['senroflux_test_nav_menu_items'][ $menu_id ] ?? array() ) + 1;
+		$item->menu_order = 0 !== $position ? $position : count( $GLOBALS['specflux_site_agent_test_nav_menu_items'][ $menu_id ] ?? array() ) + 1;
 		// Core stores the parent as post meta and `wp_setup_nav_menu_item()` exposes it as a string.
 		$item->menu_item_parent = (string) (int) ( $menu_item_data['menu-item-parent-id'] ?? 0 );
 
-		$GLOBALS['senroflux_test_nav_menu_items'][ $menu_id ][ $id ] = $item;
+		$GLOBALS['specflux_site_agent_test_nav_menu_items'][ $menu_id ][ $id ] = $item;
 
 		return $id;
 	}
@@ -135,10 +135,10 @@ if ( ! function_exists( 'wp_update_nav_menu_item' ) ) {
 if ( ! function_exists( 'wp_delete_post' ) ) {
 	function wp_delete_post( int $post_id, bool $force_delete = false ): bool {
 		unset( $force_delete );
-		unset( $GLOBALS['senroflux_test_posts'][ $post_id ] );
+		unset( $GLOBALS['specflux_site_agent_test_posts'][ $post_id ] );
 
-		foreach ( array_keys( (array) ( $GLOBALS['senroflux_test_nav_menu_items'] ?? array() ) ) as $menu_id ) {
-			unset( $GLOBALS['senroflux_test_nav_menu_items'][ $menu_id ][ $post_id ] );
+		foreach ( array_keys( (array) ( $GLOBALS['specflux_site_agent_test_nav_menu_items'] ?? array() ) ) as $menu_id ) {
+			unset( $GLOBALS['specflux_site_agent_test_nav_menu_items'][ $menu_id ][ $post_id ] );
 		}
 
 		return true;
@@ -147,7 +147,7 @@ if ( ! function_exists( 'wp_delete_post' ) ) {
 
 if ( ! function_exists( 'get_pages' ) ) {
 	/**
-	 * Minimal stand-in over the shared `senroflux_test_posts` store (0.3
+	 * Minimal stand-in over the shared `specflux_site_agent_test_posts` store (0.3
 	 * quality fix 5): published `page` posts, optionally status-filtered,
 	 * sorted by title (core's own `get_pages()` default sort).
 	 *
@@ -157,7 +157,7 @@ if ( ! function_exists( 'get_pages' ) ) {
 	function get_pages( array $args = array() ): array {
 		$status = $args['post_status'] ?? 'publish';
 		$pages  = array();
-		foreach ( (array) ( $GLOBALS['senroflux_test_posts'] ?? array() ) as $post ) {
+		foreach ( (array) ( $GLOBALS['specflux_site_agent_test_posts'] ?? array() ) as $post ) {
 			if ( ! is_object( $post ) || 'page' !== ( $post->post_type ?? '' ) ) {
 				continue;
 			}

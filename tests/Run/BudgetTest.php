@@ -2,20 +2,20 @@
 /**
  * Budget defaults + sanitization tests (stage-4 check: filterable defaults).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Budget;
+use Specflux\SiteAgent\Run\Budget;
 
 final class BudgetTest extends TestCase {
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_default_budget' );
+		remove_all_filters( 'specflux_site_agent_default_budget' );
 	}
 
 	public function test_defaults_carry_the_shipped_ceilings(): void {
@@ -35,7 +35,7 @@ final class BudgetTest extends TestCase {
 
 	public function test_defaults_are_filterable(): void {
 		add_filter(
-			'senroflux_default_budget',
+			'specflux_site_agent_default_budget',
 			static fn ( array $defaults ): array => array_merge(
 				$defaults,
 				array(
@@ -155,21 +155,21 @@ final class BudgetTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_spent_count_counts_only_ok_steps_for_the_named_ability(): void {
-		$store  = new \Specflux\SenroFlux\Run\WpdbRunStore( new \wpdb() );
+		$store  = new \Specflux\SiteAgent\Run\WpdbRunStore( new \wpdb() );
 		$run_id = $store->createRun( 1, 'test', 'goal', array(), Budget::defaults() );
 
-		$store->appendStep( $run_id, \Specflux\SenroFlux\Run\StepKind::ToolResult, null, 'senroflux/orders-refund', null, 'ok' );
-		$store->appendStep( $run_id, \Specflux\SenroFlux\Run\StepKind::ToolResult, null, 'senroflux/orders-refund', null, 'ok' );
+		$store->appendStep( $run_id, \Specflux\SiteAgent\Run\StepKind::ToolResult, null, 'specflux/orders-refund', null, 'ok' );
+		$store->appendStep( $run_id, \Specflux\SiteAgent\Run\StepKind::ToolResult, null, 'specflux/orders-refund', null, 'ok' );
 		// Refused: not spent.
-		$store->appendStep( $run_id, \Specflux\SenroFlux\Run\StepKind::ToolResult, null, 'senroflux/orders-refund', null, 'refused' );
+		$store->appendStep( $run_id, \Specflux\SiteAgent\Run\StepKind::ToolResult, null, 'specflux/orders-refund', null, 'refused' );
 		// A different ability: not counted.
-		$store->appendStep( $run_id, \Specflux\SenroFlux\Run\StepKind::ToolResult, null, 'senroflux/order-add-note', null, 'ok' );
+		$store->appendStep( $run_id, \Specflux\SiteAgent\Run\StepKind::ToolResult, null, 'specflux/order-add-note', null, 'ok' );
 
 		$this->assertSame( 2, Budget::spentCount( $store, $run_id, 'orders-refund' ) );
 	}
 
 	public function test_spent_count_is_zero_with_no_matching_steps(): void {
-		$store  = new \Specflux\SenroFlux\Run\WpdbRunStore( new \wpdb() );
+		$store  = new \Specflux\SiteAgent\Run\WpdbRunStore( new \wpdb() );
 		$run_id = $store->createRun( 1, 'test', 'goal', array(), Budget::defaults() );
 
 		$this->assertSame( 0, Budget::spentCount( $store, $run_id, 'orders-refund' ) );
@@ -177,7 +177,7 @@ final class BudgetTest extends TestCase {
 
 	public function test_sanitize_falls_back_to_the_filtered_defaults_not_the_shipped_ones(): void {
 		add_filter(
-			'senroflux_default_budget',
+			'specflux_site_agent_default_budget',
 			static fn ( array $defaults ): array => array_merge(
 				$defaults,
 				array(
@@ -191,7 +191,7 @@ final class BudgetTest extends TestCase {
 
 		// A partial override must inherit the SITE's defaults for every key it
 		// does not name — re-hardcoding the shipped table here would silently
-		// discard `senroflux_default_budget`.
+		// discard `specflux_site_agent_default_budget`.
 		$budget = Budget::sanitize( array( 'max_steps' => 7 ) );
 
 		$this->assertSame( 7, $budget['max_steps'], 'the caller override wins' );
@@ -264,7 +264,7 @@ final class BudgetTest extends TestCase {
 
 	public function test_the_default_budget_filter_may_only_lower_a_pack_override_never_raise_it(): void {
 		add_filter(
-			'senroflux_default_budget',
+			'specflux_site_agent_default_budget',
 			static fn ( array $defaults ): array => array_merge(
 				$defaults,
 				array(
@@ -284,7 +284,7 @@ final class BudgetTest extends TestCase {
 
 	public function test_the_default_budget_filter_may_still_lower_a_pack_override(): void {
 		add_filter(
-			'senroflux_default_budget',
+			'specflux_site_agent_default_budget',
 			static fn ( array $defaults ): array => array_merge( $defaults, array( 'max_steps' => 50 ) ),
 			10,
 			1
@@ -297,7 +297,7 @@ final class BudgetTest extends TestCase {
 		// Pages/posts (no pack override) must see EXACTLY the pre-0.3 filter
 		// behaviour — a filter may still move a key either direction.
 		add_filter(
-			'senroflux_default_budget',
+			'specflux_site_agent_default_budget',
 			static fn ( array $defaults ): array => array_merge( $defaults, array( 'max_steps' => 999 ) ),
 			10,
 			1

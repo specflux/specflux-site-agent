@@ -2,19 +2,19 @@
 /**
  * ToolExecutor tests: the permission-first seam (stage 5).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Tools\BuiltinGate;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\BuiltinGate;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 use wpdb;
-use SenroFlux_Test_Fake_Ability;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 
 final class ToolExecutorTest extends TestCase {
 
@@ -25,8 +25,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_unknown_tool_is_reported_and_never_executed(): void {
-		$executed                            = false;
-		$GLOBALS['senroflux_test_abilities'] = array();
+		$executed                                      = false;
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
 
 		$outcome = $this->executor->call( 'agsafe-smoke/ghost', null );
 
@@ -35,8 +35,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_approval_required_is_detected_from_the_gate_error_data(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/blocked' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/blocked' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/blocked',
 				permission_result: new WP_Error(
 					'approval_required',
@@ -60,9 +60,9 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_denied_path_never_calls_execute(): void {
-		$executed                            = false;
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/denied' => new SenroFlux_Test_Fake_Ability(
+		$executed                                      = false;
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/denied' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/denied',
 				permission_result: new WP_Error( 'not_in_pack', 'verb is not in the pack allow-list' ),
 				execute_result: function () use ( &$executed ) {
@@ -82,8 +82,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_a_bare_false_permission_still_gives_the_model_a_reason(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/denied' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/denied' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/denied',
 				permission_result: false,
 				execute_result: array( 'ok' => true )
@@ -105,9 +105,9 @@ final class ToolExecutorTest extends TestCase {
 	 * runs, with a message that says what actually happened.
 	 */
 	public function test_a_resent_history_placeholder_is_refused_before_execute(): void {
-		$executed                            = false;
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+		$executed                                      = false;
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				execute_result: function () use ( &$executed ) {
 					$executed = true;
@@ -137,8 +137,8 @@ final class ToolExecutorTest extends TestCase {
 	 * never a substring, but it can land at any depth.
 	 */
 	public function test_a_nested_history_placeholder_is_refused_too(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write' ),
 		);
 
 		$outcome = $this->executor->call(
@@ -156,8 +156,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_success_wraps_scalar_output_as_text(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'tool/text' => new SenroFlux_Test_Fake_Ability( 'tool/text', execute_result: 'just a string' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'tool/text' => new SpecfluxSiteAgent_Test_Fake_Ability( 'tool/text', execute_result: 'just a string' ),
 		);
 
 		$outcome = $this->executor->call( 'tool/text', null );
@@ -167,8 +167,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_execution_errors_surface_as_the_error_kind(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'tool/boom' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'tool/boom' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'tool/boom',
 				execute_result: new WP_Error( 'kaboom', 'Execution failed hard' )
 			),
@@ -182,15 +182,15 @@ final class ToolExecutorTest extends TestCase {
 
 	public function test_results_over_the_byte_cap_are_truncated_with_a_marker(): void {
 		add_filter(
-			'senroflux_tool_result_max_bytes',
+			'specflux_site_agent_tool_result_max_bytes',
 			static fn (): int => 64,
 			10,
 			1
 		);
 
 		try {
-			$GLOBALS['senroflux_test_abilities'] = array(
-				'tool/huge' => new SenroFlux_Test_Fake_Ability(
+			$GLOBALS['specflux_site_agent_test_abilities'] = array(
+				'tool/huge' => new SpecfluxSiteAgent_Test_Fake_Ability(
 					'tool/huge',
 					execute_result: array( 'blob' => str_repeat( 'x', 5000 ) )
 				),
@@ -202,7 +202,7 @@ final class ToolExecutorTest extends TestCase {
 			$this->assertTrue( $outcome->output['truncated'] ?? false );
 			$this->assertLessThanOrEqual( 64 + 40, strlen( (string) wp_json_encode( $outcome->output ) ), 'prefix + marker stays close to the cap' );
 		} finally {
-			remove_all_filters( 'senroflux_tool_result_max_bytes' );
+			remove_all_filters( 'specflux_site_agent_tool_result_max_bytes' );
 		}
 	}
 
@@ -214,8 +214,8 @@ final class ToolExecutorTest extends TestCase {
 		$permission_checked = false;
 		$executed           = false;
 
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: static function () use ( &$permission_checked ) {
 					$permission_checked = true;
@@ -250,8 +250,8 @@ final class ToolExecutorTest extends TestCase {
 		// from it is active exactly like any other tier-2 call.
 		$gate = new BuiltinGate( active: true, tier: 2, verb: 'agsafe-smoke/unmapped', approvalId: 'builtin:1:call_y', approved: false );
 
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/unmapped' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/unmapped' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/unmapped' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/unmapped' ),
 		);
 
 		$outcome = $this->executor->call( 'agsafe-smoke/unmapped', array(), $gate );
@@ -261,8 +261,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_a_tier_zero_gate_is_inert_and_the_call_runs_normally(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/read' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/read', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/read' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/read', execute_result: array( 'ok' => true ) ),
 		);
 
 		$outcome = $this->executor->call(
@@ -275,8 +275,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_an_approved_gate_skips_the_park_and_runs_the_ability(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
 		);
 
 		$outcome = $this->executor->call(
@@ -289,8 +289,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_a_null_gate_never_registers_a_permission_filter_and_behaves_like_as_mode(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
 		);
 
 		$outcome = $this->executor->call( 'agsafe-smoke/write', array(), null );
@@ -305,8 +305,8 @@ final class ToolExecutorTest extends TestCase {
 	 */
 	public function test_json_encoded_strings_are_decoded_where_the_schema_expects_objects_or_arrays(): void {
 		$received = null;
-		$GLOBALS['senroflux_test_abilities']['senroflux/publish-post'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/publish-post',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/publish-post'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/publish-post',
 			execute_result: function ( $input ) use ( &$received ) {
 				$received = $input;
 
@@ -333,7 +333,7 @@ final class ToolExecutorTest extends TestCase {
 		);
 
 		$this->executor->call(
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'title'    => '{"not":"decoded, the schema says string"}',
 				'sections' => array( '{"layout":"text","paragraphs":"[\"One.\",\"Two.\"]"}' ),
@@ -367,7 +367,7 @@ final class ToolExecutorTest extends TestCase {
 			)
 		);
 
-		$GLOBALS['senroflux_test_abilities']['woocommerce/product-create'] = new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['woocommerce/product-create'] = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'woocommerce/product-create',
 			execute_result: function ( $input ) use ( $seen ) {
 				$seen['received'] = $input;
@@ -839,9 +839,9 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_a_validate_refusal_beats_the_built_in_park(): void {
-		$permission_checked                  = false;
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+		$permission_checked                            = false;
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: static function () use ( &$permission_checked ) {
 					$permission_checked = true;
@@ -864,8 +864,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_a_call_that_passes_validate_still_parks_in_built_in_mode(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write' ),
 		);
 
 		$outcome = $this->executor->call( 'agsafe-smoke/write', array(), $this->parkedGate(), static fn () => null );
@@ -874,8 +874,8 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_the_history_placeholder_refusal_beats_the_built_in_park(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write' ),
 		);
 
 		$outcome = $this->executor->call(
@@ -889,11 +889,11 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_validate_runs_again_on_the_approved_re_entry(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
 		);
-		$calls                               = 0;
-		$validate                            = static function () use ( &$calls ): ?WP_Error {
+		$calls    = 0;
+		$validate = static function () use ( &$calls ): ?WP_Error {
 			++$calls;
 
 			return 2 === $calls ? new WP_Error( 'site_changed', 'No longer valid.' ) : null;
@@ -909,9 +909,9 @@ final class ToolExecutorTest extends TestCase {
 	}
 
 	public function test_as_mode_validate_refuses_before_check_permissions_is_called(): void {
-		$permission_checked                  = false;
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+		$permission_checked                            = false;
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: static function () use ( &$permission_checked ) {
 					$permission_checked = true;

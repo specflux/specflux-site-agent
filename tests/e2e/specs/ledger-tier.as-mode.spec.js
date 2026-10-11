@@ -27,14 +27,14 @@ const { assertNoSeriousA11y } = require( '../support/a11y' );
  * ran without parking (Tier 0, or pre-approved under a grant) now has its
  * tier written where the screen can read it, so the ledger row shows one.
  */
-test.describe( 'S23: ledger rows carry a tier badge in SenroGate mode', () => {
+test.describe( 'S23: ledger rows carry a tier badge in Specflux Agent Governance mode', () => {
 	test.beforeEach( () => {
 		resetRuns();
 		setScript( fullTour() );
 	} );
 
 	test(
-		'an expanded ledger row shows its tier in SenroGate mode',
+		'an expanded ledger row shows its tier in Specflux Agent Governance mode',
 		async ( { page } ) => {
 			await gotoRuns( page );
 			await waitLoaded( page );
@@ -51,7 +51,7 @@ test.describe( 'S23: ledger rows carry a tier badge in SenroGate mode', () => {
 
 			// Ledger groups render as closed <details>, so their rows' badges
 			// are in the DOM but hidden until the group is opened.
-			const ledgerGroup = page.locator( '.senroflux-ledger-group', { hasText: '4 actions' } );
+			const ledgerGroup = page.locator( '.specflux-site-agent-ledger-group', { hasText: '4 actions' } );
 			await ledgerGroup.locator( 'summary' ).click();
 			const badge = ledgerGroup.locator( '[data-testid="tier-badge"]' ).first();
 			await expect( badge ).toBeVisible( { timeout: 5000 } );

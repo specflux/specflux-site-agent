@@ -10,24 +10,24 @@
  * (`Plugin::get()` -> `ui.approval`, via `Runner::parkedApprovalUi()`) now
  * carry the summary, sanitised to a one-element anchor allow-list.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
-use Specflux\SenroFlux\Packs\Pages\PublishSummary;
-use Specflux\SenroFlux\Packs\Site\ContentSummary;
-use Specflux\SenroFlux\Packs\Site\FrontPage;
-use Specflux\SenroFlux\Packs\Site\Navigation;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Tools\ToolRegistry;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Packs\Pages\PublishSummary;
+use Specflux\SiteAgent\Packs\Site\ContentSummary;
+use Specflux\SiteAgent\Packs\Site\FrontPage;
+use Specflux\SiteAgent\Packs\Site\Navigation;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Tools\ToolRegistry;
 use wpdb;
 
 final class ApprovalSummaryTest extends TestCase {
@@ -38,27 +38,27 @@ final class ApprovalSummaryTest extends TestCase {
 		require_once dirname( __DIR__ ) . '/stubs/navigation.php';
 
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id']          = 1;
-		$GLOBALS['senroflux_test_filters']                  = array();
-		$GLOBALS['wpdb']                                    = new wpdb();
-		$GLOBALS['senroflux_test_posts']                    = array();
-		$GLOBALS['senroflux_test_product_rows']             = array();
-		$GLOBALS['senroflux_test_products']                 = array();
-		$GLOBALS['senroflux_test_orders']                   = array();
-		$GLOBALS['senroflux_test_shipping_zones']           = array();
-		$GLOBALS['senroflux_test_gateway_supports_refunds'] = true;
-		$GLOBALS['senroflux_test_options']                  = array();
-		$GLOBALS['senroflux_test_nav_menu_items']           = array();
-		$GLOBALS['senroflux_test_registered_nav_menus']     = array();
-		$GLOBALS['senroflux_test_nav_menu_locations']       = array();
-		$GLOBALS['senroflux_test_is_block_theme']           = true;
-		$GLOBALS['senroflux_test_header_template_content']  = null;
-		$GLOBALS['senroflux_test_nav_fallback']             = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['wpdb']                                     = new wpdb();
+		$GLOBALS['specflux_site_agent_test_posts']           = array();
+		$GLOBALS['specflux_site_agent_test_product_rows']    = array();
+		$GLOBALS['specflux_site_agent_test_products']        = array();
+		$GLOBALS['specflux_site_agent_test_orders']          = array();
+		$GLOBALS['specflux_site_agent_test_shipping_zones']  = array();
+		$GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] = true;
+		$GLOBALS['specflux_site_agent_test_options']                  = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_items']           = array();
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus']     = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']       = array();
+		$GLOBALS['specflux_site_agent_test_is_block_theme']           = true;
+		$GLOBALS['specflux_site_agent_test_header_template_content']  = null;
+		$GLOBALS['specflux_site_agent_test_nav_fallback']             = null;
 		Navigation::reset();
 		FrontPage::reset();
 		Plugin::set_dependency_probe( true );
 
-		// The same registrations Plugin::boot() makes — SenroFlux's own,
+		// The same registrations Plugin::boot() makes — Specflux Site Agent's own,
 		// so the Runs card works with Agent Safety absent.
 		CommerceSummary::boot();
 		PublishSummary::boot();
@@ -67,23 +67,23 @@ final class ApprovalSummaryTest extends TestCase {
 
 	protected function tearDown(): void {
 		remove_all_filters();
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 		unset( $GLOBALS['wpdb'] );
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
 	}
 
 	private function seedPost( int $id, string $title, string $post_type, string $status = 'draft' ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = $post_type;
-		$post->post_title                       = $title;
-		$post->post_status                      = $status;
-		$post->post_name                        = '';
-		$post->post_parent                      = 0;
-		$post->post_excerpt                     = '';
-		$post->post_content                     = '';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post               = new \stdClass();
+		$post->ID           = $id;
+		$post->post_type    = $post_type;
+		$post->post_title   = $title;
+		$post->post_status  = $status;
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$post->post_content = '';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	/**
@@ -98,7 +98,7 @@ final class ApprovalSummaryTest extends TestCase {
 		$method->setAccessible( true );
 		$store = $method->invoke( Plugin::instance() )->store();
 
-		$run_id      = $store->createRun( 1, 'test-consumer', 'Do it', array( 'senroflux/*' ), array(), null, null, null, $mode );
+		$run_id      = $store->createRun( 1, 'test-consumer', 'Do it', array( 'specflux/*' ), array(), null, null, null, $mode );
 		$tool        = ToolRegistry::functionName( $ability );
 		$approval_id = GateMode::BuiltIn === $mode ? 'builtin:abc123' : 'as-approval-1';
 		$store->appendStep(
@@ -129,14 +129,14 @@ final class ApprovalSummaryTest extends TestCase {
 	public static function cards(): array {
 		return array(
 			'price change'  => array(
-				'senroflux/product-update',
+				'specflux/product-update',
 				array(
 					'id'            => 100,
 					'regular_price' => '5.00',
 				),
 				static function ( self $t ): void {
 					$t->seedPost( 100, 'Blue Mug', 'product', 'publish' );
-					$GLOBALS['senroflux_test_product_rows'][100] = (object) array(
+					$GLOBALS['specflux_site_agent_test_product_rows'][100] = (object) array(
 						'name'           => 'Blue Mug',
 						'regular_price'  => '10.00',
 						'sale_price'     => '',
@@ -147,13 +147,13 @@ final class ApprovalSummaryTest extends TestCase {
 				array( 'current regular 10.00', 'proposed regular 5.00' ),
 			),
 			'refund'        => array(
-				'senroflux/orders-refund',
+				'specflux/orders-refund',
 				array(
 					'order_id' => 50,
 					'amount'   => '30',
 				),
 				static function (): void {
-					$GLOBALS['senroflux_test_orders'][50] = (object) array(
+					$GLOBALS['specflux_site_agent_test_orders'][50] = (object) array(
 						'total'          => 100.0,
 						'total_refunded' => 20.0,
 						'payment_method' => 'bacs',
@@ -165,7 +165,7 @@ final class ApprovalSummaryTest extends TestCase {
 				array( 'already refunded 20', 'remaining refundable 80', 'refund amount 30' ),
 			),
 			'shipping zone' => array(
-				'senroflux/shipping-zone-save',
+				'specflux/shipping-zone-save',
 				array(
 					'zone_id'   => 7,
 					'name'      => 'New Zone',
@@ -173,7 +173,7 @@ final class ApprovalSummaryTest extends TestCase {
 					'methods'   => array(),
 				),
 				static function (): void {
-					$GLOBALS['senroflux_test_shipping_zones'][7] = array(
+					$GLOBALS['specflux_site_agent_test_shipping_zones'][7] = array(
 						'name'      => 'Old Zone',
 						'locations' => array(),
 						'methods'   => array(),
@@ -182,7 +182,7 @@ final class ApprovalSummaryTest extends TestCase {
 				array( 'current: name &quot;Old Zone&quot;', 'proposed: name &quot;New Zone&quot;' ),
 			),
 			'navigation'    => array(
-				'senroflux/update-navigation',
+				'specflux/update-navigation',
 				array(
 					'items' => array(
 						array(
@@ -196,7 +196,7 @@ final class ApprovalSummaryTest extends TestCase {
 				array( 'current: (none)', 'proposed: &quot;Shop&quot;' ),
 			),
 			'post publish'  => array(
-				'senroflux/publish-post',
+				'specflux/publish-post',
 				array(
 					'id'     => 300,
 					'status' => 'publish',

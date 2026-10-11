@@ -2,12 +2,12 @@
 /**
  * Bridge to Agent Safety's programmatic approvals API.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval;
+namespace Specflux\SiteAgent\Approval;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

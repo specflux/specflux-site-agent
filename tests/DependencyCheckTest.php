@@ -3,16 +3,16 @@
  * Tests for the Agent Safety dependency probe (0.3 S3: no longer a hard
  * dependency — its absence only decides the gate mode a run starts in).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
 
 /**
  * The 0.3 contract: `available()` still reports whether Agent Safety is
@@ -51,7 +51,7 @@ final class DependencyCheckTest extends TestCase {
 	}
 
 	public function test_boot_without_dependency_still_wires_the_runtime(): void {
-		$GLOBALS['senroflux_test_actions'] = array();
+		$GLOBALS['specflux_site_agent_test_actions'] = array();
 
 		Plugin::set_dependency_probe( false );
 
@@ -62,23 +62,23 @@ final class DependencyCheckTest extends TestCase {
 		// runtime wires up (HTTP surfaces, init hooks) exactly as it would
 		// with Agent Safety present. It does NOT register a site-wide
 		// notice: per S11 the advisory lives ONLY in the Runs-screen setup
-		// panel ({@see \Specflux\SenroFlux\Setup\Checks::agentSafetyAdvisory}).
+		// panel ({@see \Specflux\SiteAgent\Setup\Checks::agentSafetyAdvisory}).
 		$this->assertContains(
 			'rest_api_init',
-			array_keys( $GLOBALS['senroflux_test_actions'] ),
+			array_keys( $GLOBALS['specflux_site_agent_test_actions'] ),
 			'the HTTP surface must wire up even without Agent Safety (built-in mode still runs)'
 		);
 		$this->assertFalse( $plugin->available() );
 	}
 
 	/**
-	 * Defect 3 (0.3 live run + S11/S3): a site-wide "SenroFlux is running
+	 * Defect 3 (0.3 live run + S11/S3): a site-wide "Specflux Site Agent is running
 	 * without Agent Safety…" notice used to render on EVERY admin screen
 	 * (e.g. the Dashboard) via an unconditional admin_notices hook. S11
 	 * places that advisory in the Runs-screen setup panel only.
 	 */
 	public function test_no_admin_notice_is_registered_for_the_agent_safety_state(): void {
-		$GLOBALS['senroflux_test_actions'] = array();
+		$GLOBALS['specflux_site_agent_test_actions'] = array();
 
 		Plugin::set_dependency_probe( false );
 
@@ -87,7 +87,7 @@ final class DependencyCheckTest extends TestCase {
 
 		$this->assertArrayNotHasKey(
 			'admin_notices',
-			$GLOBALS['senroflux_test_actions'],
+			$GLOBALS['specflux_site_agent_test_actions'],
 			'no callback advertising the Agent Safety state may run on every admin screen'
 		);
 	}

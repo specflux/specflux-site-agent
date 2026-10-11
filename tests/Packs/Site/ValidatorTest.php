@@ -10,16 +10,16 @@
  * `columns` slot on `page-links` is enforced, and `page-links` is capped at
  * one per page exactly like `cta`.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Validator;
-use Specflux\SenroFlux\Packs\Site\Vocabulary;
+use Specflux\SiteAgent\Packs\Site\Validator;
+use Specflux\SiteAgent\Packs\Site\Vocabulary;
 use WP_Error;
 
 final class ValidatorTest extends TestCase {
@@ -144,7 +144,7 @@ final class ValidatorTest extends TestCase {
 		// swapped in, and the real hero shape: h1, centered/large-font
 		// paragraph, flex buttons.
 		$hero = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/hero"},"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/hero"},"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignfull" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
 <!-- wp:heading {"textAlign":"center","level":1} --><h1 class="wp-block-heading has-text-align-center">Your neighborhood sourdough bakery</h1><!-- /wp:heading -->
 <!-- wp:paragraph {"align":"center","fontSize":"large"} --><p class="has-text-align-center has-large-font-size">Welcome to Crumb &amp; Co, a small sourdough bakery at 12 Mill Lane.</p><!-- /wp:paragraph -->
@@ -153,7 +153,7 @@ final class ValidatorTest extends TestCase {
 HTML;
 
 		$text_section = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/text-section"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/text-section"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
 <!-- wp:heading --><h2 class="wp-block-heading">Visit Crumb &amp; Co</h2><!-- /wp:heading -->
 <!-- wp:paragraph --><p>Find us at 12 Mill Lane, Tuesday through Sunday, 7am&#8211;3pm. We're closed on Mondays.</p><!-- /wp:paragraph -->
@@ -176,7 +176,7 @@ HTML;
 	 */
 	public function test_hero_without_padding_style_validates(): void {
 		$hero = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/hero"},"align":"full","layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/hero"},"align":"full","layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignfull">
 <!-- wp:heading {"textAlign":"center","level":1} --><h1 class="wp-block-heading has-text-align-center">Your neighborhood sourdough bakery</h1><!-- /wp:heading -->
 <!-- wp:paragraph {"align":"center","fontSize":"large"} --><p class="has-text-align-center has-large-font-size">Welcome to Crumb &amp; Co, a small sourdough bakery at 12 Mill Lane.</p><!-- /wp:paragraph -->
@@ -185,7 +185,7 @@ HTML;
 HTML;
 
 		$text_section = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/text-section"},"layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/text-section"},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
 <!-- wp:heading --><h2 class="wp-block-heading">Visit Crumb &amp; Co</h2><!-- /wp:heading -->
 <!-- wp:paragraph --><p>Find us at 12 Mill Lane, Tuesday through Sunday, 7am&#8211;3pm. We're closed on Mondays.</p><!-- /wp:paragraph -->
@@ -214,7 +214,7 @@ HTML;
 	 */
 	public function test_hero_without_padding_but_with_added_colour_still_refused(): void {
 		$wrong = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/hero"},"align":"full","layout":{"type":"constrained"},"backgroundColor":"vivid-purple"} -->
+<!-- wp:group {"metadata":{"name":"specflux/hero"},"align":"full","layout":{"type":"constrained"},"backgroundColor":"vivid-purple"} -->
 <div class="wp-block-group alignfull has-vivid-purple-background-color has-background">
 <!-- wp:heading {"textAlign":"center","level":1} --><h1 class="wp-block-heading has-text-align-center">Your neighborhood sourdough bakery</h1><!-- /wp:heading -->
 <!-- wp:paragraph {"align":"center","fontSize":"large"} --><p class="has-text-align-center has-large-font-size">Welcome to Crumb &amp; Co, a small sourdough bakery at 12 Mill Lane.</p><!-- /wp:paragraph -->
@@ -234,7 +234,7 @@ HTML;
 	 */
 	public function test_a_genuinely_wrong_shape_is_still_refused(): void {
 		$wrong = <<<'HTML'
-<!-- wp:group {"metadata":{"name":"senroflux/hero"},"align":"full","layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/hero"},"align":"full","layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignfull"><!-- wp:heading {"textAlign":"center","level":1} -->
 <h1 class="wp-block-heading has-text-align-center">A headline</h1>
 <!-- /wp:heading -->

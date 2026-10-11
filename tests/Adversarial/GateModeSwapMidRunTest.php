@@ -4,24 +4,24 @@
  * run (Agent Safety activated/deactivated mid-run) must FAIL the run, never
  * silently continue under the new mode.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use wpdb;
@@ -60,9 +60,9 @@ final class GateModeSwapMidRunTest extends TestCase {
 			fn (): GateMode => $this->currentMode
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
 	}
 
 	private static function textTurn( string $text ): ModelTurn {

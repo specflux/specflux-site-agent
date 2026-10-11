@@ -3,15 +3,15 @@
  * HTTP start policy: the server owns the allow-list; the request may only
  * lower the budget.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Http\ConsumerPolicy;
+use Specflux\SiteAgent\Http\ConsumerPolicy;
 use WP_Error;
 
 final class ConsumerPolicyTest extends TestCase {
@@ -24,7 +24,7 @@ final class ConsumerPolicyTest extends TestCase {
 		$result = ConsumerPolicy::resolve( 'anyone', array( 'max_tokens' => 5 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_unknown_consumer', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_unknown_consumer', $result->get_error_code() );
 		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 

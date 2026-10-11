@@ -15,21 +15,21 @@
  * chose one, the gateway must pass the `[provider, model]` tuple through
  * untouched.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Model;
+namespace Specflux\SiteAgent\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\AiClientGateway;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolRegistry;
+use Specflux\SiteAgent\Model\AiClientGateway;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolRegistry;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -41,18 +41,18 @@ use wpdb;
 final class AiClientGatewayTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_abilities']             = array();
-		$GLOBALS['senroflux_test_prompt_builder_calls']  = array();
-		$GLOBALS['senroflux_test_prompt_builder_script'] = array();
+		$GLOBALS['specflux_site_agent_test_abilities']             = array();
+		$GLOBALS['specflux_site_agent_test_prompt_builder_calls']  = array();
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'] = array();
 	}
 
 	protected function tearDown(): void {
 		unset(
-			$GLOBALS['senroflux_test_abilities'],
-			$GLOBALS['senroflux_test_prompt_builder_calls'],
-			$GLOBALS['senroflux_test_prompt_builder_script']
+			$GLOBALS['specflux_site_agent_test_abilities'],
+			$GLOBALS['specflux_site_agent_test_prompt_builder_calls'],
+			$GLOBALS['specflux_site_agent_test_prompt_builder_script']
 		);
-		remove_all_filters( 'senroflux_model_request_timeout' );
+		remove_all_filters( 'specflux_site_agent_model_request_timeout' );
 	}
 
 	private function registry(): ToolRegistry {
@@ -79,7 +79,7 @@ final class AiClientGatewayTest extends TestCase {
 	}
 
 	private function scriptOneTextResult(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new class() {
 				public function toMessage(): Message {
 					return new UserMessage( array( new MessagePart( 'hi' ) ) );
@@ -112,49 +112,49 @@ final class AiClientGatewayTest extends TestCase {
 	}
 
 	public function test_request_carries_the_default_120_second_timeout(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static fn () => self::fakeResult();
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static fn () => self::fakeResult();
 
 		$gateway = new AiClientGateway();
 		$turn    = $gateway->generateTurn( $this->history(), 'system', $this->registry() );
 
 		$this->assertInstanceOf( ModelTurn::class, $turn );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertCount( 1, $calls );
 		$this->assertInstanceOf( RequestOptions::class, $calls[0]['request_options'] );
 		$this->assertSame( 120.0, $calls[0]['request_options']->getTimeout() );
 	}
 
 	public function test_filter_overrides_the_timeout(): void {
-		add_filter( 'senroflux_model_request_timeout', static fn (): float => 45.0 );
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static fn () => self::fakeResult();
+		add_filter( 'specflux_site_agent_model_request_timeout', static fn (): float => 45.0 );
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static fn () => self::fakeResult();
 
 		$gateway = new AiClientGateway();
 		$gateway->generateTurn( $this->history(), 'system', $this->registry() );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertSame( 45.0, $calls[0]['request_options']->getTimeout() );
 	}
 
 	public function test_non_numeric_filter_value_keeps_the_default(): void {
-		add_filter( 'senroflux_model_request_timeout', static fn (): string => 'not-a-number' );
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static fn () => self::fakeResult();
+		add_filter( 'specflux_site_agent_model_request_timeout', static fn (): string => 'not-a-number' );
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static fn () => self::fakeResult();
 
 		$gateway = new AiClientGateway();
 		$gateway->generateTurn( $this->history(), 'system', $this->registry() );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertSame( 120.0, $calls[0]['request_options']->getTimeout() );
 	}
 
 	public function test_negative_filter_value_keeps_the_default(): void {
-		add_filter( 'senroflux_model_request_timeout', static fn (): float => -5.0 );
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static fn () => self::fakeResult();
+		add_filter( 'specflux_site_agent_model_request_timeout', static fn (): float => -5.0 );
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static fn () => self::fakeResult();
 
 		$gateway = new AiClientGateway();
 		$gateway->generateTurn( $this->history(), 'system', $this->registry() );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertSame( 120.0, $calls[0]['request_options']->getTimeout() );
 	}
 
@@ -164,7 +164,7 @@ final class AiClientGatewayTest extends TestCase {
 	 * transient failure from a fatal one without parsing prose.
 	 */
 	public function test_a_thrown_exception_carries_its_code_as_error_data(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			throw new \RuntimeException(
 				'Network error occurred while sending POST request to https://api.openai.com/v1/responses: cURL error 28: Operation timed out after 30002 milliseconds with 0 bytes received',
 				0
@@ -187,7 +187,7 @@ final class AiClientGatewayTest extends TestCase {
 
 		$this->assertNotInstanceOf( WP_Error::class, $result );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertCount( 1, $calls );
 		$this->assertNull( $calls[0]['model_preference'], 'byte-identical to today: automatic means the call is never made at all' );
 	}
@@ -200,7 +200,7 @@ final class AiClientGatewayTest extends TestCase {
 
 		$this->assertNotInstanceOf( WP_Error::class, $result );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertCount( 1, $calls );
 		$this->assertSame( array( 'openai', 'gpt-4o' ), $calls[0]['model_preference'] );
 	}
@@ -211,7 +211,7 @@ final class AiClientGatewayTest extends TestCase {
 		$gateway = new AiClientGateway();
 		$gateway->generateTurn( array(), 'be nice', $this->emptyTools() );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertSame( 'be nice', $calls[0]['system_instruction'] );
 	}
 }

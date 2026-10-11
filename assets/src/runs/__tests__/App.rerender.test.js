@@ -4,7 +4,7 @@
  * reaches admin-ajax, the tick runs, and the run advances server-side — but
  * the screen never updates. Root cause: `wp_localize_script()` casts every
  * scalar value to a STRING before JSON-encoding it (a documented WordPress
- * core behaviour, `WP_Scripts::localize()`), so `senrofluxRunsConfig.
+ * core behaviour, `WP_Scripts::localize()`), so `specfluxSiteAgentRunsConfig.
  * initialRunId` arrives in JS as the STRING `"1"`, while every `run.id` in a
  * REST/ajax JSON payload is a genuine JSON NUMBER `1`. `App.js` seeded
  * `activeRunRef.current` from that string and never normalized it, so the
@@ -47,7 +47,7 @@ describe( 'the re-render defect: deep-linked run id (string) vs server run id (n
 			steps: [
 				{
 					kind: 'approval',
-					message: { verb: 'senroflux/publish-page', tier: 1, args: {} },
+					message: { verb: 'specflux/publish-page', tier: 1, args: {} },
 				},
 			],
 		} );
@@ -61,7 +61,7 @@ describe( 'the re-render defect: deep-linked run id (string) vs server run id (n
 		} );
 
 		// `wp_localize_script()` casts every scalar to a string — this is
-		// the exact shape `window.senrofluxRunsConfig` has in production
+		// the exact shape `window.specfluxSiteAgentRunsConfig` has in production
 		// whenever the Runs screen opens via `?run_id=1`.
 		const config = { initialRunId: '1', nonce: 'abc', consumer: 'admin', gateMode: 'agent_safety' };
 
@@ -91,7 +91,7 @@ describe( 'the re-render defect: deep-linked run id (string) vs server run id (n
 		listRuns.mockResolvedValue( [ parkedRun ] );
 		getRun.mockResolvedValue( {
 			run: parkedRun,
-			steps: [ { kind: 'approval', message: { verb: 'senroflux/send-newsletter', tier: 1, args: {} } } ],
+			steps: [ { kind: 'approval', message: { verb: 'specflux/send-newsletter', tier: 1, args: {} } } ],
 		} );
 
 		// Never resolves within this test — proves the disabling doesn't wait
@@ -132,9 +132,9 @@ describe( 'the re-render defect: deep-linked run id (string) vs server run id (n
 		listRuns.mockResolvedValue( [ parkedRun ] );
 		getRun.mockResolvedValue( {
 			run: parkedRun,
-			steps: [ { kind: 'approval', message: { verb: 'senroflux/draft-faq', tier: 1, args: {} } } ],
+			steps: [ { kind: 'approval', message: { verb: 'specflux/draft-faq', tier: 1, args: {} } } ],
 		} );
-		tickRun.mockRejectedValue( Object.assign( new Error( 'The run could not be resolved.' ), { code: 'senroflux_tick_conflict' } ) );
+		tickRun.mockRejectedValue( Object.assign( new Error( 'The run could not be resolved.' ), { code: 'specflux_site_agent_tick_conflict' } ) );
 
 		const config = { initialRunId: '3', nonce: 'abc', consumer: 'admin', gateMode: 'agent_safety' };
 		render( <App config={ config } /> );
@@ -168,7 +168,7 @@ describe( 'the re-render defect: deep-linked run id (string) vs server run id (n
 		listRuns.mockResolvedValueOnce( [ parkedRun ] ).mockResolvedValue( [ advancedRun ] );
 		getRun.mockResolvedValue( {
 			run: parkedRun,
-			steps: [ { kind: 'approval', message: { verb: 'senroflux/update-pricing', tier: 1, args: {} } } ],
+			steps: [ { kind: 'approval', message: { verb: 'specflux/update-pricing', tier: 1, args: {} } } ],
 		} );
 		tickRun.mockResolvedValue( { run: advancedRun, new_steps: [] } );
 

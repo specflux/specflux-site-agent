@@ -2,12 +2,12 @@
 /**
  * One setup-check result (0.3 S11).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Setup;
+namespace Specflux\SiteAgent\Setup;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -39,10 +39,10 @@ final class SetupCheck {
 	 * @param string      $fix_message      Shown to a viewer who can act on the fix.
 	 * @param string|null $fix_url          Where the fix lives, or null when there is none to link.
 	 * @param string|null $fix_capability   The capability {@see $fix_url} needs; null means
-	 *                                      "nobody but SenroFlux itself can fix this" (no viewer
+	 *                                      "nobody but Specflux Site Agent itself can fix this" (no viewer
 	 *                                      ever qualifies for the fix message).
 	 * @param string      $blocked_message  Shown to a viewer who cannot act on the fix.
-	 * @param string      $error_code       The WP_Error code {@see \Specflux\SenroFlux\Packs\Pack::preflight()}
+	 * @param string      $error_code       The WP_Error code {@see \Specflux\SiteAgent\Packs\Pack::preflight()}
 	 *                                      raises when this check is the reason a run refused to start.
 	 */
 	public function __construct(
@@ -90,14 +90,14 @@ final class SetupCheck {
 	}
 
 	public function errorCode(): string {
-		return '' !== $this->error_code ? $this->error_code : 'senroflux_setup_check_failed';
+		return '' !== $this->error_code ? $this->error_code : 'specflux_site_agent_setup_check_failed';
 	}
 
 	/**
 	 * The message to show ONE viewer: the fix message when they hold
 	 * {@see fixCapability()}, otherwise the blocked message. A null
 	 * `fix_capability` means no viewer ever qualifies for the fix message
-	 * (S11: "SenroFlux writes no other plugin's or core's options").
+	 * (S11: "Specflux Site Agent writes no other plugin's or core's options").
 	 *
 	 * @param int $user_id The viewer.
 	 */

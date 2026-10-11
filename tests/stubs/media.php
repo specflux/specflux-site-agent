@@ -4,7 +4,7 @@
  * `Packs\Content\Media` tests call (stage 6). TARGET REPO PATH:
  * tests/stubs/media.php
  *
- * Attachments live in the SAME `senroflux_test_posts` in-memory store
+ * Attachments live in the SAME `specflux_site_agent_test_posts` in-memory store
  * `blocks.php` already provides — an attachment is just a post whose
  * `post_type` is `attachment` — so `get_post()`/`get_post_status()` etc. keep
  * working unmodified.
@@ -12,18 +12,18 @@
  * Everything is `function_exists`-guarded so a real WordPress load order
  * wins.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-$GLOBALS['senroflux_test_postmeta']   = array();
-$GLOBALS['senroflux_test_terms']      = array();
-$GLOBALS['senroflux_test_post_terms'] = array();
+$GLOBALS['specflux_site_agent_test_postmeta']   = array();
+$GLOBALS['specflux_site_agent_test_terms']      = array();
+$GLOBALS['specflux_site_agent_test_post_terms'] = array();
 
 if ( ! function_exists( 'update_post_meta' ) ) {
 	function update_post_meta( int $post_id, string $key, mixed $value ): bool {
-		$GLOBALS['senroflux_test_postmeta'][ $post_id ][ $key ] = $value;
+		$GLOBALS['specflux_site_agent_test_postmeta'][ $post_id ][ $key ] = $value;
 
 		return true;
 	}
@@ -33,13 +33,13 @@ if ( ! function_exists( 'get_post_meta' ) ) {
 	function get_post_meta( int $post_id, string $key = '', bool $single = false ): mixed {
 		unset( $single );
 
-		return $GLOBALS['senroflux_test_postmeta'][ $post_id ][ $key ] ?? '';
+		return $GLOBALS['specflux_site_agent_test_postmeta'][ $post_id ][ $key ] ?? '';
 	}
 }
 
 if ( ! function_exists( 'set_post_thumbnail' ) ) {
 	function set_post_thumbnail( int $post_id, int $thumbnail_id ): bool {
-		$GLOBALS['senroflux_test_postmeta'][ $post_id ]['_thumbnail_id'] = $thumbnail_id;
+		$GLOBALS['specflux_site_agent_test_postmeta'][ $post_id ]['_thumbnail_id'] = $thumbnail_id;
 
 		return true;
 	}
@@ -82,7 +82,7 @@ if ( ! function_exists( 'wp_update_attachment_metadata' ) ) {
 
 if ( ! function_exists( 'wp_upload_dir' ) ) {
 	function wp_upload_dir(): array {
-		$base = sys_get_temp_dir() . '/senroflux-test-uploads';
+		$base = sys_get_temp_dir() . '/specflux-site-agent-test-uploads';
 		if ( ! is_dir( $base ) ) {
 			mkdir( $base, 0777, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- test fixture dir, not a WP runtime path.
 		}
@@ -121,7 +121,7 @@ if ( ! function_exists( 'get_posts' ) ) {
 		$meta_value = array_key_exists( 'meta_value', $args ) ? (string) $args['meta_value'] : null;
 
 		$matches = array();
-		foreach ( $GLOBALS['senroflux_test_posts'] ?? array() as $post ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_posts'] ?? array() as $post ) {
 			if ( 'any' !== $post_type && ( $post->post_type ?? '' ) !== $post_type ) {
 				continue;
 			}
@@ -132,7 +132,7 @@ if ( ! function_exists( 'get_posts' ) ) {
 				continue;
 			}
 			if ( '' !== $meta_key ) {
-				$actual = $GLOBALS['senroflux_test_postmeta'][ $post->ID ][ $meta_key ] ?? null;
+				$actual = $GLOBALS['specflux_site_agent_test_postmeta'][ $post->ID ][ $meta_key ] ?? null;
 				if ( null === $meta_value ) {
 					if ( null === $actual ) {
 						continue;
@@ -161,34 +161,34 @@ if ( ! function_exists( 'get_attached_file' ) ) {
 	/**
 	 * 0.3 quality fix 3: the on-disk path `generateAltText()`'s caller falls
 	 * back to when no intermediate size is registered. Scripted per
-	 * attachment via `$GLOBALS['senroflux_test_attached_files'][$id]`;
+	 * attachment via `$GLOBALS['specflux_site_agent_test_attached_files'][$id]`;
 	 * absent means "no file on disk" (the missing-file refusal path).
 	 */
 	function get_attached_file( int $attachment_id ): string|false {
-		return $GLOBALS['senroflux_test_attached_files'][ $attachment_id ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_attached_files'][ $attachment_id ] ?? false;
 	}
 }
 
 if ( ! function_exists( 'image_get_intermediate_size' ) ) {
 	/**
 	 * 0.3 quality fix 3: scripted per attachment+size via
-	 * `$GLOBALS['senroflux_test_intermediate_sizes'][$id][$size]` (a
+	 * `$GLOBALS['specflux_site_agent_test_intermediate_sizes'][$id][$size]` (a
 	 * `basedir`-relative `path`, mirroring the real function's shape).
 	 */
 	function image_get_intermediate_size( int $attachment_id, string $size = 'thumbnail' ): array|false {
-		return $GLOBALS['senroflux_test_intermediate_sizes'][ $attachment_id ][ $size ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_intermediate_sizes'][ $attachment_id ][ $size ] ?? false;
 	}
 }
 
 if ( ! function_exists( 'wp_get_attachment_metadata' ) ) {
 	/**
 	 * `read-media`'s dimensions source (defect fix): scripted per attachment
-	 * via `$GLOBALS['senroflux_test_attachment_metadata'][$id]`, empty array
+	 * via `$GLOBALS['specflux_site_agent_test_attachment_metadata'][$id]`, empty array
 	 * (no width/height) otherwise — mirrors a real attachment with no
 	 * generated image sizes rather than guessing.
 	 */
 	function wp_get_attachment_metadata( int $attachment_id ): array {
-		return $GLOBALS['senroflux_test_attachment_metadata'][ $attachment_id ] ?? array();
+		return $GLOBALS['specflux_site_agent_test_attachment_metadata'][ $attachment_id ] ?? array();
 	}
 }
 
@@ -233,20 +233,20 @@ if ( ! function_exists( 'wp_delete_file' ) ) {
 if ( ! function_exists( 'download_url' ) ) {
 	/**
 	 * Test double: writes the scripted response body
-	 * (`$GLOBALS['senroflux_test_download_url_response']`) to a temp file and
+	 * (`$GLOBALS['specflux_site_agent_test_download_url_response']`) to a temp file and
 	 * returns its path, or a WP_Error if the script sets one.
 	 */
 	function download_url( string $url, int $timeout = 300, bool $signature_verification = false ): string|WP_Error {
 		unset( $timeout, $signature_verification );
 
-		$GLOBALS['senroflux_test_download_url_calls'][] = $url;
+		$GLOBALS['specflux_site_agent_test_download_url_calls'][] = $url;
 
-		$response = $GLOBALS['senroflux_test_download_url_response'] ?? null;
+		$response = $GLOBALS['specflux_site_agent_test_download_url_response'] ?? null;
 		if ( $response instanceof WP_Error ) {
 			return $response;
 		}
 
-		$tmp = tempnam( sys_get_temp_dir(), 'senroflux-download-' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- test fixture, not a WP runtime path.
+		$tmp = tempnam( sys_get_temp_dir(), 'specflux-site-agent-download-' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- test fixture, not a WP runtime path.
 		file_put_contents( $tmp, (string) $response ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test fixture, not a WP runtime path.
 
 		return $tmp;
@@ -256,17 +256,17 @@ if ( ! function_exists( 'download_url' ) ) {
 if ( ! function_exists( 'get_taxonomy' ) ) {
 	/**
 	 * False by default, which forces the assign/manage-terms fallback caps in
-	 * Media; a test may script `$GLOBALS['senroflux_test_taxonomies'][$name]`.
+	 * Media; a test may script `$GLOBALS['specflux_site_agent_test_taxonomies'][$name]`.
 	 */
 	function get_taxonomy( string $taxonomy ): object|false {
-		return $GLOBALS['senroflux_test_taxonomies'][ $taxonomy ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_taxonomies'][ $taxonomy ] ?? false;
 	}
 }
 
 if ( ! function_exists( 'is_object_in_taxonomy' ) ) {
 	/** Only `post` carries categories and tags unless a test scripts otherwise. */
 	function is_object_in_taxonomy( string $object_type, string $taxonomy ): bool {
-		$map = $GLOBALS['senroflux_test_object_taxonomies'] ?? array( 'post' => array( 'category', 'post_tag' ) );
+		$map = $GLOBALS['specflux_site_agent_test_object_taxonomies'] ?? array( 'post' => array( 'category', 'post_tag' ) );
 
 		return in_array( $taxonomy, $map[ $object_type ] ?? array(), true );
 	}
@@ -276,10 +276,10 @@ if ( ! function_exists( 'term_exists' ) ) {
 	function term_exists( string $term, string $taxonomy = '' ): array|null {
 		$key = $taxonomy . ':' . strtolower( $term );
 
-		return isset( $GLOBALS['senroflux_test_terms'][ $key ] )
+		return isset( $GLOBALS['specflux_site_agent_test_terms'][ $key ] )
 			? array(
-				'term_id'          => $GLOBALS['senroflux_test_terms'][ $key ],
-				'term_taxonomy_id' => $GLOBALS['senroflux_test_terms'][ $key ],
+				'term_id'          => $GLOBALS['specflux_site_agent_test_terms'][ $key ],
+				'term_taxonomy_id' => $GLOBALS['specflux_site_agent_test_terms'][ $key ],
 			)
 			: null;
 	}
@@ -289,13 +289,13 @@ if ( ! function_exists( 'wp_insert_term' ) ) {
 	function wp_insert_term( string $term, string $taxonomy, array $args = array() ): array|WP_Error {
 		unset( $args );
 		$key = $taxonomy . ':' . strtolower( $term );
-		if ( isset( $GLOBALS['senroflux_test_terms'][ $key ] ) ) {
+		if ( isset( $GLOBALS['specflux_site_agent_test_terms'][ $key ] ) ) {
 			return new WP_Error( 'term_exists', 'Term already exists.' );
 		}
 
-		$id                                      = (int) ( $GLOBALS['senroflux_test_next_term_id'] ?? 1 );
-		$GLOBALS['senroflux_test_next_term_id']  = $id + 1;
-		$GLOBALS['senroflux_test_terms'][ $key ] = $id;
+		$id = (int) ( $GLOBALS['specflux_site_agent_test_next_term_id'] ?? 1 );
+		$GLOBALS['specflux_site_agent_test_next_term_id']  = $id + 1;
+		$GLOBALS['specflux_site_agent_test_terms'][ $key ] = $id;
 
 		return array(
 			'term_id'          => $id,
@@ -312,7 +312,7 @@ if ( ! function_exists( 'get_term' ) ) {
 	function get_term( int $term_id, string $taxonomy = '' ): object|null {
 		unset( $taxonomy );
 
-		foreach ( $GLOBALS['senroflux_test_terms'] ?? array() as $key => $id ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_terms'] ?? array() as $key => $id ) {
 			if ( (int) $id !== $term_id ) {
 				continue;
 			}
@@ -341,13 +341,13 @@ if ( ! function_exists( 'get_edit_term_link' ) ) {
 if ( ! function_exists( 'wp_set_post_terms' ) ) {
 	function wp_set_post_terms( int $post_id, array $terms, string $taxonomy, bool $append = false ): array|WP_Error {
 		if ( ! $append ) {
-			$GLOBALS['senroflux_test_post_terms'][ $post_id ][ $taxonomy ] = array();
+			$GLOBALS['specflux_site_agent_test_post_terms'][ $post_id ][ $taxonomy ] = array();
 		}
 		foreach ( $terms as $term_id ) {
-			$GLOBALS['senroflux_test_post_terms'][ $post_id ][ $taxonomy ][] = (int) $term_id;
+			$GLOBALS['specflux_site_agent_test_post_terms'][ $post_id ][ $taxonomy ][] = (int) $term_id;
 		}
 
-		return $GLOBALS['senroflux_test_post_terms'][ $post_id ][ $taxonomy ];
+		return $GLOBALS['specflux_site_agent_test_post_terms'][ $post_id ][ $taxonomy ];
 	}
 }
 
@@ -355,8 +355,8 @@ if ( ! function_exists( 'get_terms' ) ) {
 	/**
 	 * Honours `taxonomy`, `search` (substring of the name), `orderby=count`
 	 * (most used first), `number`. Rows are scripted in
-	 * `$GLOBALS['senroflux_test_term_rows'][$taxonomy]` as name => count;
-	 * `product_cat` reads the commerce stub's `senroflux_test_product_cats`.
+	 * `$GLOBALS['specflux_site_agent_test_term_rows'][$taxonomy]` as name => count;
+	 * `product_cat` reads the commerce stub's `specflux_site_agent_test_product_cats`.
 	 *
 	 * @param array<string,mixed> $args
 	 * @return list<object>
@@ -365,7 +365,7 @@ if ( ! function_exists( 'get_terms' ) ) {
 		$taxonomy = (string) ( $args['taxonomy'] ?? '' );
 		$terms    = array();
 		if ( 'product_cat' === $taxonomy ) {
-			foreach ( $GLOBALS['senroflux_test_product_cats'] ?? array() as $id => $row ) {
+			foreach ( $GLOBALS['specflux_site_agent_test_product_cats'] ?? array() as $id => $row ) {
 				$terms[] = (object) array(
 					'term_id' => (int) $id,
 					'name'    => (string) $row['name'],
@@ -377,7 +377,7 @@ if ( ! function_exists( 'get_terms' ) ) {
 			return $terms;
 		}
 
-		foreach ( $GLOBALS['senroflux_test_term_rows'][ $taxonomy ] ?? array() as $name => $count ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_term_rows'][ $taxonomy ] ?? array() as $name => $count ) {
 			if ( isset( $args['search'] ) && false === stripos( (string) $name, (string) $args['search'] ) ) {
 				continue;
 			}
@@ -397,11 +397,11 @@ if ( ! function_exists( 'get_terms' ) ) {
 
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	/**
-	 * Test knob: $GLOBALS['senroflux_test_post_types'][$type] = a `cap` object
+	 * Test knob: $GLOBALS['specflux_site_agent_test_post_types'][$type] = a `cap` object
 	 * (create_posts, publish_posts). Unset means "unknown type" (null), which
 	 * callers answer with the core defaults.
 	 */
 	function get_post_type_object( string $post_type ): ?object {
-		return $GLOBALS['senroflux_test_post_types'][ $post_type ] ?? null;
+		return $GLOBALS['specflux_site_agent_test_post_types'][ $post_type ] ?? null;
 	}
 }

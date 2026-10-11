@@ -4,29 +4,29 @@
  * attachment write (`posts/update-alt`) must produce a real report row —
  * not "unknown".
  *
- * Runs the REAL `senroflux/update-alt` ability (via {@see Media}) through
+ * Runs the REAL `specflux/update-alt` ability (via {@see Media}) through
  * the REAL {@see PostsPack} verb/id-key/id-prefix seams and the REAL
  * {@see Runner}, with a `$post_lookup` that mirrors the dispatcher wired in
  * `Plugin::runner()` — the same seam a real run uses.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -51,14 +51,14 @@ final class AttachmentReportTest extends TestCase {
 		require_once __DIR__ . '/../stubs/blocks.php';
 		require_once __DIR__ . '/../stubs/media.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 1;
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array( 'edit_post' => true );
-		$GLOBALS['senroflux_test_current_user_id']    = 1;
-		$GLOBALS['senroflux_test_transients']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 1;
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array( 'edit_post' => true );
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 1;
+		$GLOBALS['specflux_site_agent_test_transients']         = array();
 
 		Media::reset();
 		Media::registerCategory();
@@ -91,7 +91,7 @@ final class AttachmentReportTest extends TestCase {
 			fn ( $run, string $ability, array $args ) => $this->pack->verbFor( $ability, $args ),
 			fn () => $this->pack,
 			fn ( $run, string $verb ) => $this->pack->objectIdKey( $verb ),
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			null,
 			null,
@@ -106,18 +106,18 @@ final class AttachmentReportTest extends TestCase {
 	}
 
 	private function seedAttachment( int $id ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = 'attachment';
-		$post->post_mime_type                   = 'image/jpeg';
-		$post->post_title                       = 'image-' . $id;
-		$post->guid                             = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
-		$post->post_status                      = 'inherit';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post                 = new \stdClass();
+		$post->ID             = $id;
+		$post->post_type      = 'attachment';
+		$post->post_mime_type = 'image/jpeg';
+		$post->post_title     = 'image-' . $id;
+		$post->guid           = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
+		$post->post_status    = 'inherit';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	private function createRun(): int {
-		$run_id = $this->store->createRun( 1, 'test', 'Caption the hero image', array( 'senroflux/*' ), Budget::defaults() );
+		$run_id = $this->store->createRun( 1, 'test', 'Caption the hero image', array( 'specflux/*' ), Budget::defaults() );
 
 		$this->store->appendStep(
 			$run_id,
@@ -138,7 +138,7 @@ final class AttachmentReportTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -172,7 +172,7 @@ final class AttachmentReportTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_alt',
-					'wpab__senroflux__update-alt',
+					'wpab__specflux__update-alt',
 					array(
 						'attachment_id' => 63,
 						'alt'           => 'a red bicycle',

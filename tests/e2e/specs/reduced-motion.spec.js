@@ -22,23 +22,23 @@ const { assertNoSeriousA11y } = require( '../support/a11y' );
  * proves nothing, since `none` would also be what a broken/never-applied
  * selector produces).
  *
- * The typing bubble (`.senroflux-typing`, `Chat.js`) renders only while a
+ * The typing bubble (`.specflux-site-agent-typing`, `Chat.js`) renders only while a
  * tick round-trip is in flight (`busy && ! park`) — a `planOnly` scenario
  * parks on its very first turn, so the bubble is visible for the single
  * round trip between clicking "Start run" and the plan park appearing.
  * Against this worktree's own wp-env that round trip is fast enough
  * (observed empirically) that the busy render can commit and unmount
  * between two Playwright DOM polls with nothing left to assert against —
- * so every `senroflux_tick` admin-ajax POST is deliberately delayed via
+ * so every `specflux_site_agent_tick` admin-ajax POST is deliberately delayed via
  * `page.route()` for this spec only, to give the busy state time to paint.
  * This delays only this spec's own request; it does not touch app code.
  */
 
-/** Delay each `senroflux_tick` admin-ajax POST so the typing bubble has time to paint. */
+/** Delay each `specflux_site_agent_tick` admin-ajax POST so the typing bubble has time to paint. */
 async function delayTickAjax( page ) {
 	await page.route( '**/admin-ajax.php', async ( route ) => {
 		const postData = route.request().postData() || '';
-		if ( postData.includes( 'action=senroflux_tick' ) ) {
+		if ( postData.includes( 'action=specflux_site_agent_tick' ) ) {
 			await new Promise( ( resolve ) => setTimeout( resolve, 1500 ) );
 		}
 		await route.continue();
@@ -49,7 +49,7 @@ async function delayTickAjax( page ) {
  * @param {import('@playwright/test').Page} page
  */
 async function readTypingMotion( page ) {
-	const typing = page.locator( '.senroflux-typing' ).first();
+	const typing = page.locator( '.specflux-site-agent-typing' ).first();
 	await typing.waitFor( { state: 'attached', timeout: 15000 } );
 	return typing.evaluate( ( el ) => {
 		const after = getComputedStyle( el, '::after' );
@@ -82,7 +82,7 @@ test.describe( 'S22 reduced motion: typing indicator and park card', () => {
 
 			await waitForPark( page, 'plan', 'Plan: needs your OK' );
 			const parkCardDuration = await page
-				.locator( '.senroflux-park-card' )
+				.locator( '.specflux-site-agent-park-card' )
 				.evaluate( ( el ) => getComputedStyle( el ).transitionDuration );
 			expect( parkCardDuration ).toBe( '0s' );
 
@@ -103,7 +103,7 @@ test.describe( 'S22 reduced motion: typing indicator and park card', () => {
 			await startRun( page, 'Build the launch page' );
 
 			const typingMotion = await readTypingMotion( page );
-			expect( typingMotion.animationName ).toBe( 'senroflux-typing-blink' );
+			expect( typingMotion.animationName ).toBe( 'specflux-site-agent-typing-blink' );
 
 			await waitForPark( page, 'plan', 'Plan: needs your OK' );
 		} );

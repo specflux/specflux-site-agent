@@ -2,23 +2,23 @@
 /**
  * S22 gate robustness suite: "an expired grant".
  *
- * SenroFlux's built-in gate mode has NO grants at all (see GateMode::BuiltIn
+ * Specflux Site Agent's built-in gate mode has NO grants at all (see GateMode::BuiltIn
  * — every Tier-1+ call parks on the run's own transient/DB park, with no
  * TTL or count to expire). Pre-approval grants only exist under
  * GateMode::AgentSafety (S14 AS-12), and their COUNT/TTL bookkeeping is
  * entirely Agent Safety's own `grants()` service — {@see
- * \Specflux\SenroFlux\Approval\GrantBridge} only issues and revokes by
- * correlation id; SenroFlux never decrements or ages a grant itself (see
- * tests/stubs/agent-safety.php's SenroFlux_Test_Grants, which records
+ * \Specflux\SiteAgent\Approval\GrantBridge} only issues and revokes by
+ * correlation id; Specflux Site Agent never decrements or ages a grant itself (see
+ * tests/stubs/agent-safety.php's SpecfluxSiteAgent_Test_Grants, which records
  * issue()/revokeAll() calls and nothing about consumption).
  *
- * The nearest SenroFlux-side guarantee — and the one this test proves — is
+ * The nearest Specflux Site Agent-side guarantee — and the one this test proves — is
  * structural rather than time-based: a grant cannot outlive the run whose
  * correlation scope it was issued under. A grant object matching a FINISHED
  * run's correlation id and verb (the shape a leaked/replayed grant would
- * have, which is what "expired" amounts to from SenroFlux's side) is never
+ * have, which is what "expired" amounts to from Specflux Site Agent's side) is never
  * eligible for a DIFFERENT, live run — {@see
- * \Specflux\SenroFlux\Run\GrantEligibility} only answers true inside the
+ * \Specflux\SiteAgent\Run\GrantEligibility} only answers true inside the
  * currently-ticking run's own correlation scope.
  *
  * A true count/TTL expiry — Agent Safety's own grants table saying "this
@@ -27,27 +27,27 @@
  * flagged here rather than papered over with a fixture that pretends to
  * model it.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use Specflux\AgentSafety\Plugin\Support\RequestContext;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GrantEligibility;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
-use Specflux\SenroFlux\Tests\Run\RecordingBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GrantEligibility;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
+use Specflux\SiteAgent\Tests\Run\RecordingBridge;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -71,17 +71,17 @@ final class ExpiredGrantTest extends TestCase {
 		$this->gateway         = new FakeGateway();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, new RecordingBridge() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/read' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/read', true, array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/read' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/read', true, array( 'ok' => true ) ),
 		);
 
 		RequestContext::reset();
-		senroflux_test_grants( true );
+		specflux_site_agent_test_grants( true );
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'agsafe-smoke/read' => VerbTier::TIER_0 ),
 			10,
 			1
@@ -92,7 +92,7 @@ final class ExpiredGrantTest extends TestCase {
 		remove_all_filters();
 		RequestContext::reset();
 		GrantEligibility::forgetRun();
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
 	}
@@ -102,7 +102,7 @@ final class ExpiredGrantTest extends TestCase {
 	}
 
 	private static function correlationFor( int $run_id ): string {
-		return 'senroflux:run:' . $run_id;
+		return 'specflux:run:' . $run_id;
 	}
 
 	/** A stand-in for Agent Safety's Grant value object. */
@@ -120,7 +120,7 @@ final class ExpiredGrantTest extends TestCase {
 
 	/**
 	 * A grant scoped to a run that has ALREADY FINISHED (the closest
-	 * SenroFlux-side model of "expired": nothing issued for that scope may
+	 * Specflux Site Agent-side model of "expired": nothing issued for that scope may
 	 * be spent again) is never eligible for a brand-new, currently-ticking
 	 * run — even though the verb matches and the object id matches the new
 	 * run's own write.
@@ -141,7 +141,7 @@ final class ExpiredGrantTest extends TestCase {
 		$this->store->updateRun( $new_run_id, array( 'objects_json' => array( '42' => array( 'written_at' => 1 ) ) ) );
 
 		$answer = null;
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute =
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute =
 			static function () use ( &$answer, $stale_grant ): void {
 				$answer = self::grantEligible( $stale_grant, 'agsafe-smoke/publish', array( 'id' => 42 ) );
 			};
@@ -160,12 +160,12 @@ final class ExpiredGrantTest extends TestCase {
 
 	/**
 	 * Every terminal path revokes the run's own grants (already exhaustively
-	 * covered by {@see \Specflux\SenroFlux\Tests\Run\GrantsTest}) — pinned
+	 * covered by {@see \Specflux\SiteAgent\Tests\Run\GrantsTest}) — pinned
 	 * here once more as the concrete mechanism that makes a grant incapable
 	 * of outliving its run in the first place.
 	 */
 	public function test_completing_a_run_revokes_its_grants_so_nothing_survives_to_expire(): void {
-		$grants                  = senroflux_test_grants( true );
+		$grants                  = specflux_site_agent_test_grants( true );
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = new ModelTurn( new ModelMessage( array( new MessagePart( 'Done.' ) ) ), 10, 5 );
 

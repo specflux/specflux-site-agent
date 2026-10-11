@@ -9,12 +9,12 @@
  * it synchronously, in the same tick, because the model never writes the
  * site brief: only a human clicking Save on the endpoint does that.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 use WP_Error;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -23,15 +23,15 @@ use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Declarations + validation for `senroflux/suggest-brief-addition`.
+ * Declarations + validation for `specflux/suggest-brief-addition`.
  */
 final class SuggestBriefTool {
 
 	/**
 	 * The harness tool's identity, in the two forms the repo uses.
 	 */
-	public const TOOL_NAME     = 'senroflux/suggest-brief-addition';
-	public const FUNCTION_NAME = 'senroflux__suggest-brief-addition';
+	public const TOOL_NAME     = 'specflux/suggest-brief-addition';
+	public const FUNCTION_NAME = 'specflux__suggest-brief-addition';
 
 	/** S20 `[assumed]`: the suggestion text cap. */
 	public const MAX_TEXT_CHARS = 200;
@@ -51,7 +51,7 @@ final class SuggestBriefTool {
 	 * never hidden. What was missing is a message that tells the model
 	 * plainly what to do about it: the bare `suggestion_limit` code alone
 	 * gave it nothing to act on, so it just tried again. This rides along in
-	 * the tool_result's `message` field (see {@see \Specflux\SenroFlux\Run\Runner::appendSuggestBriefError()}).
+	 * the tool_result's `message` field (see {@see \Specflux\SiteAgent\Run\Runner::appendSuggestBriefError()}).
 	 */
 	public const LIMIT_MESSAGE = 'This run has already reached its limit of accepted brief suggestions. Do not call suggest-brief-addition again this run — continue the goal with what you have, or finish.';
 
@@ -85,7 +85,7 @@ final class SuggestBriefTool {
 			'properties'           => array(
 				'text' => array(
 					'type'        => 'string',
-					'description' => __( 'A short addition to suggest for the site brief.', 'senroflux' ) . ' ' . PlanTools::lengthNote( self::MAX_TEXT_CHARS ),
+					'description' => __( 'A short addition to suggest for the site brief.', 'specflux-site-agent' ) . ' ' . PlanTools::lengthNote( self::MAX_TEXT_CHARS ),
 				),
 			),
 			'required'             => array( 'text' ),
@@ -95,7 +95,7 @@ final class SuggestBriefTool {
 
 		$description = __(
 			'Suggest one short addition to the site owner\'s standing brief. The site owner reviews it and decides whether to save it — you never write the brief yourself.',
-			'senroflux'
+			'specflux-site-agent'
 		);
 
 		if ( class_exists( FunctionDeclaration::class ) ) {
@@ -119,22 +119,22 @@ final class SuggestBriefTool {
 		$invalid = static fn ( string $what ): WP_Error => new WP_Error(
 			self::ERROR_INVALID,
 			/* translators: %s names the offending field. */
-			sprintf( __( 'Invalid suggest-brief-addition call: %s', 'senroflux' ), $what )
+			sprintf( __( 'Invalid suggest-brief-addition call: %s', 'specflux-site-agent' ), $what )
 		);
 
 		if ( ! is_array( $args ) ) {
-			return $invalid( __( 'the payload must be an object.', 'senroflux' ) );
+			return $invalid( __( 'the payload must be an object.', 'specflux-site-agent' ) );
 		}
 
 		$text = $args['text'] ?? null;
 		if ( ! is_string( $text ) || '' === trim( $text ) ) {
-			return $invalid( __( 'a non-empty "text" is required.', 'senroflux' ) );
+			return $invalid( __( 'a non-empty "text" is required.', 'specflux-site-agent' ) );
 		}
 		if ( PlanTools::overCap( $text, self::MAX_TEXT_CHARS ) ) {
 			return $invalid(
 				sprintf(
 					/* translators: %1$d is the actual character count, %2$d is the character cap. */
-					__( '"text" is %1$d characters; the limit is %2$d. Shorten it and suggest again.', 'senroflux' ),
+					__( '"text" is %1$d characters; the limit is %2$d. Shorten it and suggest again.', 'specflux-site-agent' ),
 					mb_strlen( $text ),
 					self::MAX_TEXT_CHARS
 				)

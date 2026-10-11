@@ -4,17 +4,17 @@
  * (live run 56) that a READ-ONLY marker (no last_write_seq) must never open
  * a report row.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\Tracker;
 
 final class ReportTest extends TestCase {
 
@@ -71,7 +71,7 @@ final class ReportTest extends TestCase {
 	public function test_grants_ride_on_the_report_with_their_expiry(): void {
 		$grants = array(
 			array(
-				'verb'       => 'senroflux/publish-post',
+				'verb'       => 'specflux/publish-post',
 				'status'     => 'revoked',
 				'remaining'  => 1,
 				'expires_at' => '2026-10-03T10:00:00Z',

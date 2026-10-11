@@ -9,15 +9,15 @@
  * non-2xx status, malformed body — all normalizing to one
  * `stock_images_unavailable` refusal.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Model;
+namespace Specflux\SiteAgent\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\OpenverseStockImageGateway;
+use Specflux\SiteAgent\Model\OpenverseStockImageGateway;
 use WP_Error;
 
 final class OpenverseStockImageGatewayTest extends TestCase {
@@ -26,23 +26,23 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 		require_once dirname( __DIR__ ) . '/stubs/media.php';
 		require_once dirname( __DIR__ ) . '/stubs/stock-image.php';
 
-		$GLOBALS['senroflux_test_remote_get_calls']      = array();
-		$GLOBALS['senroflux_test_remote_get_responses']  = array();
-		$GLOBALS['senroflux_test_download_url_calls']    = array();
-		$GLOBALS['senroflux_test_download_url_response'] = null;
+		$GLOBALS['specflux_site_agent_test_remote_get_calls']      = array();
+		$GLOBALS['specflux_site_agent_test_remote_get_responses']  = array();
+		$GLOBALS['specflux_site_agent_test_download_url_calls']    = array();
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = null;
 	}
 
 	protected function tearDown(): void {
 		unset(
-			$GLOBALS['senroflux_test_remote_get_calls'],
-			$GLOBALS['senroflux_test_remote_get_responses'],
-			$GLOBALS['senroflux_test_download_url_calls'],
-			$GLOBALS['senroflux_test_download_url_response']
+			$GLOBALS['specflux_site_agent_test_remote_get_calls'],
+			$GLOBALS['specflux_site_agent_test_remote_get_responses'],
+			$GLOBALS['specflux_site_agent_test_download_url_calls'],
+			$GLOBALS['specflux_site_agent_test_download_url_response']
 		);
 	}
 
 	private function queueResponse( int $code, array $body ): void {
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => $code ),
 			'body'     => (string) wp_json_encode( $body ),
 		);
@@ -53,8 +53,8 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 
 		( new OpenverseStockImageGateway() )->search( 'a red bicycle' );
 
-		$this->assertCount( 1, $GLOBALS['senroflux_test_remote_get_calls'] );
-		$url = $GLOBALS['senroflux_test_remote_get_calls'][0]['url'];
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_remote_get_calls'] );
+		$url = $GLOBALS['specflux_site_agent_test_remote_get_calls'][0]['url'];
 
 		$this->assertStringContainsString( 'license=cc0%2Cpdm', $url );
 		$this->assertStringContainsString( 'source=wordpress%2Crawpixel', $url ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- Openverse's own lowercase source slug, not prose.
@@ -63,18 +63,18 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 
 	public function test_search_honours_the_sources_filter(): void {
 		add_filter(
-			'senroflux_stock_image_sources',
+			'specflux_site_agent_stock_image_sources',
 			static fn () => array( 'wordpress' )
 		);
 		$this->queueResponse( 200, array( 'results' => array() ) );
 
 		( new OpenverseStockImageGateway() )->search( 'x' );
 
-		$url = $GLOBALS['senroflux_test_remote_get_calls'][0]['url'];
+		$url = $GLOBALS['specflux_site_agent_test_remote_get_calls'][0]['url'];
 		$this->assertStringContainsString( 'source=wordpress', $url ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- Openverse's own lowercase source slug, not prose.
 		$this->assertStringNotContainsString( 'rawpixel', $url );
 
-		remove_all_filters( 'senroflux_stock_image_sources' );
+		remove_all_filters( 'specflux_site_agent_stock_image_sources' );
 	}
 
 	public function test_search_returns_the_results_array(): void {
@@ -110,7 +110,7 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 				parse_str( (string) parse_url( $call['url'], PHP_URL_QUERY ), $args ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- test helper.
 				return (string) $args['q'];
 			},
-			$GLOBALS['senroflux_test_remote_get_calls']
+			$GLOBALS['specflux_site_agent_test_remote_get_calls']
 		);
 		$this->assertSame( array( 'physiotherapy clinic stretching', 'physiotherapy clinic', 'physiotherapy' ), $queries );
 	}
@@ -119,11 +119,11 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 		$this->queueResponse( 200, array( 'results' => array() ) );
 
 		$this->assertSame( array(), ( new OpenverseStockImageGateway() )->search( 'zzzz' ) );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_remote_get_calls'] );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_remote_get_calls'] );
 	}
 
 	public function test_search_refuses_on_a_transport_error(): void {
-		$GLOBALS['senroflux_test_remote_get_responses'] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'] = array(
 			new WP_Error( 'http_request_failed', 'Could not resolve host.' ),
 		);
 
@@ -143,7 +143,7 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 	}
 
 	public function test_search_refuses_on_a_malformed_body(): void {
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => 'not json',
 		);
@@ -168,12 +168,12 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 
 		$this->assertIsArray( $detail );
 		$this->assertSame( 'https://stock.example/photo.jpg', $detail['url'] );
-		$this->assertStringContainsString( '/images/a-uuid/', $GLOBALS['senroflux_test_remote_get_calls'][0]['url'] );
+		$this->assertStringContainsString( '/images/a-uuid/', $GLOBALS['specflux_site_agent_test_remote_get_calls'][0]['url'] );
 	}
 
 	public function test_download_persists_the_file_to_uploads(): void {
 		// A 1x1 PNG served from a URL ending .jpg: the saved extension follows the bytes.
-		$GLOBALS['senroflux_test_download_url_response'] = (string) hex2bin( '89504e470d0a1a0a0000000d4948445200000001000000010804000000b51c0c020000000b4944415478da6364600000000600023081d02f0000000049454e44ae426082' );
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = (string) hex2bin( '89504e470d0a1a0a0000000d4948445200000001000000010804000000b51c0c020000000b4944415478da6364600000000600023081d02f0000000049454e44ae426082' );
 
 		$result = ( new OpenverseStockImageGateway() )->download( array( 'url' => 'https://stock.example/photo.jpg' ) );
 
@@ -183,7 +183,7 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 	}
 
 	public function test_download_refuses_a_file_that_is_not_an_image(): void {
-		$GLOBALS['senroflux_test_download_url_response'] = '<html><body>Photo unavailable</body></html>';
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = '<html><body>Photo unavailable</body></html>';
 
 		$result = ( new OpenverseStockImageGateway() )->download( array( 'url' => 'https://stock.example/photo.jpg' ) );
 
@@ -193,7 +193,7 @@ final class OpenverseStockImageGatewayTest extends TestCase {
 
 	public function test_a_refused_download_tells_the_model_to_pick_another_photo(): void {
 		// Live run 2026-09-28: a CDN answered 403 and the model saw only "Forbidden".
-		$GLOBALS['senroflux_test_download_url_response'] = new WP_Error( 'http_404', 'Forbidden' );
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = new WP_Error( 'http_404', 'Forbidden' );
 
 		$result = ( new OpenverseStockImageGateway() )->download( array( 'url' => 'https://stock.example/photo.jpg' ) );
 

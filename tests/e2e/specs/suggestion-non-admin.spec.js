@@ -6,12 +6,12 @@ const { gotoRuns, waitLoaded, startRun, waitForPark, answerChoice, acceptPlan, a
 const { assertNoSeriousA11y } = require( '../support/a11y' );
 const { BASE_URL } = require( '../support/global-setup' );
 
-const EDITOR_USER = 'senroflux-e2e-editor';
-const EDITOR_PASS = 'senroflux-e2e-editor-pass';
+const EDITOR_USER = 'specflux-e2e-editor';
+const EDITOR_PASS = 'specflux-e2e-editor-pass';
 
 function ensureEditor() {
 	try {
-		wpCli( [ 'user', 'create', EDITOR_USER, 'senroflux-e2e-editor@example.test', '--role=editor', `--user_pass=${ EDITOR_PASS }` ] );
+		wpCli( [ 'user', 'create', EDITOR_USER, 'specflux-e2e-editor@example.test', '--role=editor', `--user_pass=${ EDITOR_PASS }` ] );
 	} catch ( e ) {
 		// Already exists from a previous run — fine, just reset the password.
 		wpCli( [ 'user', 'update', EDITOR_USER, `--user_pass=${ EDITOR_PASS }` ] );
@@ -47,7 +47,7 @@ test.describe( 'S12 brief-suggestion card, non-admin viewer', () => {
 		// The React screen never pushes run_id into the address bar (no
 		// client routing), so read the just-started run's id straight from
 		// the DB rather than guessing it from `page.url()`.
-		const idOut = wpCli( [ 'db', 'query', 'SELECT id FROM wp_senroflux_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] );
+		const idOut = wpCli( [ 'db', 'query', 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] );
 		const runId = idOut.trim();
 		expect( runId ).toMatch( /^\d+$/ );
 
@@ -86,13 +86,13 @@ test.describe( 'S12 brief-suggestion card, non-admin viewer', () => {
 		const loggedIn = cookies.some( ( cookie ) => cookie.name.startsWith( 'wordpress_logged_in_' ) );
 		expect( loggedIn, 'Editor login POST to /wp-login.php did not set a wordpress_logged_in_ cookie' ).toBe( true );
 
-		await editorPage.goto( `/wp-admin/admin.php?page=senroflux-runs&run_id=${ runId }` );
-		await editorPage.waitForSelector( '#senroflux-runs-root' );
-		await editorPage.waitForSelector( '.senroflux-loading', { state: 'detached' } ).catch( () => {} );
+		await editorPage.goto( `/wp-admin/admin.php?page=specflux-site-agent-runs&run_id=${ runId }` );
+		await editorPage.waitForSelector( '#specflux-site-agent-runs-root' );
+		await editorPage.waitForSelector( '.specflux-site-agent-loading', { state: 'detached' } ).catch( () => {} );
 
 		await assertNoSeriousA11y( editorPage, 'non-admin report view' );
 
-		const suggestion = editorPage.locator( '.senroflux-suggestion-card' );
+		const suggestion = editorPage.locator( '.specflux-site-agent-suggestion-card' );
 		await expect( suggestion ).toBeVisible();
 		await expect( suggestion ).toContainText( 'An administrator can add this to the site brief.' );
 		await expect( suggestion.locator( 'button' ) ).toHaveCount( 0 );

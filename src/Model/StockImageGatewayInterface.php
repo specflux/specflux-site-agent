@@ -2,12 +2,12 @@
 /**
  * Stock-photo gateway contract (S5's `stock-image-search` / `stock-image-import`).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WP_Error;
 

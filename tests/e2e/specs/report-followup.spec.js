@@ -32,17 +32,17 @@ test.describe( 'S12 the report shows a write that was never re-read', () => {
 		await approveCall( page );
 		await waitSettled( page );
 
-		const report = page.locator( '.senroflux-report' );
+		const report = page.locator( '.specflux-site-agent-report' );
 		await expect( report ).toBeVisible( { timeout: 30000 } );
-		await expect( report.locator( '.senroflux-report-summary' ) ).toHaveText( '1 change, 1 not checked' );
+		await expect( report.locator( '.specflux-site-agent-report-summary' ) ).toHaveText( '1 change, 1 not checked' );
 
-		const row = report.locator( '.senroflux-report-change.is-unchecked' );
+		const row = report.locator( '.specflux-site-agent-report-change.is-unchecked' );
 		await expect( row ).toHaveCount( 1 );
-		await expect( row.locator( '.senroflux-report-state' ) ).toHaveText( 'Not checked after the change' );
+		await expect( row.locator( '.specflux-site-agent-report-state' ) ).toHaveText( 'Not checked after the change' );
 		// Distinguishable without colour: the mark differs from a verified
 		// row's and is hidden from assistive tech; the words carry the state.
-		await expect( row.locator( '.senroflux-report-mark' ) ).not.toHaveText( '✓' );
-		await expect( row.locator( '.senroflux-report-mark' ) ).toHaveAttribute( 'aria-hidden', 'true' );
+		await expect( row.locator( '.specflux-site-agent-report-mark' ) ).not.toHaveText( '✓' );
+		await expect( row.locator( '.specflux-site-agent-report-mark' ) ).toHaveAttribute( 'aria-hidden', 'true' );
 		await expect( report.locator( '.is-verified' ) ).toHaveCount( 0 );
 		await assertNoSeriousA11y( page, 'report with a not-checked row' );
 	} );
@@ -66,30 +66,30 @@ test.describe( 'S20 a follow-up run starts from a cancelled run', () => {
 		// A run still parked offers no follow-up.
 		await expect( page.getByRole( 'button', { name: 'Start a follow-up' } ) ).toHaveCount( 0 );
 
-		const sourceId = dbQuery( 'SELECT id FROM wp_senroflux_runs ORDER BY id DESC LIMIT 1' );
+		const sourceId = dbQuery( 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1' );
 		await page.getByRole( 'button', { name: 'Cancel run' } ).click();
 
 		const followUpButton = page.getByRole( 'button', { name: 'Start a follow-up' } );
 		await expect( followUpButton ).toBeVisible( { timeout: 30000 } );
-		await expect( page.locator( '.senroflux-report-summary' ) ).toContainText( 'not checked' );
+		await expect( page.locator( '.specflux-site-agent-report-summary' ) ).toContainText( 'not checked' );
 		await followUpButton.click();
 
-		const box = page.locator( '.senroflux-message-box-input' );
-		await expect( page.locator( '.senroflux-followup-note' ) ).toContainText( `Follow-up to run #${ sourceId }` );
+		const box = page.locator( '.specflux-site-agent-message-box-input' );
+		await expect( page.locator( '.specflux-site-agent-followup-note' ) ).toContainText( `Follow-up to run #${ sourceId }` );
 		await expect( box ).toHaveValue( '' );
 		await expect( box ).toBeFocused();
 		await assertNoSeriousA11y( page, 'follow-up affordance' );
 
 		await box.fill( 'Follow up on the launch page' );
-		await page.locator( '.senroflux-message-box button:has-text("Start run")' ).click();
+		await page.locator( '.specflux-site-agent-message-box button:has-text("Start run")' ).click();
 		await waitForPark( page, 'plan', 'Plan: needs your OK' );
 
-		const row = dbQuery( 'SELECT follow_up_of, pack FROM wp_senroflux_runs ORDER BY id DESC LIMIT 1' ).split( '\t' );
+		const row = dbQuery( 'SELECT follow_up_of, pack FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1' ).split( '\t' );
 		expect( row[ 0 ] ).toBe( sourceId );
-		expect( row[ 1 ] ).toBe( 'senroflux-e2e' );
+		expect( row[ 1 ] ).toBe( 'specflux-e2e' );
 
 		// The harness-built object list reached the model's first turn.
-		const prompts = JSON.parse( wpCli( [ 'option', 'get', 'senroflux_e2e_prompts', '--format=json' ] ) );
+		const prompts = JSON.parse( wpCli( [ 'option', 'get', 'specflux_site_agent_e2e_prompts', '--format=json' ] ) );
 		const followUpPrompt = prompts[ prompts.length - 1 ];
 		expect( followUpPrompt ).toContain( 'An earlier run touched these objects' );
 		expect( followUpPrompt ).toContain( 'thing-3' );

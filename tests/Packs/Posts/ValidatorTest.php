@@ -4,16 +4,16 @@
  *
  * TARGET REPO PATH: tests/Packs/Posts/ValidatorTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Posts;
+namespace Specflux\SiteAgent\Tests\Packs\Posts;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Posts\Validator;
-use Specflux\SenroFlux\Packs\Posts\Vocabulary;
+use Specflux\SiteAgent\Packs\Posts\Validator;
+use Specflux\SiteAgent\Packs\Posts\Vocabulary;
 
 final class ValidatorTest extends TestCase {
 
@@ -84,7 +84,7 @@ final class ValidatorTest extends TestCase {
 	}
 
 	public function test_unknown_block_is_refused(): void {
-		$content = '<!-- wp:senroflux/hero --><div>x</div><!-- /wp:senroflux/hero -->';
+		$content = '<!-- wp:specflux/hero --><div>x</div><!-- /wp:specflux/hero -->';
 		$result  = $this->validator->clean( $content );
 
 		$this->assertFalse( $result['ok'] );
@@ -130,22 +130,22 @@ final class ValidatorTest extends TestCase {
 		$this->assertSame( 'unknown_block', $result['wp_error']->get_error_code() );
 	}
 
-	public function test_a_senroflux_closing_cta_block_is_refused_with_the_core_form(): void {
-		$result = $this->validator->clean( '<!-- wp:senroflux/closing-cta --><div>x</div><!-- /wp:senroflux/closing-cta -->' );
+	public function test_a_specflux_site_agent_closing_cta_block_is_refused_with_the_core_form(): void {
+		$result = $this->validator->clean( '<!-- wp:specflux/closing-cta --><div>x</div><!-- /wp:specflux/closing-cta -->' );
 
 		$this->assertFalse( $result['ok'] );
 		$message = $result['wp_error']->get_error_message();
 		$this->assertStringContainsString( 'core/group', $message );
-		$this->assertStringContainsString( '{"metadata":{"name":"senroflux/closing-cta"},"align":"full"}', $message );
+		$this->assertStringContainsString( '{"metadata":{"name":"specflux/closing-cta"},"align":"full"}', $message );
 	}
 
-	public function test_a_senroflux_pull_quote_block_is_refused_with_the_core_form(): void {
-		$result = $this->validator->clean( '<!-- wp:senroflux/pull-quote --><div>x</div><!-- /wp:senroflux/pull-quote -->' );
+	public function test_a_specflux_site_agent_pull_quote_block_is_refused_with_the_core_form(): void {
+		$result = $this->validator->clean( '<!-- wp:specflux/pull-quote --><div>x</div><!-- /wp:specflux/pull-quote -->' );
 
 		$this->assertFalse( $result['ok'] );
 		$message = $result['wp_error']->get_error_message();
 		$this->assertStringContainsString( 'core/pullquote', $message );
-		$this->assertStringContainsString( '{"metadata":{"name":"senroflux/pull-quote"}}', $message );
+		$this->assertStringContainsString( '{"metadata":{"name":"specflux/pull-quote"}}', $message );
 	}
 
 	public function test_disallowed_html_tag_is_refused(): void {
@@ -201,7 +201,7 @@ final class ValidatorTest extends TestCase {
 		$result = $this->validator->clean( $cta );
 
 		$this->assertTrue( $result['ok'], $result['wp_error'] ? $result['wp_error']->get_error_code() : '' );
-		$this->assertStringContainsString( '"name":"senroflux/closing-cta"', $result['content'] );
+		$this->assertStringContainsString( '"name":"specflux/closing-cta"', $result['content'] );
 	}
 
 	/**

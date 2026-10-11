@@ -9,24 +9,24 @@
  * here: it re-checks the capability itself, it is scoped to one run, and it
  * leaves no trace behind.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Admin;
+namespace Specflux\SiteAgent\Tests\Admin;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\ScreenCapability;
-use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SiteAgent\Admin\ScreenCapability;
+use Specflux\SiteAgent\Packs\Pack;
 use WP_Error;
 
 final class ScreenCapabilityTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_filters']   = array();
-		remove_all_filters( 'senroflux_packs' );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_filters']   = array();
+		remove_all_filters( 'specflux_site_agent_packs' );
 		// S10: the computed default walks the registered packs in order —
 		// pin the same shape production boots (pages 'edit_pages', posts
 		// 'edit_posts', site 'manage_options') so a manage_options-only
@@ -39,8 +39,8 @@ final class ScreenCapabilityTest extends TestCase {
 
 	protected function tearDown(): void {
 		remove_all_filters( ScreenCapability::FILTER );
-		remove_all_filters( 'senroflux_can_tick' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 	}
 
 	private function registerFixturePack( string $name, string $capability ): void {
@@ -69,7 +69,7 @@ final class ScreenCapabilityTest extends TestCase {
 		};
 
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array( $name => $pack ),
 			10,
 			1
@@ -95,13 +95,13 @@ final class ScreenCapabilityTest extends TestCase {
 	}
 
 	public function test_an_editor_gets_the_first_pack_capability_they_hold(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'edit_pages' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'edit_pages' => true );
 
 		$this->assertSame( 'edit_pages', ScreenCapability::current() );
 	}
 
 	public function test_a_subscriber_holding_no_pack_capability_gets_do_not_allow(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$this->assertSame( ScreenCapability::NOBODY, ScreenCapability::current() );
 	}
@@ -109,8 +109,8 @@ final class ScreenCapabilityTest extends TestCase {
 	public function test_the_filter_is_applied_after_the_computation_not_instead_of_it(): void {
 		// The filter receives the COMPUTED value, so a filter that inspects it
 		// (rather than replacing it outright) sees the per-viewer result.
-		$GLOBALS['senroflux_test_user_caps'] = array( 'edit_pages' => true );
-		$seen                                = null;
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'edit_pages' => true );
+		$seen = null;
 
 		add_filter(
 			ScreenCapability::FILTER,
@@ -127,7 +127,7 @@ final class ScreenCapabilityTest extends TestCase {
 	}
 
 	public function test_without_the_capability_the_tick_is_never_called(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$called = false;
 		$result = ScreenCapability::tickAsScreen(
@@ -141,7 +141,7 @@ final class ScreenCapabilityTest extends TestCase {
 
 		$this->assertFalse( $called, 'the closure must not run without the capability' );
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_forbidden', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_forbidden', $result->get_error_code() );
 		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 
@@ -155,8 +155,8 @@ final class ScreenCapabilityTest extends TestCase {
 			static function () use ( &$seen, $mine, $other ): array {
 				// The Runner asks the filter with the run it is about to tick;
 				// ask it about both, from INSIDE the allowance.
-				$seen['mine']  = (bool) apply_filters( 'senroflux_can_tick', false, $mine );
-				$seen['other'] = (bool) apply_filters( 'senroflux_can_tick', false, $other );
+				$seen['mine']  = (bool) apply_filters( 'specflux_site_agent_can_tick', false, $mine );
+				$seen['other'] = (bool) apply_filters( 'specflux_site_agent_can_tick', false, $other );
 
 				return array( 'run' => array() );
 			}
@@ -172,7 +172,7 @@ final class ScreenCapabilityTest extends TestCase {
 		ScreenCapability::tickAsScreen( 7, static fn (): array => array( 'run' => array() ) );
 
 		$this->assertFalse(
-			(bool) apply_filters( 'senroflux_can_tick', false, $run ),
+			(bool) apply_filters( 'specflux_site_agent_can_tick', false, $run ),
 			'the allowance is removed once the tick returns'
 		);
 	}
@@ -192,7 +192,7 @@ final class ScreenCapabilityTest extends TestCase {
 			$this->assertSame( 'boom', $e->getMessage() );
 		}
 
-		$this->assertFalse( (bool) apply_filters( 'senroflux_can_tick', false, $run ) );
+		$this->assertFalse( (bool) apply_filters( 'specflux_site_agent_can_tick', false, $run ) );
 	}
 
 	public function test_a_nonsense_tick_return_is_normalized_to_an_error(): void {

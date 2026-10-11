@@ -4,22 +4,22 @@
  * refuses park resolutions whose shape does not match the run's park kind,
  * and refuses any resolution on a non-parked run.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -46,15 +46,15 @@ final class RunnerResumeTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/blocked' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/blocked' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true ),
 		);
 		// The S7 plan fence is separately tested in PlanParkTest. These tests
 		// exercise the approval/park mechanics with fence-free (tier-0) verbs.
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array(
 				'agsafe-smoke/spend'   => 0,
 				'agsafe-smoke/blocked' => 0,
@@ -67,7 +67,7 @@ final class RunnerResumeTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 
@@ -112,7 +112,7 @@ final class RunnerResumeTest extends TestCase {
 			5
 		);
 		// A permission check that parks.
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] = new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/blocked',
 			permission_result: new WP_Error(
 				'approval_required',
@@ -243,14 +243,14 @@ final class RunnerResumeTest extends TestCase {
 	 */
 	public function test_approving_a_parked_call_still_passes_the_plan_fence(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => array_merge( $map, array( 'agsafe-smoke/blocked' => 2 ) ),
 			20,
 			1
 		);
 
 		$executions          = 0;
-		$ability             = new SenroFlux_Test_Fake_Ability(
+		$ability             = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/blocked',
 			permission_result: new WP_Error(
 				'approval_required',
@@ -265,7 +265,7 @@ final class RunnerResumeTest extends TestCase {
 		$ability->on_execute = static function () use ( &$executions ): void {
 			++$executions;
 		};
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] = $ability;
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] = $ability;
 
 		$run_id = $this->createRun();
 		// An accepted plan covering the verb, so the call reaches the executor
@@ -284,7 +284,7 @@ final class RunnerResumeTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -329,6 +329,6 @@ final class RunnerResumeTest extends TestCase {
 		// — a loud, unignorable rejection. The HTTP seam's own refusal of the
 		// legacy field is covered by tests/Http/ResumeContractTest.php.
 		$this->expectException( \TypeError::class );
-		senroflux()->tick( 1, 0, 'approve' );
+		specflux_site_agent()->tick( 1, 0, 'approve' );
 	}
 }

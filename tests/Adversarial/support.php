@@ -11,14 +11,14 @@
  * Global namespace (no `namespace` line) and function_exists-guarded, same
  * discipline as every shim in tests/stubs/, so a real WP load order wins.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
 if ( ! function_exists( 'is_user_logged_in' ) ) {
-	/** Test knob: $GLOBALS['senroflux_test_logged_in'], defaults to true (an ordinary logged-in session). */
+	/** Test knob: $GLOBALS['specflux_site_agent_test_logged_in'], defaults to true (an ordinary logged-in session). */
 	function is_user_logged_in(): bool {
-		return (bool) ( $GLOBALS['senroflux_test_logged_in'] ?? true );
+		return (bool) ( $GLOBALS['specflux_site_agent_test_logged_in'] ?? true );
 	}
 }

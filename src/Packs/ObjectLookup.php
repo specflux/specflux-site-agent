@@ -2,19 +2,19 @@
 /**
  * The report's object lookup: one place that knows every pack's object ids.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs;
+namespace Specflux\SiteAgent\Packs;
 
-use Specflux\SenroFlux\Packs\Commerce\ReportLookup;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Site\FrontPage;
-use Specflux\SenroFlux\Packs\Site\Navigation;
-use Specflux\SenroFlux\Packs\Site\Style;
-use Specflux\SenroFlux\Run\Report;
+use Specflux\SiteAgent\Packs\Commerce\ReportLookup;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Site\FrontPage;
+use Specflux\SiteAgent\Packs\Site\Navigation;
+use Specflux\SiteAgent\Packs\Site\Style;
+use Specflux\SiteAgent\Run\Report;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

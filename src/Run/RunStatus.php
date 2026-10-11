@@ -2,18 +2,18 @@
 /**
  * Run lifecycle states.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One run's lifecycle, per S4 (as amended by SPEC-SENROFLUX-0.2 S4):
+ * One run's lifecycle, per S4 (as amended by SPEC-SITE-AGENT-0.2 S4):
  *
  *   pending → running → (awaiting_approval ↔ running)*
  *                     → (awaiting_user ↔ running)*

@@ -13,7 +13,7 @@ const { assertNoSeriousA11y } = require( '../support/a11y' );
 function createPendingRunViaCli() {
 	wpCli( [
 		'eval',
-		'wp_set_current_user(1); $p = \\Specflux\\SenroFlux\\Http\\ConsumerPolicy::resolve("senroflux-admin", []); $r = senroflux()->start("senroflux-admin", "Pending, never ticked", $p["allow"], $p["budget"]); echo $r["run"]["id"];',
+		'wp_set_current_user(1); $p = \\Specflux\\SiteAgent\\Http\\ConsumerPolicy::resolve("specflux-site-agent-admin", []); $r = specflux_site_agent()->start("specflux-site-agent-admin", "Pending, never ticked", $p["allow"], $p["budget"]); echo $r["run"]["id"];',
 	] );
 }
 
@@ -36,7 +36,7 @@ test.describe( 'S10 run-list tabs partition every run exactly once', () => {
 		await waitLoaded( page );
 		await startRun( page, 'A run that finishes immediately' );
 		await page.waitForFunction(
-			() => ! document.querySelector( '.senroflux-typing' ) && document.querySelector( '.senroflux-run-actions' ) === null,
+			() => ! document.querySelector( '.specflux-site-agent-typing' ) && document.querySelector( '.specflux-site-agent-run-actions' ) === null,
 			null,
 			{ timeout: 30000 }
 		);
@@ -55,7 +55,7 @@ test.describe( 'S10 run-list tabs partition every run exactly once', () => {
 
 		const counts = {};
 		for ( const tab of [ 'needs_you', 'running', 'finished', 'all' ] ) {
-			const button = page.locator( `.senroflux-run-tab[role="tab"]`, { hasText: tabLabel( tab ) } );
+			const button = page.locator( `.specflux-site-agent-run-tab[role="tab"]`, { hasText: tabLabel( tab ) } );
 			const text = await button.first().textContent();
 			const match = text.match( /\((\d+)\)/ );
 			expect( match, `tab "${ tab }" must render a count, including (0): "${ text }"` ).not.toBeNull();
@@ -70,8 +70,8 @@ test.describe( 'S10 run-list tabs partition every run exactly once', () => {
 function resetRunsScriptOnly() {
 	// Leave the DB rows alone (we want the pending run from the previous
 	// step to survive) — only clear the fake provider's own script/call log.
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_script' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_calls' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_script' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_calls' ] );
 }
 
 function tabLabel( key ) {

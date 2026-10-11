@@ -2,22 +2,22 @@
 /**
  * The shared content registrar (0.3 S4): registers the six content-pack
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
-use Specflux\SenroFlux\Packs\Pages\HeroTemplate;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary as PagesVocabulary;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Tone;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Run\RunStore;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Packs\Pages\HeroTemplate;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary as PagesVocabulary;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Tone;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\RunStore;
+use Specflux\SiteAgent\Run\Tracker;
 use WP_Error;
 use WP_Post;
 
@@ -39,12 +39,12 @@ defined( 'ABSPATH' ) || exit;
  * pair here under its own slug.
  *
  * 0.3 S4 CHANGES SHIPPED 0.2 BEHAVIOUR:
- *   - `senroflux/update-post` is now DRAFT-STATE EDITS ONLY (Tier 1). It
+ *   - `specflux/update-post` is now DRAFT-STATE EDITS ONLY (Tier 1). It
  *     refuses a target post that is already public (publish/future/private)
  *     and refuses a requested transition to publish/future.
- *   - NEW `senroflux/publish-post` carries every publish/future transition
+ *   - NEW `specflux/publish-post` carries every publish/future transition
  *     AND any edit to an already-public post (Tier 2).
- *   - `senroflux/create-post` refuses `publish`/`future` outright (already
+ *   - `specflux/create-post` refuses `publish`/`future` outright (already
  *     true in 0.2 by construction: `status_not_allowed` fires for anything
  *     but `draft`).
  *   - NEW slug-collision refusal on `create-post`: `slug_collision` (409)
@@ -92,7 +92,7 @@ final class Abilities {
 	/**
 	 * The ability category for the content abilities.
 	 */
-	public const CATEGORY = 'senroflux-content';
+	public const CATEGORY = 'specflux-content';
 
 	/**
 	 * The post types these abilities will touch at all (S10 allow-list). Every
@@ -375,7 +375,7 @@ final class Abilities {
 
 	/**
 	 * 0.3 quality fix (images budget 0): whether the CURRENT run's `images`
-	 * budget key is 0 — a plainer signal than {@see \Specflux\SenroFlux\Packs\Content\Media::noImageSourceLeft()}
+	 * budget key is 0 — a plainer signal than {@see \Specflux\SiteAgent\Packs\Content\Media::noImageSourceLeft()}
 	 * (spend-aware, and out of scope for this fix), used only to decide
 	 * whether a refusal message may tell the model to call `media-generate`.
 	 * Fails OPEN (false, i.e. assume available) with no run context resolved
@@ -439,8 +439,8 @@ final class Abilities {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux content', 'senroflux' ),
-				'description' => __( 'Content abilities shared by SenroFlux capability packs.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent content', 'specflux-site-agent' ),
+				'description' => __( 'Content abilities shared by Specflux Site Agent capability packs.', 'specflux-site-agent' ),
 			)
 		);
 	}
@@ -517,14 +517,14 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/read-content — three-mode oneOf (by id / by slug / query).
+	 * specflux/read-content — three-mode oneOf (by id / by slug / query).
 	 */
 	private static function registerReadContent(): void {
 		wp_register_ability(
-			'senroflux/read-content',
+			'specflux/read-content',
 			array(
-				'label'               => __( 'Read content', 'senroflux' ),
-				'description'         => __( 'Read one page/post by id or slug, or query a list. Use it after writing, too: re-read what you just wrote against its plan-step brief and fix any thin or generic section before finishing.', 'senroflux' ),
+				'label'               => __( 'Read content', 'specflux-site-agent' ),
+				'description'         => __( 'Read one page/post by id or slug, or query a list. Use it after writing, too: re-read what you just wrote against its plan-step brief and fix any thin or generic section before finishing.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => self::readContentSchema(),
 				'output_schema'       => self::readContentOutputSchema(),
@@ -558,15 +558,15 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/create-post — draft-only create; content validated before
+	 * specflux/create-post — draft-only create; content validated before
 	 * insert; slug/title collision refused (S4).
 	 */
 	private static function registerCreatePost(): void {
 		wp_register_ability(
-			'senroflux/create-post',
+			'specflux/create-post',
 			array(
-				'label'               => __( 'Create post', 'senroflux' ),
-				'description'         => __( 'Create a draft page or post from block markup. Send content OR sections, never a plan/summary in content alongside sections — if both arrive, sections is used and the result reports content_ignored: true. Write to the plan step\'s brief: who it is for, what it must achieve, its sections in order, and the visitor\'s next step. Write copy a visitor can act on — explain each service (who it helps, what happens, what to expect) using general professional knowledge. Never invent business facts: no names, prices, credentials, results, testimonials, history or addresses that were not supplied. Where a fact was left to you, write around it (for example "our team") instead of inventing one, and never use a placeholder like "to be confirmed". A section should be more than one sentence unless it is a heading or a call to action. After writing, re-read the page or post against its brief and fix any thin or generic section before finishing.', 'senroflux' ),
+				'label'               => __( 'Create post', 'specflux-site-agent' ),
+				'description'         => __( 'Create a draft page or post from block markup. Send content OR sections, never a plan/summary in content alongside sections — if both arrive, sections is used and the result reports content_ignored: true. Write to the plan step\'s brief: who it is for, what it must achieve, its sections in order, and the visitor\'s next step. Write copy a visitor can act on — explain each service (who it helps, what happens, what to expect) using general professional knowledge. Never invent business facts: no names, prices, credentials, results, testimonials, history or addresses that were not supplied. Where a fact was left to you, write around it (for example "our team") instead of inventing one, and never use a placeholder like "to be confirmed". A section should be more than one sentence unless it is a heading or a call to action. After writing, re-read the page or post against its brief and fix any thin or generic section before finishing.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => self::createPostSchema(),
 				'output_schema'       => self::createPostOutputSchema(),
@@ -594,7 +594,7 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/update-post — draft-state edits ONLY (Tier 1, 0.3 S4). Refuses
+	 * specflux/update-post — draft-state edits ONLY (Tier 1, 0.3 S4). Refuses
 	 * a target that is already public, or a requested transition to
 	 * publish/future — both point the caller at `publish-post` instead.
 	 *
@@ -606,10 +606,10 @@ final class Abilities {
 	 */
 	private static function registerUpdatePost(): void {
 		wp_register_ability(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
-				'label'               => __( 'Update post', 'senroflux' ),
-				'description'         => __( 'Update a draft-state page or post. Refuses an already-public target or a publish/future status; use publish-post for those. Send content OR sections (sections only for a page) — if both arrive, sections is used and the result reports content_ignored: true. Same substance rules as create-post: write to the plan step\'s brief, write copy a visitor can act on, never invent business facts, no placeholders, and re-read the result against its brief before finishing.', 'senroflux' ),
+				'label'               => __( 'Update post', 'specflux-site-agent' ),
+				'description'         => __( 'Update a draft-state page or post. Refuses an already-public target or a publish/future status; use publish-post for those. Send content OR sections (sections only for a page) — if both arrive, sections is used and the result reports content_ignored: true. Same substance rules as create-post: write to the plan step\'s brief, write copy a visitor can act on, never invent business facts, no placeholders, and re-read the result against its brief before finishing.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => self::updatePostSchema( self::DRAFT_STATUSES ),
 				'output_schema'       => self::updatePostOutputSchema(),
@@ -631,16 +631,16 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/publish-post — NEW (0.3 S4). Every transition to publish or
+	 * specflux/publish-post — NEW (0.3 S4). Every transition to publish or
 	 * future, AND any edit to an already-public post (Tier 2, "any change
 	 * with public effect").
 	 */
 	private static function registerPublishPost(): void {
 		wp_register_ability(
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
-				'label'               => __( 'Publish post', 'senroflux' ),
-				'description'         => __( 'Publish, schedule, or edit an already-public page or post.', 'senroflux' ),
+				'label'               => __( 'Publish post', 'specflux-site-agent' ),
+				'description'         => __( 'Publish, schedule, or edit an already-public page or post.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => self::updatePostSchema( self::PUBLISH_STATUSES ),
 				'output_schema'       => self::updatePostOutputSchema(),
@@ -662,14 +662,14 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/get-preview-url — {id} → {preview_url}.
+	 * specflux/get-preview-url — {id} → {preview_url}.
 	 */
 	private static function registerGetPreviewUrl(): void {
 		wp_register_ability(
-			'senroflux/get-preview-url',
+			'specflux/get-preview-url',
 			array(
-				'label'               => __( 'Get preview URL', 'senroflux' ),
-				'description'         => __( 'Build the preview URL for a page or post.', 'senroflux' ),
+				'label'               => __( 'Get preview URL', 'specflux-site-agent' ),
+				'description'         => __( 'Build the preview URL for a page or post.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -693,7 +693,7 @@ final class Abilities {
 
 					return $url
 						? array( 'preview_url' => $url )
-						: new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+						: new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 				},
 				'permission_callback' => static function ( $input = array() ) {
 					$input = is_array( $input ) ? $input : array();
@@ -712,16 +712,16 @@ final class Abilities {
 	}
 
 	/**
-	 * senroflux/list-patterns — {} → compact index; {names} → full entries
+	 * specflux/list-patterns — {} → compact index; {names} → full entries
 	 * for those names only. Answers with the RUNNING
 	 * pack's vocabulary (S4 point 4) — never a model-supplied `pack`.
 	 */
 	private static function registerListPatterns(): void {
 		wp_register_ability(
-			'senroflux/list-patterns',
+			'specflux/list-patterns',
 			array(
-				'label'               => __( 'List patterns', 'senroflux' ),
-				'description'         => __( 'Call with no input for a compact index (name, title, description, and — for a theme_derived entry — slots_summary) of the available content patterns. Prefer the active theme\'s own patterns (theme_derived: true) over the vocabulary ones named in the pack\'s layout rules; use a vocabulary pattern only where no theme pattern fits the page. Call again with `names` set to the pattern names you will use to get their full copy constraints (and sample markup/slots) — never guess constraints from the index alone.', 'senroflux' ),
+				'label'               => __( 'List patterns', 'specflux-site-agent' ),
+				'description'         => __( 'Call with no input for a compact index (name, title, description, and — for a theme_derived entry — slots_summary) of the available content patterns. Prefer the active theme\'s own patterns (theme_derived: true) over the vocabulary ones named in the pack\'s layout rules; use a vocabulary pattern only where no theme pattern fits the page. Call again with `names` set to the pattern names you will use to get their full copy constraints (and sample markup/slots) — never guess constraints from the index alone.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -1048,7 +1048,7 @@ final class Abilities {
 	private static function noImageReasonSchema(): array {
 		return array(
 			'type'        => 'string',
-			'description' => __( 'Why this page write skips the image rule (e.g. a legal or short utility page). Accepted only on a page of two sections or fewer; a longer page needs an image, generated when none exists.', 'senroflux' ),
+			'description' => __( 'Why this page write skips the image rule (e.g. a legal or short utility page). Accepted only on a page of two sections or fewer; a longer page needs an image, generated when none exists.', 'specflux-site-agent' ),
 		);
 	}
 
@@ -1074,7 +1074,7 @@ final class Abilities {
 	private static function sectionsSchema( bool $describe_layouts = true ): array {
 		return array(
 			'type'        => 'array',
-			'description' => __( 'Only accepted for a page (this pack\'s content pack, or when the target is a page). Refused with sections_not_supported for a post.', 'senroflux' ),
+			'description' => __( 'Only accepted for a page (this pack\'s content pack, or when the target is a page). Refused with sections_not_supported for a post.', 'specflux-site-agent' ),
 			'items'       => array(
 				'type'                 => 'object',
 				// 0.3 quality fix (readable section refusals, live evidence
@@ -1091,7 +1091,7 @@ final class Abilities {
 				'properties'           => array(
 					'layout'     => array(
 						'type'        => 'string',
-						'description' => $describe_layouts ? __( 'Preferred. Name the layout and give its fields; the page is designed from the theme for you. hero: image, heading (≤5 words), text (≤40 words), button — put it first. text: heading (≤9 words), paragraphs (2 to 4, each 40 to 90 words). text-with-image: heading (≤5 words), text (one paragraph, ≤119 words), image. services: heading (≤8 words), items — exactly 3 of {title (≤6 words), text (≤60 words), image}; give every item an image or leave image off every item (no mix) — text-only cards are fine when there are not three distinct, relevant photos. faq: heading (≤5 words), items — exactly 4 of {question (≤12 words), answer (≤60 words)}; answer only from supplied facts, and if they cannot answer 4 questions use a text section instead. cta: heading (≤5 words), text (≤40 words), button — at most one. Outside services, each image slot needs its own image; the alt text goes in image.alt.', 'senroflux' ) . ' Use when, ' . Layouts::useWhenText() . '.' : __( 'The same layouts, fields and limits as create-post.', 'senroflux' ),
+						'description' => $describe_layouts ? __( 'Preferred. Name the layout and give its fields; the page is designed from the theme for you. hero: image, heading (≤5 words), text (≤40 words), button — put it first. text: heading (≤9 words), paragraphs (2 to 4, each 40 to 90 words). text-with-image: heading (≤5 words), text (one paragraph, ≤119 words), image. services: heading (≤8 words), items — exactly 3 of {title (≤6 words), text (≤60 words), image}; give every item an image or leave image off every item (no mix) — text-only cards are fine when there are not three distinct, relevant photos. faq: heading (≤5 words), items — exactly 4 of {question (≤12 words), answer (≤60 words)}; answer only from supplied facts, and if they cannot answer 4 questions use a text section instead. cta: heading (≤5 words), text (≤40 words), button — at most one. Outside services, each image slot needs its own image; the alt text goes in image.alt.', 'specflux-site-agent' ) . ' Use when, ' . Layouts::useWhenText() . '.' : __( 'The same layouts, fields and limits as create-post.', 'specflux-site-agent' ),
 					),
 					'heading'    => array( 'type' => 'string' ),
 					'text'       => array( 'type' => 'string' ),
@@ -1128,7 +1128,7 @@ final class Abilities {
 					),
 					'tone'       => array(
 						'type'        => 'string',
-						'description' => __( 'default, contrast or accent: the section\'s band colour, set from the theme palette. At most 2 per page, never side by side. An image-less hero is contrast unless you set it.', 'senroflux' ),
+						'description' => __( 'default, contrast or accent: the section\'s band colour, set from the theme palette. At most 2 per page, never side by side. An image-less hero is contrast unless you set it.', 'specflux-site-agent' ),
 					),
 					'markup'     => array( 'type' => 'string' ),
 					'pattern'    => array( 'type' => 'string' ),
@@ -1217,7 +1217,7 @@ final class Abilities {
 				'title'           => array( 'type' => 'string' ),
 				'content'         => array(
 					'type'        => 'string',
-					'description' => __( 'Block markup. To rewrite a page, send `sections` instead: never edit the markup read-content returned.', 'senroflux' ),
+					'description' => __( 'Block markup. To rewrite a page, send `sections` instead: never edit the markup read-content returned.', 'specflux-site-agent' ),
 				),
 				'sections'        => self::sectionsSchema( false ),
 				'status'          => array(
@@ -1226,7 +1226,7 @@ final class Abilities {
 				),
 				'date'            => array(
 					'type'        => 'string',
-					'description' => __( 'Publication date in the SITE timezone, formatted `Y-m-d H:i:s` (for example 2026-10-12 09:00:00). Send it with status "future" to schedule; a date in the past publishes immediately.', 'senroflux' ),
+					'description' => __( 'Publication date in the SITE timezone, formatted `Y-m-d H:i:s` (for example 2026-10-12 09:00:00). Send it with status "future" to schedule; a date in the past publishes immediately.', 'specflux-site-agent' ),
 				),
 				'slug'            => array( 'type' => 'string' ),
 				'parent'          => array( 'type' => 'integer' ),
@@ -1247,12 +1247,12 @@ final class Abilities {
 			'categories' => array(
 				'type'        => 'array',
 				'items'       => array( 'type' => 'string' ),
-				'description' => __( 'Category names, at most 3, each up to 60 characters. An existing category is reused and a missing one is created; the post\'s categories become exactly this list. Only for a post type that has categories.', 'senroflux' ),
+				'description' => __( 'Category names, at most 3, each up to 60 characters. An existing category is reused and a missing one is created; the post\'s categories become exactly this list. Only for a post type that has categories.', 'specflux-site-agent' ),
 			),
 			'tags'       => array(
 				'type'        => 'array',
 				'items'       => array( 'type' => 'string' ),
-				'description' => __( 'Tag names, at most 8, each up to 60 characters. An existing tag is reused and a missing one is created; the post\'s tags become exactly this list. Only for a post type that has tags.', 'senroflux' ),
+				'description' => __( 'Tag names, at most 8, each up to 60 characters. An existing tag is reused and a missing one is created; the post\'s tags become exactly this list. Only for a post type that has tags.', 'specflux-site-agent' ),
 			),
 		);
 	}
@@ -1294,7 +1294,7 @@ final class Abilities {
 	}
 
 	/**
-	 * The shared meta block: annotations + `meta.senroflux.hidden === false`
+	 * The shared meta block: annotations + `meta.specflux.hidden === false`
 	 * (these abilities MUST be exposed as tools — the harness lists them).
 	 *
 	 * @param array<string,mixed> $annotations annotations.
@@ -1303,7 +1303,7 @@ final class Abilities {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -1363,7 +1363,7 @@ final class Abilities {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -1375,7 +1375,7 @@ final class Abilities {
 	private static function packArgRefused(): WP_Error {
 		return new WP_Error(
 			'pack_arg_refused',
-			__( 'The pack is determined by the run, not by the call.', 'senroflux' ),
+			__( 'The pack is determined by the run, not by the call.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -1387,7 +1387,7 @@ final class Abilities {
 	private static function packUnresolved(): WP_Error {
 		return new WP_Error(
 			'pack_unresolved',
-			__( 'This call is not running inside a pack that provides content rules.', 'senroflux' ),
+			__( 'This call is not running inside a pack that provides content rules.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -1459,7 +1459,7 @@ final class Abilities {
 		if ( ! self::sectionsAllowed() ) {
 			return new WP_Error(
 				'sections_not_supported',
-				__( 'This pack does not support the sections form of content.', 'senroflux' ),
+				__( 'This pack does not support the sections form of content.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -1508,7 +1508,7 @@ final class Abilities {
 			'layout_wall_of_text',
 			sprintf(
 				/* translators: 1: first section number, 2: last section number. */
-				__( 'Sections %1$d to %2$d are all `text` layouts in a row, so the page reads as a wall of text. Make one of them `text-with-image` with its own image, or `services` or `faq` where the content fits, or merge two of them.', 'senroflux' ),
+				__( 'Sections %1$d to %2$d are all `text` layouts in a row, so the page reads as a wall of text. Make one of them `text-with-image` with its own image, or `services` or `faq` where the content fits, or merge two of them.', 'specflux-site-agent' ),
 				(int) $run_start + 1,
 				(int) $run_start + $run_count
 			),
@@ -1539,7 +1539,7 @@ final class Abilities {
 			if ( ! is_array( $section ) ) {
 				return new WP_Error(
 					'section_invalid',
-					__( 'Each section must be an object.', 'senroflux' ),
+					__( 'Each section must be an object.', 'specflux-site-agent' ),
 					array(
 						'status' => 400,
 						'index'  => $index,
@@ -1556,7 +1556,7 @@ final class Abilities {
 				if ( ! $vocabulary instanceof PagesVocabulary ) {
 					return new WP_Error(
 						'layout_unavailable',
-						__( 'Layouts are not available for this pack.', 'senroflux' ),
+						__( 'Layouts are not available for this pack.', 'specflux-site-agent' ),
 						array(
 							'status' => 400,
 							'index'  => $index,
@@ -1573,13 +1573,13 @@ final class Abilities {
 						$reuse_message = self::currentImagesBudgetIsZero()
 							? sprintf(
 								/* translators: 1: section number, 2: earlier section number. */
-								__( 'Section %1$d reuses an image already used in section %2$d. Give each image slot its own image from media-search or stock-image-search/stock-image-import.', 'senroflux' ),
+								__( 'Section %1$d reuses an image already used in section %2$d. Give each image slot its own image from media-search or stock-image-search/stock-image-import.', 'specflux-site-agent' ),
 								(int) $index + 1,
 								$images[ $url ] + 1
 							)
 							: sprintf(
 								/* translators: 1: section number, 2: earlier section number. */
-								__( 'Section %1$d reuses an image already used in section %2$d. Give each image slot its own image: another from media-search, or a new one from media-generate.', 'senroflux' ),
+								__( 'Section %1$d reuses an image already used in section %2$d. Give each image slot its own image: another from media-search, or a new one from media-generate.', 'specflux-site-agent' ),
 								(int) $index + 1,
 								$images[ $url ] + 1
 							);
@@ -1609,7 +1609,7 @@ final class Abilities {
 				if ( ! $vocabulary instanceof ThemePatternSource ) {
 					return new WP_Error(
 						'theme_pattern_unavailable',
-						__( 'Theme patterns are not available for this pack.', 'senroflux' ),
+						__( 'Theme patterns are not available for this pack.', 'specflux-site-agent' ),
 						array(
 							'status' => 400,
 							'index'  => $index,
@@ -1622,7 +1622,7 @@ final class Abilities {
 						'theme_pattern_unavailable',
 						sprintf(
 							/* translators: 1: section number, 2: the layout names. */
-							__( 'Section %1$d: this pack builds theme patterns for you. Send `layout` (%2$s) with its fields instead of `pattern` and `slots`.', 'senroflux' ),
+							__( 'Section %1$d: this pack builds theme patterns for you. Send `layout` (%2$s) with its fields instead of `pattern` and `slots`.', 'specflux-site-agent' ),
 							(int) $index + 1,
 							implode( ', ', Layouts::names() )
 						),
@@ -1664,7 +1664,7 @@ final class Abilities {
 					'section_invalid',
 					sprintf(
 						/* translators: %d: section number. */
-						__( 'Section %d has no layout; a button belongs inside its section as `button: {label, url}`.', 'senroflux' ),
+						__( 'Section %d has no layout; a button belongs inside its section as `button: {label, url}`.', 'specflux-site-agent' ),
 						(int) $index + 1
 					),
 					array(
@@ -1676,7 +1676,7 @@ final class Abilities {
 
 			return new WP_Error(
 				'section_invalid',
-				__( 'Each section must supply a layout, markup or a pattern.', 'senroflux' ),
+				__( 'Each section must supply a layout, markup or a pattern.', 'specflux-site-agent' ),
 				array(
 					'status' => 400,
 					'index'  => $index,
@@ -1697,15 +1697,15 @@ final class Abilities {
 
 	/**
 	 * 0.3 quality fix (live run, services page): a `sections` item naming a
-	 * pattern {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary::resolveThemePattern()}
+	 * pattern {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary::resolveThemePattern()}
 	 * cannot resolve used to get the SAME generic "not available" message
 	 * whether the name was a typo OR one of the pack's own curated
-	 * (`senroflux/*`) patterns sent with `{pattern, slots}` — the numbered-slot
+	 * (`specflux/*`) patterns sent with `{pattern, slots}` — the numbered-slot
 	 * form ONLY theme-derived patterns accept (S21). A live run sent
-	 * `{"pattern":"senroflux/hero","slots":[...]}` for the curated hero (which
+	 * `{"pattern":"specflux/hero","slots":[...]}` for the curated hero (which
 	 * ships full markup and takes no numbered slots at all) and, on refusal,
 	 * abandoned every theme pattern in the same call rather than fixing the
-	 * one wrong section — because {@see \Specflux\SenroFlux\Tools\ToolExecutor}
+	 * one wrong section — because {@see \Specflux\SiteAgent\Tools\ToolExecutor}
 	 * only ever surfaces `get_error_message()` to the model, never a WP_Error's
 	 * `data` (`index`/`pattern`), the message ITSELF has to name the pattern
 	 * and say what is actually wrong with it.
@@ -1723,7 +1723,7 @@ final class Abilities {
 				'theme_pattern_unknown',
 				sprintf(
 					/* translators: %s: the curated pattern's name. */
-					__( '"%s" is one of this pack\'s own hand-authored patterns, not a theme one — write its block markup yourself and send it as `markup`, not `slots`.', 'senroflux' ),
+					__( '"%s" is one of this pack\'s own hand-authored patterns, not a theme one — write its block markup yourself and send it as `markup`, not `slots`.', 'specflux-site-agent' ),
 					$name
 				),
 				array(
@@ -1741,12 +1741,12 @@ final class Abilities {
 			array() === $available
 				? sprintf(
 					/* translators: %s: the requested pattern name. */
-					__( '"%s" is not an available theme pattern. Call pages/list-patterns for the current names.', 'senroflux' ),
+					__( '"%s" is not an available theme pattern. Call pages/list-patterns for the current names.', 'specflux-site-agent' ),
 					$name
 				)
 				: sprintf(
 					/* translators: 1: the requested pattern name, 2: comma-separated available theme pattern names. */
-					__( '"%1$s" is not an available theme pattern. Available theme patterns: %2$s.', 'senroflux' ),
+					__( '"%1$s" is not an available theme pattern. Available theme patterns: %2$s.', 'specflux-site-agent' ),
 					$name,
 					implode( ', ', $available )
 				),
@@ -1857,7 +1857,7 @@ final class Abilities {
 		if ( $publish_tier && ! $current_public && ! $desired_public ) {
 			return new WP_Error(
 				'publish_needs_status',
-				__( 'This is still a draft. To publish it, call publish-post again with "status": "publish" (or "future" with a date to schedule it). To edit the draft, use update-post.', 'senroflux' ),
+				__( 'This is still a draft. To publish it, call publish-post again with "status": "publish" (or "future" with a date to schedule it). To edit the draft, use update-post.', 'specflux-site-agent' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -1865,7 +1865,7 @@ final class Abilities {
 		if ( ! $publish_tier && ( $current_public || $desired_public ) ) {
 			return new WP_Error(
 				'use_publish_post',
-				__( 'This change is public: the target is already published, or the call publishes it. Use publish-post instead of update-post.', 'senroflux' ),
+				__( 'This change is public: the target is already published, or the call publishes it. Use publish-post instead of update-post.', 'specflux-site-agent' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -1946,12 +1946,12 @@ final class Abilities {
 		$post_type = (string) ( $post->post_type ?? '' );
 
 		if ( ! self::allowedPostType( $post_type ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$requested = $input['post_type'] ?? null;
 		if ( is_string( $requested ) && $requested !== $post_type ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! current_user_can( 'read_post', (int) ( $post->ID ?? 0 ) ) ) {
@@ -1974,7 +1974,7 @@ final class Abilities {
 		if ( isset( $input['id'] ) ) {
 			$post = function_exists( 'get_post' ) ? get_post( (int) $input['id'] ) : null;
 			if ( ! is_object( $post ) ) {
-				return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 
 			$readable = self::readablePost( $post, $input );
@@ -1993,12 +1993,12 @@ final class Abilities {
 		if ( isset( $input['slug'] ) && function_exists( 'get_page_by_path' ) ) {
 			$post_type = (string) ( $input['post_type'] ?? 'page' );
 			if ( ! self::allowedPostType( $post_type ) ) {
-				return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 
 			$post = get_page_by_path( (string) $input['slug'], 'OBJECT', $post_type );
 			if ( ! is_object( $post ) ) {
-				return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 
 			$readable = self::readablePost( $post, $input );
@@ -2012,11 +2012,11 @@ final class Abilities {
 		}
 
 		if ( ! self::allowedPostType( (string) ( $input['post_type'] ?? 'page' ) ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! class_exists( '\WP_Query' ) || ! function_exists( 'apply_filters' ) ) {
-			return new WP_Error( 'not_found', __( 'Query unavailable.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Query unavailable.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$query = new \WP_Query( self::queryArgs( $input ) );
@@ -2135,7 +2135,7 @@ final class Abilities {
 						'term_create_forbidden',
 						sprintf(
 							/* translators: 1: term name, 2: taxonomy slug. */
-							__( 'You may assign existing terms but not create new ones, and "%1$s" does not exist in %2$s yet. Use an existing name, or leave it out.', 'senroflux' ),
+							__( 'You may assign existing terms but not create new ones, and "%1$s" does not exist in %2$s yet. Use an existing name, or leave it out.', 'specflux-site-agent' ),
 							$name,
 							$taxonomy
 						),
@@ -2182,22 +2182,22 @@ final class Abilities {
 
 			if ( ! function_exists( 'is_object_in_taxonomy' ) || ! is_object_in_taxonomy( $post_type, $taxonomy ) ) {
 				/* translators: 1: input name, 2: post type. */
-				return $invalid( sprintf( __( 'A %2$s has no %1$s: leave that input out.', 'senroflux' ), $field, $post_type ) );
+				return $invalid( sprintf( __( 'A %2$s has no %1$s: leave that input out.', 'specflux-site-agent' ), $field, $post_type ) );
 			}
 
 			$given = $input[ $field ];
 			if ( is_array( $given ) && ! array_is_list( $given ) ) {
 				/* translators: 1: input name, 2: example list. */
-				return $invalid( sprintf( __( '%1$s was sent as an object, but it must be a plain list of names, like %2$s.', 'senroflux' ), $field, self::termListExample( $field ) ) );
+				return $invalid( sprintf( __( '%1$s was sent as an object, but it must be a plain list of names, like %2$s.', 'specflux-site-agent' ), $field, self::termListExample( $field ) ) );
 			}
 			if ( ! is_array( $given ) || array() === $given ) {
 				/* translators: 1: input name, 2: example list. */
-				return $invalid( sprintf( __( '%1$s must be a list of at least one name, like %2$s, or be left out.', 'senroflux' ), $field, self::termListExample( $field ) ) );
+				return $invalid( sprintf( __( '%1$s must be a list of at least one name, like %2$s, or be left out.', 'specflux-site-agent' ), $field, self::termListExample( $field ) ) );
 			}
 
 			if ( count( $given ) > self::TERM_LIMITS[ $field ] ) {
 				/* translators: 1: input name, 2: limit. */
-				return $invalid( sprintf( __( 'Send at most %2$d %1$s.', 'senroflux' ), $field, self::TERM_LIMITS[ $field ] ) );
+				return $invalid( sprintf( __( 'Send at most %2$d %1$s.', 'specflux-site-agent' ), $field, self::TERM_LIMITS[ $field ] ) );
 			}
 
 			$names = array();
@@ -2206,22 +2206,22 @@ final class Abilities {
 				$name = is_string( $name ) ? trim( $name ) : '';
 				if ( '' === $name ) {
 					/* translators: 1: input name, 2: example list. */
-					return $invalid( sprintf( __( '%1$s must be a list of names, each a non-empty string, like %2$s.', 'senroflux' ), $field, self::termListExample( $field ) ) );
+					return $invalid( sprintf( __( '%1$s must be a list of names, each a non-empty string, like %2$s.', 'specflux-site-agent' ), $field, self::termListExample( $field ) ) );
 				}
 				if ( mb_strlen( $name ) > self::TERM_NAME_MAX ) {
 					/* translators: 1: term name, 2: limit. */
-					return $invalid( sprintf( __( 'The name "%1$s" is longer than %2$d characters.', 'senroflux' ), $name, self::TERM_NAME_MAX ) );
+					return $invalid( sprintf( __( 'The name "%1$s" is longer than %2$d characters.', 'specflux-site-agent' ), $name, self::TERM_NAME_MAX ) );
 				}
 				if ( isset( $seen[ mb_strtolower( $name ) ] ) ) {
 					/* translators: 1: term name, 2: input name. */
-					return $invalid( sprintf( __( 'The name "%1$s" appears twice in %2$s.', 'senroflux' ), $name, $field ) );
+					return $invalid( sprintf( __( 'The name "%1$s" appears twice in %2$s.', 'specflux-site-agent' ), $name, $field ) );
 				}
 				$seen[ mb_strtolower( $name ) ] = true;
 				$names[]                        = $name;
 			}
 
 			if ( $creating && 'categories' === $field && 1 === count( $names ) && self::isUncategorized( $names[0] ) ) {
-				return $invalid( __( 'Uncategorized is the default, not a category choice: name a real category.', 'senroflux' ) );
+				return $invalid( __( 'Uncategorized is the default, not a category choice: name a real category.', 'specflux-site-agent' ) );
 			}
 
 			$terms[ $taxonomy ] = $names;
@@ -2260,7 +2260,7 @@ final class Abilities {
 			foreach ( $names as $name ) {
 				$id = self::existingTermId( $name, $taxonomy );
 				if ( null === $id ) {
-					$inserted = function_exists( 'wp_insert_term' ) ? wp_insert_term( $name, $taxonomy ) : new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'senroflux' ), array( 'status' => 400 ) );
+					$inserted = function_exists( 'wp_insert_term' ) ? wp_insert_term( $name, $taxonomy ) : new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 					if ( $inserted instanceof WP_Error ) {
 						// A concurrent create of the same name: reuse its term.
 						$raced = $inserted->get_error_data( 'term_exists' );
@@ -2340,7 +2340,7 @@ final class Abilities {
 	 */
 	private static function createContentChecks( array $input ): array|WP_Error {
 		if ( ( $input['status'] ?? 'draft' ) !== 'draft' ) {
-			return new WP_Error( 'status_not_allowed', __( 'Only draft is allowed on create.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'status_not_allowed', __( 'Only draft is allowed on create.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$validator = self::currentValidator();
@@ -2381,7 +2381,7 @@ final class Abilities {
 		// caller states `no_image_reason` (0.3 quality fix 2 — see
 		// self::pageImageCheck()). Never enforced on a post (the Posts pack
 		// already asks for images on its own terms). Filterable per site
-		// (`senroflux_require_page_image`, default true): a host with no media
+		// (`specflux_site_agent_require_page_image`, default true): a host with no media
 		// library worth using can turn it off outright.
 		$image_check = self::pageImageCheck( $post_type, $clean['content'], $input );
 		if ( $image_check instanceof WP_Error ) {
@@ -2520,7 +2520,7 @@ final class Abilities {
 	 */
 	private static function pageImageCheck( string $post_type, string $content, array $input ): WP_Error|string|null {
 		/** Filters whether a page write must include an image step. `@internal`. */
-		if ( 'page' !== $post_type || ! apply_filters( 'senroflux_require_page_image', true ) ) {
+		if ( 'page' !== $post_type || ! apply_filters( 'specflux_site_agent_require_page_image', true ) ) {
 			return null;
 		}
 
@@ -2555,13 +2555,13 @@ final class Abilities {
 				$images_budget_zero
 					? sprintf(
 						/* translators: %1$d: most sections a page may have without an image, %2$d: sections on this page. */
-						__( '`no_image_reason` is only for short pages of %1$d sections or fewer; this page has %2$d. Add an image: this run has no image-generation budget left, so use `media-search` first, then `stock-image-search`.', 'senroflux' ),
+						__( '`no_image_reason` is only for short pages of %1$d sections or fewer; this page has %2$d. Add an image: this run has no image-generation budget left, so use `media-search` first, then `stock-image-search`.', 'specflux-site-agent' ),
 						self::NO_IMAGE_MAX_SECTIONS,
 						$sections
 					)
 					: sprintf(
 						/* translators: %1$d: most sections a page may have without an image, %2$d: sections on this page. */
-						__( '`no_image_reason` is only for short pages of %1$d sections or fewer; this page has %2$d. Add an image: when `media-search` finds nothing suitable, call `media-generate`; if the budget is exhausted, try `stock-image-search`.', 'senroflux' ),
+						__( '`no_image_reason` is only for short pages of %1$d sections or fewer; this page has %2$d. Add an image: when `media-search` finds nothing suitable, call `media-generate`; if the budget is exhausted, try `stock-image-search`.', 'specflux-site-agent' ),
 						self::NO_IMAGE_MAX_SECTIONS,
 						$sections
 					),
@@ -2572,8 +2572,8 @@ final class Abilities {
 		return new WP_Error(
 			'page_needs_image',
 			self::currentImagesBudgetIsZero()
-				? __( 'A page with content needs at least one image, or a non-empty `no_image_reason` explaining why not (a legal page or a short utility page, say). Add a `cover-hero` or `media-text` section (see `list-patterns`), or a theme pattern with an image slot. This run has no image-generation budget left: use `media-search` first, then `stock-image-search` before giving up. Every image needs alt text.', 'senroflux' )
-				: __( 'A page with content needs at least one image, or a non-empty `no_image_reason` explaining why not (a legal page or a short utility page, say). Add a `cover-hero` or `media-text` section (see `list-patterns`), or a theme pattern with an image slot. Use `media-search` first; only call `media-generate` when nothing suitable exists; if the budget is exhausted, try `stock-image-search` before giving up. Every image needs alt text.', 'senroflux' ),
+				? __( 'A page with content needs at least one image, or a non-empty `no_image_reason` explaining why not (a legal page or a short utility page, say). Add a `cover-hero` or `media-text` section (see `list-patterns`), or a theme pattern with an image slot. This run has no image-generation budget left: use `media-search` first, then `stock-image-search` before giving up. Every image needs alt text.', 'specflux-site-agent' )
+				: __( 'A page with content needs at least one image, or a non-empty `no_image_reason` explaining why not (a legal page or a short utility page, say). Add a `cover-hero` or `media-text` section (see `list-patterns`), or a theme pattern with an image slot. Use `media-search` first; only call `media-generate` when nothing suitable exists; if the budget is exhausted, try `stock-image-search` before giving up. Every image needs alt text.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -2582,7 +2582,7 @@ final class Abilities {
 	 * Refuses a page whose curated text sections are too thin to be useful
 	 * (0.3 quality fix: copy depth). Same moments as {@see pageImageCheck()}:
 	 * a new page, or an update that rewrites the content. Filterable per site
-	 * (`senroflux_min_section_words`; return an empty array to turn it off).
+	 * (`specflux_site_agent_min_section_words`; return an empty array to turn it off).
 	 *
 	 * @param string $content The validated page content.
 	 */
@@ -2596,7 +2596,7 @@ final class Abilities {
 		 *
 		 * @var array<string, array{0:int, 1:bool}> $minimums
 		 */
-		$minimums = (array) apply_filters( 'senroflux_min_section_words', ThinCopy::MINIMUMS );
+		$minimums = (array) apply_filters( 'specflux_site_agent_min_section_words', ThinCopy::MINIMUMS );
 		$thin     = ThinCopy::first( array_values( parse_blocks( $content ) ), $minimums );
 		if ( null === $thin ) {
 			return null;
@@ -2606,7 +2606,7 @@ final class Abilities {
 			'section_too_thin',
 			sprintf(
 				/* translators: %1$d: section index, %2$s: pattern name, %3$d: words written, %4$d: minimum words, %5$d: words to add. */
-				__( 'Section %1$d (%2$s) has %3$d words of body copy (headings do not count); write at least %4$d (per column for a feature-grid), so add at least %5$d more. Say who it is for, what happens, and why it matters to the visitor, using the facts you were given and general expertise — never invented prices, credentials or results.', 'senroflux' ),
+				__( 'Section %1$d (%2$s) has %3$d words of body copy (headings do not count); write at least %4$d (per column for a feature-grid), so add at least %5$d more. Say who it is for, what happens, and why it matters to the visitor, using the facts you were given and general expertise — never invented prices, credentials or results.', 'specflux-site-agent' ),
 				$thin['index'],
 				$thin['pattern'],
 				$thin['words'],
@@ -2624,7 +2624,7 @@ final class Abilities {
 
 	/**
 	 * Bug 2 (live run: a café photo repeated at the top of a post) — the
-	 * mirrored half of {@see \Specflux\SenroFlux\Packs\Content\Media::executeSetFeaturedImage()}'s
+	 * mirrored half of {@see \Specflux\SiteAgent\Packs\Content\Media::executeSetFeaturedImage()}'s
 	 * refusal: content being written to a POST that already carries this
 	 * same image as its `_thumbnail_id` would show it twice, since TT25's
 	 * `single.html` prints the featured image above the content. `$post_id`
@@ -2653,7 +2653,7 @@ final class Abilities {
 
 		return new WP_Error(
 			'featured_image_duplicated',
-			__( 'This post\'s content includes the image that is already its featured image, and the theme shows the featured image above the post, so it would appear twice. Remove it from the content, or set-featured-image to a different attachment.', 'senroflux' ),
+			__( 'This post\'s content includes the image that is already its featured image, and the theme shows the featured image above the post, so it would appear twice. Remove it from the content, or set-featured-image to a different attachment.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -2719,13 +2719,13 @@ final class Abilities {
 					'image_reused_across_pages',
 					sprintf(
 						/* translators: 1: image file name, 2: the other page's title, 3: the other page's id, 4: where to find another image. */
-						__( 'The image %1$s is already on "%2$s" (page %3$d). Give each page its own photos: %4$s.', 'senroflux' ),
+						__( 'The image %1$s is already on "%2$s" (page %3$d). Give each page its own photos: %4$s.', 'specflux-site-agent' ),
 						basename( (string) $shared[0] ),
 						$title,
 						$other_id,
 						self::currentImagesBudgetIsZero()
-							? __( 'pick another from media-search, or stock-image-search then stock-image-import', 'senroflux' )
-							: __( 'pick another from media-search, try media-generate for a new one, or stock-image-search then stock-image-import', 'senroflux' )
+							? __( 'pick another from media-search, or stock-image-search then stock-image-import', 'specflux-site-agent' )
+							: __( 'pick another from media-search, try media-generate for a new one, or stock-image-search then stock-image-import', 'specflux-site-agent' )
 					),
 					array( 'status' => 400 )
 				);
@@ -2736,13 +2736,13 @@ final class Abilities {
 				self::currentImagesBudgetIsZero()
 					? sprintf(
 						/* translators: 1: the other page's title, 2: the other page's id. */
-						__( 'The hero image is already the hero on "%1$s" (page %2$d). Give this page its own hero: pick another from media-search, or stock-image-search then stock-image-import.', 'senroflux' ),
+						__( 'The hero image is already the hero on "%1$s" (page %2$d). Give this page its own hero: pick another from media-search, or stock-image-search then stock-image-import.', 'specflux-site-agent' ),
 						$title,
 						$other_id
 					)
 					: sprintf(
 						/* translators: 1: the other page's title, 2: the other page's id. */
-						__( 'The hero image is already the hero on "%1$s" (page %2$d). Give this page its own hero: pick another from media-search, try media-generate for a new one, or stock-image-search then stock-image-import.', 'senroflux' ),
+						__( 'The hero image is already the hero on "%1$s" (page %2$d). Give this page its own hero: pick another from media-search, try media-generate for a new one, or stock-image-search then stock-image-import.', 'specflux-site-agent' ),
 						$title,
 						$other_id
 					),
@@ -2778,7 +2778,7 @@ final class Abilities {
 		if ( ! class_exists( '\WP_Query' ) ) {
 			return new WP_Error(
 				'collision_check_unavailable',
-				__( 'Could not verify the slug is unique.', 'senroflux' ),
+				__( 'Could not verify the slug is unique.', 'specflux-site-agent' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -2816,7 +2816,7 @@ final class Abilities {
 	private static function staleWriteError(): WP_Error {
 		return new WP_Error(
 			'stale_write',
-			__( 'This content changed since the run last read it. Re-read it before writing again.', 'senroflux' ),
+			__( 'This content changed since the run last read it. Re-read it before writing again.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
 	}
@@ -2830,7 +2830,7 @@ final class Abilities {
 	private static function unreadWriteError(): WP_Error {
 		return new WP_Error(
 			'stale_write',
-			__( 'This run has not read this item yet. Read it with read-content by its id, then write again.', 'senroflux' ),
+			__( 'This run has not read this item yet. Read it with read-content by its id, then write again.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
 	}
@@ -2841,7 +2841,7 @@ final class Abilities {
 	private static function slugCollisionError(): WP_Error {
 		return new WP_Error(
 			'slug_collision',
-			__( 'Another page or post already uses that slug or title.', 'senroflux' ),
+			__( 'Another page or post already uses that slug or title.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
 	}
@@ -2861,16 +2861,16 @@ final class Abilities {
 		}
 
 		if ( ! isset( $input['id'] ) || ! is_numeric( $input['id'] ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$post = function_exists( 'get_post' ) ? get_post( (int) $input['id'] ) : null;
 		if ( ! $post ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! self::allowedPostType( (string) ( $post->post_type ?? '' ) ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// The status allow-list runs BEFORE the capability/routing gate so a
@@ -2878,7 +2878,7 @@ final class Abilities {
 		$status         = $input['status'] ?? null;
 		$allowed_status = $publish_tier ? self::PUBLISH_STATUSES : self::DRAFT_STATUSES;
 		if ( null !== $status && ! in_array( $status, $allowed_status, true ) ) {
-			return new WP_Error( 'status_not_allowed', __( 'That status is not allowed on this ability.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'status_not_allowed', __( 'That status is not allowed on this ability.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// WordPress publishes a `future` post with no date, or a date that is
@@ -3150,7 +3150,7 @@ final class Abilities {
 		$date = self::requestedDate( $input );
 		if ( null === $date ) {
 			return 'future' === $status
-				? self::scheduleNeedsFutureDate( __( 'Status "future" needs a `date`.', 'senroflux' ) )
+				? self::scheduleNeedsFutureDate( __( 'Status "future" needs a `date`.', 'specflux-site-agent' ) )
 				: null;
 		}
 
@@ -3158,19 +3158,19 @@ final class Abilities {
 		if ( false === $when || $when->format( 'Y-m-d H:i:s' ) !== $date ) {
 			return new WP_Error(
 				'invalid_date',
-				__( 'The date must be a site-timezone datetime formatted Y-m-d H:i:s, for example 2026-10-12 09:00:00.', 'senroflux' ),
+				__( 'The date must be a site-timezone datetime formatted Y-m-d H:i:s, for example 2026-10-12 09:00:00.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		$ahead = $when->getTimestamp() > Clock::now();
 		if ( 'future' === $status && ! $ahead ) {
-			return self::scheduleNeedsFutureDate( __( 'That `date` is not later than now.', 'senroflux' ) );
+			return self::scheduleNeedsFutureDate( __( 'That `date` is not later than now.', 'specflux-site-agent' ) );
 		}
 		if ( 'publish' === $status && $ahead ) {
 			return new WP_Error(
 				'use_future_status',
-				__( 'That `date` is in the future, so status "publish" would be ambiguous. To schedule, send status "future" with the date; to publish now, omit `date`.', 'senroflux' ),
+				__( 'That `date` is in the future, so status "publish" would be ambiguous. To schedule, send status "future" with the date; to publish now, omit `date`.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -3181,7 +3181,7 @@ final class Abilities {
 	private static function scheduleNeedsFutureDate( string $reason ): WP_Error {
 		return new WP_Error(
 			'schedule_needs_future_date',
-			$reason . ' ' . __( 'Pass a site-local `Y-m-d H:i:s` later than now (the turn\'s "Today is" line gives the current date), or WordPress would publish it immediately.', 'senroflux' ),
+			$reason . ' ' . __( 'Pass a site-local `Y-m-d H:i:s` later than now (the turn\'s "Today is" line gives the current date), or WordPress would publish it immediately.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}

@@ -8,24 +8,24 @@
  * fence is not what these tests are about, but a tier-0 write would make them
  * test nothing.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -53,41 +53,41 @@ final class VerificationReportTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge, self::lookup() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/write'     => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/write'     => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: true,
 				execute_result: array( 'id' => 42 )
 			),
-			'agsafe-smoke/read'      => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/read'      => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/read',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
 			// A tier-1 call that confirms nothing: the model may pass the id
 			// but it is not a read-back.
-			'agsafe-smoke/touch'     => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/touch'     => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/touch',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
 			// A tier-0 read that happens to echo an id of its own.
-			'agsafe-smoke/list'      => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/list'      => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/list',
 				permission_result: true,
 				execute_result: array( 'id' => 77 )
 			),
 			// A second write, tracked as a distinct object id (43).
-			'agsafe-smoke/write2'    => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/write2'    => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write2',
 				permission_result: true,
 				execute_result: array( 'id' => 43 )
 			),
 			// A tier-0 read whose args name several ids at once via `include`,
-			// mirroring `senroflux/read-content`'s query mode.
-			'agsafe-smoke/read-many' => new SenroFlux_Test_Fake_Ability(
+			// mirroring `specflux/read-content`'s query mode.
+			'agsafe-smoke/read-many' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/read-many',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
@@ -95,7 +95,7 @@ final class VerificationReportTest extends TestCase {
 		);
 
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'agsafe-smoke/read'      => VerbTier::TIER_0,
 				'agsafe-smoke/list'      => VerbTier::TIER_0,
@@ -110,7 +110,7 @@ final class VerificationReportTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		Plugin::reset();
 		unset( $GLOBALS['wpdb'] );
 	}
@@ -166,7 +166,7 @@ final class VerificationReportTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -197,7 +197,7 @@ final class VerificationReportTest extends TestCase {
 		return new ModelTurn( new ModelMessage( $parts ), 10, 5 );
 	}
 
-	/** @return list<\Specflux\SenroFlux\Run\Step> */
+	/** @return list<\Specflux\SiteAgent\Run\Step> */
 	private function verifyNudges( int $run_id ): array {
 		$out = array();
 		foreach ( $this->store->getSteps( $run_id ) as $step ) {
@@ -427,7 +427,7 @@ final class VerificationReportTest extends TestCase {
 			null,
 			// The pack's read ability names the id `post_id`; the write still
 			// returns plain `id`.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $verb ): string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $verb ): string {
 				unset( $run );
 
 				return 'agsafe-smoke/read' === $verb ? 'post_id' : 'id';

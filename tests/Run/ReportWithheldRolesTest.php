@@ -3,16 +3,16 @@
  * Report::build() unit tests for 0.3 S6's `withheld_roles` field — added next
  * to `gate_mode`, existing report shape otherwise unchanged.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Report;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Report;
 
 final class ReportWithheldRolesTest extends TestCase {
 

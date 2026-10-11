@@ -5,15 +5,15 @@
  * told plain sentences and did not fully comply, so the renderer must strip
  * common markdown tokens defensively, on top of the harness instruction.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Report;
+use Specflux\SiteAgent\Run\Report;
 
 final class ReportPlainSummaryTest extends TestCase {
 

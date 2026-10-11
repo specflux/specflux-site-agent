@@ -3,12 +3,12 @@
  * Shipping-zone location parsing shared by `shipping-zone-save` and its
  * approval card, so both read a location code the same way.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
 use WP_Error;
 
@@ -39,10 +39,10 @@ final class ShippingZoneInput {
 		$type = is_array( $location ) ? ( $location['type'] ?? null ) : null;
 
 		if ( ! is_string( $code ) || '' === trim( $code ) ) {
-			return self::refuse( __( 'Every location needs a code, such as "CA", "CA:ON", "NA" or "90210".', 'senroflux' ) );
+			return self::refuse( __( 'Every location needs a code, such as "CA", "CA:ON", "NA" or "90210".', 'specflux-site-agent' ) );
 		}
 		if ( null !== $type && ( ! is_string( $type ) || ! in_array( $type, self::LOCATION_TYPES, true ) ) ) {
-			return self::refuse( __( 'A location type must be one of country, state, continent or postcode.', 'senroflux' ) );
+			return self::refuse( __( 'A location type must be one of country, state, continent or postcode.', 'specflux-site-agent' ) );
 		}
 
 		$code = trim( $code );
@@ -52,7 +52,7 @@ final class ShippingZoneInput {
 				return self::refuse(
 					sprintf(
 						/* translators: 1: location code as given, 2: explicit type. */
-						__( 'Location "%1$s" conflicts with its type "%2$s".', 'senroflux' ),
+						__( 'Location "%1$s" conflicts with its type "%2$s".', 'specflux-site-agent' ),
 						$code,
 						$type
 					)
@@ -69,7 +69,7 @@ final class ShippingZoneInput {
 			return self::refuse(
 				sprintf(
 					/* translators: %s: state location code as given. */
-					__( 'State location "%s" must look like "CA:ON" (country, colon, state).', 'senroflux' ),
+					__( 'State location "%s" must look like "CA:ON" (country, colon, state).', 'specflux-site-agent' ),
 					$code
 				)
 			);

@@ -1,4 +1,4 @@
-/* SenroFlux Runs screen (S10/S13/S15): badges, park cards, new-run form.
+/* Specflux Site Agent Runs screen (S10/S13/S15): badges, park cards, new-run form.
  * Minimal by design; the WP admin already supplies base form/button styling.
  *
  * BADGE COLOURS ARE A WCAG 2.1 AA CONSTRAINT, not a palette choice: badge text
@@ -9,7 +9,7 @@
  * The darker pair below reads as the same status colour and clears the bar. */
 
 /* Visually-hidden but available to assistive tech (aria-live region + labels). */
-.senroflux-sr-only {
+.specflux-site-agent-sr-only {
 	position: absolute !important;
 	width: 1px;
 	height: 1px;
@@ -21,7 +21,7 @@
 	border: 0;
 }
 
-.senroflux-badge {
+.specflux-site-agent-badge {
 	display: inline-block;
 	padding: 1px 8px;
 	border-radius: 10px;
@@ -29,72 +29,72 @@
 	font-size: 12px;
 }
 
-.senroflux-badge-running,
-.senroflux-badge-pending {
+.specflux-site-agent-badge-running,
+.specflux-site-agent-badge-pending {
 	background: #f0f6fc;
 	color: #2271b1;
 }
 
-.senroflux-badge-awaiting_approval,
-.senroflux-badge-awaiting_plan {
+.specflux-site-agent-badge-awaiting_approval,
+.specflux-site-agent-badge-awaiting_plan {
 	background: #fcf9e8;
 	color: #996800;
 }
 
-.senroflux-badge-awaiting_user {
+.specflux-site-agent-badge-awaiting_user {
 	background: #fcf9e8;
 	color: #996800;
 }
 
-.senroflux-badge-completed {
+.specflux-site-agent-badge-completed {
 	background: #edfaef;
 	color: #005c12; /* 7.69:1 on #edfaef. */
 }
 
-.senroflux-badge-failed {
+.specflux-site-agent-badge-failed {
 	background: #fcf0f1;
 	color: #b32d2e; /* 5.67:1 on #fcf0f1. */
 }
 
-.senroflux-badge-cancelled {
+.specflux-site-agent-badge-cancelled {
 	background: #f0f0f1;
 	color: #50575e;
 }
 
-.senroflux-badge-verified {
+.specflux-site-agent-badge-verified {
 	background: #edfaef;
 	color: #005c12; /* 7.69:1 on #edfaef. */
 }
 
-.senroflux-badge-unverified {
+.specflux-site-agent-badge-unverified {
 	background: #fcf0f1;
 	color: #b32d2e; /* 5.67:1 on #fcf0f1. */
 }
 
 /* Steps timeline (existing). */
-.senroflux-steps {
+.specflux-site-agent-steps {
 	max-width: 900px;
 }
 
-.senroflux-step {
+.specflux-site-agent-step {
 	margin-bottom: 8px;
 	padding: 8px 12px;
 	border-left: 3px solid #dcdcde;
 	background: #fff;
 }
 
-.senroflux-step-approval,
-.senroflux-step-tool_result,
-.senroflux-step-question,
-.senroflux-step-plan {
+.specflux-site-agent-step-approval,
+.specflux-site-agent-step-tool_result,
+.specflux-site-agent-step-question,
+.specflux-site-agent-step-plan {
 	border-left-color: #996800;
 }
 
-.senroflux-step-model {
+.specflux-site-agent-step-model {
 	border-left-color: #2271b1;
 }
 
-.senroflux-json-toggle pre {
+.specflux-site-agent-json-toggle pre {
 	overflow: auto;
 	max-height: 320px;
 	background: #f6f7f7;
@@ -102,7 +102,7 @@
 }
 
 /* New-run form. */
-.senroflux-new-run-form {
+.specflux-site-agent-new-run-form {
 	max-width: 720px;
 	margin-bottom: 24px;
 	padding: 16px;
@@ -110,38 +110,38 @@
 	border: 1px solid #dcdcde;
 }
 
-.senroflux-new-run-form label {
+.specflux-site-agent-new-run-form label {
 	display: block;
 	font-weight: 600;
 	margin-bottom: 4px;
 }
 
-.senroflux-new-run-form label[for],
-.senroflux-advanced label {
+.specflux-site-agent-new-run-form label[for],
+.specflux-site-agent-advanced label {
 	display: block;
 }
 
-.senroflux-new-run-form textarea,
-.senroflux-new-run-form select,
-.senroflux-new-run-form input[type="number"] {
+.specflux-site-agent-new-run-form textarea,
+.specflux-site-agent-new-run-form select,
+.specflux-site-agent-new-run-form input[type="number"] {
 	width: 100%;
 }
 
-.senroflux-advanced {
+.specflux-site-agent-advanced {
 	margin: 8px 0 16px;
 }
 
-.senroflux-advanced summary {
+.specflux-site-agent-advanced summary {
 	cursor: pointer;
 	font-weight: 600;
 }
 
-.senroflux-ceiling {
+.specflux-site-agent-ceiling {
 	max-width: 220px;
 }
 
 /* Park cards. */
-.senroflux-park-card {
+.specflux-site-agent-park-card {
 	max-width: 720px;
 	margin: 16px 0;
 	padding: 16px 20px;
@@ -150,59 +150,59 @@
 	border-left: 4px solid #996800;
 }
 
-.senroflux-park-card-heading {
+.specflux-site-agent-park-card-heading {
 	margin-top: 0;
 }
 
-.senroflux-park-card fieldset {
+.specflux-site-agent-park-card fieldset {
 	border: 0;
 	padding: 0;
 	margin: 0 0 8px;
 }
 
-.senroflux-park-card legend {
+.specflux-site-agent-park-card legend {
 	font-weight: 700;
 	padding: 0;
 	margin-bottom: 4px;
 }
 
-.senroflux-rationale {
+.specflux-site-agent-rationale {
 	color: #50575e;
 }
 
-.senroflux-choice {
+.specflux-site-agent-choice {
 	display: block;
 	margin: 4px 0;
 }
 
-.senroflux-other-wrap textarea {
+.specflux-site-agent-other-wrap textarea {
 	display: block;
 	width: 100%;
 	margin-top: 4px;
 }
 
-.senroflux-plan-steps li {
+.specflux-site-agent-plan-steps li {
 	margin: 4px 0;
 }
 
-.senroflux-plan-verbs {
+.specflux-site-agent-plan-verbs {
 	color: #50575e;
 }
 
-.senroflux-plan-approval {
+.specflux-site-agent-plan-approval {
 	color: #996800;
 	font-weight: 600;
 }
 
-.senroflux-plan-decision {
+.specflux-site-agent-plan-decision {
 	margin-bottom: 8px;
 }
 
-.senroflux-plan-decision .description {
+.specflux-site-agent-plan-decision .description {
 	color: #50575e;
 }
 
-.senroflux-args {
+.specflux-site-agent-args {
 	overflow: auto;
 	max-height: 240px;
 	background: #f6f7f7;
@@ -217,30 +217,30 @@
 /* Defect E (live run): the run header renders the MODEL-AUTHORED goal
    (S15) verbatim, which can be a long unbroken string that overflowed the
    viewport instead of wrapping. */
-.senroflux-run-heading {
+.specflux-site-agent-run-heading {
 	overflow-wrap: anywhere;
 }
 
 /* The args box is keyboard-focusable (it scrolls), so the focus ring has to
    be visible on it. */
-.senroflux-args:focus-visible {
+.specflux-site-agent-args:focus-visible {
 	outline: 2px solid #2271b1;
 	outline-offset: 1px;
 }
 
-.senroflux-card-actions {
+.specflux-site-agent-card-actions {
 	margin: 12px 0 0;
 }
 
-.senroflux-refresh {
+.specflux-site-agent-refresh {
 	margin: 12px 0;
 }
 
-.senroflux-report-summary {
+.specflux-site-agent-report-summary {
 	max-width: 720px;
 }
 
-.senroflux-report th,
-.senroflux-report td {
+.specflux-site-agent-report th,
+.specflux-site-agent-report td {
 	vertical-align: top;
 }

@@ -3,15 +3,15 @@
  * `propose-plan`'s per-step `objects` (the existing objects a pre-approval may
  * cover): validated against the report's object lookup, fail closed.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\PlanTools;
 use WP_Error;
 
 final class PlanObjectsTest extends TestCase {

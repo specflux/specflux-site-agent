@@ -123,7 +123,7 @@ export default function App( { config } ) {
 				}
 				// The server-rendered panel is outside the React root: swap its
 				// markup (server-escaped, same origin) rather than re-render it.
-				const panel = document.getElementById( 'senroflux-setup-panel' );
+				const panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 				if ( panel && 'string' === typeof state.html && '' !== state.html ) {
 					panel.outerHTML = state.html;
 				} else if ( panel && '' === state.html ) {
@@ -162,21 +162,21 @@ export default function App( { config } ) {
 	// every later refresh renders the panel without it.
 	useEffect( () => {
 		const onClick = ( event ) => {
-			const button = event.target.closest && event.target.closest( '.senroflux-dismiss-check' );
+			const button = event.target.closest && event.target.closest( '.specflux-site-agent-dismiss-check' );
 			if ( ! button ) {
 				return;
 			}
 			dismissAdvisory( { nonce: button.getAttribute( 'data-nonce' ) || '', ajaxUrl: window.ajaxurl } )
 				.then( ( result ) => {
-					const panel = document.getElementById( 'senroflux-setup-panel' );
+					const panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 					if ( panel && result && 'string' === typeof result.html ) {
 						panel.outerHTML = result.html;
 					}
 					// The focused button just vanished: move focus to the next
 					// focusable thing in the panel (a "Fix this" link), else the goal box.
 					const next =
-						document.querySelector( '#senroflux-setup-panel a[href], #senroflux-setup-panel button' ) ||
-						document.querySelector( '.senroflux-message-box-input:not([disabled])' );
+						document.querySelector( '#specflux-site-agent-setup-panel a[href], #specflux-site-agent-setup-panel button' ) ||
+						document.querySelector( '.specflux-site-agent-message-box-input:not([disabled])' );
 					if ( next ) {
 						next.focus();
 					}
@@ -324,7 +324,7 @@ export default function App( { config } ) {
 			return step( runId, stepCount, resume, 1 )
 				.catch( ( error ) => {
 					if ( aliveRef.current ) {
-						setActionError( error.message || __( 'Something went wrong.', 'senroflux' ) );
+						setActionError( error.message || __( 'Something went wrong.', 'specflux-site-agent' ) );
 					}
 				} )
 				.finally( () => {
@@ -354,7 +354,7 @@ export default function App( { config } ) {
 				.catch( ( error ) => {
 					if ( aliveRef.current ) {
 						setBusyRunId( null );
-						setActionError( error.message || __( 'Could not start the run.', 'senroflux' ) );
+						setActionError( error.message || __( 'Could not start the run.', 'specflux-site-agent' ) );
 					}
 				} );
 		},
@@ -384,7 +384,7 @@ export default function App( { config } ) {
 			} )
 			.catch( ( error ) => {
 				if ( aliveRef.current ) {
-					setActionError( error.message || __( 'Could not cancel the run.', 'senroflux' ) );
+					setActionError( error.message || __( 'Could not cancel the run.', 'specflux-site-agent' ) );
 				}
 			} )
 			.finally( () => {
@@ -404,7 +404,7 @@ export default function App( { config } ) {
 	const handleResolveSuggestion = useCallback(
 		( seq, action, text ) => {
 			if ( ! runDetail ) {
-				return Promise.reject( new Error( __( 'No run selected.', 'senroflux' ) ) );
+				return Promise.reject( new Error( __( 'No run selected.', 'specflux-site-agent' ) ) );
 			}
 			const runId = runDetail.run.id;
 			return resolveSuggestion( runId, seq, action, text ).then( ( result ) => {
@@ -438,7 +438,7 @@ export default function App( { config } ) {
 	};
 
 	if ( ! loaded ) {
-		return <div className="senroflux-loading">{ __( 'Loading…', 'senroflux' ) }</div>;
+		return <div className="specflux-site-agent-loading">{ __( 'Loading…', 'specflux-site-agent' ) }</div>;
 	}
 
 	// The message box is ONE persistent affordance (S10: "the message box at
@@ -455,7 +455,7 @@ export default function App( { config } ) {
 		: 'idle';
 
 	return (
-		<div className="senroflux-runs-app">
+		<div className="specflux-site-agent-runs-app">
 			<RunList
 				runs={ runs }
 				activeTab={ activeTab }
@@ -463,8 +463,8 @@ export default function App( { config } ) {
 				selectedRunId={ selectedRunId }
 				onSelectRun={ handleSelectRun }
 			/>
-			<main className="senroflux-runs-main">
-				{ actionError && <p className="senroflux-action-error">{ actionError }</p> }
+			<main className="specflux-site-agent-runs-main">
+				{ actionError && <p className="specflux-site-agent-action-error">{ actionError }</p> }
 				{ runDetail ? (
 					<Chat
 						run={ runDetail.run }
@@ -492,9 +492,9 @@ export default function App( { config } ) {
 					// this happens whenever nothing auto-selected (e.g. the
 					// active tab genuinely has no rows), and must say so
 					// rather than claim no run has ever started.
-					<div className="senroflux-pick-a-run">
-						<h2>{ __( 'Pick a run', 'senroflux' ) }</h2>
-						<p>{ __( 'Choose a run from the list to see its detail.', 'senroflux' ) }</p>
+					<div className="specflux-site-agent-pick-a-run">
+						<h2>{ __( 'Pick a run', 'specflux-site-agent' ) }</h2>
+						<p>{ __( 'Choose a run from the list to see its detail.', 'specflux-site-agent' ) }</p>
 					</div>
 				) : (
 					<EmptyState

@@ -2,14 +2,14 @@
 /**
  * Resolves a human's Save/Dismiss decision on a brief suggestion (0.3 S20).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
 use WP_Error;
 
 // Bail on direct access.
@@ -42,11 +42,11 @@ final class SuggestionResolver {
 	 */
 	public static function resolve( RunStore $store, int $run_id, int $seq, string $action, ?string $text ): array|WP_Error {
 		if ( ! in_array( $action, array( 'save', 'dismiss' ), true ) ) {
-			return new WP_Error( self::ERROR_INVALID_ACTION, __( 'action must be "save" or "dismiss".', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( self::ERROR_INVALID_ACTION, __( 'action must be "save" or "dismiss".', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( null === $store->getRun( $run_id ) ) {
-			return new WP_Error( 'senroflux_not_found', __( 'Run not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'specflux_site_agent_not_found', __( 'Run not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		$suggestion = null;
@@ -64,10 +64,10 @@ final class SuggestionResolver {
 		}
 
 		if ( null === $suggestion ) {
-			return new WP_Error( self::ERROR_NOT_FOUND, __( 'No such suggestion.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( self::ERROR_NOT_FOUND, __( 'No such suggestion.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 		if ( $resolved ) {
-			return new WP_Error( self::ERROR_ALREADY_RESOLVED, __( 'That suggestion was already resolved.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( self::ERROR_ALREADY_RESOLVED, __( 'That suggestion was already resolved.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
 		$original      = is_array( $suggestion->messageArray ) && is_string( $suggestion->messageArray['text'] ?? null )
@@ -80,7 +80,7 @@ final class SuggestionResolver {
 				'invalid_suggestion_text',
 				sprintf(
 					/* translators: %d is the character cap. */
-					__( 'The suggestion text may be at most %d characters.', 'senroflux' ),
+					__( 'The suggestion text may be at most %d characters.', 'specflux-site-agent' ),
 					SuggestBriefTool::MAX_TEXT_CHARS
 				),
 				array( 'status' => 400 )

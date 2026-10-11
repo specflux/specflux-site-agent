@@ -1,11 +1,11 @@
 /**
- * SenroFlux Runs screen (S10/S13/S15): progressive enhancement.
+ * Specflux Site Agent Runs screen (S10/S13/S15): progressive enhancement.
  *
  * The whole page (list, detail, the three park cards, the new-run form) is
  * complete without JS — every mutation is a plain admin-post form. This
  * script only:
  *   1. confirms the destructive Cancel action (existing behaviour);
- *   2. polls `wp_ajax_senroflux_tick` (POST {action, nonce, run_id, step_count}
+ *   2. polls `wp_ajax_specflux_site_agent_tick` (POST {action, nonce, run_id, step_count}
  *      — NO `resume`) every 3s while a run is `running`/`pending`, appends any
  *      `new_steps` to the timeline, swaps the status badge, and announces STATUs
  *      TRANSITIONS ONLY in the aria-live region;
@@ -16,7 +16,7 @@
  *   5. announces a failed poll in the same aria-live region instead of
  *      stopping silently.
  *
- * Every human-readable string comes from the server through `senrofluxRuns.i18n`
+ * Every human-readable string comes from the server through `specfluxSiteAgentRuns.i18n`
  * (S15: nothing user-facing is hardcoded English here), falling back to English
  * only if the localization did not load.
  *
@@ -26,7 +26,7 @@
 ( function () {
 	'use strict';
 
-	var settings = window.senrofluxRuns || {};
+	var settings = window.specfluxSiteAgentRuns || {};
 	var strings = settings.i18n || {};
 
 	/** A translated status label, falling back to the machine value. */
@@ -44,7 +44,7 @@
 	// Cancel confirm (kept from the original screen).
 	// ------------------------------------------------------------------
 	document.addEventListener( 'click', function ( event ) {
-		var link = event.target.closest && event.target.closest( 'a[href*="admin-post.php?action=senroflux_cancel_run"]' );
+		var link = event.target.closest && event.target.closest( 'a[href*="admin-post.php?action=specflux_site_agent_cancel_run"]' );
 		// The ONLY cancel confirmation: the markup carries no inline onclick,
 		// so JS-off users simply follow the nonce-checked link.
 		if ( link && ! window.confirm( settings.cancelConfirm || 'Cancel this run?' ) ) {
@@ -55,7 +55,7 @@
 	// ------------------------------------------------------------------
 	// Detail polling — only present on the run detail view.
 	// ------------------------------------------------------------------
-	var detail = document.getElementById( 'senroflux-run-detail' );
+	var detail = document.getElementById( 'specflux-site-agent-run-detail' );
 	if ( ! detail ) {
 		return; // List view: no polling.
 	}
@@ -68,9 +68,9 @@
 	var timer = null;
 	var lastStatus = initialStatus;
 
-	var badge = document.getElementById( 'senroflux-status-badge' );
-	var live = document.getElementById( 'senroflux-live-status' );
-	var timeline = document.querySelector( '.senroflux-steps' );
+	var badge = document.getElementById( 'specflux-site-agent-status-badge' );
+	var live = document.getElementById( 'specflux-site-agent-live-status' );
+	var timeline = document.querySelector( '.specflux-site-agent-steps' );
 	var page = document.querySelector( 'div.wrap' );
 
 	function isRunning( status ) {
@@ -112,7 +112,7 @@
 	 * that was already failed/completed/cancelled.
 	 */
 	function hideCancelLink() {
-		var wrapper = document.querySelector( '.senroflux-cancel-run' );
+		var wrapper = document.querySelector( '.specflux-site-agent-cancel-run' );
 		if ( wrapper ) {
 			wrapper.remove();
 		}
@@ -124,7 +124,7 @@
 		}
 		// The machine value stays in the class and data-status; only the TEXT
 		// is the translated label, matching the server render exactly.
-		badge.className = 'senroflux-badge senroflux-badge-' + status;
+		badge.className = 'specflux-site-agent-badge specflux-site-agent-badge-' + status;
 		badge.setAttribute( 'data-status', status );
 		badge.textContent = statusLabel( status );
 	}
@@ -133,7 +133,7 @@
 	// polled steps must look identical to a server render).
 	function buildStepLi( step ) {
 		var li = document.createElement( 'li' );
-		li.className = 'senroflux-step senroflux-step-' + ( step.kind || '' );
+		li.className = 'specflux-site-agent-step specflux-site-agent-step-' + ( step.kind || '' );
 		li.setAttribute( 'data-seq', String( step.seq || '' ) );
 		li.setAttribute( 'data-kind', step.kind || '' );
 		li.setAttribute( 'data-tool-name', step.tool_name || '' );
@@ -153,7 +153,7 @@
 
 		if ( step.message && step.message !== null ) {
 			var details = document.createElement( 'details' );
-			details.className = 'senroflux-json-toggle';
+			details.className = 'specflux-site-agent-json-toggle';
 
 			var summary = document.createElement( 'summary' );
 			summary.textContent = strings.json || 'JSON';
@@ -201,7 +201,7 @@
 		}
 
 		var body = new URLSearchParams();
-		body.append( 'action', 'senroflux_tick' );
+		body.append( 'action', 'specflux_site_agent_tick' );
 		body.append( 'nonce', settings.nonce );
 		body.append( 'run_id', String( runId ) );
 		body.append( 'step_count', String( stepCount ) );
@@ -264,8 +264,8 @@
 	// reader affordance.
 	// ------------------------------------------------------------------
 	function bindConditionalRequired() {
-		var otherRadio = document.querySelector( 'input[name="senroflux_answer_choice"][value="__other__"]' );
-		var otherField = document.getElementById( 'senroflux_answer_other' );
+		var otherRadio = document.querySelector( 'input[name="specflux_site_agent_answer_choice"][value="__other__"]' );
+		var otherField = document.getElementById( 'specflux_site_agent_answer_other' );
 		if ( otherRadio && otherField ) {
 			var sync = function () {
 				otherField.required = otherRadio.checked;
@@ -274,8 +274,8 @@
 			sync();
 		}
 
-		var vetoRadio = document.querySelector( 'input[name="senroflux_plan_action"][value="veto"]' );
-		var noteField = document.getElementById( 'senroflux_plan_note' );
+		var vetoRadio = document.querySelector( 'input[name="specflux_site_agent_plan_action"][value="veto"]' );
+		var noteField = document.getElementById( 'specflux_site_agent_plan_note' );
 		if ( vetoRadio && noteField ) {
 			var syncNote = function () {
 				noteField.required = vetoRadio.checked;
@@ -292,7 +292,7 @@
 	// screen reader announcement and the in-page document order agree.
 	// ------------------------------------------------------------------
 	function focusParkHeading() {
-		var heading = document.querySelector( '.senroflux-park-card-heading' );
+		var heading = document.querySelector( '.specflux-site-agent-park-card-heading' );
 		if ( heading && typeof heading.focus === 'function' ) {
 			heading.focus();
 		}
@@ -309,13 +309,13 @@
 /**
  * Setup panel (0.3 S11): refresh on window focus (no polling, no button), and
  * the Agent Safety advisory's Dismiss button. Present on both the list and
- * detail views, so this runs in its OWN scope — not gated on `#senroflux-run-detail`.
+ * detail views, so this runs in its OWN scope — not gated on `#specflux-site-agent-run-detail`.
  */
 ( function () {
 	'use strict';
 
-	var settings = window.senrofluxRuns || {};
-	var panel = document.getElementById( 'senroflux-setup-panel' );
+	var settings = window.specfluxSiteAgentRuns || {};
+	var panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 
 	if ( ! panel || ! settings.ajaxUrl ) {
 		return;
@@ -324,10 +324,10 @@
 	/** Re-fetch the panel and swap it in place. */
 	function refreshPanel() {
 		var body = new URLSearchParams();
-		body.set( 'action', 'senroflux_setup_panel' );
+		body.set( 'action', 'specflux_site_agent_setup_panel' );
 		body.set( 'nonce', settings.nonce || '' );
 
-		var select = document.getElementById( 'senroflux-pack' );
+		var select = document.getElementById( 'specflux-site-agent-pack' );
 		if ( select && select.value ) {
 			body.set( 'pack', select.value );
 		}
@@ -343,7 +343,7 @@
 			} )
 			.then( function ( json ) {
 				if ( json && json.success && json.data && typeof json.data.html === 'string' ) {
-					var next = document.getElementById( 'senroflux-setup-panel' );
+					var next = document.getElementById( 'specflux-site-agent-setup-panel' );
 					if ( next ) {
 						next.outerHTML = json.data.html;
 					}
@@ -360,7 +360,7 @@
 		if ( ! json || ! json.success || ! json.data || typeof json.data.start_enabled !== 'boolean' ) {
 			return;
 		}
-		var button = document.getElementById( 'senroflux-start-run' );
+		var button = document.getElementById( 'specflux-site-agent-start-run' );
 		if ( button ) {
 			button.disabled = ! json.data.start_enabled;
 		}
@@ -371,13 +371,13 @@
 	// Delegated: the panel is replaced wholesale on refresh, so a
 	// live-bound listener on `document` survives that swap.
 	document.addEventListener( 'click', function ( event ) {
-		var button = event.target.closest && event.target.closest( '.senroflux-dismiss-check' );
+		var button = event.target.closest && event.target.closest( '.specflux-site-agent-dismiss-check' );
 		if ( ! button ) {
 			return;
 		}
 
 		var body = new URLSearchParams();
-		body.set( 'action', 'senroflux_dismiss_agent_safety_check' );
+		body.set( 'action', 'specflux_site_agent_dismiss_agent_safety_check' );
 		body.set( 'nonce', button.getAttribute( 'data-nonce' ) || '' );
 
 		fetch( settings.ajaxUrl, {
@@ -391,7 +391,7 @@
 			} )
 			.then( function ( json ) {
 				if ( json && json.success && json.data && typeof json.data.html === 'string' ) {
-					var next = document.getElementById( 'senroflux-setup-panel' );
+					var next = document.getElementById( 'specflux-site-agent-setup-panel' );
 					if ( next ) {
 						next.outerHTML = json.data.html;
 					}

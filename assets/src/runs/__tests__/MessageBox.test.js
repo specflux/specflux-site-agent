@@ -1,7 +1,7 @@
 /**
  * Runs-pack fix: the message box's pack picker. A pack-less start deadlocks
  * every run (the Runs screen's own consumer has an empty verb map without
- * one — {@see \Specflux\SenroFlux\Tools\VerbTier}), so `MessageBox` must
+ * one — {@see \Specflux\SiteAgent\Tools\VerbTier}), so `MessageBox` must
  * never let `onSend` fire without a pack chosen whenever one is required.
  */
 

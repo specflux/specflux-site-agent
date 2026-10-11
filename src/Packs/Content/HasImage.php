@@ -9,12 +9,12 @@
  * and no message copy — the caller (`Content\Abilities::executeCreatePost()`)
  * builds its own refusal in its own pack's words.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

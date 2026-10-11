@@ -43,19 +43,19 @@ export default function TierBadge( { gateMode, tier: rawTier } ) {
 		return null;
 	}
 
-	const className = `senroflux-tier senroflux-tier-${ tier }`;
+	const className = `specflux-site-agent-tier specflux-site-agent-tier-${ tier }`;
 	// Plain language for a site owner; the tier number stays one hover away.
 	const label =
 		0 === tier
-			? __( 'Read only', 'senroflux' )
+			? __( 'Read only', 'specflux-site-agent' )
 			: 1 === tier
-			? __( 'Makes changes', 'senroflux' )
+			? __( 'Makes changes', 'specflux-site-agent' )
 			: 2 === tier
-			? __( 'Needs approval · can\'t be undone', 'senroflux' )
+			? __( 'Needs approval · can\'t be undone', 'specflux-site-agent' )
 			: /* translators: %d: tier number. */
-			  sprintf( __( 'Tier %d', 'senroflux' ), tier );
+			  sprintf( __( 'Tier %d', 'specflux-site-agent' ), tier );
 	/* translators: %d: tier number. */
-	const title = sprintf( __( 'Tier %d', 'senroflux' ), tier );
+	const title = sprintf( __( 'Tier %d', 'specflux-site-agent' ), tier );
 
 	return (
 		<span className={ className } data-testid="tier-badge" title={ title }>

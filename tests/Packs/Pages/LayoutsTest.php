@@ -4,18 +4,18 @@
  * out, checked against the real Twenty Twenty-Five fixtures and the pack's
  * own Validator.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 final class LayoutsTest extends TestCase {
@@ -50,16 +50,16 @@ final class LayoutsTest extends TestCase {
 
 		$dir = dirname( __DIR__, 2 ) . '/ThemePatterns';
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array_map( static fn ( string $slug ): array => self::loadFixture( $dir, $slug ), self::FIXTURES );
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $dir;
-		$GLOBALS['senroflux_test_template_dir']   = $dir;
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array_map( static fn ( string $slug ): array => self::loadFixture( $dir, $slug ), self::FIXTURES );
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $dir;
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $dir;
 		ThemePatterns::resetCache();
 	}
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'], $GLOBALS['senroflux_test_stylesheet'], $GLOBALS['senroflux_test_template'] );
-		remove_all_filters( 'senroflux_layout_profiles' );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'], $GLOBALS['specflux_site_agent_test_stylesheet'], $GLOBALS['specflux_site_agent_test_template'] );
+		remove_all_filters( 'specflux_site_agent_layout_profiles' );
 	}
 
 	/**
@@ -192,12 +192,12 @@ final class LayoutsTest extends TestCase {
 		}
 		$this->assertSame(
 			array(
-				'senroflux/twentytwentyfive/hero-full-width-image',
-				'senroflux/text-section',
-				'senroflux/twentytwentyfive/services-3-col',
-				'senroflux/twentytwentyfive/heading-and-paragraph-with-image',
-				'senroflux/twentytwentyfive/text-faqs',
-				'senroflux/twentytwentyfive/cta-centered-heading',
+				'specflux/twentytwentyfive/hero-full-width-image',
+				'specflux/text-section',
+				'specflux/twentytwentyfive/services-3-col',
+				'specflux/twentytwentyfive/heading-and-paragraph-with-image',
+				'specflux/twentytwentyfive/text-faqs',
+				'specflux/twentytwentyfive/cta-centered-heading',
 			),
 			$names
 		);
@@ -231,7 +231,7 @@ final class LayoutsTest extends TestCase {
 	/**
 	 * Live evidence 2026-09-29-cards1/scenario-1-1: a 6-word hero heading was
 	 * refused three times in a row against a 5-word limit. A field within
-	 * {@see \Specflux\SenroFlux\Tools\PlanTools::LENGTH_TOLERANCE_PERCENT} (25%)
+	 * {@see \Specflux\SiteAgent\Tools\PlanTools::LENGTH_TOLERANCE_PERCENT} (25%)
 	 * of its word limit is accepted, not refused — `items[1].title`'s 6-word
 	 * limit tolerates up to `floor(6 * 1.25) = 7` words. This is the exact
 	 * 7-word string {@see test_a_field_over_its_limit_is_refused_by_name()}'s
@@ -391,7 +391,7 @@ final class LayoutsTest extends TestCase {
 			}
 		}
 		$this->assertSame(
-			array( 'senroflux/twentytwentyfive/hero-full-width-image', 'senroflux/twentytwentyfive/services-3-col' ),
+			array( 'specflux/twentytwentyfive/hero-full-width-image', 'specflux/twentytwentyfive/services-3-col' ),
 			$names
 		);
 		$this->assertStringContainsString( 'Sports injuries', $clean['content'] );
@@ -453,13 +453,13 @@ final class LayoutsTest extends TestCase {
 	 * the curated pattern, never refused.
 	 */
 	public function test_a_layout_whose_pattern_the_theme_lacks_falls_back_to_the_curated_section(): void {
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
 		ThemePatterns::resetCache();
 
 		$built = Layouts::render( self::outline()[0], 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/cover-hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/cover-hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 	}
 
 	public function test_text_escapes_copy_and_counts_its_paragraphs(): void {
@@ -493,13 +493,13 @@ final class LayoutsTest extends TestCase {
 	}
 
 	/**
-	 * A profile another theme contributes through `senroflux_layout_profiles`
+	 * A profile another theme contributes through `specflux_site_agent_layout_profiles`
 	 * is the map `render()` builds from: here `hero` is backed by the theme's
 	 * CTA pattern, so it takes no image.
 	 */
 	public function test_a_filtered_profile_for_the_active_theme_drives_render(): void {
 		self::contributeFakeProfile();
-		$GLOBALS['senroflux_test_stylesheet'] = 'fake-theme';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'fake-theme';
 
 		$built = Layouts::render( self::hero_as_cta_section(), 0, new Vocabulary() );
 
@@ -509,32 +509,32 @@ final class LayoutsTest extends TestCase {
 
 	public function test_a_theme_with_no_profile_maps_its_patterns_automatically(): void {
 		self::contributeFakeProfile();
-		$GLOBALS['senroflux_test_stylesheet'] = 'unprofiled-theme';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'unprofiled-theme';
 
 		// D1 step 2 (S5b): no profile, so the theme's own patterns are matched to the layout by category and slot fit.
 		$built = Layouts::render( self::outline()[0], 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/twentytwentyfive/hero-full-width-image', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/twentytwentyfive/hero-full-width-image', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 		$this->assertSame( array( 'hero', 'text-with-image', 'services', 'faq', 'cta', 'text' ), Layouts::names() );
 	}
 
 	public function test_a_theme_with_no_profile_and_no_matching_pattern_gets_the_curated_fallback(): void {
 		self::contributeFakeProfile();
-		$GLOBALS['senroflux_test_stylesheet']     = 'unprofiled-theme';
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_stylesheet']     = 'unprofiled-theme';
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
 		ThemePatterns::resetCache();
 
 		$built = Layouts::render( self::outline()[0], 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/cover-hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/cover-hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 	}
 
 	public function test_a_child_theme_falls_back_to_its_parents_profile(): void {
 		self::contributeFakeProfile();
-		$GLOBALS['senroflux_test_stylesheet'] = 'fake-theme-child';
-		$GLOBALS['senroflux_test_template']   = 'fake-theme';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'fake-theme-child';
+		$GLOBALS['specflux_site_agent_test_template']   = 'fake-theme';
 
 		$built = Layouts::render( self::hero_as_cta_section(), 0, new Vocabulary() );
 
@@ -543,19 +543,19 @@ final class LayoutsTest extends TestCase {
 
 	public function test_a_themes_own_profile_is_not_merged_with_its_parents(): void {
 		self::contributeFakeProfile();
-		$GLOBALS['senroflux_test_stylesheet'] = 'fake-theme';
-		$GLOBALS['senroflux_test_template']   = 'twentytwentyfive';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'fake-theme';
+		$GLOBALS['specflux_site_agent_test_template']   = 'twentytwentyfive';
 
 		$built = Layouts::render( self::outline()[4], 4, new Vocabulary() );
 
 		// The fake profile has no `faq`, and the parent's `text-faqs` is not borrowed: the curated faq is built.
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/faq', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/faq', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 	}
 
 	private static function contributeFakeProfile(): void {
 		add_filter(
-			'senroflux_layout_profiles',
+			'specflux_site_agent_layout_profiles',
 			static function ( array $profiles ): array {
 				$profiles['fake-theme'] = array(
 					'hero' => array(

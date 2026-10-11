@@ -7,7 +7,7 @@
  * way to exercise that seam in a checkout where the Agent Safety plugin is not
  * installed. Knobs only — none of the real implementation is reproduced.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );

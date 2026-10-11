@@ -30,16 +30,16 @@
  * shell to match against — the block-name allow-list, the XSS gate and the
  * decorative-color check already bound what a prose block may contain.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Posts;
+namespace Specflux\SiteAgent\Packs\Posts;
 
-use Specflux\SenroFlux\Packs\BlockRoundTrip;
-use Specflux\SenroFlux\Packs\Content\ImageAlt;
-use Specflux\SenroFlux\Packs\Content\Validator as ContentValidator;
+use Specflux\SiteAgent\Packs\BlockRoundTrip;
+use Specflux\SiteAgent\Packs\Content\ImageAlt;
+use Specflux\SiteAgent\Packs\Content\Validator as ContentValidator;
 use WP_Error;
 
 // Bail on direct access.
@@ -826,7 +826,7 @@ final class Validator implements ContentValidator {
 			$slug = $identities[ $i ] ?? null;
 			if ( 'closing-cta' === $slug || 'pull-quote' === $slug ) {
 				$attrs             = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
-				$attrs['metadata'] = array( 'name' => 'senroflux/' . $slug );
+				$attrs['metadata'] = array( 'name' => 'specflux/' . $slug );
 				if ( 'closing-cta' === $slug && ! isset( $attrs['layout'] ) ) {
 					$attrs['layout'] = array( 'type' => 'constrained' );
 				}
@@ -845,59 +845,59 @@ final class Validator implements ContentValidator {
 		unset( $ctx );
 
 		return match ( $code ) {
-			'invalid_markup'         => __( 'The post content is not well-formed block markup.', 'senroflux' ),
+			'invalid_markup'         => __( 'The post content is not well-formed block markup.', 'specflux-site-agent' ),
 			'unknown_block'          => sprintf(
 				/* translators: %1$d: block index, %2$s: block name. */
-				__( 'Block %1$d "%2$s" is not a posts-vocabulary block.', 'senroflux' ),
+				__( 'Block %1$d "%2$s" is not a posts-vocabulary block.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['name'] ?? 'unknown'
 			) . $this->unknownBlockHint( (string) ( $data['name'] ?? '' ) ),
 			'disallowed_markup'      => $this->disallowedMarkupMessage( $data ),
 			'decorative_color'       => sprintf(
 				/* translators: %1$d: block index, %2$s: block name, %3$s: attribute. */
-				__( 'Block %1$d: "%2$s" sets the colour attribute "%3$s". Remove it; posts take their colours from the theme.', 'senroflux' ),
+				__( 'Block %1$d: "%2$s" sets the colour attribute "%3$s". Remove it; posts take their colours from the theme.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['name'] ?? '',
 				$data['attr'] ?? ''
 			),
 			'unresolved_placeholder' => sprintf(
 				/* translators: %s: placeholder. */
-				__( 'Unresolved placeholder "{{%s}}" must be filled before writing.', 'senroflux' ),
+				__( 'Unresolved placeholder "{{%s}}" must be filled before writing.', 'specflux-site-agent' ),
 				$data['placeholder'] ?? ''
 			),
 			'missing_alt'            => sprintf(
 				/* translators: %d: block index. */
-				__( 'Block %d is an image with no alt text; every image needs non-empty, descriptive alt text.', 'senroflux' ),
+				__( 'Block %d is an image with no alt text; every image needs non-empty, descriptive alt text.', 'specflux-site-agent' ),
 				$data['index'] ?? 0
 			),
 			'unknown_pattern'        => sprintf(
 				/* translators: %1$d: block index, %2$s: block name. */
-				__( 'Block %1$d ("%2$s") does not match a posts feature pattern.', 'senroflux' ),
+				__( 'Block %1$d ("%2$s") does not match a posts feature pattern.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['name'] ?? 'unknown'
 			),
 			'too_many_blocks'        => sprintf(
 				/* translators: %1$d: block count, %2$d: runaway guard. */
-				__( 'This post has %1$d blocks, over the runaway guard of %2$d.', 'senroflux' ),
+				__( 'This post has %1$d blocks, over the runaway guard of %2$d.', 'specflux-site-agent' ),
 				$data['count'] ?? 0,
 				Vocabulary::RUNAWAY_GUARD
 			),
 			'post_shape'             => $this->postShapeMessage( $data ),
-			default                  => __( 'Invalid post content.', 'senroflux' ),
+			default                  => __( 'Invalid post content.', 'specflux-site-agent' ),
 		};
 	}
 
 	/**
 	 * What to write instead of a block name the model keeps getting wrong:
 	 * the pack's feature patterns are core blocks carrying a metadata name,
-	 * never `senroflux/*` blocks (the forms the prose rules give).
+	 * never `specflux/*` blocks (the forms the prose rules give).
 	 */
 	private function unknownBlockHint( string $name ): string {
 		return match ( true ) {
-			'senroflux/closing-cta' === $name => ' ' . __( 'Write a closing call to action as a core/group with `{"metadata":{"name":"senroflux/closing-cta"},"align":"full"}` containing a heading, a paragraph and one button.', 'senroflux' ),
-			'senroflux/pull-quote' === $name  => ' ' . __( 'Write a pull quote as a core/pullquote with `{"metadata":{"name":"senroflux/pull-quote"}}`.', 'senroflux' ),
-			str_starts_with( $name, 'senroflux/' ) => ' ' . __( 'Never write a block whose name starts with senroflux/; use core blocks.', 'senroflux' ),
-			'core/list-item' === $name        => ' ' . __( 'A core/list-item is only valid directly inside a core/list.', 'senroflux' ),
+			'specflux/closing-cta' === $name => ' ' . __( 'Write a closing call to action as a core/group with `{"metadata":{"name":"specflux/closing-cta"},"align":"full"}` containing a heading, a paragraph and one button.', 'specflux-site-agent' ),
+			'specflux/pull-quote' === $name  => ' ' . __( 'Write a pull quote as a core/pullquote with `{"metadata":{"name":"specflux/pull-quote"}}`.', 'specflux-site-agent' ),
+			str_starts_with( $name, 'specflux/' ) => ' ' . __( 'Never write a block whose name starts with specflux/; use core blocks.', 'specflux-site-agent' ),
+			'core/list-item' === $name        => ' ' . __( 'A core/list-item is only valid directly inside a core/list.', 'specflux-site-agent' ),
 			default                           => '',
 		};
 	}
@@ -909,31 +909,31 @@ final class Validator implements ContentValidator {
 		return match ( $data['reason'] ?? '' ) {
 			'tag'   => sprintf(
 				/* translators: %1$d: block index, %2$s: HTML tag. */
-				__( 'Block %1$d contains the disallowed HTML tag "<%2$s>".', 'senroflux' ),
+				__( 'Block %1$d contains the disallowed HTML tag "<%2$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['tag'] ?? ''
 			),
 			'attr'  => sprintf(
 				/* translators: %1$d: block index, %2$s: attribute, %3$s: HTML tag. */
-				__( 'Block %1$d contains the disallowed attribute "%2$s" on "<%3$s>".', 'senroflux' ),
+				__( 'Block %1$d contains the disallowed attribute "%2$s" on "<%3$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['attr'] ?? '',
 				$data['tag'] ?? ''
 			),
 			'style' => sprintf(
 				/* translators: %1$d: block index, %2$s: HTML tag. */
-				__( 'Block %1$d has an unsafe style attribute on "<%2$s>".', 'senroflux' ),
+				__( 'Block %1$d has an unsafe style attribute on "<%2$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['tag'] ?? ''
 			),
 			'url'   => sprintf(
 				/* translators: %1$d: block index, %2$s: attribute, %3$s: HTML tag. */
-				__( 'Block %1$d has an unsafe URL in "%2$s" on "<%3$s>"; use http, https, mailto or tel.', 'senroflux' ),
+				__( 'Block %1$d has an unsafe URL in "%2$s" on "<%3$s>"; use http, https, mailto or tel.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['attr'] ?? '',
 				$data['tag'] ?? ''
 			),
-			default => __( 'The post contains markup that is not allowed.', 'senroflux' ),
+			default => __( 'The post contains markup that is not allowed.', 'specflux-site-agent' ),
 		};
 	}
 
@@ -942,14 +942,14 @@ final class Validator implements ContentValidator {
 	 */
 	private function postShapeMessage( array $data ): string {
 		return match ( $data['rule'] ?? '' ) {
-			'too_few_patterns' => __( 'A post needs at least one paragraph, heading or other content block.', 'senroflux' ),
-			'max_closing_cta'  => __( 'A post may contain at most one closing call to action.', 'senroflux' ),
+			'too_few_patterns' => __( 'A post needs at least one paragraph, heading or other content block.', 'specflux-site-agent' ),
+			'max_closing_cta'  => __( 'A post may contain at most one closing call to action.', 'specflux-site-agent' ),
 			'max_pull_quote'   => sprintf(
 				/* translators: %d: allowed pull quotes. */
-				__( 'A post may contain at most %d pull quotes.', 'senroflux' ),
+				__( 'A post may contain at most %d pull quotes.', 'specflux-site-agent' ),
 				Vocabulary::RULES_MAX_PULL_QUOTE
 			),
-			default            => __( 'The post does not satisfy the post-shape rules.', 'senroflux' ),
+			default            => __( 'The post does not satisfy the post-shape rules.', 'specflux-site-agent' ),
 		};
 	}
 }

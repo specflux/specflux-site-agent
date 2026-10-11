@@ -24,20 +24,20 @@
  * `testimonials-6-col`, `text-faqs`.
  *
  * Five of those nine were rejected while the depth cap stood at S21's
- * original 5 — see {@see \Specflux\SenroFlux\Packs\Pages\ThemePatterns}'s
+ * original 5 — see {@see \Specflux\SiteAgent\Packs\Pages\ThemePatterns}'s
  * `MAX_DEPTH` for why the bound moved to 7. `binding-format` is still cut,
  * on a different clause: no text slot with any shipped words, being a
  * block-bindings paragraph with empty literal content.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
 
 final class ThemePatternsTest extends TestCase {
 
@@ -55,14 +55,14 @@ final class ThemePatternsTest extends TestCase {
 		$this->loadShims();
 
 		ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
 	}
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'] );
 	}
 
 	// --- fixture loading -----------------------------------------------
@@ -116,13 +116,13 @@ final class ThemePatternsTest extends TestCase {
 	}
 
 	private function registerFixtures( string ...$slugs ): void {
-		$GLOBALS['senroflux_test_theme_patterns'] = array_map( fn ( string $slug ) => $this->loadFixture( $slug ), $slugs );
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array_map( fn ( string $slug ) => $this->loadFixture( $slug ), $slugs );
 		ThemePatterns::resetCache();
 	}
 
 	/** @param array<string,mixed> $entry */
 	private function registerRaw( array $entry ): void {
-		$GLOBALS['senroflux_test_theme_patterns'] = array( $entry );
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array( $entry );
 		ThemePatterns::resetCache();
 	}
 
@@ -181,7 +181,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/too-deep',
 				'title'    => 'Nested past the cap',
 				'content'  => $open . '<!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph -->' . $close,
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -210,7 +210,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/disallowed-block',
 				'title'    => 'A video pattern',
 				'content'  => '<!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph --><!-- wp:video --><figure class="wp-block-video"></figure><!-- /wp:video -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -255,7 +255,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'      => 'synthetic/post-types-not-page',
 				'title'     => 'Not a page pattern',
 				'content'   => '<!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath'  => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath'  => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 				'postTypes' => array( 'wp_template' ),
 			)
 		);
@@ -271,7 +271,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'       => 'synthetic/block-types-not-page',
 				'title'      => 'Not a page pattern',
 				'content'    => '<!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath'   => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath'   => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 				'blockTypes' => array( 'core/query' ),
 			)
 		);
@@ -295,7 +295,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/preset-color',
 				'title'    => 'Coloured paragraph',
 				'content'  => '<!-- wp:paragraph {"backgroundColor":"accent-1"} --><p class="has-accent-1-background-color has-background">Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -319,7 +319,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/raw-color',
 				'title'    => 'Coloured paragraph',
 				'content'  => '<!-- wp:paragraph {"style":{"color":{"background":"#5140a5"}}} --><p class="has-background" style="background-color:#5140a5">Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -338,7 +338,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/unknown-slug-color',
 				'title'    => 'Coloured paragraph',
 				'content'  => '<!-- wp:paragraph {"backgroundColor":"not-a-real-slug"} --><p class="has-not-a-real-slug-background-color has-background">Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -356,7 +356,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/unknown-gradient',
 				'title'    => 'Gradient group',
 				'content'  => '<!-- wp:group {"gradient":"not-a-real-gradient"} --><div class="wp-block-group has-not-a-real-gradient-gradient-background has-background"><!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph --></div><!-- /wp:group -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -376,7 +376,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/class-only-color',
 				'title'    => 'Coloured paragraph',
 				'content'  => '<!-- wp:paragraph --><p class="has-not-a-real-slug-background-color has-background">Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -397,7 +397,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/custom-overlay-color',
 				'title'    => 'Cover with a hard-coded overlay',
 				'content'  => '<!-- wp:cover {"dimRatio":0,"customOverlayColor":"#b8b4b6","isUserOverlayColor":true} --><div class="wp-block-cover"><span aria-hidden="true" class="wp-block-cover__background has-background-dim-0"></span><div class="wp-block-cover__inner-container"><!-- wp:paragraph --><p>Some real sample copy here.</p><!-- /wp:paragraph --></div></div><!-- /wp:cover -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -415,7 +415,7 @@ final class ThemePatternsTest extends TestCase {
 				'name'     => 'synthetic/generic-color-class',
 				'title'    => 'Linked paragraph',
 				'content'  => '<!-- wp:paragraph --><p class="has-text-color has-link-color">Some real sample copy here.</p><!-- /wp:paragraph -->',
-				'filePath' => $GLOBALS['senroflux_test_stylesheet_dir'] . '/synthetic.php',
+				'filePath' => $GLOBALS['specflux_site_agent_test_stylesheet_dir'] . '/synthetic.php',
 			)
 		);
 
@@ -432,7 +432,7 @@ final class ThemePatternsTest extends TestCase {
 		$saved            = $fixture;
 		$saved['name']    = 'wp_block/123';
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array( $remote, $saved );
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array( $remote, $saved );
 		ThemePatterns::resetCache();
 
 		$this->assertSame( array(), ThemePatterns::eligible() );
@@ -445,7 +445,7 @@ final class ThemePatternsTest extends TestCase {
 		$fixture             = $this->loadFixture( 'banner-intro' );
 		$fixture['filePath'] = '/some/other/theme/patterns/banner-intro.php';
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array( $fixture );
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array( $fixture );
 		ThemePatterns::resetCache();
 
 		$this->assertSame( array(), ThemePatterns::eligible() );
@@ -457,7 +457,7 @@ final class ThemePatternsTest extends TestCase {
 		$this->assertCount( 1, ThemePatterns::eligible() );
 
 		// Mutate the source WITHOUT resetting: the memo must still answer 1.
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
 		$this->assertCount( 1, ThemePatterns::eligible(), 'the memo must not re-read until reset' );
 
 		ThemePatterns::resetCache();
@@ -506,7 +506,7 @@ final class ThemePatternsTest extends TestCase {
 	}
 
 	/**
-	 * LIMIT (documented in {@see \Specflux\SenroFlux\Packs\Pages\ThemePatterns}):
+	 * LIMIT (documented in {@see \Specflux\SiteAgent\Packs\Pages\ThemePatterns}):
 	 * `format-link`'s second paragraph wraps its ENTIRE anchor
 	 * (`<p><a href="#">…</a></p>`) — a rich-text element nested inside
 	 * another. The outer `<p>` capture swallows the anchor as flat text, so

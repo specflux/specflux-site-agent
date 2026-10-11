@@ -2,7 +2,7 @@
     "api_version": "0.3.0",
     "surface": {
         "classes": {
-            "Specflux\\SenroFlux\\Packs\\Pack": {
+            "Specflux\\SiteAgent\\Packs\\Pack": {
                 "kind": "abstract_class",
                 "is_final": false,
                 "methods": {
@@ -321,7 +321,7 @@
                     }
                 }
             },
-            "Specflux\\SenroFlux\\Api\\LayoutVocabulary": {
+            "Specflux\\SiteAgent\\Api\\LayoutVocabulary": {
                 "kind": "class",
                 "is_final": true,
                 "methods": {
@@ -385,7 +385,7 @@
                     }
                 }
             },
-            "Specflux\\SenroFlux\\Skills\\Skill": {
+            "Specflux\\SiteAgent\\Skills\\Skill": {
                 "kind": "class",
                 "is_final": true,
                 "methods": {
@@ -424,9 +424,9 @@
                             },
                             {
                                 "name": "source",
-                                "type": "Specflux\\SenroFlux\\Skills\\SkillSource",
+                                "type": "Specflux\\SiteAgent\\Skills\\SkillSource",
                                 "has_default": true,
-                                "default": "Specflux\\SenroFlux\\Skills\\SkillSource::Harness",
+                                "default": "Specflux\\SiteAgent\\Skills\\SkillSource::Harness",
                                 "variadic": false
                             },
                             {
@@ -441,7 +441,7 @@
                     }
                 }
             },
-            "Specflux\\SenroFlux\\Setup\\SetupCheck": {
+            "Specflux\\SiteAgent\\Setup\\SetupCheck": {
                 "kind": "class",
                 "is_final": true,
                 "methods": {
@@ -511,7 +511,7 @@
                     }
                 }
             },
-            "Specflux\\SenroFlux\\Skills\\SkillSource": {
+            "Specflux\\SiteAgent\\Skills\\SkillSource": {
                 "kind": "enum",
                 "cases": [
                     "Harness",
@@ -521,16 +521,16 @@
             }
         },
         "hooks": {
-            "senroflux_packs": [
+            "specflux_site_agent_packs": [
                 "array<string,Pack>"
             ],
-            "senroflux_run_skills": [
+            "specflux_site_agent_run_skills": [
                 "list<Skill>",
                 "Pack|null",
                 "string",
                 "string"
             ],
-            "senroflux_default_budget": [
+            "specflux_site_agent_default_budget": [
                 "array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int}"
             ]
         }

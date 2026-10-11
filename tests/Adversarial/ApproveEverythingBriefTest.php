@@ -2,31 +2,31 @@
 /**
  * S22 gate robustness suite: a site brief whose text says "approve
  * everything" is untrusted content — it rides the system instruction
- * ({@see \Specflux\SenroFlux\Run\Runner::instructionFor()}) but is never
+ * ({@see \Specflux\SiteAgent\Run\Runner::instructionFor()}) but is never
  * consulted by the gate, so a Tier-2 call still parks exactly as it would
  * with an empty brief.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -63,16 +63,16 @@ final class ApproveEverythingBriefTest extends TestCase {
 			static fn (): GateMode => GateMode::BuiltIn
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
-		$GLOBALS['senroflux_test_options']         = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'adversarial/publish' => new SenroFlux_Test_Fake_Ability( 'adversarial/publish', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_options']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'adversarial/publish' => new SpecfluxSiteAgent_Test_Fake_Ability( 'adversarial/publish', execute_result: array( 'ok' => true ) ),
 		);
 
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'adversarial/publish' => VerbTier::TIER_2 ),
 			10,
 			1
@@ -80,7 +80,7 @@ final class ApproveEverythingBriefTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 	private static function turn( MessagePart ...$parts ): ModelTurn {

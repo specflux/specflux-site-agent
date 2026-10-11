@@ -3,34 +3,34 @@
  * Regression coverage for the `skills_too_large` fix (0.3): the pages/site
  * `copy-rules` skill used to restate every theme-derived pattern's
  * `constraints.stated` lines (one per text/url slot), which pushed a real
- * Twenty Twenty-Five site's skill set over {@see \Specflux\SenroFlux\Skills\SkillSet}'s
+ * Twenty Twenty-Five site's skill set over {@see \Specflux\SiteAgent\Skills\SkillSet}'s
  * 2000-token ceiling (measured: pages ~4227 tokens, site ~4571, over 9
- * eligible theme patterns). {@see \Specflux\SenroFlux\Packs\Pack::copyRulesLines()}
+ * eligible theme patterns). {@see \Specflux\SiteAgent\Packs\Pack::copyRulesLines()}
  * now points the model at `list-patterns` for every pattern's copy limits
  * and names theme patterns once instead.
  *
  * The 9 fixtures under `tests/ThemePatterns/` used here are the REAL Twenty
  * Twenty-Five pattern files (fetched from a live Twenty Twenty-Five 1.5
  * install) that a full scan of the theme's `patterns/` directory found
- * eligible (see the provenance note in {@see \Specflux\SenroFlux\Tests\Packs\Pages\ThemePatternsTest}):
+ * eligible (see the provenance note in {@see \Specflux\SiteAgent\Tests\Packs\Pages\ThemePatternsTest}):
  * `banner-intro`, `cta-book-links`, `cta-book-locations`, `cta-centered-heading`,
  * `cta-events-list`, `format-link`, `pricing-3-col`, `testimonials-6-col`,
  * `text-faqs`.
  *
  * TARGET REPO PATH: tests/Packs/Pages/CopyRulesCeilingTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Skills\SkillSet;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Skills\SkillSet;
 
 final class CopyRulesCeilingTest extends TestCase {
 
@@ -59,7 +59,7 @@ final class CopyRulesCeilingTest extends TestCase {
 
 	/**
 	 * Render one real fixture file exactly as `WP_Theme::get_block_patterns()`
-	 * would, same approach {@see \Specflux\SenroFlux\Tests\Packs\Pages\ThemePatternsTest::loadFixture()}
+	 * would, same approach {@see \Specflux\SiteAgent\Tests\Packs\Pages\ThemePatternsTest::loadFixture()}
 	 * uses.
 	 *
 	 * @return array<string,mixed>
@@ -98,17 +98,17 @@ final class CopyRulesCeilingTest extends TestCase {
 		$this->loadShims();
 
 		ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_theme_patterns'] = array_map(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array_map(
 			fn ( string $slug ) => $this->loadFixture( $slug ),
 			self::TT25_ELIGIBLE
 		);
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
 	}
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'] );
 	}
 
 	/** Sanity: the fixture set is really the 9 eligible TT25 patterns, not a subset skipped for some other reason. */
@@ -201,7 +201,7 @@ final class CopyRulesCeilingTest extends TestCase {
 
 	public function test_the_faq_descriptions_carry_the_supplied_facts_rule(): void {
 		$faq = null;
-		foreach ( ( new \Specflux\SenroFlux\Packs\Pages\Vocabulary() )->curated() as $pattern ) {
+		foreach ( ( new \Specflux\SiteAgent\Packs\Pages\Vocabulary() )->curated() as $pattern ) {
 			if ( 'faq' === $pattern['slug'] ) {
 				$faq = $pattern;
 			}
@@ -213,7 +213,7 @@ final class CopyRulesCeilingTest extends TestCase {
 	}
 
 	public function test_a_theme_faq_pattern_states_the_supplied_facts_rule_and_other_patterns_do_not(): void {
-		$vocabulary = new \Specflux\SenroFlux\Packs\Pages\Vocabulary();
+		$vocabulary = new \Specflux\SiteAgent\Packs\Pages\Vocabulary();
 		$rule       = 'FAQ answers: only from supplied facts; leave out a question you cannot answer from them.';
 
 		$faq = $vocabulary->resolveThemePattern( 'twentytwentyfive/text-faqs' );
@@ -236,7 +236,7 @@ final class CopyRulesCeilingTest extends TestCase {
 	 * internally, summed rather than compared — 0.3 quality fix (instruction
 	 * ceiling: cover-hero/media-text grew the shapes list by two patterns).
 	 *
-	 * @param list<\Specflux\SenroFlux\Skills\Skill> $skills
+	 * @param list<\Specflux\SiteAgent\Skills\Skill> $skills
 	 */
 	private static function totalTokens( array $skills ): int {
 		$chars = 0;

@@ -2,12 +2,12 @@
 /**
  * Object binding for Agent Safety pre-approval grants (S14 AS-12).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -40,7 +40,7 @@ defined( 'ABSPATH' ) || exit;
  * the payload might be an id.
  *
  * Everything is static per-request context, mirroring
- * {@see \Specflux\SenroFlux\Packs\Pages\PublishSummary}: the filter fires deep
+ * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}: the filter fires deep
  * inside Agent Safety's pipeline, several frames below anything the harness
  * hands an object to. The Runner sets the context for the length of one tick
  * and clears it in a `finally`, so a filter fired outside a tick — by another

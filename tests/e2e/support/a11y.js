@@ -13,7 +13,7 @@ const { expect } = require( '@playwright/test' );
  *                                                    the Runs screen root; pass a different selector
  *                                                    for specs that render outside it.
  */
-async function assertNoSeriousA11y( page, label, scope = '#senroflux-runs-root' ) {
+async function assertNoSeriousA11y( page, label, scope = '#specflux-site-agent-runs-root' ) {
 	const results = await new AxeBuilder( { page } ).include( scope ).analyze();
 	const serious = results.violations.filter( ( v ) => [ 'serious', 'critical' ].includes( v.impact ) );
 	expect( serious, `${ label }: ${ JSON.stringify( serious, null, 2 ) }` ).toEqual( [] );

@@ -9,28 +9,28 @@
  *
  * TARGET REPO PATH: tests/Http/AjaxStartTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Http\ConsumerPolicy;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Schema;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFluxJsonResponse;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Http\ConsumerPolicy;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Schema;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgentJsonResponse;
 use WP_Error;
 use wpdb;
 
@@ -39,23 +39,23 @@ final class AjaxStartTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['senroflux_test_user_caps']       = array(
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(
 			'read'           => true,
 			'manage_options' => true,
 		);
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
 		unset( $_POST );
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( ConsumerPolicy::FILTER );
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'manage_options' );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( ConsumerPolicy::FILTER );
 		unset( $_POST );
 	}
@@ -93,7 +93,7 @@ final class AjaxStartTest extends TestCase {
 
 		$this->assertFalse( $json->success );
 		$this->assertSame( 400, $json->status );
-		$this->assertSame( 'senroflux_bad_request', $json->code() );
+		$this->assertSame( 'specflux_site_agent_bad_request', $json->code() );
 
 		$table = Schema::runsTable( $GLOBALS['wpdb'] );
 		$this->assertSame( array(), $GLOBALS['wpdb']->tables[ $table ] ?? array(), 'no run row may exist after the refusal' );
@@ -104,7 +104,7 @@ final class AjaxStartTest extends TestCase {
 		add_filter(
 			ConsumerPolicy::FILTER,
 			static fn (): array => array(
-				'mac' => array( 'allow' => array( 'senroflux/read-content' ) ),
+				'mac' => array( 'allow' => array( 'specflux/read-content' ) ),
 			)
 		);
 
@@ -133,7 +133,7 @@ final class AjaxStartTest extends TestCase {
 		add_filter(
 			ConsumerPolicy::FILTER,
 			static fn (): array => array(
-				'mac' => array( 'allow' => array( 'senroflux/read-content' ) ),
+				'mac' => array( 'allow' => array( 'specflux/read-content' ) ),
 			)
 		);
 
@@ -155,10 +155,10 @@ final class AjaxStartTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	/** Run `Ajax::handleStart()` and capture the JSON it would have died with. */
-	private function captureAjaxStart(): SenroFluxJsonResponse {
+	private function captureAjaxStart(): SpecfluxSiteAgentJsonResponse {
 		try {
 			( new Ajax() )->handleStart();
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			return $json;
 		}
 
@@ -178,7 +178,7 @@ final class AjaxStartTest extends TestCase {
 
 			/** @return list<string> */
 			public function allowList(): array {
-				return array( 'senroflux/read-content' );
+				return array( 'specflux/read-content' );
 			}
 
 			/** @return array<string,int> */
@@ -205,7 +205,7 @@ final class AjaxStartTest extends TestCase {
 		};
 
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array( $name => $pack ),
 			10,
 			1

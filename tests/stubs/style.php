@@ -9,25 +9,25 @@
  * file stubs them behind test-controlled globals so a test can set up "the
  * active theme ships N variations" and "here is the current global styles
  * post" without a real WordPress. The user global styles post lives in the
- * SAME `senroflux_test_posts` store `blocks.php` provides (it is just a post
+ * SAME `specflux_site_agent_test_posts` store `blocks.php` provides (it is just a post
  * whose `post_type` is `wp_global_styles`), so `get_post()`/`wp_update_post()`
  * keep working unmodified.
  *
  * Everything is `class_exists`/`function_exists`-guarded so a real WordPress
  * load order wins.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-$GLOBALS['senroflux_test_is_block_theme']        = true;
-$GLOBALS['senroflux_test_style_variations']      = array();
-$GLOBALS['senroflux_test_global_styles_post_id'] = 0;
+$GLOBALS['specflux_site_agent_test_is_block_theme']        = true;
+$GLOBALS['specflux_site_agent_test_style_variations']      = array();
+$GLOBALS['specflux_site_agent_test_global_styles_post_id'] = 0;
 
 if ( ! function_exists( 'wp_is_block_theme' ) ) {
 	function wp_is_block_theme(): bool {
-		return (bool) $GLOBALS['senroflux_test_is_block_theme'];
+		return (bool) $GLOBALS['specflux_site_agent_test_is_block_theme'];
 	}
 }
 
@@ -50,12 +50,12 @@ if ( ! class_exists( 'WP_Theme_JSON_Resolver' ) ) {
 		 * @return list<array<string,mixed>>
 		 */
 		public static function get_style_variations(): array {
-			return $GLOBALS['senroflux_test_style_variations'];
+			return $GLOBALS['specflux_site_agent_test_style_variations'];
 		}
 
 		public static function get_user_global_styles_post_id(): int {
-			if ( 0 !== $GLOBALS['senroflux_test_global_styles_post_id'] ) {
-				return $GLOBALS['senroflux_test_global_styles_post_id'];
+			if ( 0 !== $GLOBALS['specflux_site_agent_test_global_styles_post_id'] ) {
+				return $GLOBALS['specflux_site_agent_test_global_styles_post_id'];
 			}
 
 			// Mirrors core: create the post the first time it is asked for.
@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_Theme_JSON_Resolver' ) ) {
 				)
 			);
 
-			$GLOBALS['senroflux_test_global_styles_post_id'] = $id;
+			$GLOBALS['specflux_site_agent_test_global_styles_post_id'] = $id;
 
 			return $id;
 		}

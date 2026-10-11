@@ -2,17 +2,17 @@
 /**
  * admin-ajax surface (S9): browser-driven ticks from the logged-in session.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Http;
+namespace Specflux\SiteAgent\Http;
 
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Admin\ScreenCapability;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Admin\ScreenCapability;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
 use WP_Error;
 
 // Bail on direct access.
@@ -24,24 +24,24 @@ defined( 'ABSPATH' ) || exit;
  * third-party consumer integrates against. This class exists only because
  * the bundled React Runs screen (`assets/src/runs/`) talks admin-ajax, not
  * REST; its four actions are not guaranteed to stay a superset (or subset)
- * of `Rest`'s routes and may change shape without a SENROFLUX_API_VERSION
+ * of `Rest`'s routes and may change shape without a SPECFLUX_SITE_AGENT_API_VERSION
  * bump.
  *
  * Four actions mirroring the PHP API: start, tick, cancel, get. Nonce
- * `senroflux_run`, capability `read`, plus per-run ownership enforced in the
+ * `specflux_site_agent_run`, capability `read`, plus per-run ownership enforced in the
  * Runner itself (the tick protocol re-checks it). Start is additionally
  * gated by {@see ConsumerPolicy}: the server owns the allow-list.
  */
 final class Ajax {
 
-	private const NONCE = 'senroflux_run';
+	private const NONCE = 'specflux_site_agent_run';
 
 	/** Register on init. */
 	public function register(): void {
-		add_action( 'wp_ajax_senroflux_start', array( $this, 'handleStart' ) );
-		add_action( 'wp_ajax_senroflux_tick', array( $this, 'handleTick' ) );
-		add_action( 'wp_ajax_senroflux_cancel', array( $this, 'handleCancel' ) );
-		add_action( 'wp_ajax_senroflux_get', array( $this, 'handleGet' ) );
+		add_action( 'wp_ajax_specflux_site_agent_start', array( $this, 'handleStart' ) );
+		add_action( 'wp_ajax_specflux_site_agent_tick', array( $this, 'handleTick' ) );
+		add_action( 'wp_ajax_specflux_site_agent_cancel', array( $this, 'handleCancel' ) );
+		add_action( 'wp_ajax_specflux_site_agent_get', array( $this, 'handleGet' ) );
 	}
 
 	/**
@@ -63,7 +63,7 @@ final class Ajax {
 
 		if ( ! current_user_can( 'read' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ),
+				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
 			);
 		}
@@ -80,7 +80,7 @@ final class Ajax {
 			// The source run's pack also decides the budget ceiling below. A
 			// source the viewer may not see (or that does not exist) leaves
 			// the posted pack in place; start() refuses it either way.
-			$source = senroflux()->get( $follow_up_of );
+			$source = specflux_site_agent()->get( $follow_up_of );
 			if ( is_array( $source ) && is_string( $source['run']['pack'] ?? null ) ) {
 				$pack = $source['run']['pack'];
 			}
@@ -89,8 +89,8 @@ final class Ajax {
 		if ( RunsScreen::CONSUMER === $consumer && '' === $pack && 0 === $follow_up_of ) {
 			wp_send_json_error(
 				array(
-					'code'    => 'senroflux_bad_request',
-					'message' => __( 'Choose what to work on before starting a run.', 'senroflux' ),
+					'code'    => 'specflux_site_agent_bad_request',
+					'message' => __( 'Choose what to work on before starting a run.', 'specflux-site-agent' ),
 				),
 				400
 			);
@@ -125,7 +125,7 @@ final class Ajax {
 		$model_provider = sanitize_text_field( wp_unslash( $_POST['model_provider'] ?? '' ) );
 		$model_id       = sanitize_text_field( wp_unslash( $_POST['model_id'] ?? '' ) );
 
-		$result = senroflux()->start(
+		$result = specflux_site_agent()->start(
 			$consumer,
 			sanitize_textarea_field( wp_unslash( $_POST['goal'] ?? '' ) ),
 			$policy['allow'],
@@ -151,7 +151,7 @@ final class Ajax {
 	 *
 	 * S13 delegation: the Runs screen POLLS this endpoint, and a screen
 	 * capability holder may drive a run they do not own. So the tick runs
-	 * under the SAME scoped `senroflux_can_tick` allowance the screen's own
+	 * under the SAME scoped `specflux_site_agent_can_tick` allowance the screen's own
 	 * park handlers use ({@see ScreenCapability::tickAsScreen()}) whenever the
 	 * caller holds that capability. Without it, polling a DELEGATED run 403'd
 	 * while submitting the form on the same page succeeded. A caller who does
@@ -164,7 +164,7 @@ final class Ajax {
 
 		if ( ! current_user_can( 'read' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ),
+				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
 			);
 		}
@@ -172,8 +172,8 @@ final class Ajax {
 		if ( isset( $_POST['approval_action'] ) ) {
 			wp_send_json_error(
 				array(
-					'code'    => 'senroflux_bad_request',
-					'message' => __( 'The approval_action field was removed; send a resume object instead (S5).', 'senroflux' ),
+					'code'    => 'specflux_site_agent_bad_request',
+					'message' => __( 'The approval_action field was removed; send a resume object instead (S5).', 'specflux-site-agent' ),
 				),
 				400
 			);
@@ -187,7 +187,7 @@ final class Ajax {
 				wp_send_json_error(
 					array(
 						'code'    => 'resume_mismatch',
-						'message' => __( 'The resume field must be a JSON object matching the run\'s park kind.', 'senroflux' ),
+						'message' => __( 'The resume field must be a JSON object matching the run\'s park kind.', 'specflux-site-agent' ),
 					),
 					400
 				);
@@ -215,11 +215,11 @@ final class Ajax {
 		if ( ScreenCapability::held() ) {
 			return ScreenCapability::tickAsScreen(
 				$run_id,
-				static fn (): array|WP_Error => senroflux()->tick( $run_id, $step_count, $resume )
+				static fn (): array|WP_Error => specflux_site_agent()->tick( $run_id, $step_count, $resume )
 			);
 		}
 
-		return senroflux()->tick( $run_id, $step_count, $resume );
+		return specflux_site_agent()->tick( $run_id, $step_count, $resume );
 	}
 
 	/** POST run_id. `@internal` (S23) — see the class docblock. */
@@ -228,12 +228,12 @@ final class Ajax {
 
 		if ( ! current_user_can( 'read' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ),
+				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
 			);
 		}
 
-		$this->respond( senroflux()->cancel( absint( $_POST['run_id'] ?? 0 ) ) );
+		$this->respond( specflux_site_agent()->cancel( absint( $_POST['run_id'] ?? 0 ) ) );
 	}
 
 	/** POST run_id. `@internal` (S23) — see the class docblock. */
@@ -242,12 +242,12 @@ final class Ajax {
 
 		if ( ! current_user_can( 'read' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ),
+				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
 			);
 		}
 
-		$this->respond( senroflux()->get( absint( $_POST['run_id'] ?? 0 ) ) );
+		$this->respond( specflux_site_agent()->get( absint( $_POST['run_id'] ?? 0 ) ) );
 	}
 
 	/**

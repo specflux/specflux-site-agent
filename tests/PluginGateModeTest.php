@@ -3,23 +3,23 @@
  * Plugin-level tests for 0.3 S3: a third-party consumer may not drive a
  * built-in-mode run, on either start() or tick().
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
 use WP_Error;
 use wpdb;
 
@@ -27,9 +27,9 @@ final class PluginGateModeTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
 	}
 
 	protected function tearDown(): void {
@@ -67,10 +67,10 @@ final class PluginGateModeTest extends TestCase {
 		Plugin::set_dependency_probe( false ); // Agent Safety absent => built-in mode.
 		$this->seedRunnerGraph();
 
-		$result = senroflux()->start( 'marketing-analytics-chat', 'Do a thing', array( 'agsafe-smoke/*' ) );
+		$result = specflux_site_agent()->start( 'marketing-analytics-chat', 'Do a thing', array( 'agsafe-smoke/*' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_ungoverned', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_ungoverned', $result->get_error_code() );
 		$this->assertSame( 409, $result->get_error_data()['status'] ?? null );
 	}
 
@@ -78,7 +78,7 @@ final class PluginGateModeTest extends TestCase {
 		Plugin::set_dependency_probe( false );
 		$this->seedRunnerGraph();
 
-		$result = senroflux()->start( RunsScreen::CONSUMER, 'Do a thing', array( 'agsafe-smoke/*' ) );
+		$result = specflux_site_agent()->start( RunsScreen::CONSUMER, 'Do a thing', array( 'agsafe-smoke/*' ) );
 
 		$this->assertIsArray( $result );
 	}
@@ -87,7 +87,7 @@ final class PluginGateModeTest extends TestCase {
 		Plugin::set_dependency_probe( true ); // Agent Safety present => AS mode.
 		$this->seedRunnerGraph();
 
-		$result = senroflux()->start( 'marketing-analytics-chat', 'Do a thing', array( 'agsafe-smoke/*' ) );
+		$result = specflux_site_agent()->start( 'marketing-analytics-chat', 'Do a thing', array( 'agsafe-smoke/*' ) );
 
 		$this->assertIsArray( $result );
 	}
@@ -104,16 +104,16 @@ final class PluginGateModeTest extends TestCase {
 			'marketing-analytics-chat',
 			'Do a thing',
 			array( 'agsafe-smoke/*' ),
-			\Specflux\SenroFlux\Run\Budget::defaults(),
+			\Specflux\SiteAgent\Run\Budget::defaults(),
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::BuiltIn
+			\Specflux\SiteAgent\Run\GateMode::BuiltIn
 		);
 
-		$result = senroflux()->tick( $run_id, 0, null );
+		$result = specflux_site_agent()->tick( $run_id, 0, null );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_ungoverned', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_ungoverned', $result->get_error_code() );
 	}
 }

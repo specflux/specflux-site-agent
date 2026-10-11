@@ -4,24 +4,24 @@
  * its next tick with the plain reason "started under 0.2" [assumed], while
  * a run that already completed under 0.2 keeps rendering untouched.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WP_Error;
@@ -61,7 +61,7 @@ final class LegacyRunTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			fn (): GateMode => $this->currentMode,
 			null,
@@ -71,9 +71,9 @@ final class LegacyRunTest extends TestCase {
 			fn (): ?int => $this->watermark
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
 	}
 
 	private function createRun( GateMode $gate_mode = GateMode::AgentSafety ): int {
@@ -214,7 +214,7 @@ final class LegacyRunTest extends TestCase {
 		$prop->setAccessible( true );
 		$prop->setValue( Plugin::instance(), $this->runner );
 
-		$result = senroflux()->cancel( $run_id );
+		$result = specflux_site_agent()->cancel( $run_id );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'failed', $result['run']['status'] );
@@ -265,7 +265,7 @@ final class LegacyRunTest extends TestCase {
 		// Force the row into the 0.2 shape directly: withheld_roles_json and
 		// follow_up_of NULL (0.2 never had them), and skills_disable_json
 		// entirely absent from the row (0.2 predates that column too).
-		$table = \Specflux\SenroFlux\Schema::runsTable( $this->db );
+		$table = \Specflux\SiteAgent\Schema::runsTable( $this->db );
 		foreach ( $this->db->tables[ $table ] as $i => $row ) {
 			if ( (int) $row['id'] === $run_id ) {
 				$this->db->tables[ $table ][ $i ]['status']              = RunStatus::Completed->value;
@@ -286,7 +286,7 @@ final class LegacyRunTest extends TestCase {
 		$prop->setAccessible( true );
 		$prop->setValue( Plugin::instance(), $this->runner );
 
-		$result = senroflux()->get( $run_id );
+		$result = specflux_site_agent()->get( $run_id );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'completed', $result['run']['status'] );

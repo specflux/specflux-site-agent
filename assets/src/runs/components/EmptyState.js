@@ -7,18 +7,18 @@ import { __ } from '@wordpress/i18n';
 export default function EmptyState( { gateMode, examples, onPickExample } ) {
 	const promise =
 		'agent_safety' === gateMode
-			? __( 'It reads what is there, asks when something is unclear, shows you a plan, and waits for your click before anything irreversible.', 'senroflux' )
-			: __( 'It reads what is there, asks when something is unclear, shows you a plan, and asks before it changes anything.', 'senroflux' );
+			? __( 'It reads what is there, asks when something is unclear, shows you a plan, and waits for your click before anything irreversible.', 'specflux-site-agent' )
+			: __( 'It reads what is there, asks when something is unclear, shows you a plan, and asks before it changes anything.', 'specflux-site-agent' );
 
 	return (
-		<div className="senroflux-empty-state">
-			<h2>{ __( 'Nothing has run yet', 'senroflux' ) }</h2>
+		<div className="specflux-site-agent-empty-state">
+			<h2>{ __( 'Nothing has run yet', 'specflux-site-agent' ) }</h2>
 			<p>{ promise }</p>
 			{ examples.length > 0 && (
-				<ul className="senroflux-empty-examples">
+				<ul className="specflux-site-agent-empty-examples">
 					{ examples.map( ( example ) => (
 						<li key={ example }>
-							<button type="button" className="senroflux-empty-example" onClick={ () => onPickExample( example ) }>
+							<button type="button" className="specflux-site-agent-empty-example" onClick={ () => onPickExample( example ) }>
 								{ example }
 							</button>
 						</li>

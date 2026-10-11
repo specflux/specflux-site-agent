@@ -7,12 +7,12 @@
  * Mirrors {@see HasImage}: a pure tree walk with no WP_Error — the caller
  * (`Content\Abilities`) builds the refusal in its own pack's words.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -27,9 +27,9 @@ final class ThinCopy {
 	 * @var array<string, array{0:int, 1:bool}>
 	 */
 	public const MINIMUMS = array(
-		'senroflux/text-section' => array( 60, false ),
-		'senroflux/media-text'   => array( 30, false ),
-		'senroflux/feature-grid' => array( 12, true ),
+		'specflux/text-section' => array( 60, false ),
+		'specflux/media-text'   => array( 30, false ),
+		'specflux/feature-grid' => array( 12, true ),
 	);
 
 	/**

@@ -1,17 +1,17 @@
 <?php
 /**
- * The site navigation registrar (0.3 S7): `senroflux/read-navigation` (Tier
- * 0) and `senroflux/update-navigation` (ALWAYS Tier 2).
+ * The site navigation registrar (0.3 S7): `specflux/read-navigation` (Tier
+ * 0) and `specflux/update-navigation` (ALWAYS Tier 2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Run\RunStore;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\RunStore;
+use Specflux\SiteAgent\Run\Tracker;
 use WP_Error;
 
 // Bail on direct access.
@@ -57,7 +57,7 @@ final class Navigation {
 	/**
 	 * The ability category for the site abilities (shared with FrontPage).
 	 */
-	public const CATEGORY = 'senroflux-site';
+	public const CATEGORY = 'specflux-site';
 
 	/**
 	 * The capability that gates both abilities. Editing either world's
@@ -105,7 +105,7 @@ final class Navigation {
 		// check ({@see filterPlanError()}) — a no-op for any plan that never
 		// names a site-pack page-create/publish verb.
 		if ( function_exists( 'add_filter' ) ) {
-			add_filter( 'senroflux_plan_error', array( self::class, 'filterPlanError' ), 10, 2 );
+			add_filter( 'specflux_site_agent_plan_error', array( self::class, 'filterPlanError' ), 10, 2 );
 		}
 	}
 
@@ -183,7 +183,7 @@ final class Navigation {
 
 	/**
 	 * Stage 14 (AS-15/S19 approval cards): the resolved navigation's CURRENT
-	 * item list, for {@see \Specflux\SenroFlux\Packs\Site\ContentSummary} to
+	 * item list, for {@see \Specflux\SiteAgent\Packs\Site\ContentSummary} to
 	 * render beside an `update-navigation` call's proposed list. Read-only —
 	 * unlike {@see executeReadNavigation()} this never records a read marker,
 	 * because rendering an approval card is not the run "reading" the
@@ -218,8 +218,8 @@ final class Navigation {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux site', 'senroflux' ),
-				'description' => __( 'Site navigation and front-page abilities shared by SenroFlux capability packs.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent site', 'specflux-site-agent' ),
+				'description' => __( 'Site navigation and front-page abilities shared by Specflux Site Agent capability packs.', 'specflux-site-agent' ),
 			)
 		);
 	}
@@ -242,14 +242,14 @@ final class Navigation {
 	}
 
 	/**
-	 * senroflux/read-navigation — Tier 0, `{} => {kind, items}`.
+	 * specflux/read-navigation — Tier 0, `{} => {kind, items}`.
 	 */
 	private static function registerReadNavigation(): void {
 		wp_register_ability(
-			'senroflux/read-navigation',
+			'specflux/read-navigation',
 			array(
-				'label'               => __( 'Read site navigation', 'senroflux' ),
-				'description'         => __( 'Read the resolved site navigation\'s current items.', 'senroflux' ),
+				'label'               => __( 'Read site navigation', 'specflux-site-agent' ),
+				'description'         => __( 'Read the resolved site navigation\'s current items.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -276,15 +276,15 @@ final class Navigation {
 	}
 
 	/**
-	 * senroflux/update-navigation — ALWAYS Tier 2, replaces the resolved
+	 * specflux/update-navigation — ALWAYS Tier 2, replaces the resolved
 	 * navigation's item list.
 	 */
 	private static function registerUpdateNavigation(): void {
 		wp_register_ability(
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
-				'label'               => __( 'Update site navigation', 'senroflux' ),
-				'description'         => __( 'Replace the resolved site navigation\'s items (label, target, order and optional sub-menu nesting). The list is the WHOLE menu: anything left out is removed. Refuses a link to an unpublished page.', 'senroflux' ),
+				'label'               => __( 'Update site navigation', 'specflux-site-agent' ),
+				'description'         => __( 'Replace the resolved site navigation\'s items (label, target, order and optional sub-menu nesting). The list is the WHOLE menu: anything left out is removed. Refuses a link to an unpublished page.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => self::updateNavigationSchema(),
 				'output_schema'       => self::navigationOutputSchema(),
@@ -336,7 +336,7 @@ final class Navigation {
 				// S7 quality fix (2026-09-28): a hint, never a write — the id of
 				// the WordPress stock Sample Page when it is STILL published,
 				// null otherwise, so the model can see the `page_list`-fallback
-				// problem {@see \Specflux\SenroFlux\Packs\Site\SitePack}'s own
+				// problem {@see \Specflux\SiteAgent\Packs\Site\SitePack}'s own
 				// guidance now names (see `structureRulesBody()`).
 				'stock_sample_page'           => array( 'type' => array( 'integer', 'null' ) ),
 			),
@@ -711,7 +711,7 @@ final class Navigation {
 			if ( ! isset( $item['page_id'] ) && ! $has_url ) {
 				return new WP_Error(
 					'navigation_item_incomplete',
-					__( 'Every navigation item needs a url or a page_id.', 'senroflux' ),
+					__( 'Every navigation item needs a url or a page_id.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -731,7 +731,7 @@ final class Navigation {
 			if ( 'publish' !== $status ) {
 				return new WP_Error(
 					'navigation_links_unpublished',
-					__( 'Every linked page must be published before the navigation can point to it.', 'senroflux' ),
+					__( 'Every linked page must be published before the navigation can point to it.', 'specflux-site-agent' ),
 					array(
 						'status'  => 409,
 						'page_id' => (int) $item['page_id'],
@@ -750,7 +750,7 @@ final class Navigation {
 		if ( self::isStaleWrite( (string) $payload['marker'] ) ) {
 			return new WP_Error(
 				'stale_write',
-				__( 'The navigation changed since this run last read it. Re-read it before writing again.', 'senroflux' ),
+				__( 'The navigation changed since this run last read it. Re-read it before writing again.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -953,10 +953,10 @@ final class Navigation {
 			}
 			if ( array_key_exists( 'key', $item ) ) {
 				if ( ! is_string( $item['key'] ) || '' === trim( $item['key'] ) ) {
-					return self::nestingRefusal( 'navigation_invalid_key', __( 'An item key must be a non-empty string.', 'senroflux' ) );
+					return self::nestingRefusal( 'navigation_invalid_key', __( 'An item key must be a non-empty string.', 'specflux-site-agent' ) );
 				}
 				if ( array_key_exists( $item['key'], $parents ) ) {
-					return self::nestingRefusal( 'navigation_duplicate_key', __( 'Two navigation items share a key. Keys must be unique within the call.', 'senroflux' ), $item['key'] );
+					return self::nestingRefusal( 'navigation_duplicate_key', __( 'Two navigation items share a key. Keys must be unique within the call.', 'specflux-site-agent' ), $item['key'] );
 				}
 				$parents[ $item['key'] ] = self::parentKey( $item );
 			}
@@ -971,10 +971,10 @@ final class Navigation {
 				continue;
 			}
 			if ( ! is_string( $raw ) || ! array_key_exists( $raw, $parents ) ) {
-				return self::nestingRefusal( 'navigation_unknown_parent', __( 'An item names a parent that is not the key of any item in this call.', 'senroflux' ), is_string( $raw ) ? $raw : '' );
+				return self::nestingRefusal( 'navigation_unknown_parent', __( 'An item names a parent that is not the key of any item in this call.', 'specflux-site-agent' ), is_string( $raw ) ? $raw : '' );
 			}
 			if ( isset( $item['key'] ) && $item['key'] === $raw ) {
-				return self::nestingRefusal( 'navigation_self_parent', __( 'A navigation item cannot be its own parent.', 'senroflux' ), $raw );
+				return self::nestingRefusal( 'navigation_self_parent', __( 'A navigation item cannot be its own parent.', 'specflux-site-agent' ), $raw );
 			}
 		}
 
@@ -988,7 +988,7 @@ final class Navigation {
 			$current = self::parentKey( $item );
 			while ( null !== $current ) {
 				if ( isset( $seen[ $current ] ) ) {
-					return self::nestingRefusal( 'navigation_parent_cycle', __( 'The navigation parents form a loop.', 'senroflux' ), $start );
+					return self::nestingRefusal( 'navigation_parent_cycle', __( 'The navigation parents form a loop.', 'specflux-site-agent' ), $start );
 				}
 				$seen[ $current ] = true;
 				++$depth;
@@ -999,7 +999,7 @@ final class Navigation {
 					'navigation_too_deep',
 					sprintf(
 						/* translators: %d: maximum number of menu levels. */
-						__( 'Navigation can nest %d levels at most: top-level items and one level of sub-menu items under them.', 'senroflux' ),
+						__( 'Navigation can nest %d levels at most: top-level items and one level of sub-menu items under them.', 'specflux-site-agent' ),
 						self::MAX_DEPTH
 					),
 					$start
@@ -1104,7 +1104,7 @@ final class Navigation {
 	private static function navigationUnresolved(): WP_Error {
 		return new WP_Error(
 			'navigation_unresolved',
-			__( 'No site navigation could be resolved.', 'senroflux' ),
+			__( 'No site navigation could be resolved.', 'specflux-site-agent' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -1116,7 +1116,7 @@ final class Navigation {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -1130,7 +1130,7 @@ final class Navigation {
 	// wrote outside the governed tool path (no plan, no Agent Safety
 	// gate/audit) and silently converted a `page_list` fallback into fixed
 	// links. {@see filterPlanError()} replaces it: it refuses the PLAN, on
-	// the `senroflux_plan_error` filter ({@see boot()}), so the model fixes
+	// the `specflux_site_agent_plan_error` filter ({@see boot()}), so the model fixes
 	// its own plan through the ordinary approval path.
 	// ------------------------------------------------------------------
 
@@ -1153,13 +1153,13 @@ final class Navigation {
 	private const UPDATE_NAVIGATION_VERB = 'site/update-navigation';
 
 	/**
-	 * S7 quality fix (2026-09-28): refuse a `senroflux/propose-plan` call
+	 * S7 quality fix (2026-09-28): refuse a `specflux/propose-plan` call
 	 * that creates or publishes a page while the stock Sample Page is still
 	 * published and the resolved navigation would show it — a `page_list`
 	 * fallback (which renders every published page), or an explicit link to
 	 * it — unless some step also names `site/update-navigation`.
 	 *
-	 * Registered on the `senroflux_plan_error` filter (see {@see boot()});
+	 * Registered on the `specflux_site_agent_plan_error` filter (see {@see boot()});
 	 * PlanTools threads every registered pack's check through this one
 	 * filter (it may not depend on `src/Packs`, see its own class docblock),
 	 * so this is the SITE pack's own contribution, not site-specific logic
@@ -1198,7 +1198,7 @@ final class Navigation {
 
 		return new WP_Error(
 			'navigation_shows_sample_page',
-			__( 'This site\'s menu still shows WordPress\'s sample page "Sample Page". Add update-navigation to a step and set the menu links to the site\'s real pages, leaving the sample page out, then propose the plan again.', 'senroflux' )
+			__( 'This site\'s menu still shows WordPress\'s sample page "Sample Page". Add update-navigation to a step and set the menu links to the site\'s real pages, leaving the sample page out, then propose the plan again.', 'specflux-site-agent' )
 		);
 	}
 
@@ -1271,7 +1271,7 @@ final class Navigation {
 	public static function reportLookup(): array {
 		return array(
 			'object_type' => 'navigation',
-			'title'       => __( 'Site navigation', 'senroflux' ),
+			'title'       => __( 'Site navigation', 'specflux-site-agent' ),
 			'status'      => '',
 			'edit_url'    => function_exists( 'admin_url' ) ? admin_url( 'site-editor.php?p=%2Fnavigation' ) : null,
 			'preview_url' => null,

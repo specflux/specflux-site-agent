@@ -58,7 +58,7 @@ describe( 'ReportView change rows', () => {
 	it( 'renders one row per change, each with an edit link named for its object', () => {
 		render( <ReportView report={ baseReport } steps={ [] } /> );
 
-		const rows = screen.getAllByRole( 'listitem' ).filter( ( li ) => li.classList.contains( 'senroflux-report-change' ) );
+		const rows = screen.getAllByRole( 'listitem' ).filter( ( li ) => li.classList.contains( 'specflux-site-agent-report-change' ) );
 		expect( rows ).toHaveLength( 2 );
 
 		const link = screen.getByRole( 'link', { name: 'Edit Launch Day' } );
@@ -82,7 +82,7 @@ describe( 'ReportView change rows', () => {
 		expect( row ).toHaveClass( 'is-unchecked' );
 		// The mark differs from the verified one and is hidden from the
 		// accessibility tree: the TEXT carries the state for everyone.
-		const mark = row.querySelector( '.senroflux-report-mark' );
+		const mark = row.querySelector( '.specflux-site-agent-report-mark' );
 		expect( mark ).toHaveAttribute( 'aria-hidden', 'true' );
 		expect( mark.textContent ).not.toBe( '✓' );
 	} );
@@ -195,10 +195,10 @@ describe( 'ReportView gate mode, withheld roles and grants', () => {
 		expect( screen.getByText( 'Approvals for this run are recorded only on this page.' ) ).toBeInTheDocument();
 	} );
 
-	it( 'names SenroGate mode and carries no built-in line', () => {
+	it( 'names Specflux Agent Governance mode and carries no built-in line', () => {
 		render( <ReportView report={ { ...baseReport, gate_mode: 'agent_safety' } } steps={ [] } /> );
 
-		expect( screen.getByText( /Gate mode:/ ) ).toHaveTextContent( 'SenroGate' );
+		expect( screen.getByText( /Gate mode:/ ) ).toHaveTextContent( 'Specflux Agent Governance' );
 		expect( screen.queryByText( /recorded only on this page/ ) ).not.toBeInTheDocument();
 	} );
 
@@ -212,13 +212,13 @@ describe( 'ReportView gate mode, withheld roles and grants', () => {
 		expect( screen.queryByText( /Withheld roles:/ ) ).not.toBeInTheDocument();
 	} );
 
-	it( 'lists grants with their expiry in SenroGate mode', () => {
+	it( 'lists grants with their expiry in Specflux Agent Governance mode', () => {
 		const report = {
 			...baseReport,
 			gate_mode: 'agent_safety',
 			grants: [
 				{
-					verb: 'senroflux/publish-post',
+					verb: 'specflux/publish-post',
 					status: 'revoked',
 					remaining: 1,
 					expires_at: '2026-10-03T10:00:00Z',
@@ -228,7 +228,7 @@ describe( 'ReportView gate mode, withheld roles and grants', () => {
 		render( <ReportView report={ report } steps={ [] } /> );
 
 		expect( screen.getByRole( 'heading', { name: 'Pre-approvals' } ) ).toBeInTheDocument();
-		const item = screen.getByText( 'senroflux/publish-post' ).closest( 'li' );
+		const item = screen.getByText( 'specflux/publish-post' ).closest( 'li' );
 		expect( within( item ).getByText( /Expires/ ) ).toBeInTheDocument();
 		expect( item.querySelector( 'time' ) ).toHaveAttribute( 'datetime', '2026-10-03T10:00:00Z' );
 	} );
@@ -269,12 +269,12 @@ describe( 'ReportView store report (J13)', () => {
 	const storeStep = {
 		kind: 'tool_result',
 		status: 'ok',
-		tool_name: 'wpab__senroflux__store-report',
+		tool_name: 'wpab__specflux__store-report',
 		message: {
 			parts: [
 				{
 					functionResponse: {
-						name: 'wpab__senroflux__store-report',
+						name: 'wpab__specflux__store-report',
 						response: {
 							from: '2026-09-01',
 							to: '2026-09-30',
@@ -301,7 +301,7 @@ describe( 'ReportView store report (J13)', () => {
 
 	it( 'ignores an errored store-report call and the save-store-report call', () => {
 		const errored = { ...storeStep, status: 'error' };
-		const save = { ...storeStep, tool_name: 'wpab__senroflux__save-store-report' };
+		const save = { ...storeStep, tool_name: 'wpab__specflux__save-store-report' };
 		render( <ReportView report={ baseReport } steps={ [ errored, save ] } /> );
 
 		expect( screen.queryByRole( 'heading', { name: 'Store report' } ) ).not.toBeInTheDocument();

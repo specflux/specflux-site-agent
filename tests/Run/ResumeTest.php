@@ -3,16 +3,16 @@
  * Park-resolution validation tests (stage-1 check, S5): the 3x3 matrix of
  * park kinds x resolution shapes, plus the shape details that fail closed.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Resume;
-use Specflux\SenroFlux\Run\RunStatus;
+use Specflux\SiteAgent\Run\Resume;
+use Specflux\SiteAgent\Run\RunStatus;
 use WP_Error;
 
 final class ResumeTest extends TestCase {

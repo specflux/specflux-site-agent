@@ -6,9 +6,9 @@
  * TARGET REPO PATH: src/Packs/Commerce/CommerceSummary.php
  *
  * Hooks `agent_safety_approval_summary` (same seam as
- * {@see \Specflux\SenroFlux\Packs\Pages\PublishSummary}) for the commerce
+ * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}) for the commerce
  * pack's eight Tier-2 verbs and renders SERVER-READ state BESIDE the call's
- * own arguments, per SPEC-SENROFLUX-1.0.md S19's approval-cards list:
+ * own arguments, per SPEC-SITE-AGENT-1.0.md S19's approval-cards list:
  *
  *   - price change: current regular/sale price (read from the product) vs proposed
  *   - product publish: title, preview link, price, stock
@@ -26,12 +26,12 @@
  * the agent's words and escaped; it is never treated as a fact about the
  * store.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -43,7 +43,7 @@ final class CommerceSummary {
 
 	/**
 	 * The Agent Safety approval-summary filter (AS-11), shared with
-	 * {@see \Specflux\SenroFlux\Packs\Pages\PublishSummary}.
+	 * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}.
 	 */
 	public const HOOK = 'agent_safety_approval_summary';
 

@@ -20,29 +20,29 @@
  * that withholds `edit_post` is asserting the per-object check EXISTS and
  * refuses; it cannot distinguish two different post ids.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Content;
+namespace Specflux\SiteAgent\Tests\Packs\Content;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Content\Abilities;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
-use Specflux\SenroFlux\Packs\Posts\Validator as PostsValidator;
-use Specflux\SenroFlux\Packs\Posts\Vocabulary as PostsVocabulary;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Run\Tracker;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tests\Packs\Pages\LayoutsTest;
+use Specflux\SiteAgent\Packs\Content\Abilities;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Posts\Validator as PostsValidator;
+use Specflux\SiteAgent\Packs\Posts\Vocabulary as PostsVocabulary;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\Tracker;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tests\Packs\Pages\LayoutsTest;
 use WP_Error;
 use wpdb;
 
@@ -61,18 +61,18 @@ final class AbilitiesTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_inserted_posts']     = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_users']              = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_inserted_posts']     = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_users']              = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array();
 		// 0.3 S21: no theme patterns unless a test explicitly registers some.
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = '/no-such-theme';
-		$GLOBALS['senroflux_test_template_dir']   = '/no-such-theme';
-		$GLOBALS['senroflux_test_postmeta']       = array();
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = '/no-such-theme';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = '/no-such-theme';
+		$GLOBALS['specflux_site_agent_test_postmeta']       = array();
 		ThemePatterns::resetCache();
 
 		Abilities::reset();
@@ -102,9 +102,9 @@ final class AbilitiesTest extends TestCase {
 		Abilities::forgetRunPack();
 		Abilities::resetSources();
 		Media::forgetRunContext();
-		remove_all_filters( 'senroflux_theme_patterns' );
-		remove_all_filters( 'senroflux_layout_use_when' );
-		unset( $GLOBALS['senroflux_test_options'][ ThemePatterns::OPTION ] );
+		remove_all_filters( 'specflux_site_agent_theme_patterns' );
+		remove_all_filters( 'specflux_site_agent_layout_use_when' );
+		unset( $GLOBALS['specflux_site_agent_test_options'][ ThemePatterns::OPTION ] );
 	}
 
 	/**
@@ -126,22 +126,22 @@ final class AbilitiesTest extends TestCase {
 	// --- Helpers -----------------------------------------------------------
 
 	private function grant( string ...$caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		foreach ( $caps as $cap ) {
-			$GLOBALS['senroflux_test_user_caps'][ $cap ] = true;
+			$GLOBALS['specflux_site_agent_test_user_caps'][ $cap ] = true;
 		}
 	}
 
 	public function test_read_content_gate_uses_the_post_types_own_edit_capability(): void {
-		$GLOBALS['senroflux_test_post_types']['page'] = (object) array( 'cap' => (object) array( 'edit_posts' => 'edit_landing' ) );
+		$GLOBALS['specflux_site_agent_test_post_types']['page'] = (object) array( 'cap' => (object) array( 'edit_posts' => 'edit_landing' ) );
 		try {
-			$ability = $this->ability( 'senroflux/read-content' );
+			$ability = $this->ability( 'specflux/read-content' );
 			$this->grant( 'edit_pages' );
 			$this->assertFalse( (bool) $ability->check_permissions( array( 'post_type' => 'page' ) ) );
 			$this->grant( 'edit_landing' );
 			$this->assertTrue( (bool) $ability->check_permissions( array( 'post_type' => 'page' ) ) );
 		} finally {
-			unset( $GLOBALS['senroflux_test_post_types'] );
+			unset( $GLOBALS['specflux_site_agent_test_post_types'] );
 		}
 	}
 
@@ -180,7 +180,7 @@ final class AbilitiesTest extends TestCase {
 	/** The vocabulary's own `media-text` sample markup, by slug (not position). */
 	private function mediaTextMarkup(): string {
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
-			if ( 'senroflux/media-text' === $pattern['name'] ) {
+			if ( 'specflux/media-text' === $pattern['name'] ) {
 				return (string) $pattern['markup'];
 			}
 		}
@@ -201,9 +201,9 @@ final class AbilitiesTest extends TestCase {
 		$post->post_author       = 7;
 		$post->post_date         = '2026-01-01 00:00:00';
 		$post->post_modified     = '2026-01-01 00:00:00';
-		$post->post_modified_gmt = senroflux_test_next_modified_marker();
+		$post->post_modified_gmt = specflux_site_agent_test_next_modified_marker();
 
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 
 		return $post;
 	}
@@ -213,12 +213,12 @@ final class AbilitiesTest extends TestCase {
 	public function test_all_six_abilities_are_registered(): void {
 		foreach (
 			array(
-				'senroflux/read-content',
-				'senroflux/create-post',
-				'senroflux/update-post',
-				'senroflux/publish-post',
-				'senroflux/get-preview-url',
-				'senroflux/list-patterns',
+				'specflux/read-content',
+				'specflux/create-post',
+				'specflux/update-post',
+				'specflux/publish-post',
+				'specflux/get-preview-url',
+				'specflux/list-patterns',
 			) as $name
 		) {
 			$this->assertNotNull( wp_get_ability( $name ), $name );
@@ -226,7 +226,7 @@ final class AbilitiesTest extends TestCase {
 	}
 
 	public function test_read_content_permission_requires_the_post_type_cap(): void {
-		$ability = $this->ability( 'senroflux/read-content' );
+		$ability = $this->ability( 'specflux/read-content' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'post_type' => 'page' ) ) );
 
@@ -241,13 +241,13 @@ final class AbilitiesTest extends TestCase {
 		$this->grant( 'edit_pages', 'edit_posts', 'read_post' );
 
 		$this->assertFalse(
-			(bool) $this->ability( 'senroflux/read-content' )->check_permissions( array( 'post_type' => 'attachment' ) )
+			(bool) $this->ability( 'specflux/read-content' )->check_permissions( array( 'post_type' => 'attachment' ) )
 		);
 	}
 
 	public function test_read_content_permission_requires_read_post_on_the_id_branch(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/read-content' );
+		$ability = $this->ability( 'specflux/read-content' );
 
 		$this->grant( 'edit_pages' );
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'id' => 100 ) ) );
@@ -257,7 +257,7 @@ final class AbilitiesTest extends TestCase {
 	}
 
 	public function test_create_permission_requires_the_create_cap(): void {
-		$ability = $this->ability( 'senroflux/create-post' );
+		$ability = $this->ability( 'specflux/create-post' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'post_type' => 'page' ) ) );
 
@@ -269,7 +269,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_update_permission_requires_per_post_edit_post(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/update-post' );
+		$ability = $this->ability( 'specflux/update-post' );
 
 		// The primitive type cap alone is NOT enough.
 		$this->grant( 'edit_pages' );
@@ -283,14 +283,14 @@ final class AbilitiesTest extends TestCase {
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
 		$this->assertFalse(
-			(bool) $this->ability( 'senroflux/update-post' )->check_permissions( array( 'id' => 999 ) )
+			(bool) $this->ability( 'specflux/update-post' )->check_permissions( array( 'id' => 999 ) )
 		);
 	}
 
 	/** update-post is draft-state edits ONLY now (0.3 S4): it never accepts a publish transition, cap or no cap. */
 	public function test_update_permission_refuses_a_publish_transition_even_with_the_publish_cap(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/update-post' );
+		$ability = $this->ability( 'specflux/update-post' );
 
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 		$refused = $ability->check_permissions(
@@ -306,7 +306,7 @@ final class AbilitiesTest extends TestCase {
 	/** …and refuses a target that is already public, even for a plain edit. */
 	public function test_update_permission_refuses_an_already_public_target(): void {
 		$this->seedPost( 100, 'page', 'publish' );
-		$ability = $this->ability( 'senroflux/update-post' );
+		$ability = $this->ability( 'specflux/update-post' );
 
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 		$refused = $ability->check_permissions( array( 'id' => 100 ) );
@@ -323,7 +323,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', 'draft' );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$refused = $this->ability( 'senroflux/publish-post' )->check_permissions( array( 'id' => 100 ) );
+		$refused = $this->ability( 'specflux/publish-post' )->check_permissions( array( 'id' => 100 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $refused );
 		$this->assertSame( 'publish_needs_status', $refused->get_error_code() );
@@ -334,12 +334,12 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', 'draft' );
 		$this->grant( 'edit_pages' );
 
-		$this->assertFalse( $this->ability( 'senroflux/publish-post' )->check_permissions( array( 'id' => 100 ) ) );
+		$this->assertFalse( $this->ability( 'specflux/publish-post' )->check_permissions( array( 'id' => 100 ) ) );
 	}
 
 	public function test_publish_permission_requires_publish_cap_for_a_transition(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/publish-post' );
+		$ability = $this->ability( 'specflux/publish-post' );
 
 		$this->grant( 'edit_pages', 'edit_post' );
 		$this->assertFalse(
@@ -365,7 +365,7 @@ final class AbilitiesTest extends TestCase {
 	/** Editing an already-public post through publish-post needs no publish cap: it isn't a transition. */
 	public function test_publish_permission_allows_editing_an_already_public_post_without_the_publish_cap(): void {
 		$this->seedPost( 100, 'page', 'publish' );
-		$ability = $this->ability( 'senroflux/publish-post' );
+		$ability = $this->ability( 'specflux/publish-post' );
 
 		$this->grant( 'edit_pages', 'edit_post' );
 		$this->assertTrue( (bool) $ability->check_permissions( array( 'id' => 100 ) ) );
@@ -374,7 +374,7 @@ final class AbilitiesTest extends TestCase {
 	/** publish-post refuses a draft-state target that isn't transitioning: that call belongs to update-post. */
 	public function test_publish_permission_refuses_a_draft_target_with_no_transition(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/publish-post' );
+		$ability = $this->ability( 'specflux/publish-post' );
 
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 		$refused = $ability->check_permissions( array( 'id' => 100 ) );
@@ -384,7 +384,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_get_preview_url_permission_requires_edit_post(): void {
 		$this->seedPost();
-		$ability = $this->ability( 'senroflux/get-preview-url' );
+		$ability = $this->ability( 'specflux/get-preview-url' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'id' => 100 ) ) );
 
@@ -393,7 +393,7 @@ final class AbilitiesTest extends TestCase {
 	}
 
 	public function test_list_patterns_permission_requires_edit_pages(): void {
-		$ability = $this->ability( 'senroflux/list-patterns' );
+		$ability = $this->ability( 'specflux/list-patterns' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array() ) );
 
@@ -406,7 +406,7 @@ final class AbilitiesTest extends TestCase {
 		Abilities::forgetRunPack();
 		$this->grant( 'edit_pages' );
 
-		$this->assertFalse( (bool) $this->ability( 'senroflux/list-patterns' )->check_permissions( array() ) );
+		$this->assertFalse( (bool) $this->ability( 'specflux/list-patterns' )->check_permissions( array() ) );
 	}
 
 	// --- get-preview-url execute ------------------------------------------
@@ -415,7 +415,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_post' );
 
-		$result = $this->ability( 'senroflux/get-preview-url' )->execute( array( 'id' => 100 ) );
+		$result = $this->ability( 'specflux/get-preview-url' )->execute( array( 'id' => 100 ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'https://example.test/?p=100&preview=true', $result['preview_url'] );
@@ -424,7 +424,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_get_preview_url_refuses_an_unknown_id(): void {
 		$this->grant( 'edit_post' );
 
-		$result = $this->ability( 'senroflux/get-preview-url' )->execute( array( 'id' => 999 ) );
+		$result = $this->ability( 'specflux/get-preview-url' )->execute( array( 'id' => 999 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -433,7 +433,7 @@ final class AbilitiesTest extends TestCase {
 	// --- create-post execute ----------------------------------------------
 
 	public function test_create_post_refuses_without_the_create_cap(): void {
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -443,13 +443,13 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'forbidden', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'], 'a refusal must persist nothing' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'], 'a refusal must persist nothing' );
 	}
 
 	public function test_create_post_status_not_allowed_refuses_publish(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -460,14 +460,14 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'status_not_allowed', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'], 'a refusal must persist nothing' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'], 'a refusal must persist nothing' );
 	}
 
 	/** S4: create-post refuses `future` outright too, same as any non-draft status. */
 	public function test_create_post_status_not_allowed_refuses_future(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -478,13 +478,13 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'status_not_allowed', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_create_post_returns_id_and_forces_draft(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -495,8 +495,8 @@ final class AbilitiesTest extends TestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 100, $result['id'] );
 		$this->assertSame( 'draft', $result['status'] );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_inserted_posts'] );
-		$this->assertSame( 'draft', $GLOBALS['senroflux_test_inserted_posts'][0]['post_status'] );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_inserted_posts'] );
+		$this->assertSame( 'draft', $GLOBALS['specflux_site_agent_test_inserted_posts'][0]['post_status'] );
 	}
 
 	/**
@@ -507,10 +507,10 @@ final class AbilitiesTest extends TestCase {
 	 */
 	public function test_create_post_assigns_no_title_template_when_theme_has_one_and_content_has_an_h1(): void {
 		$this->grant( 'edit_pages' );
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -530,19 +530,19 @@ final class AbilitiesTest extends TestCase {
 	 */
 	public function test_create_post_assigns_no_title_template_for_a_cover_hero_page(): void {
 		$this->grant( 'edit_pages' );
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
 
 		$vocabulary = new Vocabulary();
 		$cover_hero = null;
 		foreach ( $vocabulary->all() as $pattern ) {
-			if ( 'senroflux/cover-hero' === $pattern['name'] ) {
+			if ( 'specflux/cover-hero' === $pattern['name'] ) {
 				$cover_hero = (string) $pattern['markup'];
 			}
 		}
 		$this->assertNotNull( $cover_hero );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -561,7 +561,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_leaves_template_unchanged_without_the_theme_template(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -576,7 +576,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_refuses_invalid_markup(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -586,7 +586,7 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'unknown_block', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	// --- 0.3 quality fix: images required on new pages ---------------------
@@ -595,7 +595,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_refuses_a_new_page_with_no_image(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -609,7 +609,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertStringContainsString( 'media-text', $result->get_error_message() );
 		$this->assertStringContainsString( 'media-search', $result->get_error_message() );
 		$this->assertStringContainsString( 'no_image_reason', $result->get_error_message() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'], 'a refusal must persist nothing' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'], 'a refusal must persist nothing' );
 	}
 
 	/**
@@ -620,7 +620,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_with_no_image_reason_is_accepted_and_echoed(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type'       => 'page',
 				'title'           => 'Terms of Service',
@@ -639,7 +639,7 @@ final class AbilitiesTest extends TestCase {
 		$this->grant( 'edit_pages' );
 		$text_section = ( new Vocabulary() )->all()[1]['markup'];
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type'       => 'page',
 				'title'           => 'Home',
@@ -658,14 +658,14 @@ final class AbilitiesTest extends TestCase {
 	private function exhaustImagesBudget(): void {
 		$limit = Budget::defaults()[ Budget::IMAGES ];
 		for ( $i = 0; $i < $limit; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__generate-image', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__generate-image', null, 'ok' );
 		}
 	}
 
 	private function longPageWithReason( string $reason ): array|WP_Error {
 		$text_section = ( new Vocabulary() )->all()[1]['markup'];
 
-		return $this->ability( 'senroflux/create-post' )->execute(
+		return $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type'       => 'page',
 				'title'           => 'Home',
@@ -683,14 +683,14 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_accepts_no_image_reason_on_a_long_page_when_budget_exhausted_and_stock_disabled(): void {
 		$this->grant( 'edit_pages' );
 		$this->exhaustImagesBudget();
-		add_filter( 'senroflux_stock_images_enabled', static fn () => false );
+		add_filter( 'specflux_site_agent_stock_images_enabled', static fn () => false );
 
 		$result = $this->longPageWithReason( 'This run cannot generate or find any image.' );
 
 		$this->assertIsArray( $result, $result instanceof WP_Error ? $result->get_error_message() : '' );
 		$this->assertSame( 'This run cannot generate or find any image.', $result['no_image_reason'] ?? null );
 
-		remove_all_filters( 'senroflux_stock_images_enabled' );
+		remove_all_filters( 'specflux_site_agent_stock_images_enabled' );
 	}
 
 	/**
@@ -708,13 +708,13 @@ final class AbilitiesTest extends TestCase {
 				array(
 					'functionResponse' => array(
 						'id'       => 'call-1',
-						'name'     => 'wpab__senroflux__stock-image-search',
+						'name'     => 'wpab__specflux__stock-image-search',
 						'response' => array( 'results' => array() ),
 					),
 				),
 			),
 		);
-		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'wpab__senroflux__stock-image-search', null, 'ok' );
+		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'wpab__specflux__stock-image-search', null, 'ok' );
 
 		$result = $this->longPageWithReason( 'Nothing suitable was found anywhere.' );
 
@@ -733,13 +733,13 @@ final class AbilitiesTest extends TestCase {
 				array(
 					'functionResponse' => array(
 						'id'       => 'call-1',
-						'name'     => 'wpab__senroflux__stock-image-search',
+						'name'     => 'wpab__specflux__stock-image-search',
 						'response' => array( 'error' => 'provider down' ),
 					),
 				),
 			),
 		);
-		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'wpab__senroflux__stock-image-search', null, 'error' );
+		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'wpab__specflux__stock-image-search', null, 'error' );
 
 		$result = $this->longPageWithReason( 'Nothing suitable was found anywhere.' );
 
@@ -765,7 +765,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_post_does_not_require_an_image_for_a_post(): void {
 		$this->grant( 'edit_posts' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'post',
 				'title'     => 'A post',
@@ -779,7 +779,7 @@ final class AbilitiesTest extends TestCase {
 	/** A text-section of two one-line paragraphs, as live runs wrote them. */
 	private function thinTextSectionPage(): string {
 		return (string) preg_replace(
-			'#(senroflux/text-section.*?)<p>[^<]+</p>(.*?)<p>[^<]+</p>#s',
+			'#(specflux/text-section.*?)<p>[^<]+</p>(.*?)<p>[^<]+</p>#s',
 			'$1<p>Rehabilitation for sports injuries.</p>$2<p>Book online today.</p>',
 			$this->validContentWithImage(),
 			1
@@ -791,7 +791,7 @@ final class AbilitiesTest extends TestCase {
 		$content = $this->thinTextSectionPage();
 		$this->assertStringContainsString( 'Rehabilitation for sports injuries.', $content );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -801,24 +801,24 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'section_too_thin', $result->get_error_code() );
-		$this->assertStringContainsString( 'Section 1 (senroflux/text-section) has 7 words', $result->get_error_message() );
+		$this->assertStringContainsString( 'Section 1 (specflux/text-section) has 7 words', $result->get_error_message() );
 		// A live run sent 57 of 60 words four times over: say how many to add and what counts.
 		$this->assertStringContainsString( 'add at least 53 more', $result->get_error_message() );
 		$this->assertStringContainsString( 'headings do not count', $result->get_error_message() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] ?? array() );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] ?? array() );
 	}
 
 	public function test_create_post_refuses_a_feature_grid_column_under_its_minimum(): void {
 		$this->grant( 'edit_pages' );
 		$grid = '';
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
-			if ( 'senroflux/feature-grid' === $pattern['name'] ) {
+			if ( 'specflux/feature-grid' === $pattern['name'] ) {
 				$grid = (string) $pattern['markup'];
 			}
 		}
 		$grid = (string) preg_replace( '#<p>[^<]+</p>#', '<p>Physiotherapy after surgery.</p>', $grid, 1 );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -836,7 +836,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->thinTextSectionPage(),
@@ -849,9 +849,9 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_the_copy_minimum_filter_can_turn_the_rule_off(): void {
 		$this->grant( 'edit_pages' );
-		add_filter( 'senroflux_min_section_words', static fn () => array() );
+		add_filter( 'specflux_site_agent_min_section_words', static fn () => array() );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -859,20 +859,20 @@ final class AbilitiesTest extends TestCase {
 			)
 		);
 
-		remove_all_filters( 'senroflux_min_section_words' );
+		remove_all_filters( 'specflux_site_agent_min_section_words' );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 	}
 
 	/**
-	 * `senroflux_require_page_image` (default true) turns the rule off
+	 * `specflux_site_agent_require_page_image` (default true) turns the rule off
 	 * outright, for a site with no media library worth using.
 	 */
 	public function test_create_post_filter_can_disable_the_image_requirement(): void {
 		$this->grant( 'edit_pages' );
-		add_filter( 'senroflux_require_page_image', static fn () => false );
+		add_filter( 'specflux_site_agent_require_page_image', static fn () => false );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Pricing',
@@ -880,7 +880,7 @@ final class AbilitiesTest extends TestCase {
 			)
 		);
 
-		remove_all_filters( 'senroflux_require_page_image' );
+		remove_all_filters( 'specflux_site_agent_require_page_image' );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_code() : '' );
 	}
@@ -897,7 +897,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
@@ -915,7 +915,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'              => 100,
 				'content'         => $this->validContent(),
@@ -934,7 +934,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContentWithImage(),
@@ -961,16 +961,16 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_posts', 'edit_post' );
 
-		$attachment                         = new \stdClass();
-		$attachment->ID                     = 5;
-		$attachment->post_type              = 'attachment';
-		$GLOBALS['senroflux_test_posts'][5] = $attachment;
-		$GLOBALS['senroflux_test_postmeta'][100]['_thumbnail_id'] = 5;
+		$attachment                                   = new \stdClass();
+		$attachment->ID                               = 5;
+		$attachment->post_type                        = 'attachment';
+		$GLOBALS['specflux_site_agent_test_posts'][5] = $attachment;
+		$GLOBALS['specflux_site_agent_test_postmeta'][100]['_thumbnail_id'] = 5;
 
 		$content = '<!-- wp:paragraph --><p>Hello there.</p><!-- /wp:paragraph -->'
 			. '<!-- wp:image {"alt":"A cafe photo"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/5.jpg" alt="A cafe photo"/></figure><!-- /wp:image -->';
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $content,
@@ -987,7 +987,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'A new title only',
@@ -1003,7 +1003,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'   => 100,
 				'date' => '2026-10-12 09:00:00',
@@ -1011,7 +1011,7 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
-		$this->assertSame( '2026-10-12 09:00:00', $GLOBALS['senroflux_test_posts'][100]->post_date );
+		$this->assertSame( '2026-10-12 09:00:00', $GLOBALS['specflux_site_agent_test_posts'][100]->post_date );
 	}
 
 	/** @return array<string,mixed>|WP_Error */
@@ -1021,11 +1021,11 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 		// Site is UTC+08:00; "now" is 2026-10-03 07:00 local.
-		$GLOBALS['senroflux_test_timezone'] = 'Asia/Singapore';
+		$GLOBALS['specflux_site_agent_test_timezone'] = 'Asia/Singapore';
 		Clock::useFixed( gmmktime( 23, 0, 0, 10, 2, 2026 ) );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute( array( 'id' => 100 ) + $input );
-		unset( $GLOBALS['senroflux_test_timezone'] );
+		$result = $this->ability( 'specflux/publish-post' )->execute( array( 'id' => 100 ) + $input );
+		unset( $GLOBALS['specflux_site_agent_test_timezone'] );
 		Clock::reset();
 
 		return $result;
@@ -1037,7 +1037,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'schedule_needs_future_date', $result->get_error_code() );
 		$this->assertStringContainsString( 'Y-m-d H:i:s', $result->get_error_message() );
-		$this->assertSame( 'draft', $GLOBALS['senroflux_test_posts'][100]->post_status );
+		$this->assertSame( 'draft', $GLOBALS['specflux_site_agent_test_posts'][100]->post_status );
 	}
 
 	public function test_future_status_with_a_past_date_is_refused(): void {
@@ -1072,7 +1072,7 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 		$this->assertSame( 'future', $result['status'] );
-		$this->assertSame( '2026-10-03 07:00:01', $GLOBALS['senroflux_test_posts'][100]->post_date );
+		$this->assertSame( '2026-10-03 07:00:01', $GLOBALS['specflux_site_agent_test_posts'][100]->post_date );
 	}
 
 	public function test_publish_status_with_a_future_date_is_refused_as_ambiguous(): void {
@@ -1091,7 +1091,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'   => 100,
 				'date' => 'next Monday 9am',
@@ -1102,21 +1102,21 @@ final class AbilitiesTest extends TestCase {
 		$this->assertSame( 'invalid_date', $result->get_error_code() );
 	}
 
-	/** `senroflux_require_page_image` off disables the update-post rule too. */
+	/** `specflux_site_agent_require_page_image` off disables the update-post rule too. */
 	public function test_update_post_filter_can_disable_the_image_requirement(): void {
 		$post = $this->seedPost();
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
-		add_filter( 'senroflux_require_page_image', static fn () => false );
+		add_filter( 'specflux_site_agent_require_page_image', static fn () => false );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
 			)
 		);
 
-		remove_all_filters( 'senroflux_require_page_image' );
+		remove_all_filters( 'specflux_site_agent_require_page_image' );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 		$this->assertSame( $this->validContent(), $post->post_content );
@@ -1128,7 +1128,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_posts', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
@@ -1147,7 +1147,7 @@ final class AbilitiesTest extends TestCase {
 			$this->validContent()
 		);
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -1157,13 +1157,13 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'disallowed_markup', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_create_post_refuses_a_model_supplied_pack_argument(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -1174,14 +1174,14 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'pack_arg_refused', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_create_post_fails_closed_with_no_pack_resolved(): void {
 		Abilities::forgetRunPack();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Unrelated Title',
@@ -1202,7 +1202,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', $status, 'Existing', 'pricing' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Different title',
@@ -1214,7 +1214,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result, $status );
 		$this->assertSame( 'slug_collision', $result->get_error_code(), $status );
 		$this->assertSame( 409, $result->get_error_data()['status'] ?? null, $status );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'], $status );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'], $status );
 	}
 
 	/**
@@ -1234,7 +1234,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', 'draft', 'Pricing Page', 'unrelated-slug' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'PRICING PAGE',
@@ -1251,7 +1251,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', 'trash', 'Existing', 'pricing' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'A brand new title',
@@ -1268,7 +1268,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'post', 'publish', 'Existing', 'pricing' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'A different title',
@@ -1287,7 +1287,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'title'   => 'Renamed',
@@ -1301,7 +1301,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertSame( 'draft', $result['status'] );
 		$this->assertSame( 'Renamed', $post->post_title );
 		$this->assertSame( 'draft', $post->post_status );
-		$this->assertStringContainsString( '"name":"senroflux/hero"', $post->post_content );
+		$this->assertStringContainsString( '"name":"specflux/hero"', $post->post_content );
 	}
 
 	/**
@@ -1314,10 +1314,10 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/fixtures/theme-with-no-title-template';
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContentWithImage(),
@@ -1333,7 +1333,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
@@ -1350,7 +1350,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => 'future',
@@ -1367,7 +1367,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost( 100, 'page', 'publish' );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Sneaky edit',
@@ -1383,7 +1383,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
@@ -1402,7 +1402,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => $status,
@@ -1432,7 +1432,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => 'pending',
@@ -1447,7 +1447,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_update_post_refuses_an_unknown_id(): void {
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute( array( 'id' => 999 ) );
+		$result = $this->ability( 'specflux/update-post' )->execute( array( 'id' => 999 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -1457,7 +1457,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'attachment' );
 		$this->grant( 'edit_pages', 'edit_posts', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute( array( 'id' => 100 ) );
+		$result = $this->ability( 'specflux/update-post' )->execute( array( 'id' => 100 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -1469,7 +1469,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'title'   => 'Renamed',
@@ -1487,7 +1487,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'title'   => 'Renamed',
@@ -1505,7 +1505,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'   => 100,
 				'pack' => 'posts',
@@ -1523,7 +1523,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContentWithImage(),
@@ -1540,7 +1540,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'      => 100,
 				'content' => $this->validContent(),
@@ -1559,7 +1559,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Should use update-post',
@@ -1578,7 +1578,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Refreshed copy',
@@ -1594,7 +1594,7 @@ final class AbilitiesTest extends TestCase {
 		$post = $this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => 'private',
@@ -1617,7 +1617,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'      => 100,
 				'status'  => 'publish',
@@ -1638,7 +1638,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'     => 100,
 				'title'  => 'Renamed',
@@ -1662,7 +1662,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'      => 100,
 				'status'  => 'publish',
@@ -1683,7 +1683,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => 'future',
@@ -1700,7 +1700,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 
-		$result = $this->ability( 'senroflux/publish-post' )->execute(
+		$result = $this->ability( 'specflux/publish-post' )->execute(
 			array(
 				'id'     => 100,
 				'status' => 'publish',
@@ -1719,7 +1719,7 @@ final class AbilitiesTest extends TestCase {
 		$this->grant( 'edit_pages', 'edit_post' );
 		// Deliberately no primeRead(): this run never read the object.
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'      => 100,
 				'title'   => 'Sneaky edit',
@@ -1741,7 +1741,7 @@ final class AbilitiesTest extends TestCase {
 		$post->post_modified_gmt = 'external-edit';
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Sneaky edit',
@@ -1758,7 +1758,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Renamed after read',
@@ -1773,7 +1773,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_create_then_update_without_a_read_succeeds(): void {
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$created = $this->ability( 'senroflux/create-post' )->execute(
+		$created = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Fresh draft',
@@ -1783,7 +1783,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertIsArray( $created );
 		$id = $created['id'];
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => $id,
 				'title' => 'Fresh draft, edited',
@@ -1800,7 +1800,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$first = $this->ability( 'senroflux/update-post' )->execute(
+		$first = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'First write',
@@ -1808,7 +1808,7 @@ final class AbilitiesTest extends TestCase {
 		);
 		$this->assertIsArray( $first, 'the first write must succeed' );
 
-		$second = $this->ability( 'senroflux/update-post' )->execute(
+		$second = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'    => 100,
 				'title' => 'Second write',
@@ -1825,7 +1825,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute( array( 'id' => 100 ) );
+		$result = $this->ability( 'specflux/read-content' )->execute( array( 'id' => 100 ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 100, $result['id'] );
@@ -1837,7 +1837,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute( array( 'id' => 100 ) );
+		$result = $this->ability( 'specflux/read-content' )->execute( array( 'id' => 100 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'forbidden', $result->get_error_code() );
@@ -1847,7 +1847,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'attachment' );
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute( array( 'id' => 100 ) );
+		$result = $this->ability( 'specflux/read-content' )->execute( array( 'id' => 100 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -1857,7 +1857,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page' );
 		$this->grant( 'edit_pages', 'edit_posts', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'id'        => 100,
 				'post_type' => 'post',
@@ -1874,7 +1874,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'id'     => 100,
 				'fields' => array( 'id' ),
@@ -1893,7 +1893,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'id'     => 100,
 				'fields' => array( 'id', 'title', 'content', 'excerpt' ),
@@ -1912,7 +1912,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 102, 'page', 'trash', 'Gone', 'gone' );
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute( array( 'post_type' => 'page' ) );
+		$result = $this->ability( 'specflux/read-content' )->execute( array( 'post_type' => 'page' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertEqualsCanonicalizing( array( 100, 101 ), array_column( $result['posts'], 'id' ) );
@@ -1924,7 +1924,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 101, 'page', 'draft', 'Privacy Policy', 'privacy-policy' );
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'post_type' => 'page',
 				'status'    => array( 'publish' ),
@@ -1939,9 +1939,9 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 100, 'page', 'draft', 'Mine', 'mine' );
 		$this->seedPost( 101, 'page', 'draft', 'Admin draft', 'admin-draft' );
 		$this->grant( 'edit_pages', 'read_post' );
-		$GLOBALS['senroflux_test_user_caps']['read_post:101'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:101'] = false;
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'post_type' => 'page',
 				'status'    => array( 'draft' ),
@@ -1959,14 +1959,14 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 101, 'page', 'draft', 'Admin draft', 'admin-draft' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute( array( 'slug' => 'admin-draft' ) );
+		$result = $this->ability( 'specflux/read-content' )->execute( array( 'slug' => 'admin-draft' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'forbidden', $result->get_error_code() );
 	}
 
 	public function test_read_content_lists_its_field_names_in_the_input_schema(): void {
-		$schema = $this->ability( 'senroflux/read-content' )->get_input_schema();
+		$schema = $this->ability( 'specflux/read-content' )->get_input_schema();
 		$items  = $schema['oneOf'][0]['properties']['fields']['items'] ?? array();
 
 		$this->assertContains( 'content_raw', $items['enum'] ?? array() );
@@ -1978,7 +1978,7 @@ final class AbilitiesTest extends TestCase {
 	 * markup read-content returned, so the page lost the theme design.
 	 */
 	public function test_update_and_publish_steer_a_page_rewrite_to_sections(): void {
-		foreach ( array( 'senroflux/update-post', 'senroflux/publish-post' ) as $name ) {
+		foreach ( array( 'specflux/update-post', 'specflux/publish-post' ) as $name ) {
 			$schema = $this->ability( $name )->get_input_schema();
 
 			$this->assertStringContainsString( '`sections`', $schema['properties']['content']['description'] ?? '', $name );
@@ -1990,7 +1990,7 @@ final class AbilitiesTest extends TestCase {
 	 * model-facing text must not lean toward either.
 	 */
 	public function test_create_post_description_names_no_specific_industry(): void {
-		$description = $this->ability( 'senroflux/create-post' )->get_description();
+		$description = $this->ability( 'specflux/create-post' )->get_description();
 
 		foreach ( array( 'clinic', 'physio', 'massage', 'café', 'cafe' ) as $word ) {
 			$this->assertStringNotContainsStringIgnoringCase( $word, $description );
@@ -2002,10 +2002,10 @@ final class AbilitiesTest extends TestCase {
 		$user               = new \stdClass();
 		$user->display_name = 'Ada';
 
-		$GLOBALS['senroflux_test_users'][7] = $user;
+		$GLOBALS['specflux_site_agent_test_users'][7] = $user;
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'id'     => 100,
 				'fields' => array( 'author' ),
@@ -2028,7 +2028,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost( 102, 'page', 'draft', 'C' );
 		$this->grant( 'edit_pages', 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-content' )->execute(
+		$result = $this->ability( 'specflux/read-content' )->execute(
 			array(
 				'post_type' => 'page',
 			)
@@ -2043,7 +2043,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_list_patterns_returns_seven_patterns(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 
 		$this->assertIsArray( $result );
 		$this->assertCount( 9, $result['patterns'] );
@@ -2058,7 +2058,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_list_patterns_with_no_names_returns_a_compact_index(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 
 		$this->assertCount( 9, $result['patterns'] );
 		foreach ( $result['patterns'] as $pattern ) {
@@ -2082,13 +2082,13 @@ final class AbilitiesTest extends TestCase {
 	public function test_list_patterns_with_names_includes_full_entries_in_vocabulary_order(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute(
-			array( 'names' => array( 'senroflux/cta', 'senroflux/hero' ) )
+		$result = $this->ability( 'specflux/list-patterns' )->execute(
+			array( 'names' => array( 'specflux/cta', 'specflux/hero' ) )
 		);
 
 		$this->assertCount( 2, $result['patterns'] );
-		$this->assertSame( 'senroflux/hero', $result['patterns'][0]['name'], 'vocabulary order, not requested order' );
-		$this->assertSame( 'senroflux/cta', $result['patterns'][1]['name'] );
+		$this->assertSame( 'specflux/hero', $result['patterns'][0]['name'], 'vocabulary order, not requested order' );
+		$this->assertSame( 'specflux/cta', $result['patterns'][1]['name'] );
 		$this->assertArrayNotHasKey( 'not_found', $result );
 
 		foreach ( $result['patterns'] as $pattern ) {
@@ -2102,19 +2102,19 @@ final class AbilitiesTest extends TestCase {
 	public function test_list_patterns_unknown_names_are_reported_not_found(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute(
-			array( 'names' => array( 'senroflux/hero', 'senroflux/no-such-pattern' ) )
+		$result = $this->ability( 'specflux/list-patterns' )->execute(
+			array( 'names' => array( 'specflux/hero', 'specflux/no-such-pattern' ) )
 		);
 
 		$this->assertCount( 1, $result['patterns'] );
-		$this->assertSame( 'senroflux/hero', $result['patterns'][0]['name'] );
-		$this->assertSame( array( 'senroflux/no-such-pattern' ), $result['not_found'] );
+		$this->assertSame( 'specflux/hero', $result['patterns'][0]['name'] );
+		$this->assertSame( array( 'specflux/no-such-pattern' ), $result['not_found'] );
 	}
 
 	public function test_list_patterns_refuses_a_model_supplied_pack_argument(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array( 'pack' => 'posts' ) );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array( 'pack' => 'posts' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'pack_arg_refused', $result->get_error_code() );
@@ -2124,7 +2124,7 @@ final class AbilitiesTest extends TestCase {
 		Abilities::forgetRunPack();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'pack_unresolved', $result->get_error_code() );
@@ -2141,7 +2141,7 @@ final class AbilitiesTest extends TestCase {
 	 * approval on live run 43. Creating a draft destroys nothing.
 	 */
 	public function test_create_post_carries_no_destructive_hint(): void {
-		$annotations = $this->ability( 'senroflux/create-post' )->get_meta()['annotations'] ?? array();
+		$annotations = $this->ability( 'specflux/create-post' )->get_meta()['annotations'] ?? array();
 
 		$this->assertIsArray( $annotations );
 		$this->assertNotSame(
@@ -2158,7 +2158,7 @@ final class AbilitiesTest extends TestCase {
 	 * `create-post` above already guards against.
 	 */
 	public function test_update_post_carries_no_destructive_hint(): void {
-		$annotations = $this->ability( 'senroflux/update-post' )->get_meta()['annotations'] ?? array();
+		$annotations = $this->ability( 'specflux/update-post' )->get_meta()['annotations'] ?? array();
 
 		$this->assertIsArray( $annotations );
 		$this->assertNotSame( true, $annotations['destructive'] ?? null );
@@ -2166,7 +2166,7 @@ final class AbilitiesTest extends TestCase {
 
 	/** …and the hint moved to where it now IS true: publish-post. */
 	public function test_publish_post_keeps_the_destructive_hint(): void {
-		$annotations = $this->ability( 'senroflux/publish-post' )->get_meta()['annotations'] ?? array();
+		$annotations = $this->ability( 'specflux/publish-post' )->get_meta()['annotations'] ?? array();
 
 		$this->assertIsArray( $annotations );
 		$this->assertTrue( $annotations['destructive'] ?? null );
@@ -2195,7 +2195,7 @@ final class AbilitiesTest extends TestCase {
 	/**
 	 * Render a real fixture under `tests/ThemePatterns/` and register it as
 	 * the only theme-owned pattern the stub `WP_Block_Patterns_Registry`
-	 * answers, exactly as {@see \Specflux\SenroFlux\Tests\Packs\Pages\ThemePatternsTest}
+	 * answers, exactly as {@see \Specflux\SiteAgent\Tests\Packs\Pages\ThemePatternsTest}
 	 * does.
 	 */
 	private function registerThemeFixture( string $slug ): void {
@@ -2226,8 +2226,8 @@ final class AbilitiesTest extends TestCase {
 			$entry['inserter'] = ! in_array( strtolower( $header['Inserter'] ), array( 'no', 'false' ), true );
 		}
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array( $entry );
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $dir;
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array( $entry );
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $dir;
 		ThemePatterns::resetCache();
 	}
 
@@ -2237,7 +2237,7 @@ final class AbilitiesTest extends TestCase {
 		$this->registerThemeFixture( 'hidden-blog-heading' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 
 		$this->assertSame( 1, $result['theme_patterns_skipped'] );
 		$this->assertCount( 9, $result['patterns'], 'the ineligible theme pattern never joins the list' );
@@ -2250,15 +2250,15 @@ final class AbilitiesTest extends TestCase {
 		$eligible = count( ThemePatterns::eligible() );
 		$this->assertGreaterThan( 3, $eligible );
 
-		add_filter( 'senroflux_theme_patterns', static fn ( array $patterns ): array => array_slice( $patterns, 3 ) );
+		add_filter( 'specflux_site_agent_theme_patterns', static fn ( array $patterns ): array => array_slice( $patterns, 3 ) );
 		ThemePatterns::resetCache();
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 		$this->assertSame( $skipped + 3, $result['theme_patterns_skipped'], 'the filter removed 3' );
 
-		remove_all_filters( 'senroflux_theme_patterns' );
+		remove_all_filters( 'specflux_site_agent_theme_patterns' );
 		update_option( ThemePatterns::OPTION, false );
 		ThemePatterns::resetCache();
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 		$this->assertSame( $skipped + $eligible, $result['theme_patterns_skipped'], 'the switch removed every eligible pattern' );
 	}
 
@@ -2276,7 +2276,7 @@ final class AbilitiesTest extends TestCase {
 			Abilities::reset();
 			Abilities::registerCategory();
 			Abilities::register();
-			$schema = $this->ability( 'senroflux/create-post' )->get_input_schema();
+			$schema = $this->ability( 'specflux/create-post' )->get_input_schema();
 			$page   = null;
 			foreach ( $schema['oneOf'] as $branch ) {
 				if ( array( 'page' ) === ( $branch['properties']['post_type']['enum'] ?? array() ) ) {
@@ -2298,11 +2298,11 @@ final class AbilitiesTest extends TestCase {
 		}
 
 		add_filter(
-			'senroflux_layout_use_when',
+			'specflux_site_agent_layout_use_when',
 			static fn ( array $when ): array => array_replace( $when, array( 'faq' => 'a changed sentence for the test' ) )
 		);
 		list( $description, $skill ) = $read();
-		remove_all_filters( 'senroflux_layout_use_when' );
+		remove_all_filters( 'specflux_site_agent_layout_use_when' );
 
 		$this->assertStringContainsString( 'a changed sentence for the test', $description );
 		$this->assertStringContainsString( 'a changed sentence for the test', $skill );
@@ -2317,7 +2317,7 @@ final class AbilitiesTest extends TestCase {
 		Abilities::reset();
 		Abilities::registerCategory();
 		Abilities::register();
-		$schema = $this->ability( 'senroflux/create-post' )->get_input_schema();
+		$schema = $this->ability( 'specflux/create-post' )->get_input_schema();
 		$page   = null;
 		foreach ( $schema['oneOf'] as $branch ) {
 			if ( array( 'page' ) === ( $branch['properties']['post_type']['enum'] ?? array() ) ) {
@@ -2336,7 +2336,7 @@ final class AbilitiesTest extends TestCase {
 		LayoutsTest::registerThemeFixtures();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2345,9 +2345,9 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ]->post_content;
-		$this->assertStringContainsString( 'senroflux/twentytwentyfive/hero-full-width-image', $stored );
-		$this->assertStringContainsString( 'senroflux/twentytwentyfive/services-3-col', $stored );
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ]->post_content;
+		$this->assertStringContainsString( 'specflux/twentytwentyfive/hero-full-width-image', $stored );
+		$this->assertStringContainsString( 'specflux/twentytwentyfive/services-3-col', $stored );
 		$this->assertStringContainsString( 'What happens at your first visit', $stored );
 	}
 
@@ -2355,8 +2355,8 @@ final class AbilitiesTest extends TestCase {
 	 * 0.3 quality fix (images budget 0): an image-less services section
 	 * (no card gives a photo) must be accepted by the REAL entry point the
 	 * abilities use — `create-post` on a page, which runs the section
-	 * through {@see \Specflux\SenroFlux\Packs\Pages\Layouts::render()} and
-	 * then the pages {@see \Specflux\SenroFlux\Packs\Pages\Validator} — not
+	 * through {@see \Specflux\SiteAgent\Packs\Pages\Layouts::render()} and
+	 * then the pages {@see \Specflux\SiteAgent\Packs\Pages\Validator} — not
 	 * just `Layouts::render()` in isolation.
 	 */
 	public function test_sections_builds_a_page_with_an_image_less_services_section(): void {
@@ -2370,7 +2370,7 @@ final class AbilitiesTest extends TestCase {
 		}
 		unset( $item );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2379,14 +2379,14 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ]->post_content;
-		$this->assertStringContainsString( 'senroflux/twentytwentyfive/services-3-col', $stored );
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ]->post_content;
+		$this->assertStringContainsString( 'specflux/twentytwentyfive/services-3-col', $stored );
 
 		// The hero and text-with-image sections legitimately keep their own
 		// images; only the services section's own markup must be image-less.
 		$services = null;
 		foreach ( parse_blocks( $stored ) as $block ) {
-			if ( 'senroflux/twentytwentyfive/services-3-col' === ( $block['attrs']['metadata']['name'] ?? null ) ) {
+			if ( 'specflux/twentytwentyfive/services-3-col' === ( $block['attrs']['metadata']['name'] ?? null ) ) {
 				$services = $block;
 			}
 		}
@@ -2413,7 +2413,7 @@ final class AbilitiesTest extends TestCase {
 		$text    = $outline[1];
 		array_splice( $outline, 2, 2, array( $text, $text ) );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2429,12 +2429,12 @@ final class AbilitiesTest extends TestCase {
 	/**
 	 * D3b page rule through create-post: the model's own tones may not sit side
 	 * by side or exceed two. The image-less hero's `contrast` default is
-	 * SenroFlux's choice, so it steps aside rather than cause a refusal.
+	 * Specflux Site Agent's choice, so it steps aside rather than cause a refusal.
 	 */
 	public function test_create_post_refuses_adjacent_and_excess_section_tones(): void {
 		require_once dirname( __DIR__, 2 ) . '/Packs/Pages/LayoutsTest.php';
-		$GLOBALS['senroflux_test_theme_patterns']  = array();
-		$GLOBALS['senroflux_test_global_settings'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns']  = array();
+		$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 			'color' => array(
 				'palette' => array(
 					array(
@@ -2461,7 +2461,7 @@ final class AbilitiesTest extends TestCase {
 		$faq  = $outline[4];
 		$page = 0;
 		$call = function ( array $sections ) use ( &$page ) {
-			return $this->ability( 'senroflux/create-post' )->execute(
+			return $this->ability( 'specflux/create-post' )->execute(
 				array(
 					'post_type'       => 'page',
 					'title'           => 'Home ' . ( ++$page ),
@@ -2482,15 +2482,15 @@ final class AbilitiesTest extends TestCase {
 
 		$beside = $call( array( $hero, array( 'tone' => 'contrast' ) + $outline[1] ) );
 		$this->assertIsArray( $beside, $beside instanceof WP_Error ? $beside->get_error_message() : '' );
-		$this->assertSame( 1, substr_count( $GLOBALS['senroflux_test_posts'][ $beside['id'] ]->post_content, '"backgroundColor":"contrast"' ) );
+		$this->assertSame( 1, substr_count( $GLOBALS['specflux_site_agent_test_posts'][ $beside['id'] ]->post_content, '"backgroundColor":"contrast"' ) );
 
 		$fine = $call( array( $hero, array( 'tone' => 'accent' ) + $faq ) );
 		$this->assertIsArray( $fine, $fine instanceof WP_Error ? $fine->get_error_message() : '' );
-		$stored = $GLOBALS['senroflux_test_posts'][ $fine['id'] ]->post_content;
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $fine['id'] ]->post_content;
 		$this->assertStringContainsString( '"backgroundColor":"contrast"', $stored );
 		$this->assertStringContainsString( '"backgroundColor":"accent-3"', $stored );
 
-		unset( $GLOBALS['senroflux_test_global_settings'] );
+		unset( $GLOBALS['specflux_site_agent_test_global_settings'] );
 		ThemePatterns::resetCache();
 	}
 
@@ -2499,7 +2499,7 @@ final class AbilitiesTest extends TestCase {
 		LayoutsTest::registerThemeFixtures();
 		$this->grant( 'edit_pages' );
 
-		$home = $this->ability( 'senroflux/create-post' )->execute(
+		$home = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Home',
@@ -2508,7 +2508,7 @@ final class AbilitiesTest extends TestCase {
 		);
 		$this->assertIsArray( $home, is_wp_error( $home ) ? $home->get_error_message() : '' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2522,7 +2522,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertStringContainsString( 'already the hero on "Home"', $message );
 		$this->assertStringContainsString( '(page ' . $home['id'] . ')', $message );
 		$this->assertStringContainsString( 'media-search', $message );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_inserted_posts'], 'the refused Services write persisted nothing' );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_inserted_posts'], 'the refused Services write persisted nothing' );
 	}
 
 	/** Editing the page that OWNS the hero image is unaffected — it is not reusing anyone else's. */
@@ -2531,7 +2531,7 @@ final class AbilitiesTest extends TestCase {
 		LayoutsTest::registerThemeFixtures();
 		$this->grant( 'edit_pages' );
 
-		$home = $this->ability( 'senroflux/create-post' )->execute(
+		$home = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Home',
@@ -2542,7 +2542,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( (int) $home['id'] );
 		$this->grant( 'edit_pages', 'edit_post' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'       => $home['id'],
 				'sections' => LayoutsTest::outline(),
@@ -2562,7 +2562,7 @@ final class AbilitiesTest extends TestCase {
 		LayoutsTest::registerThemeFixtures();
 		$this->grant( 'edit_pages' );
 
-		$home = $this->ability( 'senroflux/create-post' )->execute(
+		$home = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Home',
@@ -2578,7 +2578,7 @@ final class AbilitiesTest extends TestCase {
 			'alt' => 'A physiotherapist demonstrating a stretch',
 		);
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2596,10 +2596,10 @@ final class AbilitiesTest extends TestCase {
 	 * `hero-full-width-image` fixture ({@see LayoutsTest::FIXTURES}) ships
 	 * `dimRatio":10` ({@see tests/ThemePatterns/hero-full-width-image.php}) —
 	 * too light an overlay for the white hero text on top of it. The `hero`
-	 * layout fills it via {@see \Specflux\SenroFlux\Packs\Pages\Layouts::finish()}
+	 * layout fills it via {@see \Specflux\SiteAgent\Packs\Pages\Layouts::finish()}
 	 * (which only ever swaps the image url/alt, never the overlay), so the
 	 * enforcement has to happen later, in the pack's own
-	 * {@see \Specflux\SenroFlux\Packs\Pages\Validator::clean()} the write
+	 * {@see \Specflux\SiteAgent\Packs\Pages\Validator::clean()} the write
 	 * still passes through on the way to `wp_insert_post()` — proving the
 	 * theme-pattern path gets the same enforcement as the plugin's own
 	 * `cover-hero` pattern, not a special case wired into `Layouts`.
@@ -2609,7 +2609,7 @@ final class AbilitiesTest extends TestCase {
 		LayoutsTest::registerThemeFixtures();
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2618,8 +2618,8 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ]->post_content;
-		$this->assertStringContainsString( 'senroflux/twentytwentyfive/hero-full-width-image', $stored );
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ]->post_content;
+		$this->assertStringContainsString( 'specflux/twentytwentyfive/hero-full-width-image', $stored );
 		$this->assertStringNotContainsString( '"dimRatio":10', $stored );
 		$this->assertStringNotContainsString( 'has-background-dim-10', $stored );
 		$this->assertStringContainsString( '"dimRatio":50', $stored );
@@ -2632,7 +2632,7 @@ final class AbilitiesTest extends TestCase {
 		$sections                         = LayoutsTest::outline();
 		$sections[2]['items'][1]['image'] = $sections[0]['image'];
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2652,7 +2652,7 @@ final class AbilitiesTest extends TestCase {
 		$sections                     = LayoutsTest::outline();
 		$sections[0]['button']['url'] = '';
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Services',
@@ -2675,7 +2675,7 @@ final class AbilitiesTest extends TestCase {
 		$text_markup  = $vocabulary->all()[1]['markup'];
 		$image_markup = $this->mediaTextMarkup();
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Sectioned page',
@@ -2689,9 +2689,9 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_code() : '' );
 		$this->assertSame( 'draft', $result['status'] );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ];
-		$this->assertStringContainsString( 'senroflux/hero', $stored->post_content );
-		$this->assertStringContainsString( 'senroflux/text-section', $stored->post_content );
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ];
+		$this->assertStringContainsString( 'specflux/hero', $stored->post_content );
+		$this->assertStringContainsString( 'specflux/text-section', $stored->post_content );
 	}
 
 	/**
@@ -2706,7 +2706,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_sections_and_content_together_uses_sections_and_reports_it(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -2718,7 +2718,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_code() : '' );
 		$this->assertSame( 'draft', $result['status'] );
 		$this->assertTrue( $result['content_ignored'] );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ];
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ];
 		$this->assertStringNotContainsString( 'My plan for this page.', $stored->post_content );
 	}
 
@@ -2729,7 +2729,7 @@ final class AbilitiesTest extends TestCase {
 	 * definition never has a reason to send it in the first place.
 	 */
 	public function test_create_post_schema_never_offers_sections_for_post_type_post(): void {
-		$schema = $this->ability( 'senroflux/create-post' )->get_input_schema();
+		$schema = $this->ability( 'specflux/create-post' )->get_input_schema();
 
 		$this->assertArrayHasKey( 'oneOf', $schema );
 
@@ -2753,7 +2753,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_sections_unknown_theme_pattern_is_refused(): void {
 		$this->useThemeSlotPack();
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -2782,13 +2782,13 @@ final class AbilitiesTest extends TestCase {
 	 * ever ran — "label is not a valid property of Object" — which never
 	 * says what a `label`/`url` pair even means in a `sections` item. The
 	 * section item's `additionalProperties` is now `true` (see
-	 * {@see \Specflux\SenroFlux\Packs\Content\Abilities::sectionsSchema()}),
+	 * {@see \Specflux\SiteAgent\Packs\Content\Abilities::sectionsSchema()}),
 	 * so the call reaches this pack's own message instead.
 	 */
 	public function test_a_stray_button_shaped_section_names_the_mistake(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -2823,7 +2823,7 @@ final class AbilitiesTest extends TestCase {
 	public function test_an_invented_layout_with_a_button_in_its_items_gets_the_layout_message(): void {
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -2859,7 +2859,7 @@ final class AbilitiesTest extends TestCase {
 	 * This asserts the schema itself no longer blocks them.
 	 */
 	public function test_sections_item_schema_tolerates_unknown_properties(): void {
-		$schema      = $this->ability( 'senroflux/create-post' )->get_input_schema();
+		$schema      = $this->ability( 'specflux/create-post' )->get_input_schema();
 		$page_branch = null;
 		foreach ( $schema['oneOf'] as $branch ) {
 			if ( array( 'page' ) === ( $branch['properties']['post_type']['enum'] ?? array() ) ) {
@@ -2879,12 +2879,12 @@ final class AbilitiesTest extends TestCase {
 
 	/**
 	 * 0.3 quality fix (live run, services page — `scenario-2-1`, 2026-09-26):
-	 * `{"pattern":"senroflux/hero","slots":[...]}` refused with the SAME
-	 * generic "not available" message a genuine typo would get. `senroflux/hero`
-	 * is a real, curated pattern — {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary::resolveThemePattern()}
+	 * `{"pattern":"specflux/hero","slots":[...]}` refused with the SAME
+	 * generic "not available" message a genuine typo would get. `specflux/hero`
+	 * is a real, curated pattern — {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary::resolveThemePattern()}
 	 * only ever searches theme-derived ones, so it is unconditionally "unknown"
 	 * there. `ToolExecutor` drops a WP_Error's `data` before the model ever
-	 * sees it ({@see \Specflux\SenroFlux\Tools\ToolExecutor::execute()} —
+	 * sees it ({@see \Specflux\SiteAgent\Tools\ToolExecutor::execute()} —
 	 * only `get_error_message()` reaches the model), so the message ITSELF
 	 * must say the pattern is curated and point at `markup` — without this,
 	 * the model cannot tell "typo" from "wrong write form" and gives up on
@@ -2893,13 +2893,13 @@ final class AbilitiesTest extends TestCase {
 	public function test_sections_curated_pattern_sent_as_slots_names_the_fix(): void {
 		$this->useThemeSlotPack();
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
 				'sections'  => array(
 					array(
-						'pattern' => 'senroflux/hero',
+						'pattern' => 'specflux/hero',
 						'slots'   => array( 'Headline', 'Subheadline', 'Get started' ),
 					),
 				),
@@ -2909,7 +2909,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'theme_pattern_unknown', $result->get_error_code() );
 		$message = $result->get_error_message();
-		$this->assertStringContainsString( 'senroflux/hero', $message );
+		$this->assertStringContainsString( 'specflux/hero', $message );
 		$this->assertStringContainsString( 'markup', $message, 'the message must point the model at the write form it actually needs' );
 	}
 
@@ -2924,7 +2924,7 @@ final class AbilitiesTest extends TestCase {
 		Abilities::useRunPack( 'posts' );
 		$this->grant( 'edit_posts' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'post',
 				'title'     => 'T',
@@ -2934,26 +2934,26 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'sections_not_supported', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	/**
 	 * The posts pack's OWN vocabulary/payload never carries a theme-derived
 	 * entry, even with theme patterns registered globally — `Posts\Vocabulary`
-	 * does not implement {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}
+	 * does not implement {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}
 	 * at all.
 	 */
 	public function test_posts_pack_vocabulary_never_carries_theme_derived_entries(): void {
 		$this->registerThemeFixture( 'banner-intro' );
 
 		$posts_vocabulary = new PostsVocabulary();
-		$this->assertNotInstanceOf( \Specflux\SenroFlux\Packs\Content\ThemePatternSource::class, $posts_vocabulary );
+		$this->assertNotInstanceOf( \Specflux\SiteAgent\Packs\Content\ThemePatternSource::class, $posts_vocabulary );
 
 		Abilities::registerSource( 'posts', new PostsValidator( $posts_vocabulary ), $posts_vocabulary, 'edit_posts' );
 		Abilities::useRunPack( 'posts' );
 		$this->grant( 'edit_posts' );
 
-		$result = $this->ability( 'senroflux/list-patterns' )->execute( array() );
+		$result = $this->ability( 'specflux/list-patterns' )->execute( array() );
 
 		foreach ( $result['patterns'] as $pattern ) {
 			$this->assertArrayNotHasKey( 'theme_derived', $pattern );
@@ -2970,7 +2970,7 @@ final class AbilitiesTest extends TestCase {
 		$this->registerThemeFixture( 'banner-intro' );
 		$this->grant( 'edit_pages' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'T',
@@ -2987,7 +2987,7 @@ final class AbilitiesTest extends TestCase {
 		$this->assertSame( 'theme_pattern_unavailable', $result->get_error_code() );
 		$this->assertStringContainsString( '`layout`', $result->get_error_message() );
 		$this->assertStringContainsString( 'services', $result->get_error_message() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_sections_fills_a_theme_pattern_and_persists_the_filled_markup(): void {
@@ -2996,7 +2996,7 @@ final class AbilitiesTest extends TestCase {
 		$theme      = $vocabulary->resolveThemePattern( 'twentytwentyfive/banner-intro' );
 		$this->assertNotNull( $theme, 'the fixture must be eligible' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			array(
 				'post_type' => 'page',
 				'title'     => 'Themed page',
@@ -3012,7 +3012,7 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_code() : '' );
-		$stored = $GLOBALS['senroflux_test_posts'][ $result['id'] ];
+		$stored = $GLOBALS['specflux_site_agent_test_posts'][ $result['id'] ];
 		$this->assertStringContainsString( 'A brand new promise for this brand', $stored->post_content );
 	}
 
@@ -3026,18 +3026,18 @@ final class AbilitiesTest extends TestCase {
 			'content'   => '<!-- wp:video --><figure></figure><!-- /wp:video -->',
 		);
 
-		$pre  = ( new PagesPack() )->validateCall( 'senroflux/create-post', $input );
-		$exec = $this->ability( 'senroflux/create-post' )->execute( $input );
+		$pre  = ( new PagesPack() )->validateCall( 'specflux/create-post', $input );
+		$exec = $this->ability( 'specflux/create-post' )->execute( $input );
 
 		$this->assertInstanceOf( WP_Error::class, $pre );
 		$this->assertSame( $exec->get_error_code(), $pre->get_error_code() );
 		$this->assertSame( $exec->get_error_message(), $pre->get_error_message() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_preflight_passes_a_valid_create_and_writes_nothing(): void {
 		$result = ( new PagesPack() )->validateCall(
-			'senroflux/create-post',
+			'specflux/create-post',
 			array(
 				'post_type'       => 'page',
 				'title'           => 'T',
@@ -3047,17 +3047,17 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertNull( $result );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 	}
 
 	public function test_preflight_has_no_opinion_on_other_abilities(): void {
-		$this->assertNull( ( new PagesPack() )->validateCall( 'senroflux/read-content', array( 'content' => '<!-- wp:video -->' ) ) );
+		$this->assertNull( ( new PagesPack() )->validateCall( 'specflux/read-content', array( 'content' => '<!-- wp:video -->' ) ) );
 		$this->assertNull( ( new PagesPack() )->validateCall( 'woocommerce/product-create', array() ) );
 	}
 
 	/** Live J8: the run only listed the page, then an approved publish-post died unread at execute. */
-	private function parkedGate( bool $approved = false ): \Specflux\SenroFlux\Tools\BuiltinGate {
-		return new \Specflux\SenroFlux\Tools\BuiltinGate( active: true, tier: 2, verb: 'pages/publish', approvalId: 'builtin:1:call_x', approved: $approved );
+	private function parkedGate( bool $approved = false ): \Specflux\SiteAgent\Tools\BuiltinGate {
+		return new \Specflux\SiteAgent\Tools\BuiltinGate( active: true, tier: 2, verb: 'pages/publish', approvalId: 'builtin:1:call_x', approved: $approved );
 	}
 
 	/** @return array<string,mixed> */
@@ -3070,10 +3070,10 @@ final class AbilitiesTest extends TestCase {
 		);
 	}
 
-	private function callWithValidate( string $ability, array $input, ?\Specflux\SenroFlux\Tools\BuiltinGate $gate ): \Specflux\SenroFlux\Tools\ToolOutcome {
+	private function callWithValidate( string $ability, array $input, ?\Specflux\SiteAgent\Tools\BuiltinGate $gate ): \Specflux\SiteAgent\Tools\ToolOutcome {
 		$pack = new PagesPack();
 
-		return ( new \Specflux\SenroFlux\Tools\ToolExecutor() )->call(
+		return ( new \Specflux\SiteAgent\Tools\ToolExecutor() )->call(
 			$ability,
 			$input,
 			$gate,
@@ -3091,14 +3091,14 @@ final class AbilitiesTest extends TestCase {
 			'no_image_reason' => 'short utility page',
 		);
 
-		$error = ( new PagesPack() )->validateCall( 'senroflux/update-post', $update );
+		$error = ( new PagesPack() )->validateCall( 'specflux/update-post', $update );
 		$this->assertInstanceOf( WP_Error::class, $error );
 		$this->assertSame( 'stale_write', $error->get_error_code() );
 		$this->assertSame( 'This run has not read this item yet. Read it with read-content by its id, then write again.', $error->get_error_message() );
 
 		foreach ( array(
-			'senroflux/update-post'  => $update,
-			'senroflux/publish-post' => $this->publishInput(),
+			'specflux/update-post'  => $update,
+			'specflux/publish-post' => $this->publishInput(),
 		) as $ability => $input ) {
 			$outcome = $this->callWithValidate( $ability, $input, $this->parkedGate() );
 			$this->assertSame( 'denied', $outcome->kind, $ability . ' must not park for approval' );
@@ -3110,7 +3110,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->grant(); // check_permissions() would refuse: the unread refusal must come first.
 
-		$outcome = $this->callWithValidate( 'senroflux/publish-post', $this->publishInput(), null );
+		$outcome = $this->callWithValidate( 'specflux/publish-post', $this->publishInput(), null );
 
 		$this->assertSame( 'denied', $outcome->kind );
 		$this->assertSame( 'stale_write', $outcome->errorCode );
@@ -3121,7 +3121,7 @@ final class AbilitiesTest extends TestCase {
 		$this->seedPost();
 		$this->primeRead( 100 );
 
-		$outcome = $this->callWithValidate( 'senroflux/publish-post', $this->publishInput(), $this->parkedGate() );
+		$outcome = $this->callWithValidate( 'specflux/publish-post', $this->publishInput(), $this->parkedGate() );
 
 		$this->assertSame( 'approval_required', $outcome->kind );
 	}
@@ -3131,10 +3131,10 @@ final class AbilitiesTest extends TestCase {
 		$this->grant( 'edit_pages', 'edit_post', 'publish_pages' );
 		$this->primeRead( 100, 'a-marker-the-post-has-since-moved-past' );
 
-		$parked = $this->callWithValidate( 'senroflux/publish-post', $this->publishInput(), $this->parkedGate() );
+		$parked = $this->callWithValidate( 'specflux/publish-post', $this->publishInput(), $this->parkedGate() );
 		$this->assertSame( 'approval_required', $parked->kind );
 
-		$approved = $this->callWithValidate( 'senroflux/publish-post', $this->publishInput(), $this->parkedGate( true ) );
+		$approved = $this->callWithValidate( 'specflux/publish-post', $this->publishInput(), $this->parkedGate( true ) );
 		$this->assertSame( 'error', $approved->kind );
 		$this->assertStringContainsString( 'changed since the run last read it', (string) $approved->errorMessage );
 	}
@@ -3150,12 +3150,12 @@ final class AbilitiesTest extends TestCase {
 			'no_image_reason' => 'short utility page',
 		);
 
-		$this->assertNull( ( new PagesPack() )->validateCall( 'senroflux/update-post', $input ), 'a marker mismatch is execute-only' );
-		$this->assertSame( 'stale_write', $this->ability( 'senroflux/update-post' )->execute( $input )->get_error_code() );
+		$this->assertNull( ( new PagesPack() )->validateCall( 'specflux/update-post', $input ), 'a marker mismatch is execute-only' );
+		$this->assertSame( 'stale_write', $this->ability( 'specflux/update-post' )->execute( $input )->get_error_code() );
 
 		Abilities::forgetRunContext();
-		$this->assertNull( ( new PagesPack() )->validateCall( 'senroflux/update-post', $input ), 'no run context: preflight fails open, execute still refuses' );
-		$this->assertSame( 'stale_write', $this->ability( 'senroflux/update-post' )->execute( $input )->get_error_code() );
+		$this->assertNull( ( new PagesPack() )->validateCall( 'specflux/update-post', $input ), 'no run context: preflight fails open, execute still refuses' );
+		$this->assertSame( 'stale_write', $this->ability( 'specflux/update-post' )->execute( $input )->get_error_code() );
 	}
 
 	public function test_preflight_refuses_invalid_update_content(): void {
@@ -3163,7 +3163,7 @@ final class AbilitiesTest extends TestCase {
 		$this->primeRead( 100 );
 
 		$error = ( new PagesPack() )->validateCall(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'      => 100,
 				'content' => '<!-- wp:video --><figure></figure><!-- /wp:video -->',
@@ -3177,15 +3177,15 @@ final class AbilitiesTest extends TestCase {
 	// --- categories / tags on the write ---------------------------------------
 
 	private function termsSetUp(): void {
-		$GLOBALS['senroflux_test_terms']             = array();
-		$GLOBALS['senroflux_test_post_terms']        = array();
-		$GLOBALS['senroflux_test_next_term_id']      = 50;
-		$GLOBALS['senroflux_test_taxonomies']        = array();
-		$GLOBALS['senroflux_test_object_taxonomies'] = array( 'post' => array( 'category', 'post_tag' ) );
+		$GLOBALS['specflux_site_agent_test_terms']             = array();
+		$GLOBALS['specflux_site_agent_test_post_terms']        = array();
+		$GLOBALS['specflux_site_agent_test_next_term_id']      = 50;
+		$GLOBALS['specflux_site_agent_test_taxonomies']        = array();
+		$GLOBALS['specflux_site_agent_test_object_taxonomies'] = array( 'post' => array( 'category', 'post_tag' ) );
 	}
 
 	protected function tearDownTerms(): void {
-		unset( $GLOBALS['senroflux_test_taxonomies'], $GLOBALS['senroflux_test_object_taxonomies'] );
+		unset( $GLOBALS['specflux_site_agent_test_taxonomies'], $GLOBALS['specflux_site_agent_test_object_taxonomies'] );
 	}
 
 	/** @return array<string,mixed> */
@@ -3202,7 +3202,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_term_inputs_are_declared_in_every_write_schema(): void {
 		foreach ( array( 'create-post', 'update-post', 'publish-post' ) as $name ) {
-			$schema = $this->ability( 'senroflux/' . $name )->get_input_schema();
+			$schema = $this->ability( 'specflux/' . $name )->get_input_schema();
 			$props  = 'create-post' === $name ? $schema['oneOf'][0]['properties'] : $schema['properties'];
 			foreach ( array( 'categories', 'tags' ) as $field ) {
 				$this->assertSame( 'array', $props[ $field ]['type'], "$name $field" );
@@ -3214,11 +3214,11 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_create_post_reuses_existing_terms_creates_missing_ones_and_sets_them(): void {
 		$this->termsSetUp();
-		$GLOBALS['senroflux_test_terms']['category:news'] = 5;
-		$GLOBALS['senroflux_test_terms']['post_tag:php']  = 6;
+		$GLOBALS['specflux_site_agent_test_terms']['category:news'] = 5;
+		$GLOBALS['specflux_site_agent_test_terms']['post_tag:php']  = 6;
 		$this->grant( 'edit_posts', 'assign_categories', 'assign_post_tags', 'manage_categories' );
 
-		$result = $this->ability( 'senroflux/create-post' )->execute(
+		$result = $this->ability( 'specflux/create-post' )->execute(
 			$this->postWithTerms(
 				array(
 					'categories' => array( 'NEWS', 'Guides' ),
@@ -3229,10 +3229,10 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 		$this->assertSame( array( 'NEWS', 'Guides' ), $result['categories'] );
-		$this->assertSame( array( 5, 50 ), $GLOBALS['senroflux_test_post_terms'][100]['category'], 'existing reused, missing created' );
-		$this->assertSame( array( 6, 51, 52 ), $GLOBALS['senroflux_test_post_terms'][100]['post_tag'] );
-		$this->assertSame( 52, $GLOBALS['senroflux_test_next_term_id'] - 1 + 0 );
-		$this->assertCount( 5, $GLOBALS['senroflux_test_terms'], 'only the three missing names were created' );
+		$this->assertSame( array( 5, 50 ), $GLOBALS['specflux_site_agent_test_post_terms'][100]['category'], 'existing reused, missing created' );
+		$this->assertSame( array( 6, 51, 52 ), $GLOBALS['specflux_site_agent_test_post_terms'][100]['post_tag'] );
+		$this->assertSame( 52, $GLOBALS['specflux_site_agent_test_next_term_id'] - 1 + 0 );
+		$this->assertCount( 5, $GLOBALS['specflux_site_agent_test_terms'], 'only the three missing names were created' );
 		$this->tearDownTerms();
 	}
 
@@ -3240,13 +3240,13 @@ final class AbilitiesTest extends TestCase {
 		$this->termsSetUp();
 		$this->seedPost( 100, 'post' );
 		$this->primeRead( 100 );
-		$GLOBALS['senroflux_test_post_terms'][100] = array(
+		$GLOBALS['specflux_site_agent_test_post_terms'][100] = array(
 			'post_tag' => array( 1, 2 ),
 			'category' => array( 9 ),
 		);
 		$this->grant( 'edit_posts', 'edit_post', 'assign_post_tags' );
 
-		$result = $this->ability( 'senroflux/update-post' )->execute(
+		$result = $this->ability( 'specflux/update-post' )->execute(
 			array(
 				'id'   => 100,
 				'tags' => array( 'solo' ),
@@ -3254,8 +3254,8 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
-		$this->assertSame( array( 50 ), $GLOBALS['senroflux_test_post_terms'][100]['post_tag'] );
-		$this->assertSame( array( 9 ), $GLOBALS['senroflux_test_post_terms'][100]['category'] );
+		$this->assertSame( array( 50 ), $GLOBALS['specflux_site_agent_test_post_terms'][100]['post_tag'] );
+		$this->assertSame( array( 9 ), $GLOBALS['specflux_site_agent_test_post_terms'][100]['category'] );
 		$this->tearDownTerms();
 	}
 
@@ -3298,11 +3298,11 @@ final class AbilitiesTest extends TestCase {
 		$pre = Abilities::preflight( 'create-post', $input );
 
 		$this->assertInstanceOf( WP_Error::class, $pre );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_terms'], 'no term created' );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'], 'no post created' );
-		$this->assertInstanceOf( WP_Error::class, $this->ability( 'senroflux/create-post' )->execute( $input ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_terms'] );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_inserted_posts'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_terms'], 'no term created' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'], 'no post created' );
+		$this->assertInstanceOf( WP_Error::class, $this->ability( 'specflux/create-post' )->execute( $input ) );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_terms'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_inserted_posts'] );
 		$this->tearDownTerms();
 	}
 
@@ -3324,11 +3324,11 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_a_missing_create_capability_names_the_term_in_permission_and_preflight(): void {
 		$this->termsSetUp();
-		$GLOBALS['senroflux_test_terms']['category:news'] = 5;
+		$GLOBALS['specflux_site_agent_test_terms']['category:news'] = 5;
 		$this->grant( 'edit_posts', 'assign_categories' );
 		$input = $this->postWithTerms( array( 'categories' => array( 'News', 'Brand New' ) ) );
 
-		$permission = $this->ability( 'senroflux/create-post' )->check_permissions( $input );
+		$permission = $this->ability( 'specflux/create-post' )->check_permissions( $input );
 		$pre        = Abilities::preflight( 'create-post', $input );
 
 		foreach ( array( $permission, $pre ) as $refusal ) {
@@ -3338,7 +3338,7 @@ final class AbilitiesTest extends TestCase {
 		}
 
 		$this->grant( 'edit_posts' );
-		$this->assertFalse( $this->ability( 'senroflux/create-post' )->check_permissions( $this->postWithTerms( array( 'categories' => array( 'News' ) ) ) ), 'assigning needs the assign capability' );
+		$this->assertFalse( $this->ability( 'specflux/create-post' )->check_permissions( $this->postWithTerms( array( 'categories' => array( 'News' ) ) ) ), 'assigning needs the assign capability' );
 		$this->tearDownTerms();
 	}
 
@@ -3354,7 +3354,7 @@ final class AbilitiesTest extends TestCase {
 		$this->termsSetUp();
 		$this->seedPost( 100, 'post' );
 		$this->primeRead( 100 );
-		$GLOBALS['senroflux_test_terms']['category:uncategorized'] = 1;
+		$GLOBALS['specflux_site_agent_test_terms']['category:uncategorized'] = 1;
 		$this->grant( 'edit_posts', 'edit_post', 'assign_categories' );
 
 		$this->assertNull(
@@ -3375,7 +3375,7 @@ final class AbilitiesTest extends TestCase {
 			)
 		);
 		$this->assertSame( 'term_create_forbidden', $refused->get_error_code() );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_terms'] );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_terms'] );
 		$this->tearDownTerms();
 	}
 }

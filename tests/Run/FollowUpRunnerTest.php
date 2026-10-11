@@ -5,20 +5,20 @@
  * of a follow-up never chains through the intermediate run's seed text
  * (stage-16 failable check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use wpdb;
@@ -43,8 +43,8 @@ final class FollowUpRunnerTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 	}
 
 	private static function textTurn( string $text ): ModelTurn {
@@ -90,7 +90,7 @@ final class FollowUpRunnerTest extends TestCase {
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::AgentSafety,
+			\Specflux\SiteAgent\Run\GateMode::AgentSafety,
 			array(),
 			$source_id
 		);
@@ -128,7 +128,7 @@ final class FollowUpRunnerTest extends TestCase {
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::AgentSafety,
+			\Specflux\SiteAgent\Run\GateMode::AgentSafety,
 			array(),
 			$source_id
 		);
@@ -171,7 +171,7 @@ final class FollowUpRunnerTest extends TestCase {
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::AgentSafety,
+			\Specflux\SiteAgent\Run\GateMode::AgentSafety,
 			array(),
 			$run_a
 		);
@@ -199,7 +199,7 @@ final class FollowUpRunnerTest extends TestCase {
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::AgentSafety,
+			\Specflux\SiteAgent\Run\GateMode::AgentSafety,
 			array(),
 			$run_b
 		);

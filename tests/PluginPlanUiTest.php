@@ -9,32 +9,32 @@
  * the first render. The run detail now computes it fresh, with the same
  * function the tick uses.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Tools\PlanTools;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Tools\PlanTools;
 use wpdb;
 
 final class PluginPlanUiTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['wpdb']                           = new wpdb();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['wpdb']                                     = new wpdb();
 		Plugin::set_dependency_probe( true );
 	}
 
 	protected function tearDown(): void {
 		remove_all_filters();
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 		unset( $GLOBALS['wpdb'] );
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
@@ -46,7 +46,7 @@ final class PluginPlanUiTest extends TestCase {
 		$method->setAccessible( true );
 		$store = $method->invoke( Plugin::instance() )->store();
 
-		$run_id = $store->createRun( 1, 'test-consumer', 'Schedule three posts', array( 'senroflux/read-content' ), array() );
+		$run_id = $store->createRun( 1, 'test-consumer', 'Schedule three posts', array( 'specflux/read-content' ), array() );
 		$store->appendStep(
 			$run_id,
 			StepKind::Plan,
@@ -55,7 +55,7 @@ final class PluginPlanUiTest extends TestCase {
 				'steps'       => array(
 					array(
 						'text'  => 'Draft',
-						'verbs' => array( 'senroflux/read-content' ),
+						'verbs' => array( 'specflux/read-content' ),
 					),
 				),
 				'assumptions' => array(),
@@ -70,8 +70,8 @@ final class PluginPlanUiTest extends TestCase {
 	}
 
 	public function test_a_parked_plan_offers_preapproval_when_both_switches_are_on(): void {
-		senroflux_test_grants( true );
-		add_filter( 'senroflux_enable_preapproval', static fn (): bool => true );
+		specflux_site_agent_test_grants( true );
+		add_filter( 'specflux_site_agent_enable_preapproval', static fn (): bool => true );
 		$run_id = $this->seedParkedPlan();
 
 		$detail = Plugin::instance()->get( $run_id );
@@ -84,7 +84,7 @@ final class PluginPlanUiTest extends TestCase {
 	}
 
 	public function test_a_parked_plan_does_not_offer_preapproval_when_the_filter_is_off(): void {
-		senroflux_test_grants( true );
+		specflux_site_agent_test_grants( true );
 		$run_id = $this->seedParkedPlan();
 
 		$detail = Plugin::instance()->get( $run_id );
@@ -93,8 +93,8 @@ final class PluginPlanUiTest extends TestCase {
 	}
 
 	public function test_a_parked_plan_does_not_offer_preapproval_when_agent_safety_grants_are_off(): void {
-		senroflux_test_grants( false );
-		add_filter( 'senroflux_enable_preapproval', static fn (): bool => true );
+		specflux_site_agent_test_grants( false );
+		add_filter( 'specflux_site_agent_enable_preapproval', static fn (): bool => true );
 		$run_id = $this->seedParkedPlan();
 
 		$detail = Plugin::instance()->get( $run_id );
@@ -103,8 +103,8 @@ final class PluginPlanUiTest extends TestCase {
 	}
 
 	public function test_a_run_that_is_not_parked_on_a_plan_carries_no_plan_ui(): void {
-		senroflux_test_grants( true );
-		add_filter( 'senroflux_enable_preapproval', static fn (): bool => true );
+		specflux_site_agent_test_grants( true );
+		add_filter( 'specflux_site_agent_enable_preapproval', static fn (): bool => true );
 		$run_id = $this->seedParkedPlan( 'running' );
 
 		$detail = Plugin::instance()->get( $run_id );

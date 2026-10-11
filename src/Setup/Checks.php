@@ -2,15 +2,15 @@
 /**
  * The ONE setup-check evaluator (0.3 S11).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Setup;
+namespace Specflux\SiteAgent\Setup;
 
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -20,14 +20,14 @@ defined( 'ABSPATH' ) || exit;
  * pack's contributed checks (`Pack::setupChecks()`).
  *
  * THE SAME evaluator backs BOTH the setup panel and `Pack::preflight()`
- * (called from {@see \Specflux\SenroFlux\Packs\Pack::preflight()}) — there is
+ * (called from {@see \Specflux\SiteAgent\Packs\Pack::preflight()}) — there is
  * exactly one rule set. The user-meta dismissal for the advisory Agent Safety
  * check is decided here too, so the panel and any other caller agree on it.
  */
 final class Checks {
 
 	/** User-meta key: 1 once dismissed, per user, never re-armed (S11). */
-	public const AGENT_SAFETY_DISMISSED_META = 'senroflux_agent_safety_check_dismissed';
+	public const AGENT_SAFETY_DISMISSED_META = 'specflux_site_agent_agent_safety_check_dismissed';
 
 	/** Test seam: force the provider-configured probe. Null restores reality. */
 	private static ?bool $provider_probe = null;
@@ -85,7 +85,7 @@ final class Checks {
 	}
 
 	/**
-	 * `senroflux/provider` (blocking, harness): passes when the AI Client
+	 * `specflux/provider` (blocking, harness): passes when the AI Client
 	 * reports a configured provider.
 	 *
 	 * Below WordPress 7.0 the AI Client classes are absent entirely, so the
@@ -94,26 +94,26 @@ final class Checks {
 	public static function providerCheck(): SetupCheck {
 		if ( ! self::wordPressSupportsAi() ) {
 			return new SetupCheck(
-				'senroflux/provider',
+				'specflux/provider',
 				SetupCheck::BLOCKING,
 				false,
-				__( 'SenroFlux needs WordPress 7.0 or newer.', 'senroflux' ),
+				__( 'Specflux Site Agent needs WordPress 7.0 or newer.', 'specflux-site-agent' ),
 				function_exists( 'admin_url' ) ? admin_url( 'update-core.php' ) : null,
 				'update_core',
-				__( 'Ask an administrator to update WordPress to 7.0 or newer.', 'senroflux' ),
-				'senroflux_wordpress_outdated'
+				__( 'Ask an administrator to update WordPress to 7.0 or newer.', 'specflux-site-agent' ),
+				'specflux_site_agent_wordpress_outdated'
 			);
 		}
 
 		return new SetupCheck(
-			'senroflux/provider',
+			'specflux/provider',
 			SetupCheck::BLOCKING,
 			self::providerConfigured(),
-			__( 'Configure a model provider in Settings → Connectors.', 'senroflux' ),
+			__( 'Configure a model provider in Settings → Connectors.', 'specflux-site-agent' ),
 			function_exists( 'admin_url' ) ? admin_url( 'options-connectors.php' ) : null,
 			'manage_options',
-			__( 'Ask an administrator to configure a model provider in Settings → Connectors.', 'senroflux' ),
-			'senroflux_provider_unconfigured'
+			__( 'Ask an administrator to configure a model provider in Settings → Connectors.', 'specflux-site-agent' ),
+			'specflux_site_agent_provider_unconfigured'
 		);
 	}
 
@@ -158,7 +158,7 @@ final class Checks {
 	}
 
 	/**
-	 * `senroflux/agent-safety` (advisory, harness): null once Agent Safety is
+	 * `specflux/agent-safety` (advisory, harness): null once Agent Safety is
 	 * present, or once this viewer has dismissed it (per-user, never re-armed).
 	 *
 	 * @param int $user_id The viewer.
@@ -173,16 +173,16 @@ final class Checks {
 		}
 
 		return new SetupCheck(
-			'senroflux/agent-safety',
+			'specflux/agent-safety',
 			SetupCheck::ADVISORY,
 			false,
-			__( 'Install SenroGate for approval and audit governance on every write.', 'senroflux' ),
+			__( 'Install Specflux Agent Governance for approval and audit governance on every write.', 'specflux-site-agent' ),
 			function_exists( 'admin_url' )
 				? admin_url( 'plugin-install.php?tab=plugin-information&plugin=agent-safety' )
 				: null,
 			'install_plugins',
-			__( 'Ask an administrator to install the SenroGate plugin.', 'senroflux' ),
-			'senroflux_agent_safety_missing'
+			__( 'Ask an administrator to install the Specflux Agent Governance plugin.', 'specflux-site-agent' ),
+			'specflux_site_agent_agent_safety_missing'
 		);
 	}
 

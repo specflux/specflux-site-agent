@@ -3,36 +3,36 @@
  * Test-only stand-in for the Agent Safety plugin's host surface (S14 AS-12).
  *
  * Agent Safety is a separate plugin and is NOT a composer dependency, so the
- * suite has to supply the two symbols SenroFlux feature-detects: the global
+ * suite has to supply the two symbols Specflux Site Agent feature-detects: the global
  * `agent_safety()` locator and `RequestContext`'s static correlation scope.
  * Both are recording doubles with knobs — none of Agent Safety's own logic is
  * reproduced here, only the shape of its contract:
  *
- *   $GLOBALS['senroflux_test_agent_safety'] — the container (null by default,
+ *   $GLOBALS['specflux_site_agent_test_agent_safety'] — the container (null by default,
  *   which is the "Agent Safety inactive" state every pre-stage-11 test assumes).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-$GLOBALS['senroflux_test_agent_safety'] = $GLOBALS['senroflux_test_agent_safety'] ?? null;
+$GLOBALS['specflux_site_agent_test_agent_safety'] = $GLOBALS['specflux_site_agent_test_agent_safety'] ?? null;
 
 if ( ! function_exists( 'agent_safety' ) ) {
 	/**
 	 * The plugin locator Agent Safety exposes. Null = plugin absent.
 	 */
 	function agent_safety(): ?object {
-		return $GLOBALS['senroflux_test_agent_safety'] ?? null;
+		return $GLOBALS['specflux_site_agent_test_agent_safety'] ?? null;
 	}
 }
 
-if ( ! class_exists( 'SenroFlux_Test_Grants' ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Grants' ) ) {
 	/**
 	 * Stands in for `agent_safety()->grants()`: records what the harness asked
 	 * for, and refuses everything the real service refuses.
 	 */
-	class SenroFlux_Test_Grants {
+	class SpecfluxSiteAgent_Test_Grants {
 
 		/** Mirrors the `agent_safety_enable_grants` switch. */
 		public bool $enabled = true;
@@ -132,19 +132,19 @@ if ( ! class_exists( 'SenroFlux_Test_Grants' ) ) {
 	}
 }
 
-if ( ! class_exists( 'SenroFlux_Test_AgentSafety' ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_AgentSafety' ) ) {
 	/**
-	 * Stands in for Agent Safety's container: the two services SenroFlux
+	 * Stands in for Agent Safety's container: the two services Specflux Site Agent
 	 * feature-detects. `grants` may be null — an Agent Safety built without
 	 * AS-12.
 	 */
-	class SenroFlux_Test_AgentSafety {
+	class SpecfluxSiteAgent_Test_AgentSafety {
 
-		public function __construct( private ?SenroFlux_Test_Grants $grants = null ) {
-			$this->grants = $grants ?? new SenroFlux_Test_Grants();
+		public function __construct( private ?SpecfluxSiteAgent_Test_Grants $grants = null ) {
+			$this->grants = $grants ?? new SpecfluxSiteAgent_Test_Grants();
 		}
 
-		public function grants(): ?SenroFlux_Test_Grants {
+		public function grants(): ?SpecfluxSiteAgent_Test_Grants {
 			return $this->grants;
 		}
 
@@ -154,24 +154,24 @@ if ( ! class_exists( 'SenroFlux_Test_AgentSafety' ) ) {
 	}
 }
 
-if ( ! function_exists( 'senroflux_test_grants' ) ) {
+if ( ! function_exists( 'specflux_site_agent_test_grants' ) ) {
 	/**
 	 * Switch Agent Safety "on" for a test and return its grants double.
 	 *
 	 * @param bool $enabled Whether the AS-12 feature switch is on.
 	 */
-	function senroflux_test_grants( bool $enabled = true ): SenroFlux_Test_Grants {
-		$grants                                 = new SenroFlux_Test_Grants();
-		$grants->enabled                        = $enabled;
-		$GLOBALS['senroflux_test_agent_safety'] = new SenroFlux_Test_AgentSafety( $grants );
+	function specflux_site_agent_test_grants( bool $enabled = true ): SpecfluxSiteAgent_Test_Grants {
+		$grants          = new SpecfluxSiteAgent_Test_Grants();
+		$grants->enabled = $enabled;
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new SpecfluxSiteAgent_Test_AgentSafety( $grants );
 
 		return $grants;
 	}
 }
 
-if ( ! function_exists( 'senroflux_test_no_agent_safety' ) ) {
+if ( ! function_exists( 'specflux_site_agent_test_no_agent_safety' ) ) {
 	/** Return to the default state: Agent Safety inactive. */
-	function senroflux_test_no_agent_safety(): void {
-		$GLOBALS['senroflux_test_agent_safety'] = null;
+	function specflux_site_agent_test_no_agent_safety(): void {
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = null;
 	}
 }

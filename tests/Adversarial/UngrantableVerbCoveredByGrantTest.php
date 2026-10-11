@@ -5,28 +5,28 @@
  * when an accepted plan lists it — using the REAL commerce pack's own
  * `commerce/refund`, not a stand-in list.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use SenroFlux_Test_Grants;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use SpecfluxSiteAgent_Test_Grants;
 use Specflux\AgentSafety\Plugin\Support\RequestContext;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GrantEligibility;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
-use Specflux\SenroFlux\Tests\Run\RecordingBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GrantEligibility;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
+use Specflux\SiteAgent\Tests\Run\RecordingBridge;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -36,11 +36,11 @@ final class UngrantableVerbCoveredByGrantTest extends TestCase {
 
 	private wpdb $db;
 
-	private \Specflux\SenroFlux\Run\WpdbRunStore $store;
+	private \Specflux\SiteAgent\Run\WpdbRunStore $store;
 
 	private FakeGateway $gateway;
 
-	private SenroFlux_Test_Grants $grants;
+	private SpecfluxSiteAgent_Test_Grants $grants;
 
 	private CommercePack $pack;
 
@@ -48,28 +48,28 @@ final class UngrantableVerbCoveredByGrantTest extends TestCase {
 		$this->db              = new wpdb();
 		$this->db->queryReturn = 1;
 		$GLOBALS['wpdb']       = $this->db;
-		$this->store           = new \Specflux\SenroFlux\Run\WpdbRunStore( $this->db );
+		$this->store           = new \Specflux\SiteAgent\Run\WpdbRunStore( $this->db );
 		$this->gateway         = new FakeGateway();
 		$this->pack            = new CommercePack();
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'commerce/refund'        => new SenroFlux_Test_Fake_Ability( 'commerce/refund', true, array( 'ok' => true ) ),
-			'commerce/coupon-enable' => new SenroFlux_Test_Fake_Ability( 'commerce/coupon-enable', true, array( 'id' => 7 ) ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'commerce/refund'        => new SpecfluxSiteAgent_Test_Fake_Ability( 'commerce/refund', true, array( 'ok' => true ) ),
+			'commerce/coupon-enable' => new SpecfluxSiteAgent_Test_Fake_Ability( 'commerce/coupon-enable', true, array( 'id' => 7 ) ),
 		);
 
 		RequestContext::reset();
-		$this->grants = senroflux_test_grants( true );
-		add_filter( 'senroflux_enable_preapproval', static fn (): bool => true, 10, 1 );
+		$this->grants = specflux_site_agent_test_grants( true );
+		add_filter( 'specflux_site_agent_enable_preapproval', static fn (): bool => true, 10, 1 );
 	}
 
 	protected function tearDown(): void {
 		remove_all_filters();
 		RequestContext::reset();
 		GrantEligibility::forgetRun();
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
 	}
@@ -106,7 +106,7 @@ final class UngrantableVerbCoveredByGrantTest extends TestCase {
 			null,
 			null,
 			new GrantBridge(),
-			static fn ( $run, string $pack_verb ): ?string => 'senroflux/' . str_replace( 'commerce/', '', $pack_verb ),
+			static fn ( $run, string $pack_verb ): ?string => 'specflux/' . str_replace( 'commerce/', '', $pack_verb ),
 			null,
 			null,
 			static fn ( $run ): array => $pack->ungrantableVerbs() // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- the real resolver shape is callable(Run):list<string>.
@@ -161,7 +161,7 @@ final class UngrantableVerbCoveredByGrantTest extends TestCase {
 			null,
 			null,
 			new GrantBridge(),
-			static fn ( $run, string $pack_verb ): ?string => 'senroflux/' . str_replace( 'commerce/', '', $pack_verb ),
+			static fn ( $run, string $pack_verb ): ?string => 'specflux/' . str_replace( 'commerce/', '', $pack_verb ),
 			null,
 			null,
 			static fn ( $run ): array => $pack->ungrantableVerbs() // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
@@ -190,6 +190,6 @@ final class UngrantableVerbCoveredByGrantTest extends TestCase {
 		$runner->tick( $run_id, $before, array( 'plan' => array( 'action' => 'accept_preapprove' ) ) );
 
 		$this->assertCount( 1, $this->grants->issued );
-		$this->assertSame( 'senroflux/coupon-enable', $this->grants->issued[0]['verb'] );
+		$this->assertSame( 'specflux/coupon-enable', $this->grants->issued[0]['verb'] );
 	}
 }

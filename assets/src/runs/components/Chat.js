@@ -87,7 +87,7 @@ function usageAgainstCeilings( run, steps ) {
  */
 function modelLabel( run, modelChoices ) {
 	if ( ! run.model || ! run.model.id ) {
-		return __( 'Automatic', 'senroflux' );
+		return __( 'Automatic', 'specflux-site-agent' );
 	}
 	const provider = ( modelChoices || {} )[ run.model.provider ];
 	const match = provider && ( provider.models || [] ).find( ( m ) => m.id === run.model.id );
@@ -111,7 +111,7 @@ function modelLabel( run, modelChoices ) {
  * @param {Function} [props.onCancel]            `() => Promise` for the Cancel button.
  * @param {boolean}  [props.busy]                True while a tick/cancel is in flight.
  * @param {number}   [props.tickCount]           How many tick round-trips this run has sent this page-load (the "Tick N" bubble).
- * @param {Object}   [props.modelChoices]        `senrofluxRunsConfig.modelChoices`, used only to resolve `run.model`'s display name.
+ * @param {Object}   [props.modelChoices]        `specfluxSiteAgentRunsConfig.modelChoices`, used only to resolve `run.model`'s display name.
  * @param {boolean}  [props.canFollowUp]         The viewer holds the run's pack capability (S20); offers "Start a follow-up" on a terminal run.
  * @param {Function} [props.onFollowUp]          `( run ) => void` — the follow-up affordance's click.
  */
@@ -170,35 +170,35 @@ export default function Chat( {
 	const usage = usageAgainstCeilings( run, steps );
 
 	return (
-		<div className="senroflux-chat">
-			<div className="senroflux-chat-header">
-				<h1 className="senroflux-run-heading" dir="auto">{ run.goal }</h1>
+		<div className="specflux-site-agent-chat">
+			<div className="specflux-site-agent-chat-header">
+				<h1 className="specflux-site-agent-run-heading" dir="auto">{ run.goal }</h1>
 				{ /* S22 pseudo-locale: the model NAME half of this line is
 				 * data (mechanically resolved from `run.model`, same as
 				 * `LedgerGroup`'s ability labels), so only that half carries
-				 * `data-senroflux-content`/`dir="auto"` — "Model: " itself is
+				 * `data-specflux-site-agent-content`/`dir="auto"` — "Model: " itself is
 				 * translatable chrome, same split `withheld_roles` above
 				 * does not need since a role list has no independent bidi
 				 * direction of its own the way a model name might. */ }
-				<p className="senroflux-run-model">
-					{ __( 'Model:', 'senroflux' ) }{ ' ' }
-					<span data-senroflux-content dir="auto">
+				<p className="specflux-site-agent-run-model">
+					{ __( 'Model:', 'specflux-site-agent' ) }{ ' ' }
+					<span data-specflux-site-agent-content dir="auto">
 						{ modelLabel( run, modelChoices ) }
 					</span>
 				</p>
 				{ park && (
 					<button
 						type="button"
-						className="button senroflux-needs-you"
+						className="button specflux-site-agent-needs-you"
 						onClick={ () => {
-							const heading = document.getElementById( 'senroflux-park-heading' );
+							const heading = document.getElementById( 'specflux-site-agent-park-heading' );
 							if ( heading ) {
 								heading.focus();
 								heading.scrollIntoView( { block: 'center' } );
 							}
 						} }
 					>
-						{ __( 'Needs you', 'senroflux' ) }
+						{ __( 'Needs you', 'specflux-site-agent' ) }
 					</button>
 				) }
 				<UsageCeilings usage={ usage } />
@@ -215,22 +215,22 @@ export default function Chat( {
 			 * nothing (no empty paragraph either).
 			 */ }
 			{ Array.isArray( run.withheld_roles ) && run.withheld_roles.length > 0 && (
-				<p className="senroflux-withheld-roles">
+				<p className="specflux-site-agent-withheld-roles">
 					{ run.withheld_notice
 						? run.withheld_notice
 						: sprintf(
 								/* translators: %s: comma-separated list of withheld role names. */
 								__(
 									'Some abilities are off for this run (your account is missing the capability they need): %s',
-									'senroflux'
+									'specflux-site-agent'
 								),
 								run.withheld_roles.join( ', ' )
 						  ) }
 				</p>
 			) }
 			<PinnedPlan plan={ plan } steps={ steps } />
-			<div className="senroflux-chat-stream">
-				<div className="senroflux-chat-bubble senroflux-chat-bubble-user" dir="auto">{ run.goal }</div>
+			<div className="specflux-site-agent-chat-stream">
+				<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-user" dir="auto">{ run.goal }</div>
 				{ entries.map( ( entry, index ) => {
 					if ( 'ledger' === entry.type ) {
 						return <LedgerGroup key={ index } calls={ entry.calls } gateMode={ run.gate_mode } />;
@@ -240,7 +240,7 @@ export default function Chat( {
 					if ( 'model' === step.kind ) {
 						const text = stepText( step );
 						return text ? (
-							<div key={ index } className="senroflux-chat-bubble senroflux-chat-bubble-bot" dir="auto">
+							<div key={ index } className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot" dir="auto">
 								{ text }
 							</div>
 						) : null;
@@ -288,23 +288,23 @@ export default function Chat( {
 				 * invented content.
 				 */ }
 				{ busy && ! park && (
-					<div className="senroflux-chat-bubble senroflux-chat-bubble-bot senroflux-typing">
+					<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot specflux-site-agent-typing">
 						{ sprintf(
 							/* translators: %d: which tick round-trip this is, for this page-load. */
-							__( 'Tick %d: thinking…', 'senroflux' ),
+							__( 'Tick %d: thinking…', 'specflux-site-agent' ),
 							tickCount || 1
 						) }
 					</div>
 				) }
 				{ 'running' === run.status && ! park && ! busy && (
-					<div className="senroflux-chat-bubble senroflux-chat-bubble-bot senroflux-typing">
-						{ __( 'Working…', 'senroflux' ) }
+					<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot specflux-site-agent-typing">
+						{ __( 'Working…', 'specflux-site-agent' ) }
 					</div>
 				) }
 			</div>
 			{ /* A failed run says why (e.g. the model went silent twice), when the server gave a reason. */ }
 			{ 'failed' === run.status && run.error && 'string' === typeof run.error.message && '' !== run.error.message && (
-				<p className="senroflux-run-error" role="alert" dir="auto">
+				<p className="specflux-site-agent-run-error" role="alert" dir="auto">
 					{ run.error.message }
 				</p>
 			) }
@@ -314,9 +314,9 @@ export default function Chat( {
 			) }
 			{ /* 0.3 S20 (stage 22b): a follow-up starts from a finished, cancelled or failed run. */ }
 			{ isTerminalStatus( run.status ) && canFollowUp && onFollowUp && (
-				<div className="senroflux-followup-actions">
+				<div className="specflux-site-agent-followup-actions">
 					<button type="button" className="button" onClick={ () => onFollowUp( run ) }>
-						{ __( 'Start a follow-up', 'senroflux' ) }
+						{ __( 'Start a follow-up', 'specflux-site-agent' ) }
 					</button>
 				</div>
 			) }
@@ -324,14 +324,14 @@ export default function Chat( {
 			 * simply no button element rendered here for a terminal status, not a
 			 * disabled one. */ }
 			{ ! isTerminalStatus( run.status ) && (
-				<div className="senroflux-run-actions">
+				<div className="specflux-site-agent-run-actions">
 					<button
 						type="button"
-						className="button senroflux-button-danger"
+						className="button specflux-site-agent-button-danger"
 						disabled={ ! onCancel || busy }
 						onClick={ () => onCancel && onCancel() }
 					>
-						{ __( 'Cancel run', 'senroflux' ) }
+						{ __( 'Cancel run', 'specflux-site-agent' ) }
 					</button>
 				</div>
 			) }
@@ -349,20 +349,20 @@ function UsageCeilings( { usage } ) {
 	}
 
 	return (
-		<div className="senroflux-usage-ceilings">
+		<div className="specflux-site-agent-usage-ceilings">
 			{ Number.isInteger( usage.toolCalls.max ) && (
-				<span className="senroflux-usage-ceiling">
-					{ /* translators: 1: number of tool calls used, 2: tool call ceiling. */ sprintf( __( 'Tool calls %1$d/%2$d', 'senroflux' ), usage.toolCalls.used, usage.toolCalls.max ) }
+				<span className="specflux-site-agent-usage-ceiling">
+					{ /* translators: 1: number of tool calls used, 2: tool call ceiling. */ sprintf( __( 'Tool calls %1$d/%2$d', 'specflux-site-agent' ), usage.toolCalls.used, usage.toolCalls.max ) }
 				</span>
 			) }
 			{ Number.isInteger( usage.questions.max ) && (
-				<span className="senroflux-usage-ceiling">
-					{ /* translators: 1: number of questions used, 2: question ceiling. */ sprintf( __( 'Questions %1$d/%2$d', 'senroflux' ), usage.questions.used, usage.questions.max ) }
+				<span className="specflux-site-agent-usage-ceiling">
+					{ /* translators: 1: number of questions used, 2: question ceiling. */ sprintf( __( 'Questions %1$d/%2$d', 'specflux-site-agent' ), usage.questions.used, usage.questions.max ) }
 				</span>
 			) }
 			{ Number.isInteger( usage.tokens.max ) && (
-				<span className="senroflux-usage-ceiling">
-					{ /* translators: 1: number of tokens used, 2: token ceiling. */ sprintf( __( 'Tokens %1$d/%2$d', 'senroflux' ), usage.tokens.used, usage.tokens.max ) }
+				<span className="specflux-site-agent-usage-ceiling">
+					{ /* translators: 1: number of tokens used, 2: token ceiling. */ sprintf( __( 'Tokens %1$d/%2$d', 'specflux-site-agent' ), usage.tokens.used, usage.tokens.max ) }
 				</span>
 			) }
 		</div>

@@ -25,8 +25,8 @@ function wpCli( args, { env = 'cli' } = {} ) {
 /** Replace the fake provider's script queue and reset its call log. */
 function setScript( steps ) {
 	const json = JSON.stringify( steps );
-	wpCli( [ 'option', 'update', 'senroflux_e2e_script', json ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_calls' ] );
+	wpCli( [ 'option', 'update', 'specflux_site_agent_e2e_script', json ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_calls' ] );
 }
 
 /** Generic `wp option update <name> <value>`. */
@@ -61,13 +61,13 @@ function evalPhp( php ) {
 
 /** Wipe every run/step row and the e2e-only options so each spec starts clean. */
 function resetRuns() {
-	wpCli( [ 'db', 'query', 'TRUNCATE TABLE wp_senroflux_runs' ] );
-	wpCli( [ 'db', 'query', 'TRUNCATE TABLE wp_senroflux_steps' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_script' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_calls' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_prompts' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_e2e_things_created' ] );
-	wpCli( [ 'option', 'delete', 'senroflux_site_brief' ] );
+	wpCli( [ 'db', 'query', 'TRUNCATE TABLE wp_specflux_site_agent_runs' ] );
+	wpCli( [ 'db', 'query', 'TRUNCATE TABLE wp_specflux_site_agent_steps' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_script' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_calls' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_prompts' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_e2e_things_created' ] );
+	wpCli( [ 'option', 'delete', 'specflux_site_agent_site_brief' ] );
 }
 
 function activateAgentSafety() {

@@ -4,25 +4,25 @@
  * stale allow-list, an injected/hallucinated call), must be REFUSED at
  * execution — never parked, never silently executed.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -65,13 +65,13 @@ final class WithheldRoleCalledAnywayTest extends TestCase {
 				: array()
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 		// The ability IS registered — a model could still name it (an
 		// injected call or a stale allow-list) — so the refusal must come
 		// from the withheld check, not from the ability simply not existing.
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'adversarial/withheld-op' => new SenroFlux_Test_Fake_Ability( 'adversarial/withheld-op' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'adversarial/withheld-op' => new SpecfluxSiteAgent_Test_Fake_Ability( 'adversarial/withheld-op' ),
 		);
 	}
 

@@ -4,16 +4,16 @@
  *
  * TARGET REPO PATH: tests/Packs/Posts/VocabularyTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Posts;
+namespace Specflux\SiteAgent\Tests\Packs\Posts;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Packs\Posts\Vocabulary;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Packs\Posts\Vocabulary;
 
 final class VocabularyTest extends TestCase {
 
@@ -23,8 +23,8 @@ final class VocabularyTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_patterns']           = array();
-		$GLOBALS['senroflux_test_pattern_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_patterns']           = array();
+		$GLOBALS['specflux_site_agent_test_pattern_categories'] = array();
 	}
 
 	public function test_all_returns_six_prose_and_two_feature_entries(): void {
@@ -43,8 +43,8 @@ final class VocabularyTest extends TestCase {
 		$names = array_column( $payload['patterns'], 'name' );
 		$this->assertContains( 'core/paragraph', $names );
 		$this->assertContains( 'core/image', $names );
-		$this->assertContains( 'senroflux/closing-cta', $names );
-		$this->assertContains( 'senroflux/pull-quote', $names );
+		$this->assertContains( 'specflux/closing-cta', $names );
+		$this->assertContains( 'specflux/pull-quote', $names );
 	}
 
 	/** With no `names`, the payload is a compact index — no markup, no constraints. */
@@ -72,7 +72,7 @@ final class VocabularyTest extends TestCase {
 		$payload    = $vocabulary->listPayload( $names );
 
 		foreach ( $payload['patterns'] as $pattern ) {
-			if ( str_starts_with( (string) $pattern['name'], 'senroflux/' ) ) {
+			if ( str_starts_with( (string) $pattern['name'], 'specflux/' ) ) {
 				$this->assertArrayHasKey( 'markup', $pattern, $pattern['name'] );
 				$this->assertStringContainsString( '<!-- wp:', $pattern['markup'] );
 			} else {
@@ -85,9 +85,9 @@ final class VocabularyTest extends TestCase {
 		$count = ( new Vocabulary() )->register();
 
 		$this->assertSame( 2, $count );
-		$this->assertCount( 2, $GLOBALS['senroflux_test_patterns'] );
-		$this->assertArrayHasKey( 'senroflux/closing-cta', $GLOBALS['senroflux_test_patterns'] );
-		$this->assertArrayHasKey( 'senroflux/pull-quote', $GLOBALS['senroflux_test_patterns'] );
+		$this->assertCount( 2, $GLOBALS['specflux_site_agent_test_patterns'] );
+		$this->assertArrayHasKey( 'specflux/closing-cta', $GLOBALS['specflux_site_agent_test_patterns'] );
+		$this->assertArrayHasKey( 'specflux/pull-quote', $GLOBALS['specflux_site_agent_test_patterns'] );
 	}
 
 	public function test_feature_pattern_markup_round_trips(): void {
@@ -118,9 +118,9 @@ final class VocabularyTest extends TestCase {
 	}
 
 	public function test_list_payload_with_names_preserves_vocabulary_order_and_reports_not_found(): void {
-		$payload = ( new Vocabulary() )->listPayload( array( 'senroflux/pull-quote', 'core/paragraph', 'no-such-pattern' ) );
+		$payload = ( new Vocabulary() )->listPayload( array( 'specflux/pull-quote', 'core/paragraph', 'no-such-pattern' ) );
 
-		$this->assertSame( array( 'core/paragraph', 'senroflux/pull-quote' ), array_column( $payload['patterns'], 'name' ) );
+		$this->assertSame( array( 'core/paragraph', 'specflux/pull-quote' ), array_column( $payload['patterns'], 'name' ) );
 		$this->assertSame( array( 'no-such-pattern' ), $payload['not_found'] );
 	}
 
@@ -134,13 +134,13 @@ final class VocabularyTest extends TestCase {
 
 	/**
 	 * 0.3 S21: "the posts pack never sees theme patterns." The posts
-	 * vocabulary does not implement {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}
+	 * vocabulary does not implement {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}
 	 * at all — there is no seam through which a theme pattern could ever
 	 * reach it, regardless of what the active theme registers.
 	 */
 	public function test_vocabulary_does_not_implement_theme_pattern_source(): void {
 		$this->assertNotInstanceOf(
-			\Specflux\SenroFlux\Packs\Content\ThemePatternSource::class,
+			\Specflux\SiteAgent\Packs\Content\ThemePatternSource::class,
 			new Vocabulary()
 		);
 	}

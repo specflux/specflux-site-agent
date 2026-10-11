@@ -2,12 +2,12 @@
 /**
  * The harness-built report (0.2 S12).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -100,7 +100,7 @@ final class Report {
 		);
 
 		if ( GateMode::BuiltIn === $gate_mode ) {
-			$report['gate_mode_note'] = __( 'Approvals for this run are recorded only on this page.', 'senroflux' );
+			$report['gate_mode_note'] = __( 'Approvals for this run are recorded only on this page.', 'specflux-site-agent' );
 		}
 
 		if ( null !== $unverified_note && '' !== $unverified_note ) {

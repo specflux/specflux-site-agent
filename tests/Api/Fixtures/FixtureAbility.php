@@ -1,21 +1,21 @@
 <?php
 /**
  * A tiny duck-typed Abilities API ability, standing in for what a real
- * `senroflux/fixture-read` registration would look like (S23 fixture pack).
+ * `specflux/fixture-read` registration would look like (S23 fixture pack).
  *
- * Deliberately outside the `Specflux\SenroFlux` namespace and imports
+ * Deliberately outside the `Specflux\SiteAgent` namespace and imports
  * nothing from it — a real third-party ability registers through
  * `wp_register_ability()` and the Abilities API's own base class, neither of
- * which is SenroFlux's concern; `FixturePack` never references this class
- * directly (it resolves `senroflux/fixture-read` by NAME only, same as any
+ * which is Specflux Site Agent's concern; `FixturePack` never references this class
+ * directly (it resolves `specflux/fixture-read` by NAME only, same as any
  * ability it did not author).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Api\Fixtures;
+namespace Specflux\SiteAgent\Tests\Api\Fixtures;
 
 final class FixtureAbility {
 

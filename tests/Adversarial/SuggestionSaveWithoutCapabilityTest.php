@@ -5,25 +5,25 @@
  * re-checks the capability itself (never trusts a caller), and the
  * suggestion must stay unresolved.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 use wpdb;
 
@@ -31,8 +31,8 @@ final class SuggestionSaveWithoutCapabilityTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_options']         = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_options']         = array();
 		unset( $_POST );
 		SiteBrief::set( '' );
 	}
@@ -52,7 +52,7 @@ final class SuggestionSaveWithoutCapabilityTest extends TestCase {
 			$store,
 			new ToolExecutor(),
 			new class() implements ModelGatewayInterface {
-				public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
+				public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
 					unset( $history, $system_instruction, $tools );
 
 					return new WP_Error( 'unused', 'no model calls in this test' );
@@ -70,7 +70,7 @@ final class SuggestionSaveWithoutCapabilityTest extends TestCase {
 			$run_id,
 			StepKind::Suggestion,
 			array( 'text' => 'Mention our loyalty programme.' ),
-			'senroflux/suggest-brief-addition',
+			'specflux/suggest-brief-addition',
 			null,
 			'ok'
 		);
@@ -79,8 +79,8 @@ final class SuggestionSaveWithoutCapabilityTest extends TestCase {
 	}
 
 	public function test_a_non_manage_options_user_saving_a_suggestion_is_refused_and_the_brief_is_untouched(): void {
-		$run_id                              = $this->seedRunnerGraphWithSuggestion();
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$run_id                                        = $this->seedRunnerGraphWithSuggestion();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'manage_options' => false,
 			'read'           => true,
 		);
@@ -92,9 +92,9 @@ final class SuggestionSaveWithoutCapabilityTest extends TestCase {
 
 		$screen = new RunsScreen();
 		$_POST  = array(
-			'run_id'                      => (string) $run_id,
-			'seq'                         => (string) $suggestion->seq,
-			'senroflux_suggestion_action' => 'save',
+			'run_id'                                => (string) $run_id,
+			'seq'                                   => (string) $suggestion->seq,
+			'specflux_site_agent_suggestion_action' => 'save',
 		);
 
 		$this->expectException( \RuntimeException::class );

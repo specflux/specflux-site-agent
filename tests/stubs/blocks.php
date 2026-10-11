@@ -17,25 +17,25 @@
  *
  * Everything is `function_exists`-guarded so a real WordPress load order wins.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
 // --- Block pattern registry shims -----------------------------------------
 
-$GLOBALS['senroflux_test_patterns']           = array();
-$GLOBALS['senroflux_test_pattern_categories'] = array();
+$GLOBALS['specflux_site_agent_test_patterns']           = array();
+$GLOBALS['specflux_site_agent_test_pattern_categories'] = array();
 
 if ( ! function_exists( 'register_block_pattern' ) ) {
 	function register_block_pattern( string $name, array $args ): void {
-		$GLOBALS['senroflux_test_patterns'][ $name ] = $args;
+		$GLOBALS['specflux_site_agent_test_patterns'][ $name ] = $args;
 	}
 }
 
 if ( ! function_exists( 'register_block_pattern_category' ) ) {
 	function register_block_pattern_category( string $name, array $args ): void {
-		$GLOBALS['senroflux_test_pattern_categories'][ $name ] = $args;
+		$GLOBALS['specflux_site_agent_test_pattern_categories'][ $name ] = $args;
 	}
 }
 
@@ -47,7 +47,7 @@ if ( ! function_exists( 'wp_has_ability_category' ) ) {
 
 if ( ! function_exists( 'wp_register_ability_category' ) ) {
 	function wp_register_ability_category( string $name, array $args ): bool {
-		$GLOBALS['senroflux_test_ability_categories'][ $name ] = $args;
+		$GLOBALS['specflux_site_agent_test_ability_categories'][ $name ] = $args;
 
 		return true;
 	}
@@ -55,7 +55,7 @@ if ( ! function_exists( 'wp_register_ability_category' ) ) {
 
 if ( ! function_exists( 'wp_register_ability' ) ) {
 	function wp_register_ability( string $name, array $args ): ?object {
-		$ability                                      = new \SenroFlux_Test_Fake_Ability(
+		$ability = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			$name,
 			$args['permission_callback'] ?? true,
 			$args['execute_callback'] ?? array( 'ok' => true ),
@@ -64,7 +64,7 @@ if ( ! function_exists( 'wp_register_ability' ) ) {
 			$args['meta'] ?? array(),
 			$args['output_schema'] ?? null
 		);
-		$GLOBALS['senroflux_test_abilities'][ $name ] = $ability;
+		$GLOBALS['specflux_site_agent_test_abilities'][ $name ] = $ability;
 
 		return $ability;
 	}
@@ -170,10 +170,10 @@ if ( ! function_exists( 'serialize_blocks' ) ) {
 
 // --- Post shims (in-memory store) -----------------------------------------
 
-$GLOBALS['senroflux_test_posts']          = array();
-$GLOBALS['senroflux_test_inserted_posts'] = array();
-$GLOBALS['senroflux_test_next_post_id']   = 100;
-$GLOBALS['senroflux_test_modified_seq']   = 0;
+$GLOBALS['specflux_site_agent_test_posts']          = array();
+$GLOBALS['specflux_site_agent_test_inserted_posts'] = array();
+$GLOBALS['specflux_site_agent_test_next_post_id']   = 100;
+$GLOBALS['specflux_site_agent_test_modified_seq']   = 0;
 
 /**
  * A deterministic, ever-increasing `post_modified_gmt` stand-in (0.3 S8):
@@ -182,11 +182,11 @@ $GLOBALS['senroflux_test_modified_seq']   = 0;
  * writes in the same test process guaranteed distinct regardless of wall-clock
  * resolution.
  */
-if ( ! function_exists( 'senroflux_test_next_modified_marker' ) ) {
-	function senroflux_test_next_modified_marker(): string {
-		$GLOBALS['senroflux_test_modified_seq'] = (int) ( $GLOBALS['senroflux_test_modified_seq'] ?? 0 ) + 1;
+if ( ! function_exists( 'specflux_site_agent_test_next_modified_marker' ) ) {
+	function specflux_site_agent_test_next_modified_marker(): string {
+		$GLOBALS['specflux_site_agent_test_modified_seq'] = (int) ( $GLOBALS['specflux_site_agent_test_modified_seq'] ?? 0 ) + 1;
 
-		return 'modified-' . $GLOBALS['senroflux_test_modified_seq'];
+		return 'modified-' . $GLOBALS['specflux_site_agent_test_modified_seq'];
 	}
 }
 
@@ -194,10 +194,10 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 	function wp_insert_post( array $postarr, bool $wp_error = false ): int|WP_Error {
 		unset( $wp_error );
 
-		$GLOBALS['senroflux_test_inserted_posts'][] = $postarr;
+		$GLOBALS['specflux_site_agent_test_inserted_posts'][] = $postarr;
 
-		$id                                     = (int) ( $GLOBALS['senroflux_test_next_post_id'] ?? 100 );
-		$GLOBALS['senroflux_test_next_post_id'] = $id + 1;
+		$id = (int) ( $GLOBALS['specflux_site_agent_test_next_post_id'] ?? 100 );
+		$GLOBALS['specflux_site_agent_test_next_post_id'] = $id + 1;
 
 		$post                    = new stdClass();
 		$post->ID                = $id;
@@ -212,9 +212,9 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 		$post->guid              = 'https://example.test/wp-content/uploads/' . ( $postarr['post_title'] ?? (string) $id );
 		$post->post_date         = '';
 		$post->post_modified     = '';
-		$post->post_modified_gmt = senroflux_test_next_modified_marker();
+		$post->post_modified_gmt = specflux_site_agent_test_next_modified_marker();
 
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 
 		return $id;
 	}
@@ -225,8 +225,8 @@ if ( ! function_exists( 'wp_update_post' ) ) {
 		unset( $wp_error );
 
 		$id = (int) ( $postarr['ID'] ?? 0 );
-		if ( isset( $GLOBALS['senroflux_test_posts'][ $id ] ) ) {
-			$post = $GLOBALS['senroflux_test_posts'][ $id ];
+		if ( isset( $GLOBALS['specflux_site_agent_test_posts'][ $id ] ) ) {
+			$post = $GLOBALS['specflux_site_agent_test_posts'][ $id ];
 			// Real wp_update_post() (wp-includes/post.php): a never-dated
 			// draft gets "now" instead of the passed date unless edit_date is
 			// set, and wp_insert_post() publishes a `future` post whose date
@@ -236,13 +236,13 @@ if ( ! function_exists( 'wp_update_post' ) ) {
 				&& '0000-00-00 00:00:00' === (string) ( $post->post_date_gmt ?? '0000-00-00 00:00:00' );
 			unset( $postarr['edit_date'] );
 			if ( $clear_date ) {
-				$postarr['post_date']     = gmdate( 'Y-m-d H:i:s', class_exists( \Specflux\SenroFlux\Run\Clock::class ) ? \Specflux\SenroFlux\Run\Clock::now() : time() );
+				$postarr['post_date']     = gmdate( 'Y-m-d H:i:s', class_exists( \Specflux\SiteAgent\Run\Clock::class ) ? \Specflux\SiteAgent\Run\Clock::now() : time() );
 				$postarr['post_date_gmt'] = '';
 			}
 			if ( 'future' === ( $postarr['post_status'] ?? null ) ) {
 				$gmt = (string) ( $postarr['post_date_gmt'] ?? '' );
 				$at  = '' === $gmt ? false : strtotime( $gmt . ' UTC' );
-				$now = class_exists( \Specflux\SenroFlux\Run\Clock::class ) ? \Specflux\SenroFlux\Run\Clock::now() : time();
+				$now = class_exists( \Specflux\SiteAgent\Run\Clock::class ) ? \Specflux\SiteAgent\Run\Clock::now() : time();
 				if ( false === $at || $at <= $now ) {
 					$postarr['post_status'] = 'publish';
 				}
@@ -269,7 +269,7 @@ if ( ! function_exists( 'wp_update_post' ) ) {
 			// write's own after-write re-record (Content\Abilities) relies on
 			// this changing, and the "two consecutive writes" scenario would
 			// be untested if it never did.
-			$post->post_modified_gmt = senroflux_test_next_modified_marker();
+			$post->post_modified_gmt = specflux_site_agent_test_next_modified_marker();
 		}
 
 		return $id;
@@ -282,14 +282,14 @@ if ( ! function_exists( 'get_post' ) ) {
 			return $id;
 		}
 
-		return $GLOBALS['senroflux_test_posts'][ (int) $id ] ?? null;
+		return $GLOBALS['specflux_site_agent_test_posts'][ (int) $id ] ?? null;
 	}
 }
 
 if ( ! function_exists( 'get_page_by_path' ) ) {
 	/** Like core: matches by slug and type, any non-trashed status. */
 	function get_page_by_path( string $path, string $output = 'OBJECT', string $post_type = 'page' ): ?stdClass {
-		foreach ( (array) ( $GLOBALS['senroflux_test_posts'] ?? array() ) as $post ) {
+		foreach ( (array) ( $GLOBALS['specflux_site_agent_test_posts'] ?? array() ) as $post ) {
 			if ( is_object( $post ) && ( $post->post_name ?? '' ) === $path && ( $post->post_type ?? '' ) === $post_type ) {
 				return $post;
 			}
@@ -350,7 +350,7 @@ if ( ! function_exists( 'get_edit_post_link' ) ) {
 
 if ( ! function_exists( 'get_userdata' ) ) {
 	function get_userdata( int $id ): mixed {
-		return $GLOBALS['senroflux_test_users'][ $id ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_users'][ $id ] ?? false;
 	}
 }
 
@@ -358,7 +358,7 @@ if ( ! function_exists( 'get_userdata' ) ) {
 
 if ( ! class_exists( 'WP_Query', false ) ) {
 	/**
-	 * Minimal in-memory stand-in over `$GLOBALS['senroflux_test_posts']`.
+	 * Minimal in-memory stand-in over `$GLOBALS['specflux_site_agent_test_posts']`.
 	 * Supports exactly the args this codebase's own queries use: post_type,
 	 * post_status (array or string), author, post_parent, post__in, paged and
 	 * posts_per_page (-1 = all). Not a general WP_Query re-implementation.
@@ -381,7 +381,7 @@ if ( ! class_exists( 'WP_Query', false ) ) {
 			$statuses  = is_array( $statuses ) ? $statuses : array( $statuses );
 
 			$matches = array();
-			foreach ( (array) ( $GLOBALS['senroflux_test_posts'] ?? array() ) as $post ) {
+			foreach ( (array) ( $GLOBALS['specflux_site_agent_test_posts'] ?? array() ) as $post ) {
 				if ( ! is_object( $post ) ) {
 					continue;
 				}

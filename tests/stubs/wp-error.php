@@ -2,7 +2,7 @@
 /**
  * Test-only stand-in for WordPress's WP_Error.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );

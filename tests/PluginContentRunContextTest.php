@@ -11,28 +11,28 @@
  * test even though `Packs/Content/AbilitiesTest.php` (which calls
  * `useRunContext()` directly) stays green.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Content\Abilities;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
-use Specflux\SenroFlux\Tests\Run\RecordingBridge;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Content\Abilities;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
+use Specflux\SiteAgent\Tests\Run\RecordingBridge;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -56,16 +56,16 @@ final class PluginContentRunContextTest extends TestCase {
 		Abilities::forgetRunPack();
 		Abilities::forgetRunContext();
 
-		$GLOBALS['senroflux_test_current_user_id']    = 1;
-		$GLOBALS['senroflux_test_transients']         = array();
-		$GLOBALS['senroflux_test_agent_safety']       = null;
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_inserted_posts']     = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_users']              = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 1;
+		$GLOBALS['specflux_site_agent_test_transients']         = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']       = null;
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_inserted_posts']     = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_users']              = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array(
 			'edit_pages' => true,
 			'edit_post'  => true,
 			'read_post'  => true,
@@ -86,10 +86,10 @@ final class PluginContentRunContextTest extends TestCase {
 		// the built-in approval park are a different S7 concern, orthogonal
 		// to the S8 stale-write compare this test targets.
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array(
-				'senroflux/read-content' => 0,
-				'senroflux/update-post'  => 0,
+				'specflux/read-content' => 0,
+				'specflux/update-post'  => 0,
 			),
 			10,
 			0
@@ -97,7 +97,7 @@ final class PluginContentRunContextTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		Abilities::forgetRunContext();
 		Abilities::forgetRunPack();
 		Abilities::resetSources();
@@ -119,9 +119,9 @@ final class PluginContentRunContextTest extends TestCase {
 		$post->post_author       = 1;
 		$post->post_date         = '2026-01-01 00:00:00';
 		$post->post_modified     = '2026-01-01 00:00:00';
-		$post->post_modified_gmt = senroflux_test_next_modified_marker();
+		$post->post_modified_gmt = specflux_site_agent_test_next_modified_marker();
 
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	public static function validContent(): string {
@@ -136,7 +136,7 @@ final class PluginContentRunContextTest extends TestCase {
 		// `validContentWithImage()` does, rather than duplicating the rule.
 		$media_text = '';
 		foreach ( $patterns as $pattern ) {
-			if ( 'senroflux/media-text' === $pattern['name'] ) {
+			if ( 'specflux/media-text' === $pattern['name'] ) {
 				$media_text = (string) $pattern['markup'];
 				break;
 			}
@@ -196,9 +196,9 @@ final class PluginContentRunContextTest extends TestCase {
 	private function createPagesRun(): int {
 		return $this->store->createRun(
 			1,
-			RunsScreen::CONSUMER, // 0.3 S3: built-in mode may only be driven by SenroFlux's own consumer.
+			RunsScreen::CONSUMER, // 0.3 S3: built-in mode may only be driven by Specflux Site Agent's own consumer.
 			'Update the existing draft',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults(),
 			'pages',
 			null,
@@ -224,9 +224,9 @@ final class PluginContentRunContextTest extends TestCase {
 
 		$run_id = $this->createPagesRun();
 
-		$gateway->script[] = self::callTurn( 'wpab__senroflux__read-content', array( 'id' => 100 ) );
+		$gateway->script[] = self::callTurn( 'wpab__specflux__read-content', array( 'id' => 100 ) );
 		$gateway->script[] = self::callTurn(
-			'wpab__senroflux__update-post',
+			'wpab__specflux__update-post',
 			array(
 				'id'      => 100,
 				'content' => self::validContent(),
@@ -248,7 +248,7 @@ final class PluginContentRunContextTest extends TestCase {
 
 		$update_result = null;
 		foreach ( $tool_results as $step ) {
-			if ( 'wpab__senroflux__update-post' === $step['tool_name'] ) {
+			if ( 'wpab__specflux__update-post' === $step['tool_name'] ) {
 				$update_result = $step;
 			}
 		}
@@ -286,20 +286,20 @@ final class PluginContentRunContextTest extends TestCase {
 		$gateway = new class() implements ModelGatewayInterface {
 			public int $calls = 0;
 
-			public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
+			public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
 				unset( $history, $system_instruction, $tools );
 				++$this->calls;
 
 				if ( 1 === $this->calls ) {
-					return PluginContentRunContextTest::callTurn( 'wpab__senroflux__read-content', array( 'id' => 100 ) );
+					return PluginContentRunContextTest::callTurn( 'wpab__specflux__read-content', array( 'id' => 100 ) );
 				}
 
 				if ( 2 === $this->calls ) {
 					// External modification, out of band from this run.
-					$GLOBALS['senroflux_test_posts'][100]->post_modified_gmt = senroflux_test_next_modified_marker();
+					$GLOBALS['specflux_site_agent_test_posts'][100]->post_modified_gmt = specflux_site_agent_test_next_modified_marker();
 
 					return PluginContentRunContextTest::callTurn(
-						'wpab__senroflux__update-post',
+						'wpab__specflux__update-post',
 						array(
 							'id'      => 100,
 							'content' => PluginContentRunContextTest::validContent(),
@@ -320,7 +320,7 @@ final class PluginContentRunContextTest extends TestCase {
 
 		$update_result = null;
 		foreach ( $result['new_steps'] as $step ) {
-			if ( 'tool_result' === ( $step['kind'] ?? null ) && 'wpab__senroflux__update-post' === ( $step['tool_name'] ?? null ) ) {
+			if ( 'tool_result' === ( $step['kind'] ?? null ) && 'wpab__specflux__update-post' === ( $step['tool_name'] ?? null ) ) {
 				$update_result = $step;
 			}
 		}
@@ -348,13 +348,13 @@ final class PluginContentRunContextTest extends TestCase {
 		$gateway = new class() implements ModelGatewayInterface {
 			public int $calls = 0;
 
-			public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
+			public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
 				unset( $history, $system_instruction, $tools );
 				++$this->calls;
 
 				if ( 1 === $this->calls ) {
 					return PluginContentRunContextTest::callTurn(
-						'wpab__senroflux__update-post',
+						'wpab__specflux__update-post',
 						array(
 							'id'      => 100,
 							'content' => PluginContentRunContextTest::validContent(),
@@ -374,7 +374,7 @@ final class PluginContentRunContextTest extends TestCase {
 
 		$encoded = '';
 		foreach ( $result['new_steps'] as $step ) {
-			if ( 'tool_result' === ( $step['kind'] ?? null ) && 'wpab__senroflux__update-post' === ( $step['tool_name'] ?? null ) ) {
+			if ( 'tool_result' === ( $step['kind'] ?? null ) && 'wpab__specflux__update-post' === ( $step['tool_name'] ?? null ) ) {
 				$this->assertSame( 'error', $step['status'] ?? null );
 				$encoded = (string) wp_json_encode( $step['message'] ?? array() );
 			}

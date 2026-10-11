@@ -1,13 +1,13 @@
 <?php
 /**
- * The one glob dialect used everywhere SenroFlux names abilities.
+ * The one glob dialect used everywhere Specflux Site Agent names abilities.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

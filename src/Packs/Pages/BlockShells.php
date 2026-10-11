@@ -36,12 +36,12 @@
  *     h1–h6, li, summary, cite, a) is free. Extra classes are allowed: the
  *     editor keeps them as a custom class.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -316,7 +316,7 @@ final class BlockShells {
 		// is, above.
 		// A focal point only crops the chosen photo, so it is not identity either.
 		// 0.3 quality fix (hero readability): `dimRatio` is excluded the same
-		// way — {@see \Specflux\SenroFlux\Packs\Pages\Validator::MIN_COVER_DIM_RATIO}
+		// way — {@see \Specflux\SiteAgent\Packs\Pages\Validator::MIN_COVER_DIM_RATIO}
 		// silently raises a too-light overlay rather than refusing the write,
 		// so a run/theme pattern's own value can never fail this match.
 		if ( 'core/cover' === ( $block['blockName'] ?? '' ) ) {

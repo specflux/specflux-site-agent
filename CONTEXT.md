@@ -1,4 +1,4 @@
-# SenroFlux — domain glossary
+# Specflux Site Agent — domain glossary
 
 Terms as used in specs, code, and admin UI. Glossary only; no implementation detail.
 
@@ -10,7 +10,7 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
 - **Park** — a step at which the run stops and waits for a human. Kinds:
   - **Approval park** — a tool call stopped by the gate before it runs, waiting for a human's
     approve or reject; resolvable by whoever may tick the run. With Agent Safety active the gate
-    is its verdict pipeline and only Tier-2 calls park. Without it, SenroFlux's built-in gate
+    is its verdict pipeline and only Tier-2 calls park. Without it, Specflux Site Agent's built-in gate
     parks every call whose verb is above Tier 0, shows no tier, and offers no batching: one
     call, one click. Resumes on approve or reject.
   - **Question park** — the model asks the user one structured clarifying question (text,
@@ -40,24 +40,24 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
   approval park, answer or skip for a question park, accept / accept-with-pre-approval / veto
   for a plan park.
 - **Consumer** — the plugin or screen that starts a run and renders its parks, registered on the
-  `senroflux_http_consumers` allow-list. SenroFlux's own Runs screen is a consumer. Because the
+  `specflux_site_agent_http_consumers` allow-list. Specflux Site Agent's own Runs screen is a consumer. Because the
   consumer's own rendering is what makes an approval meaningful, any consumer other than that
   screen requires Agent Safety; under the built-in gate only standalone runs are allowed.
-- **Standalone run** — a run whose consumer is SenroFlux's own Runs screen rather than another
+- **Standalone run** — a run whose consumer is Specflux Site Agent's own Runs screen rather than another
   plugin; started by a human from the "New run" form and driven from the run detail page.
 - **Pack** — a named tool surface a run may use (e.g. the **pages pack**): the roles it
   needs, the verbs it exposes with their tiers, its skills, its pattern vocabulary, the run
-  capability it requires and the setup checks it declares. A SenroFlux pack produces the Agent
+  capability it requires and the setup checks it declares. A Specflux Site Agent pack produces the Agent
   Safety capability pack that governs it.
-- **Extension API** — the part of SenroFlux another plugin may build a pack against, under a
+- **Extension API** — the part of Specflux Site Agent another plugin may build a pack against, under a
   semver promise from 1.0: the pack contract, the pack registration hook, pack skills, budget
   defaults and a pack's namespace preferences. Everything else is internal and may change in any
   release. A pack registered through it is governed exactly like a bundled one.
 - **Breaking change** — a change to the extension API that removes or renames part of it, changes
   a signature or return shape, or changes what a hook's result means. Tightening the gate (a
   higher tier, a new park, a newly withheld role) is never a breaking change, whatever it breaks.
-- **Add-on** — a separate plugin that adds packs through the extension API; SenroFlux itself
-  never contains an add-on's code or checks its licence. **SenroFlux Pro** is Specflux's paid
+- **Add-on** — a separate plugin that adds packs through the extension API; Specflux Site Agent itself
+  never contains an add-on's code or checks its licence. **Specflux Site Agent Pro** is Specflux's paid
   add-on, sold outside wordpress.org; paying for it never buys a weaker gate.
 - **Setup check** — a condition shown on the Runs screen before a run can be started, declared
   by the harness or by a registered pack and identified by a namespaced id. **Blocking** checks
@@ -82,7 +82,7 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
   pack, `manage_woocommerce` for commerce). It answers "may this
   person set this pack going at all", which is a different question from what the gate lets the
   run do once started, and a different word from **Role** above. Holding no pack's run
-  capability is what makes SenroFlux invisible to a user.
+  capability is what makes Specflux Site Agent invisible to a user.
 - **Withheld role** — a pack role removed from a run's tool set at start because the starting
   user lacks the capability that role names (a Contributor's posts run has no images). The
   model is told the role is unavailable, and the run view and **Report** name it. It is decided
@@ -103,10 +103,10 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
 - **Verb** — the unit Agent Safety tiers, grants and audits. A pack maps each (role, input
   shape) to a verb, so one ability can be several verbs (editing a draft and publishing it
   are different verbs).
-- **Polyfill ability** — an ability SenroFlux registers only because upstream does not yet
+- **Polyfill ability** — an ability Specflux Site Agent registers only because upstream does not yet
   provide it, named to mirror the ability upstream is expected to ship, and withdrawn the
   release after it does. The mirror is the ability's name, never its namespace: a polyfill
-  always lives in SenroFlux's own namespace, never in one another plugin owns. Upstream is core where core is the natural home, and a canonical
+  always lives in Specflux Site Agent's own namespace, never in one another plugin owns. Upstream is core where core is the natural home, and a canonical
   upstream plugin where it is not.
 - **Pattern vocabulary** — the curated set of core-block patterns a pack ships and the model
   composes content from, plus, for the pages and site packs, the active theme's theme-derived
@@ -117,7 +117,7 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
 - **Theme-derived pattern** — a pattern the active theme (or its parent) registers that passes
   the eligibility filter, with its shape, text slots and word limits derived from its own
   markup rather than written by hand. The model never writes its markup: it supplies the text
-  slots and SenroFlux fills them into the theme's markup. A theme switch removes it from the
+  slots and Specflux Site Agent fills them into the theme's markup. A theme switch removes it from the
   vocabulary, so instances left in a draft are refused like any unknown pattern.
 - **Text slot** — a rich-text element or link target in a theme-derived pattern. Every slot must
   be supplied; an empty value, or the theme's shipped sample text, is refused.
@@ -163,7 +163,7 @@ Terms as used in specs, code, and admin UI. Glossary only; no implementation det
   highest. For an ability another plugin owns (WooCommerce's), the tier — including any raise
   that depends on the call's arguments, such as a price change — is declared by Agent Safety's
   integration for that plugin, and the pack's own declaration must agree with it.
-- **Gate mode** — which gate governs a run: Agent Safety's, or SenroFlux's built-in minimal
+- **Gate mode** — which gate governs a run: Agent Safety's, or Specflux Site Agent's built-in minimal
   gate. Resolved once when the run starts, pinned to the run, and reported with it. If the live
   environment stops matching the pinned mode — Agent Safety activated or deactivated mid-run —
   the next tick fails the run with a partial report rather than switching gates under an

@@ -1,4 +1,4 @@
-<!-- wp:group {"metadata":{"name":"senroflux/hero"},"layout":{"type":"constrained"},"align":"full"} -->
+<!-- wp:group {"metadata":{"name":"specflux/hero"},"layout":{"type":"constrained"},"align":"full"} -->
 <div class="wp-block-group alignfull"><!-- wp:heading -->
 <h2 class="wp-block-heading">Your neighborhood sourdough bakery</h2>
 <!-- /wp:heading -->
@@ -14,7 +14,7 @@
 <!-- /wp:buttons --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"metadata":{"name":"senroflux/text-section"},"layout":{"type":"constrained"}} -->
+<!-- wp:group {"metadata":{"name":"specflux/text-section"},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:heading -->
 <h2 class="wp-block-heading">Visit Crumb &amp; Co</h2>
 <!-- /wp:heading -->

@@ -4,15 +4,15 @@
  *
  * TARGET REPO PATH: tests/Packs/Commerce/DescriptionValidatorTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\DescriptionValidator;
+use Specflux\SiteAgent\Packs\Commerce\DescriptionValidator;
 use WP_Error;
 
 final class DescriptionValidatorTest extends TestCase {

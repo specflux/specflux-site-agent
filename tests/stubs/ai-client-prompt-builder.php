@@ -7,7 +7,7 @@
  * `using_model_preference()`), all recorded, plus the two generating methods,
  * scripted one result per call.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -16,8 +16,8 @@ use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
-if ( ! class_exists( 'SenroFlux_Test_Fake_Prompt_Builder', false ) ) {
-	final class SenroFlux_Test_Fake_Prompt_Builder {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Fake_Prompt_Builder', false ) ) {
+	final class SpecfluxSiteAgent_Test_Fake_Prompt_Builder {
 
 		/** @var mixed A string prompt (media calls) or a history array (AiClientGateway). */
 		private mixed $prompt;
@@ -77,7 +77,7 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Prompt_Builder', false ) ) {
 
 		/** @return mixed */
 		private function nextResult() {
-			$GLOBALS['senroflux_test_prompt_builder_calls'][] = array(
+			$GLOBALS['specflux_site_agent_test_prompt_builder_calls'][] = array(
 				'prompt'                => $this->prompt,
 				'request_options'       => $this->requestOptions,
 				'file'                  => $this->file,
@@ -86,9 +86,9 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Prompt_Builder', false ) ) {
 				'model_preference'      => $this->modelPreference,
 			);
 
-			$script = $GLOBALS['senroflux_test_prompt_builder_script'] ?? array();
+			$script = $GLOBALS['specflux_site_agent_test_prompt_builder_script'] ?? array();
 			$next   = array_shift( $script );
-			$GLOBALS['senroflux_test_prompt_builder_script'] = $script;
+			$GLOBALS['specflux_site_agent_test_prompt_builder_script'] = $script;
 
 			return null !== $next ? $next() : null;
 		}
@@ -106,7 +106,7 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Prompt_Builder', false ) ) {
 }
 
 if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-	function wp_ai_client_prompt( $prompt = null ): SenroFlux_Test_Fake_Prompt_Builder {
-		return new SenroFlux_Test_Fake_Prompt_Builder( $prompt );
+	function wp_ai_client_prompt( $prompt = null ): SpecfluxSiteAgent_Test_Fake_Prompt_Builder {
+		return new SpecfluxSiteAgent_Test_Fake_Prompt_Builder( $prompt );
 	}
 }

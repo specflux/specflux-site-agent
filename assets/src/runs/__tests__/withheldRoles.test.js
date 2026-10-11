@@ -21,20 +21,20 @@ describe( 'a withheld role is disclosed on the run', () => {
 
 		expect( screen.getByText( /generate/ ) ).toBeInTheDocument();
 		expect(
-			document.querySelector( '.senroflux-withheld-roles' )
+			document.querySelector( '.specflux-site-agent-withheld-roles' )
 		).toBeInTheDocument();
 	} );
 
 	it( 'names nothing when no role is withheld', () => {
 		render( <Chat run={ { ...baseRun, withheld_roles: [] } } steps={ [] } /> );
 
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toBeNull();
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toBeNull();
 	} );
 
 	it( 'names nothing when the run carries no withheld_roles field at all', () => {
 		render( <Chat run={ baseRun } steps={ [] } /> );
 
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toBeNull();
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toBeNull();
 	} );
 } );
 
@@ -46,7 +46,7 @@ describe( 'the run view shows the pack\'s own withheld-roles line at start (S6)'
 			<Chat run={ { ...baseRun, withheld_roles: [ 'upload' ], withheld_notice: notice } } steps={ [] } />
 		);
 
-		const line = document.querySelector( '.senroflux-withheld-roles' );
+		const line = document.querySelector( '.specflux-site-agent-withheld-roles' );
 		expect( line ).toHaveTextContent( notice );
 		expect( screen.queryByText( /Some abilities are off/ ) ).not.toBeInTheDocument();
 	} );
@@ -54,12 +54,12 @@ describe( 'the run view shows the pack\'s own withheld-roles line at start (S6)'
 	it( 'falls back to a generic line when the pack had nothing to say, so the gap is never silent', () => {
 		render( <Chat run={ { ...baseRun, withheld_roles: [ 'upload' ], withheld_notice: null } } steps={ [] } /> );
 
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toHaveTextContent( /Some abilities are off/ );
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toHaveTextContent( /Some abilities are off/ );
 	} );
 
 	it( 'shows nothing at all for a user holding every capability, even with a stray notice', () => {
 		render( <Chat run={ { ...baseRun, withheld_roles: [], withheld_notice: null } } steps={ [] } /> );
 
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toBeNull();
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toBeNull();
 	} );
 } );

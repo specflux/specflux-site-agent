@@ -2,18 +2,18 @@
 /**
  * Bridge to Agent Safety's pre-approval grants API (S14 AS-12).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval;
+namespace Specflux\SiteAgent\Approval;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * S7/S14: the one place SenroFlux talks to `agent_safety()->grants()` and to
+ * S7/S14: the one place Specflux Site Agent talks to `agent_safety()->grants()` and to
  * `RequestContext::withCorrelation()`.
  *
  * Everything here is feature-detected, because AS-12 ships behind a filter and
@@ -45,7 +45,7 @@ class GrantBridge {
 	 * @param int $run_id The run.
 	 */
 	public function correlationFor( int $run_id ): string {
-		return 'senroflux:run:' . $run_id;
+		return 'specflux:run:' . $run_id;
 	}
 
 	/**
@@ -197,7 +197,7 @@ class GrantBridge {
 	 * Throws — from Agent Safety, before the body is entered — when a different
 	 * correlation id has already been memoized in this request. That is a hard
 	 * stop, not a notice: continuing would run the tick under another scope's
-	 * key. See {@see \Specflux\SenroFlux\Run\Runner::tick()}.
+	 * key. See {@see \Specflux\SiteAgent\Run\Runner::tick()}.
 	 *
 	 * When the method is absent (Agent Safety older than AS-12) the body
 	 * simply runs unscoped. Nothing is loosened by that: grants are matched on the

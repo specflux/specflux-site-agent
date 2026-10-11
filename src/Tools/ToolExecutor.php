@@ -2,12 +2,12 @@
 /**
  * Executes one admitted tool call, permission-first.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 use WP_Error;
 
@@ -28,12 +28,12 @@ final class ToolExecutor {
 
 	/**
 	 * Default payload cap for what is handed back to the model (S5: 32 KB,
-	 * filterable via senroflux_tool_result_max_bytes).
+	 * filterable via specflux_site_agent_tool_result_max_bytes).
 	 */
 	public const DEFAULT_MAX_BYTES = 32768;
 
 	/**
-	 * The note {@see \Specflux\SenroFlux\Run\Runner} leaves in a resent call's
+	 * The note {@see \Specflux\SiteAgent\Run\Runner} leaves in a resent call's
 	 * history in place of a bulky old argument (`sprintf()`'d with the left-out
 	 * length) — shared here, not duplicated, so the note text and the refusal
 	 * that recognises it ({@see refuseHistoryPlaceholder()}) can never drift
@@ -47,12 +47,12 @@ final class ToolExecutor {
 	/**
 	 * Run one tool call to its terminal outcome.
 	 *
-	 * 0.3 S3: in {@see \Specflux\SenroFlux\Run\GateMode::BuiltIn}, `$gate`
+	 * 0.3 S3: in {@see \Specflux\SiteAgent\Run\GateMode::BuiltIn}, `$gate`
 	 * carries the Runner's classification of this call. When it is active
 	 * (tier above 0, or unmapped) and not yet approved, the call parks HERE —
 	 * BEFORE `check_permissions`, but AFTER argument repair, the placeholder
 	 * refusal and `$validate`, so a call that could never succeed is refused
-	 * without asking a person to approve it. SenroFlux never registers
+	 * without asking a person to approve it. Specflux Site Agent never registers
 	 * permission filters of its own (that would change the ability for every
 	 * consumer on the site, not just this run). On the re-run of an approved
 	 * park, `$gate->approved` is true and the park is skipped (the repair and
@@ -64,7 +64,7 @@ final class ToolExecutor {
 	 * @param BuiltinGate|null $gate         Built-in gate classification, or null in AS mode.
 	 * @param callable(string,array<string,mixed>):(WP_Error|null)|null $validate
 	 *   S19 (stage 12): the run's pack's pre-execution validator
-	 *   ({@see \Specflux\SenroFlux\Packs\Pack::validateCall()}), run BEFORE
+	 *   ({@see \Specflux\SiteAgent\Packs\Pack::validateCall()}), run BEFORE
 	 *   the ability's own `check_permissions()`/`execute()` — the seam for a
 	 *   pack rule over an ability ANOTHER plugin registers and this class
 	 *   never owns (e.g. WooCommerce's `product-update`). Null = no opinion
@@ -124,7 +124,7 @@ final class ToolExecutor {
 				);
 			}
 
-			return ToolOutcome::denied( 'not_allowed', __( 'Refused: this account may not make this call on this item.', 'senroflux' ) );
+			return ToolOutcome::denied( 'not_allowed', __( 'Refused: this account may not make this call on this item.', 'specflux-site-agent' ) );
 		}
 
 		$result = $ability->execute( $args );
@@ -151,7 +151,7 @@ final class ToolExecutor {
 
 		$encoded = (string) wp_json_encode( $output );
 		/** Filters the max byte size of an encoded tool result. `@internal`. */
-		$max = (int) apply_filters( 'senroflux_tool_result_max_bytes', self::DEFAULT_MAX_BYTES );
+		$max = (int) apply_filters( 'specflux_site_agent_tool_result_max_bytes', self::DEFAULT_MAX_BYTES );
 		if ( $max > 0 && strlen( $encoded ) > $max ) {
 			return array(
 				'truncated' => true,
@@ -174,7 +174,7 @@ final class ToolExecutor {
 	 */
 	private static function refuseHistoryPlaceholder( mixed $args ): ?string {
 		if ( is_string( $args ) && 1 === preg_match( '/^\[\d+ characters left out of the history; read the saved object if you need them\]$/', $args ) ) {
-			return __( 'That value is a note left behind by history compaction, not content — it was never something you wrote. Resend the full value for this argument.', 'senroflux' );
+			return __( 'That value is a note left behind by history compaction, not content — it was never something you wrote. Resend the full value for this argument.', 'specflux-site-agent' );
 		}
 
 		if ( is_array( $args ) ) {

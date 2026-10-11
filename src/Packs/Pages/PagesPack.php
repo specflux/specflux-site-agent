@@ -4,7 +4,7 @@
  *
  * TARGET REPO PATH: src/Packs/Pages/PagesPack.php
  *
- * Role → ability template map (resolved `core/*` vs `senroflux/*` by the
+ * Role → ability template map (resolved `core/*` vs `specflux/*` by the
  * base), the S10 verb map + verb predicate + role→verb split, the three pack
  * skills, the AS pack descriptor, and the S13 Capability-Packs binding check
  * the abstract base requires of every pack.
@@ -13,18 +13,18 @@
  * base's explicit seams only (allow-list / skills / verb map / verb
  * predicate). It never touches the run loop.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 // Bail on direct access.
@@ -147,7 +147,7 @@ final class PagesPack extends Pack {
 	 * what it actually does, not by which ability carries it.
 	 *
 	 * Dispatch is on the ability's name SEGMENT, so it holds whether the role
-	 * resolved to `senroflux/update-post` or a shape-compatible `core/update-post`
+	 * resolved to `specflux/update-post` or a shape-compatible `core/update-post`
 	 * (S9: for a core-filled role the pack still names the verb).
 	 *
 	 * 0.3 S4: `update-post` is draft-state edits only, so it is always
@@ -335,7 +335,7 @@ final class PagesPack extends Pack {
 	 */
 	public function withheldRoleNotice( array $withheld ): ?string {
 		if ( in_array( 'upload', $withheld, true ) || in_array( 'generate', $withheld, true ) || in_array( 'stock-import', $withheld, true ) ) {
-			return __( 'Images are off for this run — your account can\'t upload files.', 'senroflux' );
+			return __( 'Images are off for this run — your account can\'t upload files.', 'specflux-site-agent' );
 		}
 
 		return null;
@@ -343,8 +343,8 @@ final class PagesPack extends Pack {
 
 	/**
 	 * 0.3 quality fix: the pages pack's own budget override, applied over the
-	 * shipped table before `senroflux_default_budget` runs (same seam as
-	 * {@see \Specflux\SenroFlux\Packs\Site\SitePack::defaultBudget()}). Before
+	 * shipped table before `specflux_site_agent_default_budget` runs (same seam as
+	 * {@see \Specflux\SiteAgent\Packs\Site\SitePack::defaultBudget()}). Before
 	 * this override existed, a pages run used the SHIPPED table unchanged
 	 * (60/30/250000) — sized from runs with no image work at all. A live run
 	 * that searched for and inserted an image (cover-hero/media-text, 0.3
@@ -424,7 +424,7 @@ final class PagesPack extends Pack {
 	 * the Validator's structural identity restated for the model (blockName
 	 * tree + the layout-defining attributes it keys on), because the pack sends
 	 * the model constraints, never markup (S11) — a model told only the prose
-	 * constraints writes `<!-- wp:senroflux/hero -->` and is refused
+	 * constraints writes `<!-- wp:specflux/hero -->` and is refused
 	 * `unknown_block` on its first write (observed live, stage 10).
 	 * This is content, never translated (S15 — skill bodies stay English).
 	 */
@@ -627,7 +627,7 @@ final class PagesPack extends Pack {
 	private function packUnboundError(): WP_Error {
 		return new WP_Error(
 			'pack_unbound',
-			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the pages pack.', 'senroflux' ),
+			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the pages pack.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}

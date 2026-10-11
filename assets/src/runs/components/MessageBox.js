@@ -12,7 +12,7 @@ const AUTOMATIC_VALUE = '';
  * from the AI Client registry, so building a separator-joined key risks a
  * collision if either ever contains that separator. An index is always safe.
  *
- * @param {Object} modelChoices `senrofluxRunsConfig.modelChoices`.
+ * @param {Object} modelChoices `specfluxSiteAgentRunsConfig.modelChoices`.
  * @return {Array<{provider: string, providerName: string, id: string, name: string}>}
  */
 function flattenModelChoices( modelChoices ) {
@@ -42,9 +42,9 @@ function flattenModelChoices( modelChoices ) {
  *
  * A NEW run needs a capability pack (runs-pack fix): a pack-less start has an
  * empty verb map, so every read/plan call the model makes is refused
- * fail-closed ({@see \Specflux\SenroFlux\Tools\VerbTier}) and the run
+ * fail-closed ({@see \Specflux\SiteAgent\Tools\VerbTier}) and the run
  * deadlocks. `packs` is the CURRENT viewer's runnable packs
- * ({@see \Specflux\SenroFlux\Admin\RunsScreen::runnablePacks()}), each a data
+ * ({@see \Specflux\SiteAgent\Admin\RunsScreen::runnablePacks()}), each a data
  * `{ name, label }` pair. Exactly one pack auto-selects; two or more show a
  * "Choose what to work on" placeholder and hold Start disabled until one is
  * picked; zero packs render no picker at all and Start stays disabled.
@@ -65,7 +65,7 @@ function flattenModelChoices( modelChoices ) {
  * @param {string}   props.state          'idle' | 'parked' | 'running'.
  * @param {Function} [props.onSend]       `( goal, pack, model ) => void`, starts a new run. `model` is `{ provider, id } | null`.
  * @param {string}   [props.initialText]  Pre-fills the box (0.3 S10, the
- *                                        command palette's "SenroFlux: run
+ *                                        command palette's "Specflux Site Agent: run
  *                                        "<text>"" command) — this ONLY seeds
  *                                        the textarea; it never calls
  *                                        `onSend()` itself, so landing here
@@ -74,13 +74,13 @@ function flattenModelChoices( modelChoices ) {
  * @param {Array<{name:string,label:string}>}  [props.packs]             The viewer's runnable packs.
  * @param {Array<{name:string,reason:string}>} [props.unavailablePacks] Packs whose preflight
  *                                                                       refused this viewer, with why
- *                                                                       ({@see \Specflux\SenroFlux\Admin\RunsScreen::unavailablePacks()}) —
+ *                                                                       ({@see \Specflux\SiteAgent\Admin\RunsScreen::unavailablePacks()}) —
  *                                                                       rendered as a short notice so a
  *                                                                       viewer with zero (or fewer)
  *                                                                       runnable packs finds out why,
  *                                                                       rather than the box just going
  *                                                                       quiet.
- * @param {Object}   [props.modelChoices] `senrofluxRunsConfig.modelChoices` — `{ providerId: { name, models: [{id, name}] } }`, only configured providers.
+ * @param {Object}   [props.modelChoices] `specfluxSiteAgentRunsConfig.modelChoices` — `{ providerId: { name, models: [{id, name}] } }`, only configured providers.
  * @param {boolean}  [props.startBlocked] A blocking setup check fails (no model provider, J1): Start is disabled
  *                                        and says why. The server-rendered setup panel above the app names the fix.
  * @param {?{runId:number,pack:string}} [props.followUp] A follow-up run is being started from a finished run
@@ -147,10 +147,10 @@ export default function MessageBox( {
 
 	const placeholder =
 		'parked' === state
-			? __( 'Answer the card above to continue', 'senroflux' )
+			? __( 'Answer the card above to continue', 'specflux-site-agent' )
 			: 'running' === state
-			? __( 'Working. Keep this page open; the run pauses if you leave and continues when you come back.', 'senroflux' )
-			: __( 'Describe what you want done…', 'senroflux' );
+			? __( 'Working. Keep this page open; the run pauses if you leave and continues when you come back.', 'specflux-site-agent' )
+			: __( 'Describe what you want done…', 'specflux-site-agent' );
 
 	// Grouped by provider via real `<optgroup>` elements (SelectControl
 	// renders whatever `children` it is given instead of its own flat
@@ -185,14 +185,14 @@ export default function MessageBox( {
 	};
 
 	return (
-		<div className="senroflux-message-box-wrap">
+		<div className="specflux-site-agent-message-box-wrap">
 			{ unavailableList.length > 0 && (
-				<ul className="senroflux-unavailable-packs">
+				<ul className="specflux-site-agent-unavailable-packs">
 					{ unavailableList.map( ( p ) => (
 						<li key={ p.name }>
 							{ sprintf(
 								/* translators: 1: a capability pack's name, e.g. "widgets". 2: why it can't run right now. */
-								__( '%1$s pack unavailable: %2$s', 'senroflux' ),
+								__( '%1$s pack unavailable: %2$s', 'specflux-site-agent' ),
 								p.name,
 								p.reason
 							) }
@@ -201,22 +201,22 @@ export default function MessageBox( {
 				</ul>
 			) }
 			{ followUp && (
-				<p className="senroflux-followup-note">
+				<p className="specflux-site-agent-followup-note">
 					{ sprintf(
 						/* translators: %d: the id of the finished run being followed up. */
-						__( 'Follow-up to run #%d. It keeps the same pack and starts from the objects that run changed; it re-reads each before changing it.', 'senroflux' ),
+						__( 'Follow-up to run #%d. It keeps the same pack and starts from the objects that run changed; it re-reads each before changing it.', 'specflux-site-agent' ),
 						followUp.runId
 					) }{ ' ' }
 					<button type="button" className="button-link" onClick={ () => onCancelFollowUp && onCancelFollowUp() }>
-						{ __( 'Cancel follow-up', 'senroflux' ) }
+						{ __( 'Cancel follow-up', 'specflux-site-agent' ) }
 					</button>
 				</p>
 			) }
-			<div className="senroflux-message-box">
+			<div className="specflux-site-agent-message-box">
 				{ packList.length > 0 && (
 					<SelectControl
-						className="senroflux-message-box-pack"
-						label={ __( 'Pack', 'senroflux' ) }
+						className="specflux-site-agent-message-box-pack"
+						label={ __( 'Pack', 'specflux-site-agent' ) }
 						hideLabelFromVision
 						__next40pxDefaultSize
 						disabled={ boxDisabled || Boolean( followUp ) }
@@ -225,12 +225,12 @@ export default function MessageBox( {
 					>
 						{ 1 !== packList.length && (
 							<option value="" disabled dir="auto">
-								{ __( 'Choose what to work on', 'senroflux' ) }
+								{ __( 'Choose what to work on', 'specflux-site-agent' ) }
 							</option>
 						) }
 						{ /* Pack and model names are data, not UI chrome (S22). */ }
 						{ packList.map( ( p ) => (
-							<option key={ p.name } value={ p.name } dir="auto" data-senroflux-content>
+							<option key={ p.name } value={ p.name } dir="auto" data-specflux-site-agent-content>
 								{ p.label }
 							</option>
 						) ) }
@@ -238,8 +238,8 @@ export default function MessageBox( {
 				) }
 				{ flatModels.length > 0 && (
 					<SelectControl
-						className="senroflux-message-box-model"
-						label={ __( 'Model', 'senroflux' ) }
+						className="specflux-site-agent-message-box-model"
+						label={ __( 'Model', 'specflux-site-agent' ) }
 						hideLabelFromVision
 						disabled={ boxDisabled }
 						value={ modelIndex }
@@ -247,12 +247,12 @@ export default function MessageBox( {
 						__next40pxDefaultSize
 					>
 						<option value={ AUTOMATIC_VALUE }>
-							{ __( 'Automatic (let WordPress choose)', 'senroflux' ) }
+							{ __( 'Automatic (let WordPress choose)', 'specflux-site-agent' ) }
 						</option>
 						{ Array.from( modelGroups.entries() ).map( ( [ providerId, group ] ) => (
 							<optgroup key={ providerId } label={ group.providerName }>
 								{ group.options.map( ( { index, model } ) => (
-									<option key={ index } value={ String( index ) } dir="auto" data-senroflux-content>
+									<option key={ index } value={ String( index ) } dir="auto" data-specflux-site-agent-content>
 										{ model.name }
 									</option>
 								) ) }
@@ -262,7 +262,7 @@ export default function MessageBox( {
 				) }
 				<textarea
 					ref={ textRef }
-					className="senroflux-message-box-input"
+					className="specflux-site-agent-message-box-input"
 					disabled={ disabled }
 					placeholder={ placeholder }
 					value={ text }
@@ -278,15 +278,15 @@ export default function MessageBox( {
 					type="button"
 					className="button button-primary"
 					disabled={ startDisabled || '' === text.trim() }
-					aria-describedby={ startBlocked ? 'senroflux-start-blocked' : undefined }
+					aria-describedby={ startBlocked ? 'specflux-site-agent-start-blocked' : undefined }
 					onClick={ submit }
 				>
-					{ __( 'Start run', 'senroflux' ) }
+					{ __( 'Start run', 'specflux-site-agent' ) }
 				</button>
 			</div>
 			{ startBlocked && (
-				<p id="senroflux-start-blocked" className="senroflux-start-blocked">
-					{ __( 'Finish the setup notice above to start a run.', 'senroflux' ) }
+				<p id="specflux-site-agent-start-blocked" className="specflux-site-agent-start-blocked">
+					{ __( 'Finish the setup notice above to start a run.', 'specflux-site-agent' ) }
 				</p>
 			) }
 		</div>

@@ -6,27 +6,27 @@
  * source run's pack wins, and a viewer who cannot see the source run is
  * refused.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Http\ConsumerPolicy;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFluxJsonResponse;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Http\ConsumerPolicy;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgentJsonResponse;
 use WP_Error;
 use wpdb;
 
@@ -37,19 +37,19 @@ final class AjaxFollowUpTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['senroflux_test_user_caps']       = array(
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(
 			'read'           => true,
 			'edit_posts'     => true,
 			'manage_options' => true,
 		);
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
 		unset( $_POST );
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( ConsumerPolicy::FILTER );
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'manage_options' );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 		add_filter( ConsumerPolicy::FILTER, array( new RunsScreen(), 'registerAdminConsumer' ) );
 
 		$this->seedRunnerGraph();
@@ -58,8 +58,8 @@ final class AjaxFollowUpTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( ConsumerPolicy::FILTER );
 		unset( $_POST );
 	}
@@ -118,12 +118,12 @@ final class AjaxFollowUpTest extends TestCase {
 	public function test_a_viewer_who_cannot_see_the_source_run_is_refused(): void {
 		// Run 2 belongs to another user; the viewer holds the pack's run
 		// capability but not `manage_options`, so maySee() is false.
-		$source                              = $this->finishedRun( 2, 'pages' );
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$source                                        = $this->finishedRun( 2, 'pages' );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'read'       => true,
 			'edit_posts' => true,
 		);
-		remove_all_filters( 'senroflux_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
 
 		$_POST = array(
 			'consumer'     => RunsScreen::CONSUMER,
@@ -145,7 +145,7 @@ final class AjaxFollowUpTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	private function finishedRun( int $owner, string $pack, string $status = 'completed' ): int {
-		$run_id = $this->store->createRun( $owner, RunsScreen::CONSUMER, 'Original goal', array( 'senroflux/read-content' ), array(), $pack );
+		$run_id = $this->store->createRun( $owner, RunsScreen::CONSUMER, 'Original goal', array( 'specflux/read-content' ), array(), $pack );
 		$this->store->updateRun(
 			$run_id,
 			array(
@@ -161,10 +161,10 @@ final class AjaxFollowUpTest extends TestCase {
 		return $run_id;
 	}
 
-	private function captureAjaxStart(): SenroFluxJsonResponse {
+	private function captureAjaxStart(): SpecfluxSiteAgentJsonResponse {
 		try {
 			( new Ajax() )->handleStart();
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			return $json;
 		}
 
@@ -183,7 +183,7 @@ final class AjaxFollowUpTest extends TestCase {
 
 			/** @return list<string> */
 			public function allowList(): array {
-				return array( 'senroflux/read-content' );
+				return array( 'specflux/read-content' );
 			}
 
 			/** @return array<string,int> */
@@ -209,7 +209,7 @@ final class AjaxFollowUpTest extends TestCase {
 		};
 
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array( $name => $pack ),
 			10,
 			1

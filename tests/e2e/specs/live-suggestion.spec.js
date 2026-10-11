@@ -42,7 +42,7 @@ test.describe( 'S12 a live-ticked suggestion appears without a reload', () => {
 			await waitSettled( page );
 			await assertNoSeriousA11y( page, 'terminal report view' );
 
-			await expect( page.locator( '.senroflux-suggestion-card' ) ).toBeVisible( { timeout: 5000 } );
+			await expect( page.locator( '.specflux-site-agent-suggestion-card' ) ).toBeVisible( { timeout: 5000 } );
 		}
 	);
 } );

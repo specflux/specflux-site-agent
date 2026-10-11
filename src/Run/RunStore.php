@@ -2,12 +2,12 @@
 /**
  * Run/step persistence contract.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

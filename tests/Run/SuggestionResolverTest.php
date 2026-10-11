@@ -4,19 +4,19 @@
  * refuses without truncating; dismiss records the resolution; an already
  * resolved suggestion is refused; an unknown suggestion is refused.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\SuggestionResolver;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\SuggestionResolver;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use WP_Error;
 use wpdb;
 
@@ -27,10 +27,10 @@ final class SuggestionResolverTest extends TestCase {
 	private WpdbRunStore $store;
 
 	protected function setUp(): void {
-		$this->db                          = new wpdb();
-		$this->db->queryReturn             = 1;
-		$this->store                       = new WpdbRunStore( $this->db );
-		$GLOBALS['senroflux_test_options'] = array();
+		$this->db                                    = new wpdb();
+		$this->db->queryReturn                       = 1;
+		$this->store                                 = new WpdbRunStore( $this->db );
+		$GLOBALS['specflux_site_agent_test_options'] = array();
 	}
 
 	private function createRunWithSuggestion( string $text = 'Mention free shipping.' ): array {
@@ -39,7 +39,7 @@ final class SuggestionResolverTest extends TestCase {
 			$run_id,
 			StepKind::Suggestion,
 			array( 'text' => $text ),
-			'senroflux/suggest-brief-addition',
+			'specflux/suggest-brief-addition',
 			null,
 			'ok'
 		);

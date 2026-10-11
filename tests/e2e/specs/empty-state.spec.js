@@ -10,16 +10,16 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 		await gotoRuns( page );
 		await waitLoaded( page );
 
-		await expect( page.locator( '.senroflux-empty-state h2' ) ).toHaveText( 'Nothing has run yet' );
+		await expect( page.locator( '.specflux-site-agent-empty-state h2' ) ).toHaveText( 'Nothing has run yet' );
 		// Built-in mode's promise sentence never mentions the tier vocabulary.
-		await expect( page.locator( '.senroflux-empty-state' ) ).not.toContainText( 'Tier' );
+		await expect( page.locator( '.specflux-site-agent-empty-state' ) ).not.toContainText( 'Tier' );
 
 		await assertNoSeriousA11y( page, 'empty state' );
 	} );
 
 	// J1: dismiss the Agent Safety advisory, reload, it stays gone.
-	test( 'the SenroGate advisory can be dismissed, and stays dismissed after a reload', async ( { page } ) => {
-		const meta = 'senroflux_agent_safety_check_dismissed';
+	test( 'the Specflux Agent Governance advisory can be dismissed, and stays dismissed after a reload', async ( { page } ) => {
+		const meta = 'specflux_site_agent_agent_safety_check_dismissed';
 		// `wp user meta delete` fails when the key is absent; that is fine here.
 		const clear = () => {
 			try {
@@ -33,12 +33,12 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 			await gotoRuns( page );
 			await waitLoaded( page );
 
-			const advisory = page.locator( '.senroflux-setup-check[data-check-id="senroflux/agent-safety"]' );
+			const advisory = page.locator( '.specflux-site-agent-setup-check[data-check-id="specflux/agent-safety"]' );
 			await expect( advisory ).toBeVisible();
 			await advisory.getByRole( 'button', { name: 'Dismiss' } ).click();
 			await expect( advisory ).toHaveCount( 0 );
 			// Focus moves to the goal box (the panel has no other focusable element here).
-			await expect( page.locator( '.senroflux-message-box-input' ) ).toBeFocused();
+			await expect( page.locator( '.specflux-site-agent-message-box-input' ) ).toBeFocused();
 
 			// A tab switch back (focus refresh) must not bring it back either.
 			await page.evaluate( () => window.dispatchEvent( new Event( 'focus' ) ) );
@@ -47,7 +47,7 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 
 			await page.reload();
 			await waitLoaded( page );
-			await expect( page.locator( '#senroflux-setup-panel' ) ).toHaveCount( 1 );
+			await expect( page.locator( '#specflux-site-agent-setup-panel' ) ).toHaveCount( 1 );
 			await expect( advisory ).toHaveCount( 0 );
 		} finally {
 			clear();

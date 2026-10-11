@@ -8,8 +8,8 @@ export default function PinnedPlan( { plan, steps } ) {
 
 	if ( ! plan ) {
 		return (
-			<div className="senroflux-pinned-plan senroflux-pinned-plan-none">
-				<p>{ __( 'No plan yet. Nothing will change until you accept one.', 'senroflux' ) }</p>
+			<div className="specflux-site-agent-pinned-plan specflux-site-agent-pinned-plan-none">
+				<p>{ __( 'No plan yet. Nothing will change until you accept one.', 'specflux-site-agent' ) }</p>
 			</div>
 		);
 	}
@@ -24,39 +24,39 @@ export default function PinnedPlan( { plan, steps } ) {
 	// the count is never presented as more exact than it is.
 	const approxTitle = __(
 		'This count is estimated by matching the plan against executed calls in order; it may be briefly wrong if calls run out of the plan\'s listed order.',
-		'senroflux'
+		'specflux-site-agent'
 	);
 	const approxCount = ( doneCount, totalCount ) =>
 		sprintf(
 			/* translators: 1: steps done, 2: total steps; "~" marks the count as approximate. */
-			__( '~%1$d / %2$d', 'senroflux' ),
+			__( '~%1$d / %2$d', 'specflux-site-agent' ),
 			doneCount,
 			totalCount
 		);
 
 	return (
-		<div className="senroflux-pinned-plan">
-			<div className="senroflux-pinned-plan-header">
-				<span className="senroflux-pinned-plan-goal" dir="auto">{ plan.goal }</span>
-				<span className="senroflux-pinned-plan-count" dir="ltr" title={ approxTitle }>
+		<div className="specflux-site-agent-pinned-plan">
+			<div className="specflux-site-agent-pinned-plan-header">
+				<span className="specflux-site-agent-pinned-plan-goal" dir="auto">{ plan.goal }</span>
+				<span className="specflux-site-agent-pinned-plan-count" dir="ltr" title={ approxTitle }>
 					{ approxCount( done, total ) }
 				</span>
-				<button type="button" className="senroflux-pinned-plan-toggle" onClick={ () => setHidden( ! hidden ) }>
-					{ hidden ? __( 'Show', 'senroflux' ) : __( 'Hide', 'senroflux' ) }
+				<button type="button" className="specflux-site-agent-pinned-plan-toggle" onClick={ () => setHidden( ! hidden ) }>
+					{ hidden ? __( 'Show', 'specflux-site-agent' ) : __( 'Hide', 'specflux-site-agent' ) }
 				</button>
 			</div>
 			{ ! hidden && (
-				<ol className="senroflux-pinned-plan-steps">
+				<ol className="specflux-site-agent-pinned-plan-steps">
 					{ ( plan.steps || [] ).map( ( planStep, index ) => (
 						<li key={ index } className={ progress[ index ] && progress[ index ].waiting ? 'is-waiting' : '' }>
-							<span className="senroflux-plan-step-text" dir="auto">{ planStep.text }</span>
+							<span className="specflux-site-agent-plan-step-text" dir="auto">{ planStep.text }</span>
 							{ progress[ index ] && progress[ index ].total > 1 && (
-								<span className="senroflux-plan-step-count" dir="ltr" title={ approxTitle }>
+								<span className="specflux-site-agent-plan-step-count" dir="ltr" title={ approxTitle }>
 									{ approxCount( progress[ index ].done, progress[ index ].total ) }
 								</span>
 							) }
 							{ progress[ index ] && progress[ index ].waiting && (
-								<span className="senroflux-plan-step-waiting">{ __( '· waiting for you', 'senroflux' ) }</span>
+								<span className="specflux-site-agent-plan-step-waiting">{ __( '· waiting for you', 'specflux-site-agent' ) }</span>
 							) }
 						</li>
 					) ) }

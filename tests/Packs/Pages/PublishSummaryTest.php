@@ -10,23 +10,23 @@
  * AS-11 `wp_kses($summary, ['a' => ['href' => true]])` render is what removes
  * them downstream (outside this class).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\PublishSummary;
+use Specflux\SiteAgent\Packs\Pages\PublishSummary;
 
 final class PublishSummaryTest extends TestCase {
 
 	/** Four patterns in order, each carrying the canonical `metadata.name`. */
-	private const PRICING_MARKUP = '<!-- wp:group {"metadata":{"name":"senroflux/hero"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
-		. '<!-- wp:group {"metadata":{"name":"senroflux/pricing-table"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
-		. '<!-- wp:group {"metadata":{"name":"senroflux/faq"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
-		. '<!-- wp:group {"metadata":{"name":"senroflux/cta"}} --><div class="wp-block-group"></div><!-- /wp:group -->';
+	private const PRICING_MARKUP = '<!-- wp:group {"metadata":{"name":"specflux/hero"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
+		. '<!-- wp:group {"metadata":{"name":"specflux/pricing-table"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
+		. '<!-- wp:group {"metadata":{"name":"specflux/faq"}} --><div class="wp-block-group"></div><!-- /wp:group -->'
+		. '<!-- wp:group {"metadata":{"name":"specflux/cta"}} --><div class="wp-block-group"></div><!-- /wp:group -->';
 
 	private function loadShims(): void {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
@@ -34,7 +34,7 @@ final class PublishSummaryTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_posts'] = array();
+		$GLOBALS['specflux_site_agent_test_posts'] = array();
 		PublishSummary::forgetRunContext();
 	}
 
@@ -43,16 +43,16 @@ final class PublishSummaryTest extends TestCase {
 	}
 
 	private function seedPost( int $id, string $title, string $content = '' ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = 'page';
-		$post->post_title                       = $title;
-		$post->post_status                      = 'draft';
-		$post->post_name                        = '';
-		$post->post_parent                      = 0;
-		$post->post_excerpt                     = '';
-		$post->post_content                     = $content;
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post               = new \stdClass();
+		$post->ID           = $id;
+		$post->post_type    = 'page';
+		$post->post_title   = $title;
+		$post->post_status  = 'draft';
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$post->post_content = $content;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	public function test_rich_row_for_publish_builds_three_links(): void {
@@ -69,10 +69,10 @@ final class PublishSummaryTest extends TestCase {
 	}
 
 	/**
-	 * Provenance is server-side: a `_senroflux` block in the ARGS is the model
+	 * Provenance is server-side: a `_specflux` block in the ARGS is the model
 	 * talking, and it must not reach the row a human reads before publishing.
 	 */
-	public function test_model_supplied_senroflux_args_are_ignored(): void {
+	public function test_model_supplied_specflux_site_agent_args_are_ignored(): void {
 		$this->seedPost( 100, 'Pricing', self::PRICING_MARKUP );
 		PublishSummary::useRunContext( 'Design a pricing page' );
 
@@ -80,8 +80,8 @@ final class PublishSummaryTest extends TestCase {
 			'fallback',
 			'pages/publish',
 			array(
-				'id'         => 100,
-				'_senroflux' => array(
+				'id'        => 100,
+				'_specflux' => array(
 					'pattern_sequence' => 'audited › approved › by-legal',
 					'run_goal'         => 'Routine typo fix',
 				),
@@ -106,13 +106,13 @@ final class PublishSummaryTest extends TestCase {
 	 * Agent Safety hands the filter the ABILITY ID, not a `pages/*` verb, so
 	 * the Tier-2 test has to run through the pack's predicate.
 	 */
-	/** 0.3 S4: the publish transition now lives on `senroflux/publish-post`. */
+	/** 0.3 S4: the publish transition now lives on `specflux/publish-post`. */
 	public function test_filter_enriches_an_ability_id_publish_transition(): void {
 		$this->seedPost( 100, 'Pricing', self::PRICING_MARKUP );
 
 		$sum = PublishSummary::filter(
 			'plain',
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'id'     => 100,
 				'status' => 'publish',
@@ -127,7 +127,7 @@ final class PublishSummaryTest extends TestCase {
 
 		$sum = PublishSummary::filter(
 			'plain',
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'     => 100,
 				'status' => 'draft',
@@ -138,7 +138,7 @@ final class PublishSummaryTest extends TestCase {
 	}
 
 	public function test_passthrough_for_read_verb(): void {
-		$sum = PublishSummary::filter( 'plain', 'senroflux/read-content', array( 'id' => 100 ) );
+		$sum = PublishSummary::filter( 'plain', 'specflux/read-content', array( 'id' => 100 ) );
 
 		$this->assertSame( 'plain', $sum );
 	}

@@ -15,7 +15,7 @@ const path = require( 'path' );
  * to that project's gate mode for its whole life (gate mode is stored per
  * run — S3).
  */
-const BASE_URL = process.env.SENROFLUX_E2E_BASE_URL || 'http://localhost:8895';
+const BASE_URL = process.env.SPECFLUX_SITE_AGENT_E2E_BASE_URL || 'http://localhost:8895';
 
 module.exports = defineConfig( {
 	testDir: './tests/e2e',

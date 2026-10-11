@@ -10,10 +10,10 @@ import StatusPill from './StatusPill';
  * a fallback only for a key this map doesn't know about.
  */
 const TAB_LABELS = {
-	needs_you: __( 'Needs you', 'senroflux' ),
-	running: __( 'Running', 'senroflux' ),
-	finished: __( 'Finished', 'senroflux' ),
-	all: __( 'All', 'senroflux' ),
+	needs_you: __( 'Needs you', 'specflux-site-agent' ),
+	running: __( 'Running', 'specflux-site-agent' ),
+	finished: __( 'Finished', 'specflux-site-agent' ),
+	all: __( 'All', 'specflux-site-agent' ),
 };
 
 const tabLabel = ( key ) => TAB_LABELS[ key ] || RUN_TABS.find( ( t ) => t.key === key )?.label || key;
@@ -29,15 +29,15 @@ export default function RunList( { runs, activeTab, onTabChange, selectedRunId, 
 	const visible = runsForTab( runs, activeTab );
 
 	return (
-		<aside className="senroflux-run-list" aria-label={ __( 'Runs', 'senroflux' ) }>
-			<div className="senroflux-run-tabs" role="tablist">
+		<aside className="specflux-site-agent-run-list" aria-label={ __( 'Runs', 'specflux-site-agent' ) }>
+			<div className="specflux-site-agent-run-tabs" role="tablist">
 				{ RUN_TABS.map( ( tab ) => (
 					<button
 						key={ tab.key }
 						type="button"
 						role="tab"
 						aria-selected={ activeTab === tab.key }
-						className={ `senroflux-run-tab${ activeTab === tab.key ? ' is-active' : '' }` }
+						className={ `specflux-site-agent-run-tab${ activeTab === tab.key ? ' is-active' : '' }` }
 						onClick={ () => onTabChange( tab.key ) }
 					>
 						{ tabLabel( tab.key ) }
@@ -45,23 +45,23 @@ export default function RunList( { runs, activeTab, onTabChange, selectedRunId, 
 					</button>
 				) ) }
 			</div>
-			<ul className="senroflux-run-rows">
+			<ul className="specflux-site-agent-run-rows">
 				{ visible.map( ( run ) => (
 					<li key={ run.id }>
 						<button
 							type="button"
-							className={ `senroflux-run-row${ run.id === selectedRunId ? ' is-selected' : '' }` }
+							className={ `specflux-site-agent-run-row${ run.id === selectedRunId ? ' is-selected' : '' }` }
 							onClick={ () => onSelectRun( run.id ) }
 						>
-							<span className="senroflux-run-row-title" dir="auto">{ run.goal }</span>
+							<span className="specflux-site-agent-run-row-title" dir="auto">{ run.goal }</span>
 							<StatusPill status={ run.status } stalled={ run.stalled } />
-							<span className="senroflux-run-row-pack">{ run.pack }</span>
+							<span className="specflux-site-agent-run-row-pack">{ run.pack }</span>
 						</button>
 					</li>
 				) ) }
 				{ 0 === visible.length && (
-					<li className="senroflux-run-rows-empty">
-						{ /* translators: %s: run list tab label. */ sprintf( __( 'No runs in %s.', 'senroflux' ), tabLabel( activeTab ) ) }
+					<li className="specflux-site-agent-run-rows-empty">
+						{ /* translators: %s: run list tab label. */ sprintf( __( 'No runs in %s.', 'specflux-site-agent' ), tabLabel( activeTab ) ) }
 					</li>
 				) }
 			</ul>

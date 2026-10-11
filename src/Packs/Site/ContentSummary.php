@@ -3,14 +3,14 @@
  * AS-15's approval-summary builder for the 0.3 content-pack Tier-2 calls
  * that reach Pending Agent Actions but are NOT the pages pack's own
  * `pages/publish`/`pages/update-live` (those stay
- * {@see \Specflux\SenroFlux\Packs\Pages\PublishSummary}'s, unchanged).
+ * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}'s, unchanged).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -21,19 +21,19 @@ defined( 'ABSPATH' ) || exit;
  * Hooks the same `agent_safety_approval_summary` filter (AS-11/AS-15) for
  * four cases:
  *
- *   - `senroflux/create-post` and `senroflux/update-post` when the call
+ *   - `specflux/create-post` and `specflux/update-post` when the call
  *     names `categories` or `tags`: the terms the write will set. Without
  *     them there is no card here (the call stays as it was), and the
  *     publish-post card below carries the same clause.
- *   - `senroflux/publish-post` when the target object is an ACTUAL blog
+ *   - `specflux/publish-post` when the target object is an ACTUAL blog
  *     post (`post_type` `post`, a posts-pack run): title + preview link,
  *     "as AS-11 does for pages" (S15/AS-15).
- *   - `senroflux/update-navigation`: the current item list, read by the
+ *   - `specflux/update-navigation`: the current item list, read by the
  *     server, beside the call's proposed list (S15/AS-15).
- *   - `senroflux/set-front-page`: the current front page (or "latest
+ *   - `specflux/set-front-page`: the current front page (or "latest
  *     posts") beside the replacement (S15/AS-15).
  *
- * WHY A SIBLING, NOT AN EXTENSION OF PublishSummary: `senroflux/publish-post`
+ * WHY A SIBLING, NOT AN EXTENSION OF PublishSummary: `specflux/publish-post`
  * is ONE shared ability across three packs (pages, posts, site) — Pages',
  * Posts' and Site's own `verbFor()` all classify a transitioning call the
  * same way regardless of the object's real `post_type`, so PublishSummary's
@@ -117,7 +117,7 @@ final class ContentSummary {
 		}
 
 		$title   = self::field( $post, 'post_title' );
-		$title   = is_string( $title ) && '' !== $title ? $title : __( 'Untitled', 'senroflux' );
+		$title   = is_string( $title ) && '' !== $title ? $title : __( 'Untitled', 'specflux-site-agent' );
 		$preview = function_exists( 'get_preview_post_link' ) ? (string) get_preview_post_link( $id ) : '';
 		$edit    = function_exists( 'get_edit_post_link' ) ? (string) get_edit_post_link( $id, 'raw' ) : '';
 
@@ -149,13 +149,13 @@ final class ContentSummary {
 		}
 
 		if ( null === $post ) {
-			$title = is_string( $input['title'] ?? null ) && '' !== trim( $input['title'] ) ? trim( $input['title'] ) : __( 'Untitled', 'senroflux' );
+			$title = is_string( $input['title'] ?? null ) && '' !== trim( $input['title'] ) ? trim( $input['title'] ) : __( 'Untitled', 'specflux-site-agent' );
 
 			return sprintf( 'Create draft &quot;%s&quot; (post)', esc_html( $title ) ) . $clause;
 		}
 
 		$title = self::field( $post, 'post_title' );
-		$title = is_string( $title ) && '' !== $title ? $title : __( 'Untitled', 'senroflux' );
+		$title = is_string( $title ) && '' !== $title ? $title : __( 'Untitled', 'specflux-site-agent' );
 
 		return sprintf( 'Update &quot;%s&quot; (post)', esc_html( $title ) ) . $clause;
 	}
@@ -356,7 +356,7 @@ final class ContentSummary {
 			return sprintf( '&quot;%s&quot; (page)', esc_html( $page['title'] ) );
 		}
 
-		return esc_html__( 'Latest posts', 'senroflux' );
+		return esc_html__( 'Latest posts', 'specflux-site-agent' );
 	}
 
 	/**
@@ -374,7 +374,7 @@ final class ContentSummary {
 	 */
 	private static function itemLabels( array $items, ?array $context = null ): string {
 		if ( array() === $items ) {
-			return esc_html__( '(none)', 'senroflux' );
+			return esc_html__( '(none)', 'specflux-site-agent' );
 		}
 
 		$by_key = array();

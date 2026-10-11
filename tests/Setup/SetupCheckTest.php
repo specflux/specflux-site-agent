@@ -2,27 +2,27 @@
 /**
  * The SetupCheck value object (0.3 S11).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Setup;
+namespace Specflux\SiteAgent\Tests\Setup;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Setup\SetupCheck;
+use Specflux\SiteAgent\Setup\SetupCheck;
 
 final class SetupCheckTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 	}
 
 	public function test_a_viewer_holding_the_fix_capability_gets_the_fix_message(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 
 		$check = new SetupCheck(
-			'senroflux/provider',
+			'specflux/provider',
 			SetupCheck::BLOCKING,
 			false,
 			'Configure a provider.',
@@ -36,10 +36,10 @@ final class SetupCheckTest extends TestCase {
 	}
 
 	public function test_a_viewer_without_the_fix_capability_gets_the_blocked_message_and_no_link(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$check = new SetupCheck(
-			'senroflux/provider',
+			'specflux/provider',
 			SetupCheck::BLOCKING,
 			false,
 			'Configure a provider.',
@@ -56,7 +56,7 @@ final class SetupCheckTest extends TestCase {
 	}
 
 	public function test_a_null_fix_capability_means_nobody_gets_the_fix_message(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 
 		$check = new SetupCheck(
 			'pages/capability',
@@ -92,6 +92,6 @@ final class SetupCheckTest extends TestCase {
 	public function test_error_code_falls_back_when_unset(): void {
 		$check = new SetupCheck( 'a/b', SetupCheck::BLOCKING, false, 'x' );
 
-		$this->assertSame( 'senroflux_setup_check_failed', $check->errorCode() );
+		$this->assertSame( 'specflux_site_agent_setup_check_failed', $check->errorCode() );
 	}
 }

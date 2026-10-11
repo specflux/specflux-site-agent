@@ -4,17 +4,17 @@
  *
  * TARGET REPO PATH: tests/Packs/Site/SitePackTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Skills\SkillSet;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Skills\SkillSet;
 
 final class SitePackTest extends TestCase {
 
@@ -24,9 +24,9 @@ final class SitePackTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'senroflux_run_skills' );
-		remove_all_filters( 'senroflux_default_budget' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
+		remove_all_filters( 'specflux_site_agent_default_budget' );
 		Plugin::reset();
 	}
 
@@ -54,12 +54,12 @@ final class SitePackTest extends TestCase {
 	public function test_agent_safety_verb_map_carries_update_navigation_at_tier_2(): void {
 		$map = ( new SitePack() )->agentSafetyVerbMap();
 
-		$this->assertSame( 2, $map['senroflux/update-navigation'] );
-		$this->assertSame( 2, $map['senroflux/set-front-page'] );
-		$this->assertSame( 0, $map['senroflux/read-navigation'] );
-		$this->assertSame( 0, $map['senroflux/read-front-page'] );
+		$this->assertSame( 2, $map['specflux/update-navigation'] );
+		$this->assertSame( 2, $map['specflux/set-front-page'] );
+		$this->assertSame( 0, $map['specflux/read-navigation'] );
+		$this->assertSame( 0, $map['specflux/read-front-page'] );
 		// Draft-state edits must NOT collapse to tier 2 (same S4 rule as pages/posts).
-		$this->assertSame( 1, $map['senroflux/update-post'] );
+		$this->assertSame( 1, $map['specflux/update-post'] );
 	}
 
 	public function test_verb_map_tiers_style_verbs(): void {
@@ -81,8 +81,8 @@ final class SitePackTest extends TestCase {
 	public function test_stock_image_verbs_are_tiered_and_gated_like_the_other_media_writes(): void {
 		$pack = new SitePack();
 
-		$this->assertSame( 'site/media-stock-search', $pack->verbFor( 'senroflux/stock-image-search', array() ) );
-		$this->assertSame( 'site/media-stock-import', $pack->verbFor( 'senroflux/stock-image-import', array() ) );
+		$this->assertSame( 'site/media-stock-search', $pack->verbFor( 'specflux/stock-image-search', array() ) );
+		$this->assertSame( 'site/media-stock-import', $pack->verbFor( 'specflux/stock-image-import', array() ) );
 
 		$map = $pack->verbMap();
 		$this->assertSame( 0, $map['site/media-stock-search'] );
@@ -110,8 +110,8 @@ final class SitePackTest extends TestCase {
 	public function test_object_id_for_write_and_read_resolve_the_style_singleton(): void {
 		$pack = new SitePack();
 
-		$this->assertSame( \Specflux\SenroFlux\Packs\Site\Style::OBJECT_ID, $pack->objectIdForWrite( 'site/set-style', array(), array() ) );
-		$this->assertSame( \Specflux\SenroFlux\Packs\Site\Style::OBJECT_ID, $pack->objectIdForRead( 'site/read-style', array() ) );
+		$this->assertSame( \Specflux\SiteAgent\Packs\Site\Style::OBJECT_ID, $pack->objectIdForWrite( 'site/set-style', array(), array() ) );
+		$this->assertSame( \Specflux\SiteAgent\Packs\Site\Style::OBJECT_ID, $pack->objectIdForRead( 'site/read-style', array() ) );
 	}
 
 	public function test_role_capabilities_require_upload_files_for_every_image_role(): void {
@@ -221,7 +221,7 @@ final class SitePackTest extends TestCase {
 
 		$this->assertNotNull( $structure );
 		$this->assertStringContainsString(
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			$structure->body,
 			'the very next call after clarify must be propose-plan'
 		);

@@ -2,12 +2,12 @@
 /**
  * The outcome of one tool call, before any model turn.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -68,13 +68,13 @@ final class ToolOutcome {
 	public static function unknownTool( string $name, array $suggestions = array() ): self {
 		$message = sprintf(
 			/* translators: %s: the tool name the model called. */
-			__( 'Unknown tool "%s". Call one of the tools you were given, by its exact name.', 'senroflux' ),
+			__( 'Unknown tool "%s". Call one of the tools you were given, by its exact name.', 'specflux-site-agent' ),
 			$name
 		);
 		if ( array() !== $suggestions ) {
 			$message .= ' ' . sprintf(
 				/* translators: %s: comma-separated exact tool names. */
-				__( 'Closest matches: %s.', 'senroflux' ),
+				__( 'Closest matches: %s.', 'specflux-site-agent' ),
 				implode( ', ', $suggestions )
 			);
 		}

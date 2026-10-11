@@ -1,5 +1,5 @@
 {
-	"name": "senroflux-editor-parity",
+	"name": "specflux-site-agent-editor-parity",
 	"private": true,
 	"description": "Dev-only: validates pages-pack markup with the block editor's own parser.",
 	"license": "GPL-2.0-or-later",

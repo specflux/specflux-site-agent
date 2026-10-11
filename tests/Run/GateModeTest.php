@@ -3,24 +3,24 @@
  * Runner::tick() tests for 0.3 S3's gate mode: resolution, the mismatch
  * check, and the built-in gate's end-to-end park/approve loop.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -59,21 +59,21 @@ final class GateModeTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			fn (): GateMode => $this->currentMode
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/read'  => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/read', execute_result: array( 'ok' => true ) ),
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/read'  => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/read', execute_result: array( 'ok' => true ) ),
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write', execute_result: array( 'ok' => true ) ),
 		);
 
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'agsafe-smoke/read'  => VerbTier::TIER_0,
 				'agsafe-smoke/write' => VerbTier::TIER_1,
@@ -85,7 +85,7 @@ final class GateModeTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 	private function createRun( GateMode $gate_mode = GateMode::BuiltIn ): int {
@@ -179,7 +179,7 @@ final class GateModeTest extends TestCase {
 		$approval_id = $result['ui']['approval']['approval_id'] ?? '';
 		$this->assertStringStartsWith( 'builtin:', (string) $approval_id, 'built-in parks carry a synthetic, non-Agent-Safety id' );
 
-		// Approve on SenroFlux's own screen resolves it — the SAME tick path.
+		// Approve on Specflux Site Agent's own screen resolves it — the SAME tick path.
 		$run    = $this->store->getRun( $run_id );
 		$result = $this->runner->tick( $run_id, (int) $run->stepCount, array( 'action' => 'approve' ) );
 
@@ -209,7 +209,7 @@ final class GateModeTest extends TestCase {
 	}
 
 	public function test_an_unmapped_verb_parks_in_built_in_mode(): void {
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/unmapped'] = new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/unmapped' );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/unmapped'] = new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/unmapped' );
 
 		$run_id = $this->createRun( GateMode::BuiltIn );
 
@@ -239,7 +239,7 @@ final class GateModeTest extends TestCase {
 
 		// A run that already completed has nothing left to govern; re-open it
 		// to running so the mismatch check has something live to fail.
-		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SenroFlux\Run\RunStatus::Running->value ) );
+		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SiteAgent\Run\RunStatus::Running->value ) );
 
 		// Agent Safety is now (or again) active: the environment no longer
 		// agrees with the run's pinned built-in mode.
@@ -261,7 +261,7 @@ final class GateModeTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_a_pack_refused_write_never_parks_in_built_in_mode(): void {
-		$pack = new class() extends \Specflux\SenroFlux\Packs\Pack {
+		$pack = new class() extends \Specflux\SiteAgent\Packs\Pack {
 			public function __construct() {
 				parent::__construct( array() );
 			}
@@ -295,9 +295,9 @@ final class GateModeTest extends TestCase {
 			null,
 			null,
 			null,
-			static fn (): \Specflux\SenroFlux\Packs\Pack => $pack,
+			static fn (): \Specflux\SiteAgent\Packs\Pack => $pack,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			fn (): GateMode => GateMode::BuiltIn
 		);

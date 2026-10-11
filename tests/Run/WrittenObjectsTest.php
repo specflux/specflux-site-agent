@@ -7,25 +7,25 @@
  * id seams and the REAL {@see Runner}, then reads `objects_json` and the
  * built report back.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\ObjectLookup;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\Tracker;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\ObjectLookup;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\Tracker;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -46,23 +46,23 @@ final class WrittenObjectsTest extends TestCase {
 		require_once __DIR__ . '/../stubs/blocks.php';
 		require_once __DIR__ . '/../stubs/media.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_terms']              = array();
-		$GLOBALS['senroflux_test_post_terms']         = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 1;
-		$GLOBALS['senroflux_test_next_term_id']       = 1;
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_terms']              = array();
+		$GLOBALS['specflux_site_agent_test_post_terms']         = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 1;
+		$GLOBALS['specflux_site_agent_test_next_term_id']       = 1;
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array(
 			'edit_post'         => true,
 			'read_post'         => true,
 			'upload_files'      => true,
 			'manage_categories' => true,
 			'assign_categories' => true,
 		);
-		$GLOBALS['senroflux_test_current_user_id']    = 1;
-		$GLOBALS['senroflux_test_transients']         = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 1;
+		$GLOBALS['specflux_site_agent_test_transients']         = array();
 
 		Media::reset();
 		Media::registerCategory();
@@ -89,24 +89,24 @@ final class WrittenObjectsTest extends TestCase {
 			read_object_id_resolver: fn ( $run, string $verb, array $args ) => $this->pack->objectIdForRead( $verb, $args )
 		);
 
-		$post                                 = new \stdClass();
-		$post->ID                             = 7;
-		$post->post_type                      = 'post';
-		$post->post_status                    = 'draft';
-		$post->post_title                     = 'Desk setup';
-		$post->post_content                   = '';
-		$GLOBALS['senroflux_test_posts'][7]   = $post;
-		$attachment                           = new \stdClass();
-		$attachment->ID                       = 501;
-		$attachment->post_type                = 'attachment';
-		$attachment->post_mime_type           = 'image/jpeg';
-		$attachment->post_title               = 'image-501';
-		$attachment->guid                     = 'https://example.test/wp-content/uploads/image-501.jpg';
-		$attachment->post_status              = 'inherit';
-		$attachment->post_parent              = 0;
-		$GLOBALS['senroflux_test_posts'][501] = $attachment;
-		$GLOBALS['senroflux_test_postmeta'][501]['_wp_attachment_image_alt']   = 'A red bicycle';
-		$GLOBALS['senroflux_test_postmeta'][501]['_senroflux_stock_source_id'] = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+		$post               = new \stdClass();
+		$post->ID           = 7;
+		$post->post_type    = 'post';
+		$post->post_status  = 'draft';
+		$post->post_title   = 'Desk setup';
+		$post->post_content = '';
+		$GLOBALS['specflux_site_agent_test_posts'][7]   = $post;
+		$attachment                                     = new \stdClass();
+		$attachment->ID                                 = 501;
+		$attachment->post_type                          = 'attachment';
+		$attachment->post_mime_type                     = 'image/jpeg';
+		$attachment->post_title                         = 'image-501';
+		$attachment->guid                               = 'https://example.test/wp-content/uploads/image-501.jpg';
+		$attachment->post_status                        = 'inherit';
+		$attachment->post_parent                        = 0;
+		$GLOBALS['specflux_site_agent_test_posts'][501] = $attachment;
+		$GLOBALS['specflux_site_agent_test_postmeta'][501]['_wp_attachment_image_alt']             = 'A red bicycle';
+		$GLOBALS['specflux_site_agent_test_postmeta'][501]['_specflux_site_agent_stock_source_id'] = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 	}
 
 	protected function tearDown(): void {
@@ -115,7 +115,7 @@ final class WrittenObjectsTest extends TestCase {
 	}
 
 	private function createRun(): int {
-		$run_id = $this->store->createRun( 1, 'test', 'Write the desk post', array( 'senroflux/*' ), Budget::defaults() );
+		$run_id = $this->store->createRun( 1, 'test', 'Write the desk post', array( 'specflux/*' ), Budget::defaults() );
 
 		$this->store->appendStep(
 			$run_id,
@@ -136,7 +136,7 @@ final class WrittenObjectsTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -158,7 +158,7 @@ final class WrittenObjectsTest extends TestCase {
 				new ModelMessage(
 					array(
 						new MessagePart( 'Calling ' . $call[0] . '.' ),
-						new MessagePart( new FunctionCall( 'call_' . $index, 'wpab__senroflux__' . $call[0], $call[1] ) ),
+						new MessagePart( new FunctionCall( 'call_' . $index, 'wpab__specflux__' . $call[0], $call[1] ) ),
 					)
 				),
 				10,
@@ -180,7 +180,7 @@ final class WrittenObjectsTest extends TestCase {
 	/** The seq of the tool_result a given ability produced. */
 	private function resultSeq( int $run_id, string $ability ): int {
 		foreach ( $this->store->getSteps( $run_id ) as $step ) {
-			if ( StepKind::ToolResult === $step->kind && str_contains( (string) wp_json_encode( $step->messageArray ), 'wpab__senroflux__' . $ability ) ) {
+			if ( StepKind::ToolResult === $step->kind && str_contains( (string) wp_json_encode( $step->messageArray ), 'wpab__specflux__' . $ability ) ) {
 				return (int) $step->seq;
 			}
 		}

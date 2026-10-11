@@ -10,25 +10,25 @@
  * stop and completes as before, and after any write a text-only turn is the
  * final answer straight away.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -54,15 +54,15 @@ final class TextOnlyTurnTest extends TestCase {
 		$this->gateway         = new FakeGateway();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, new RecordingBridge() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: true,
 				execute_result: array( 'id' => 42 )
 			),
-			'agsafe-smoke/read'  => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/read'  => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/read',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
@@ -70,7 +70,7 @@ final class TextOnlyTurnTest extends TestCase {
 		);
 
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'agsafe-smoke/read'  => VerbTier::TIER_0,
 				'agsafe-smoke/write' => VerbTier::TIER_1,
@@ -81,7 +81,7 @@ final class TextOnlyTurnTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		Plugin::reset();
 		unset( $GLOBALS['wpdb'] );
 	}
@@ -105,7 +105,7 @@ final class TextOnlyTurnTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -198,7 +198,7 @@ final class TextOnlyTurnTest extends TestCase {
 	}
 
 	public function test_a_failed_write_does_not_count_as_a_write(): void {
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/write'] = new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/write'] = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/write',
 			permission_result: true,
 			execute_result: new \WP_Error( 'boom', 'The write failed.' )

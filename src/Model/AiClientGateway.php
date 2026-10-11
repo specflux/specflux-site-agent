@@ -2,14 +2,14 @@
 /**
  * Thin wrapper over the WordPress AI Client prompt builder.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
-use Specflux\SenroFlux\Tools\ToolRegistry;
+use Specflux\SiteAgent\Tools\ToolRegistry;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
@@ -41,7 +41,7 @@ final class AiClientGateway implements ModelGatewayInterface {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return new WP_Error(
 				'gateway_unavailable',
-				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'senroflux' )
+				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'specflux-site-agent' )
 			);
 		}
 
@@ -112,7 +112,7 @@ final class AiClientGateway implements ModelGatewayInterface {
 		 *
 		 * @param float $timeout Seconds. Default 120.0.
 		 */
-		$timeout = apply_filters( 'senroflux_model_request_timeout', self::DEFAULT_TIMEOUT_SECONDS );
+		$timeout = apply_filters( 'specflux_site_agent_model_request_timeout', self::DEFAULT_TIMEOUT_SECONDS );
 
 		return is_numeric( $timeout ) && (float) $timeout > 0
 			? (float) $timeout

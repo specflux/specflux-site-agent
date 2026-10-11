@@ -2,12 +2,12 @@
 /**
  * Theme block patterns as feature patterns for the pages/site packs (0.3 S21).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 use WP_Error;
 
@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) || exit;
  *   - it names no `templateTypes`, and any `postTypes`/`blockTypes`
  *     restriction includes `page`;
  *   - every block it uses (recursively) is in the pack's block allow-list —
- *     the SAME set {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary::blockNames()}
+ *     the SAME set {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary::blockNames()}
  *     already fences curated patterns to;
  *   - its block tree is no more than 5 levels deep;
  *   - every `backgroundColor`/`textColor`/`gradient` a block carries, and
@@ -55,7 +55,7 @@ defined( 'ABSPATH' ) || exit;
  * document order — found by walking the pattern's rendered markup tag by
  * tag (block comments never match the element pattern, so they simply pass
  * through unchanged; see {@see walk()}), similarly to how
- * {@see \Specflux\SenroFlux\Packs\Pages\BlockShells} walks one block's
+ * {@see \Specflux\SiteAgent\Packs\Pages\BlockShells} walks one block's
  * `innerHTML`. A `text` slot carries the shipped sample plus
  * its word count and the S21 length cap (`max(3, ceil(1.5 * shipped words))`);
  * a `url` slot carries the shipped `href`. LIMIT (documented): a rich-text
@@ -71,7 +71,7 @@ defined( 'ABSPATH' ) || exit;
 final class ThemePatterns {
 
 	/** D2: the site switch (bool, default true). Off, no theme pattern is used anywhere. */
-	public const OPTION = 'senroflux_use_theme_patterns';
+	public const OPTION = 'specflux_site_agent_use_theme_patterns';
 
 	/**
 	 * Elements whose content is a text slot; `a` doubles as a `url` slot on
@@ -136,7 +136,7 @@ final class ThemePatterns {
 
 	/**
 	 * D2: whether the site uses its theme's patterns at all. On unless the
-	 * `senroflux_use_theme_patterns` option is stored as off.
+	 * `specflux_site_agent_use_theme_patterns` option is stored as off.
 	 */
 	public static function enabled(): bool {
 		if ( ! function_exists( 'get_option' ) ) {
@@ -148,7 +148,7 @@ final class ThemePatterns {
 
 	/**
 	 * The count of this theme's own patterns that were NOT eligible (S21),
-	 * plus the eligible ones the site switch or the `senroflux_theme_patterns`
+	 * plus the eligible ones the site switch or the `specflux_site_agent_theme_patterns`
 	 * filter removed (D2).
 	 */
 	public static function skippedCount(): int {
@@ -201,7 +201,7 @@ final class ThemePatterns {
 	}
 
 	/**
-	 * D2, applied last: the site switch, then the `senroflux_theme_patterns`
+	 * D2, applied last: the site switch, then the `specflux_site_agent_theme_patterns`
 	 * filter. Both can only remove — whatever the filter hands back that was
 	 * not in `$eligible` is dropped, and an entry that did come from it is
 	 * kept as it was, so the filter can neither add nor alter a pattern.
@@ -218,14 +218,14 @@ final class ThemePatterns {
 		}
 
 		/**
-		 * Filters the theme patterns SenroFlux may use, after its own
+		 * Filters the theme patterns Specflux Site Agent may use, after its own
 		 * eligibility checks and the site switch. Return the list without the
 		 * patterns to drop; it can only remove: an entry not in the eligible
 		 * list is ignored, and a return that is not an array is ignored.
 		 *
 		 * @param list<array<string,mixed>> $eligible Eligible patterns, each with `name` (the registered slug, e.g. `ollie/faq`), `title` and `markup`.
 		 */
-		$filtered = apply_filters( 'senroflux_theme_patterns', $eligible );
+		$filtered = apply_filters( 'specflux_site_agent_theme_patterns', $eligible );
 		if ( ! is_array( $filtered ) ) {
 			return $eligible;
 		}
@@ -631,7 +631,7 @@ final class ThemePatterns {
 			if ( 'text' === $slot['kind'] ) {
 				$lines[] = sprintf(
 					/* translators: 1: slot number, 2: element tag, 3: shipped sample text, 4: maximum word count. */
-					__( 'Slot %1$d (%2$s): new text, at most %4$d words, replacing the shipped sample "%3$s".', 'senroflux' ),
+					__( 'Slot %1$d (%2$s): new text, at most %4$d words, replacing the shipped sample "%3$s".', 'specflux-site-agent' ),
 					$slot['index'] + 1,
 					$slot['tag'],
 					$slot['shipped_text'],
@@ -640,20 +640,20 @@ final class ThemePatterns {
 			} elseif ( 'image' === $slot['kind'] ) {
 				$lines[] = sprintf(
 					/* translators: %d: slot number. */
-					__( 'Slot %1$d: an image. Value is "URL||ALT TEXT" (the literal characters || separate the two) — the URL of an attachment you found or generated, and non-empty, descriptive alt text. Both parts are required.', 'senroflux' ),
+					__( 'Slot %1$d: an image. Value is "URL||ALT TEXT" (the literal characters || separate the two) — the URL of an attachment you found or generated, and non-empty, descriptive alt text. Both parts are required.', 'specflux-site-agent' ),
 					$slot['index'] + 1
 				);
 			} else {
 				$lines[] = sprintf(
 					/* translators: %d: slot number. */
-					__( 'Slot %1$d: a safe link destination, never "#" or empty.', 'senroflux' ),
+					__( 'Slot %1$d: a safe link destination, never "#" or empty.', 'specflux-site-agent' ),
 					$slot['index'] + 1
 				);
 			}
 		}
 
 		if ( $faq ) {
-			$lines[] = __( 'FAQ answers: only from supplied facts; leave out a question you cannot answer from them.', 'senroflux' );
+			$lines[] = __( 'FAQ answers: only from supplied facts; leave out a question you cannot answer from them.', 'specflux-site-agent' );
 		}
 
 		return $lines;
@@ -675,7 +675,7 @@ final class ThemePatterns {
 	/**
 	 * Fill a theme pattern's own shipped markup with model-provided slot
 	 * text (S21 write path). Same return shape as
-	 * {@see \Specflux\SenroFlux\Packs\Content\Validator::clean()}: `ok`
+	 * {@see \Specflux\SiteAgent\Packs\Content\Validator::clean()}: `ok`
 	 * false leaves `content` empty and carries the refusal; `ok` true carries
 	 * the filled markup, still subject to the pack's OWN {@see Validator::clean()}
 	 * afterwards (S21 decision: one validation path).
@@ -719,15 +719,15 @@ final class ThemePatterns {
 	 */
 	private static function refusalMessage( string $code, array $data ): string {
 		return match ( $code ) {
-			'slot_missing'      => __( 'A theme pattern slot was left empty, or an image slot is missing its alt text.', 'senroflux' ),
-			'slot_sample_text'  => __( 'A theme pattern slot still holds the shipped sample text.', 'senroflux' ),
+			'slot_missing'      => __( 'A theme pattern slot was left empty, or an image slot is missing its alt text.', 'specflux-site-agent' ),
+			'slot_sample_text'  => __( 'A theme pattern slot still holds the shipped sample text.', 'specflux-site-agent' ),
 			'slot_too_long'     => sprintf(
 				/* translators: %d: maximum word count. */
-				__( 'A theme pattern slot is over its %d-word limit.', 'senroflux' ),
+				__( 'A theme pattern slot is over its %d-word limit.', 'specflux-site-agent' ),
 				$data['max_words'] ?? 0
 			),
-			'unsafe_url'        => __( 'A theme pattern slot is missing a safe URL (a link destination, or an image\'s source).', 'senroflux' ),
-			default             => __( 'That theme pattern slot is invalid.', 'senroflux' ),
+			'unsafe_url'        => __( 'A theme pattern slot is missing a safe URL (a link destination, or an image\'s source).', 'specflux-site-agent' ),
+			default             => __( 'That theme pattern slot is invalid.', 'specflux-site-agent' ),
 		};
 	}
 
@@ -928,7 +928,7 @@ final class ThemePatterns {
 	 * {@see statedLines()}'s own line for it. Both parts are mandatory: no
 	 * URL means nothing to point the `<img>` at, no alt means the write would
 	 * only recreate the very `missing_alt` refusal
-	 * {@see \Specflux\SenroFlux\Packs\Content\ImageAlt} exists to catch —
+	 * {@see \Specflux\SiteAgent\Packs\Content\ImageAlt} exists to catch —
 	 * catching it HERE, before the block is even assembled, gives a clearer
 	 * `slot_missing`/`unsafe_url` message than a generic `missing_alt` would.
 	 *

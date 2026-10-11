@@ -2,16 +2,16 @@
 /**
  * Tests for the multisite refusal (0.3 S2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Specflux\SenroFlux\MultisiteGuard;
+use Specflux\SiteAgent\MultisiteGuard;
 
 /**
  * Activation on a multisite install dies before WordPress records the plugin
@@ -20,40 +20,40 @@ use Specflux\SenroFlux\MultisiteGuard;
 final class MultisiteGuardTest extends TestCase {
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['senroflux_test_multisite'] );
-		unset( $GLOBALS['senroflux_test_deactivated_plugins'] );
+		unset( $GLOBALS['specflux_site_agent_test_multisite'] );
+		unset( $GLOBALS['specflux_site_agent_test_deactivated_plugins'] );
 	}
 
 	public function test_single_site_is_not_refused(): void {
-		$GLOBALS['senroflux_test_multisite'] = false;
+		$GLOBALS['specflux_site_agent_test_multisite'] = false;
 
 		$this->assertFalse( MultisiteGuard::refused() );
-		MultisiteGuard::refuse_activation( '/plugins/senroflux/senroflux.php' );
-		MultisiteGuard::refuse_runtime( '/plugins/senroflux/senroflux.php' );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_deactivated_plugins'] ?? array() );
+		MultisiteGuard::refuse_activation( '/plugins/specflux-site-agent/specflux-site-agent.php' );
+		MultisiteGuard::refuse_runtime( '/plugins/specflux-site-agent/specflux-site-agent.php' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_deactivated_plugins'] ?? array() );
 	}
 
 	public function test_multisite_activation_deactivates_and_dies_with_the_refusal(): void {
-		$GLOBALS['senroflux_test_multisite'] = true;
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
 
 		$this->assertTrue( MultisiteGuard::refused() );
 		$this->expectException( RuntimeException::class );
 		$this->expectExceptionMessage( 'does not support WordPress multisite' );
 
 		try {
-			MultisiteGuard::refuse_activation( '/plugins/senroflux/senroflux.php' );
+			MultisiteGuard::refuse_activation( '/plugins/specflux-site-agent/specflux-site-agent.php' );
 		} finally {
-			$this->assertSame( array( 'senroflux/senroflux.php' ), $GLOBALS['senroflux_test_deactivated_plugins'] ?? array() );
+			$this->assertSame( array( 'specflux-site-agent/specflux-site-agent.php' ), $GLOBALS['specflux_site_agent_test_deactivated_plugins'] ?? array() );
 		}
 	}
 
 	public function test_multisite_runtime_guard_deactivates_and_notices(): void {
-		$GLOBALS['senroflux_test_multisite'] = true;
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
 
-		MultisiteGuard::refuse_runtime( '/plugins/senroflux/senroflux.php' );
+		MultisiteGuard::refuse_runtime( '/plugins/specflux-site-agent/specflux-site-agent.php' );
 
-		$this->assertSame( array( 'senroflux/senroflux.php' ), $GLOBALS['senroflux_test_deactivated_plugins'] ?? array() );
-		$this->assertNotEmpty( $GLOBALS['senroflux_test_actions']['admin_notices'] ?? array() );
+		$this->assertSame( array( 'specflux-site-agent/specflux-site-agent.php' ), $GLOBALS['specflux_site_agent_test_deactivated_plugins'] ?? array() );
+		$this->assertNotEmpty( $GLOBALS['specflux_site_agent_test_actions']['admin_notices'] ?? array() );
 	}
 
 	public function test_runtime_notice_names_multisite(): void {

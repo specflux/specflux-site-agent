@@ -2,12 +2,12 @@
 /**
  * Comparison helpers for the parse → serialise round-trip the content validators run.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs;
+namespace Specflux\SiteAgent\Packs;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -66,7 +66,7 @@ final class BlockRoundTrip {
 	public static function hint( string $content, string $reserialized ): string {
 		return sprintf(
 			/* translators: %s: an excerpt of the submitted block markup. */
-			__( 'The markup first differs from its round-trip near: "%s"', 'senroflux' ),
+			__( 'The markup first differs from its round-trip near: "%s"', 'specflux-site-agent' ),
 			self::divergence( $content, $reserialized )
 		);
 	}

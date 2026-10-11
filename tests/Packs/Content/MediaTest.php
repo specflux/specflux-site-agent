@@ -8,21 +8,21 @@
  * capping at 25, the `images` budget exhausting `generate-image` on its 7th
  * call, and `update-alt` refusing a 26th distinct attachment in one run.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Content;
+namespace Specflux\SiteAgent\Tests\Packs\Content;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ImageCapability;
-use Specflux\SenroFlux\Model\MediaGatewayInterface;
-use Specflux\SenroFlux\Model\StockImageGatewayInterface;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Model\ImageCapability;
+use Specflux\SiteAgent\Model\MediaGatewayInterface;
+use Specflux\SiteAgent\Model\StockImageGatewayInterface;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use WP_Error;
 use wpdb;
 
@@ -40,17 +40,17 @@ final class MediaTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 1;
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array();
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_terms']              = array();
-		$GLOBALS['senroflux_test_term_rows']          = array();
-		$GLOBALS['senroflux_test_post_terms']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 1;
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_terms']              = array();
+		$GLOBALS['specflux_site_agent_test_term_rows']          = array();
+		$GLOBALS['specflux_site_agent_test_post_terms']         = array();
 
-		$GLOBALS['senroflux_test_transients'] = array();
+		$GLOBALS['specflux_site_agent_test_transients'] = array();
 
 		Media::reset();
 		Media::registerCategory();
@@ -68,9 +68,9 @@ final class MediaTest extends TestCase {
 	}
 
 	private function grant( string ...$caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		foreach ( $caps as $cap ) {
-			$GLOBALS['senroflux_test_user_caps'][ $cap ] = true;
+			$GLOBALS['specflux_site_agent_test_user_caps'][ $cap ] = true;
 		}
 	}
 
@@ -82,26 +82,26 @@ final class MediaTest extends TestCase {
 	}
 
 	private function seedAttachment( int $id, string $alt = '' ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = 'attachment';
-		$post->post_mime_type                   = 'image/jpeg';
-		$post->post_title                       = 'image-' . $id;
-		$post->guid                             = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
-		$post->post_status                      = 'inherit';
-		$post->post_parent                      = 0;
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post                 = new \stdClass();
+		$post->ID             = $id;
+		$post->post_type      = 'attachment';
+		$post->post_mime_type = 'image/jpeg';
+		$post->post_title     = 'image-' . $id;
+		$post->guid           = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
+		$post->post_status    = 'inherit';
+		$post->post_parent    = 0;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 		if ( '' !== $alt ) {
-			$GLOBALS['senroflux_test_postmeta'][ $id ]['_wp_attachment_image_alt'] = $alt;
+			$GLOBALS['specflux_site_agent_test_postmeta'][ $id ]['_wp_attachment_image_alt'] = $alt;
 		}
 	}
 
 	private function seedPost( int $id ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = 'post';
-		$post->post_status                      = 'draft';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post              = new \stdClass();
+		$post->ID          = $id;
+		$post->post_type   = 'post';
+		$post->post_status = 'draft';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	// ------------------------------------------------------------------
@@ -111,19 +111,19 @@ final class MediaTest extends TestCase {
 	public function test_all_thirteen_abilities_are_registered(): void {
 		foreach (
 			array(
-				'senroflux/media-search',
-				'senroflux/list-missing-alt',
-				'senroflux/media-upload',
-				'senroflux/generate-image',
-				'senroflux/generate-alt-text',
-				'senroflux/set-featured-image',
-				'senroflux/update-alt',
-				'senroflux/read-media',
-				'senroflux/set-terms',
-				'senroflux/create-term',
-				'senroflux/list-terms',
-				'senroflux/stock-image-search',
-				'senroflux/stock-image-import',
+				'specflux/media-search',
+				'specflux/list-missing-alt',
+				'specflux/media-upload',
+				'specflux/generate-image',
+				'specflux/generate-alt-text',
+				'specflux/set-featured-image',
+				'specflux/update-alt',
+				'specflux/read-media',
+				'specflux/set-terms',
+				'specflux/create-term',
+				'specflux/list-terms',
+				'specflux/stock-image-search',
+				'specflux/stock-image-import',
 			) as $name
 		) {
 			$this->assertIsObject( wp_get_ability( $name ), $name );
@@ -131,8 +131,8 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_media_search_and_list_missing_alt_permission_require_upload_files(): void {
-		$ability = $this->ability( 'senroflux/media-search' );
-		$missing = $this->ability( 'senroflux/list-missing-alt' );
+		$ability = $this->ability( 'specflux/media-search' );
+		$missing = $this->ability( 'specflux/list-missing-alt' );
 		$this->grant( 'edit_posts' );
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'query' => 'x' ) ), 'edit_posts (a Contributor) does not open the library' );
 		$this->assertFalse( (bool) $missing->check_permissions( array() ) );
@@ -147,25 +147,25 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 501 );
 		$this->seedAttachment( 502 );
 		$this->grant( 'upload_files', 'read_post' );
-		$GLOBALS['senroflux_test_user_caps']['read_post:502'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:502'] = false;
 
-		$result = $this->ability( 'senroflux/media-search' )->execute( array( 'query' => 'image' ) );
+		$result = $this->ability( 'specflux/media-search' )->execute( array( 'query' => 'image' ) );
 
 		$this->assertSame( array( 501 ), array_column( $result['results'], 'id' ) );
 	}
 
 	public function test_already_used_flag_ignores_pages_the_user_may_not_read(): void {
 		$this->seedAttachment( 501 );
-		$page                                 = new \stdClass();
-		$page->ID                             = 900;
-		$page->post_type                      = 'page';
-		$page->post_status                    = 'private';
-		$page->post_content                   = '<!-- wp:image {"alt":"x"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/501.jpg" alt="x"/></figure><!-- /wp:image -->';
-		$GLOBALS['senroflux_test_posts'][900] = $page;
+		$page               = new \stdClass();
+		$page->ID           = 900;
+		$page->post_type    = 'page';
+		$page->post_status  = 'private';
+		$page->post_content = '<!-- wp:image {"alt":"x"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/501.jpg" alt="x"/></figure><!-- /wp:image -->';
+		$GLOBALS['specflux_site_agent_test_posts'][900] = $page;
 		$this->grant( 'upload_files', 'read_post' );
-		$GLOBALS['senroflux_test_user_caps']['read_post:900'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:900'] = false;
 
-		$result = $this->ability( 'senroflux/media-search' )->execute( array( 'query' => 'image' ) );
+		$result = $this->ability( 'specflux/media-search' )->execute( array( 'query' => 'image' ) );
 
 		$this->assertFalse( $result['results'][0]['already_used'] );
 	}
@@ -174,9 +174,9 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 1 );
 		$this->seedAttachment( 2 );
 		$this->grant( 'upload_files', 'edit_post' );
-		$GLOBALS['senroflux_test_user_caps']['edit_post:2'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:2'] = false;
 
-		$result = $this->ability( 'senroflux/list-missing-alt' )->execute( array() );
+		$result = $this->ability( 'specflux/list-missing-alt' )->execute( array() );
 
 		$this->assertSame( array( 1 ), array_column( $result['attachments'], 'id' ) );
 	}
@@ -190,15 +190,15 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 501 );
 		$this->seedAttachment( 502 );
 
-		$page                                 = new \stdClass();
-		$page->ID                             = 900;
-		$page->post_type                      = 'page';
-		$page->post_status                    = 'publish';
-		$page->post_content                   = '<!-- wp:image {"alt":"x"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/501.jpg" alt="x"/></figure><!-- /wp:image -->';
-		$GLOBALS['senroflux_test_posts'][900] = $page;
+		$page               = new \stdClass();
+		$page->ID           = 900;
+		$page->post_type    = 'page';
+		$page->post_status  = 'publish';
+		$page->post_content = '<!-- wp:image {"alt":"x"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/501.jpg" alt="x"/></figure><!-- /wp:image -->';
+		$GLOBALS['specflux_site_agent_test_posts'][900] = $page;
 
 		$this->grant( 'upload_files', 'read_post' );
-		$result = $this->ability( 'senroflux/media-search' )->execute( array( 'query' => 'image' ) );
+		$result = $this->ability( 'specflux/media-search' )->execute( array( 'query' => 'image' ) );
 
 		$this->assertIsArray( $result );
 		$ids = array_column( $result['results'], 'id' );
@@ -208,7 +208,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_media_upload_and_generate_image_require_upload_files(): void {
-		foreach ( array( 'senroflux/media-upload', 'senroflux/generate-image' ) as $name ) {
+		foreach ( array( 'specflux/media-upload', 'specflux/generate-image' ) as $name ) {
 			$ability = $this->ability( $name );
 
 			$this->grant( 'edit_posts' );
@@ -223,7 +223,7 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 5 );
 		$this->seedPost( 6 ); // Not an attachment.
 
-		foreach ( array( 'senroflux/update-alt', 'senroflux/generate-alt-text', 'senroflux/read-media' ) as $name ) {
+		foreach ( array( 'specflux/update-alt', 'specflux/generate-alt-text', 'specflux/read-media' ) as $name ) {
 			$ability = $this->ability( $name );
 
 			$this->grant( 'edit_post' );
@@ -237,7 +237,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_set_featured_image_permission_requires_edit_post_on_the_target_post(): void {
-		$ability = $this->ability( 'senroflux/set-featured-image' );
+		$ability = $this->ability( 'specflux/set-featured-image' );
 
 		$this->assertFalse(
 			(bool) $ability->check_permissions(
@@ -266,7 +266,7 @@ final class MediaTest extends TestCase {
 				)
 			)
 		);
-		$GLOBALS['senroflux_test_user_caps']['read_post:5'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:5'] = false;
 		$this->assertFalse(
 			(bool) $ability->check_permissions(
 				array(
@@ -285,16 +285,16 @@ final class MediaTest extends TestCase {
 	 */
 	public function test_set_featured_image_refuses_an_attachment_already_in_the_posts_content(): void {
 		$this->seedAttachment( 5 );
-		$post                               = new \stdClass();
-		$post->ID                           = 6;
-		$post->post_type                    = 'post';
-		$post->post_status                  = 'draft';
-		$post->post_content                 = '<!-- wp:paragraph --><p>Hello there.</p><!-- /wp:paragraph -->'
+		$post               = new \stdClass();
+		$post->ID           = 6;
+		$post->post_type    = 'post';
+		$post->post_status  = 'draft';
+		$post->post_content = '<!-- wp:paragraph --><p>Hello there.</p><!-- /wp:paragraph -->'
 			. '<!-- wp:image {"alt":"A cafe photo"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/5.jpg" alt="A cafe photo"/></figure><!-- /wp:image -->';
-		$GLOBALS['senroflux_test_posts'][6] = $post;
+		$GLOBALS['specflux_site_agent_test_posts'][6] = $post;
 
 		$this->grant( 'edit_post' );
-		$result = $this->ability( 'senroflux/set-featured-image' )->execute(
+		$result = $this->ability( 'specflux/set-featured-image' )->execute(
 			array(
 				'post_id'       => 6,
 				'attachment_id' => 5,
@@ -305,27 +305,27 @@ final class MediaTest extends TestCase {
 		$this->assertSame( 'featured_image_duplicated', $result->get_error_code() );
 		$this->assertStringContainsString( "already in the post's content", $result->get_error_message() );
 		$this->assertStringContainsString( 'update-draft', $result->get_error_message() );
-		$this->assertArrayNotHasKey( 6, $GLOBALS['senroflux_test_postmeta'] ?? array() );
+		$this->assertArrayNotHasKey( 6, $GLOBALS['specflux_site_agent_test_postmeta'] ?? array() );
 	}
 
 	/** The same attachment set as featured on a DIFFERENT post is unaffected. */
 	public function test_set_featured_image_allows_an_attachment_used_in_a_different_posts_content(): void {
 		$this->seedAttachment( 5 );
-		$other                              = new \stdClass();
-		$other->ID                          = 7;
-		$other->post_type                   = 'post';
-		$other->post_status                 = 'draft';
-		$other->post_content                = '<!-- wp:image {"alt":"A cafe photo"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/5.jpg" alt="A cafe photo"/></figure><!-- /wp:image -->';
-		$GLOBALS['senroflux_test_posts'][7] = $other;
-		$post                               = new \stdClass();
-		$post->ID                           = 6;
-		$post->post_type                    = 'post';
-		$post->post_status                  = 'draft';
-		$post->post_content                 = '<!-- wp:paragraph --><p>Hello there.</p><!-- /wp:paragraph -->';
-		$GLOBALS['senroflux_test_posts'][6] = $post;
+		$other                                        = new \stdClass();
+		$other->ID                                    = 7;
+		$other->post_type                             = 'post';
+		$other->post_status                           = 'draft';
+		$other->post_content                          = '<!-- wp:image {"alt":"A cafe photo"} --><figure class="wp-block-image"><img src="https://example.test/wp-content/uploads/5.jpg" alt="A cafe photo"/></figure><!-- /wp:image -->';
+		$GLOBALS['specflux_site_agent_test_posts'][7] = $other;
+		$post               = new \stdClass();
+		$post->ID           = 6;
+		$post->post_type    = 'post';
+		$post->post_status  = 'draft';
+		$post->post_content = '<!-- wp:paragraph --><p>Hello there.</p><!-- /wp:paragraph -->';
+		$GLOBALS['specflux_site_agent_test_posts'][6] = $post;
 
 		$this->grant( 'edit_post' );
-		$result = $this->ability( 'senroflux/set-featured-image' )->execute(
+		$result = $this->ability( 'specflux/set-featured-image' )->execute(
 			array(
 				'post_id'       => 6,
 				'attachment_id' => 5,
@@ -333,11 +333,11 @@ final class MediaTest extends TestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertSame( 5, $GLOBALS['senroflux_test_postmeta'][6]['_thumbnail_id'] ?? null );
+		$this->assertSame( 5, $GLOBALS['specflux_site_agent_test_postmeta'][6]['_thumbnail_id'] ?? null );
 	}
 
 	public function test_set_terms_requires_edit_post_and_the_assign_terms_cap(): void {
-		$ability = $this->ability( 'senroflux/set-terms' );
+		$ability = $this->ability( 'specflux/set-terms' );
 		$input   = array(
 			'post_id'  => 6,
 			'taxonomy' => 'category',
@@ -354,7 +354,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_create_term_requires_the_manage_terms_cap_for_a_category_and_says_so(): void {
-		$ability = $this->ability( 'senroflux/create-term' );
+		$ability = $this->ability( 'specflux/create-term' );
 		$input   = array(
 			'taxonomy' => 'category',
 			'name'     => 'News',
@@ -375,7 +375,7 @@ final class MediaTest extends TestCase {
 
 	/** A flat taxonomy is created with the assign cap, like core REST and create-post. */
 	public function test_create_term_for_a_tag_needs_only_the_assign_cap(): void {
-		$ability = $this->ability( 'senroflux/create-term' );
+		$ability = $this->ability( 'specflux/create-term' );
 		$input   = array(
 			'taxonomy' => 'post_tag',
 			'name'     => 'Kitchen',
@@ -391,7 +391,7 @@ final class MediaTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_list_terms_permission_is_the_taxonomys_assign_cap(): void {
-		$ability = $this->ability( 'senroflux/list-terms' );
+		$ability = $this->ability( 'specflux/list-terms' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'taxonomy' => 'category' ) ) );
 		$this->grant( 'assign_post_tags' );
@@ -403,7 +403,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_list_terms_returns_names_and_counts_most_used_first_and_schema_valid(): void {
-		$GLOBALS['senroflux_test_term_rows'] = array(
+		$GLOBALS['specflux_site_agent_test_term_rows'] = array(
 			'category' => array(
 				'Recipes'          => 3,
 				'Food &amp; Drink' => 12,
@@ -411,7 +411,7 @@ final class MediaTest extends TestCase {
 			),
 		);
 
-		$result = $this->ability( 'senroflux/list-terms' )->execute( array( 'taxonomy' => 'category' ) );
+		$result = $this->ability( 'specflux/list-terms' )->execute( array( 'taxonomy' => 'category' ) );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 		$this->assertSame(
@@ -432,7 +432,7 @@ final class MediaTest extends TestCase {
 			$result['terms']
 		);
 
-		$narrowed = $this->ability( 'senroflux/list-terms' )->execute(
+		$narrowed = $this->ability( 'specflux/list-terms' )->execute(
 			array(
 				'taxonomy' => 'category',
 				'search'   => 'garden',
@@ -446,18 +446,18 @@ final class MediaTest extends TestCase {
 		for ( $i = 1; $i <= 60; $i++ ) {
 			$rows[ 'tag ' . $i ] = $i;
 		}
-		$GLOBALS['senroflux_test_term_rows'] = array( 'post_tag' => $rows );
+		$GLOBALS['specflux_site_agent_test_term_rows'] = array( 'post_tag' => $rows );
 
-		$result = $this->ability( 'senroflux/list-terms' )->execute( array( 'taxonomy' => 'post_tag' ) );
+		$result = $this->ability( 'specflux/list-terms' )->execute( array( 'taxonomy' => 'post_tag' ) );
 		$this->assertCount( 50, $result['terms'] );
 		$this->assertSame( 60, $result['terms'][0]['count'] );
 
-		$this->assertInstanceOf( WP_Error::class, $this->ability( 'senroflux/list-terms' )->execute( array( 'taxonomy' => 'nav_menu' ) ) );
+		$this->assertInstanceOf( WP_Error::class, $this->ability( 'specflux/list-terms' )->execute( array( 'taxonomy' => 'nav_menu' ) ) );
 	}
 
 	/** Real WordPress refuses an undeclared input field before execute runs; the stub does not. */
 	public function test_list_terms_schema_declares_every_field(): void {
-		$schema = $this->ability( 'senroflux/list-terms' )->get_input_schema();
+		$schema = $this->ability( 'specflux/list-terms' )->get_input_schema();
 
 		$this->assertFalse( $schema['additionalProperties'] );
 		$this->assertSame( array( 'taxonomy', 'search' ), array_keys( $schema['properties'] ) );
@@ -477,7 +477,7 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 31, 'already has alt' );
 
 		$this->grant( 'upload_files', 'edit_post' );
-		$result = $this->ability( 'senroflux/list-missing-alt' )->execute( array() );
+		$result = $this->ability( 'specflux/list-missing-alt' )->execute( array() );
 
 		$this->assertIsArray( $result );
 		$this->assertCount( 25, $result['attachments'] );
@@ -498,8 +498,8 @@ final class MediaTest extends TestCase {
 				++$this->calls;
 
 				return array(
-					'path'     => sys_get_temp_dir() . '/senroflux-generated.jpg',
-					'filename' => 'senroflux-generated.jpg',
+					'path'     => sys_get_temp_dir() . '/specflux-site-agent-generated.jpg',
+					'filename' => 'specflux-site-agent-generated.jpg',
 				);
 			}
 
@@ -512,11 +512,11 @@ final class MediaTest extends TestCase {
 		touch( $gateway->generateImage( '' )['path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
 		Media::setGateway( $gateway );
 
-		$ability = $this->ability( 'senroflux/generate-image' );
+		$ability = $this->ability( 'specflux/generate-image' );
 
 		// Six prior successful generations, exactly at the shipped default.
 		for ( $i = 0; $i < 6; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__generate-image', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__generate-image', null, 'ok' );
 		}
 
 		$result = $ability->execute( array( 'prompt' => 'a red bicycle' ) );
@@ -543,7 +543,7 @@ final class MediaTest extends TestCase {
 			}
 		};
 		Media::setGateway( $gateway );
-		$ability = $this->ability( 'senroflux/generate-image' );
+		$ability = $this->ability( 'specflux/generate-image' );
 
 		$first = $ability->execute( array( 'prompt' => 'a red bicycle' ) );
 		$this->assertInstanceOf( WP_Error::class, $first );
@@ -581,7 +581,7 @@ final class MediaTest extends TestCase {
 			}
 		};
 		Media::setGateway( $gateway );
-		$ability = $this->ability( 'senroflux/generate-image' );
+		$ability = $this->ability( 'specflux/generate-image' );
 
 		$ability->execute( array( 'prompt' => 'a red bicycle' ) );
 		$ability->execute( array( 'prompt' => 'a red bicycle' ) );
@@ -593,7 +593,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_generate_image_succeeds_under_the_budget(): void {
-		$path = sys_get_temp_dir() . '/senroflux-generated-2.jpg';
+		$path = sys_get_temp_dir() . '/specflux-site-agent-generated-2.jpg';
 		touch( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
 		$gateway = new class( $path ) implements MediaGatewayInterface {
 			public function __construct( private string $path ) {
@@ -616,7 +616,7 @@ final class MediaTest extends TestCase {
 		};
 		Media::setGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/generate-image' )->execute( array( 'prompt' => 'a red bicycle' ) );
+		$result = $this->ability( 'specflux/generate-image' )->execute( array( 'prompt' => 'a red bicycle' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'attachment_id', $result );
@@ -641,10 +641,10 @@ final class MediaTest extends TestCase {
 	 */
 	public function test_generate_alt_text_sends_the_attachments_local_file_path(): void {
 		$this->seedAttachment( 5 );
-		$filename = 'senroflux-alt-5-large.jpg';
+		$filename = 'specflux-site-agent-alt-5-large.jpg';
 		$path     = wp_upload_dir()['basedir'] . '/' . $filename;
 		touch( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
-		$GLOBALS['senroflux_test_intermediate_sizes'][5]['large'] = array( 'path' => $filename );
+		$GLOBALS['specflux_site_agent_test_intermediate_sizes'][5]['large'] = array( 'path' => $filename );
 
 		$gateway = new class() implements MediaGatewayInterface {
 			public array $seen = array();
@@ -661,7 +661,7 @@ final class MediaTest extends TestCase {
 		};
 		Media::setGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/generate-alt-text' )->execute( array( 'attachment_id' => 5 ) );
+		$result = $this->ability( 'specflux/generate-alt-text' )->execute( array( 'attachment_id' => 5 ) );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 		$this->assertSame( 'A red bicycle.', $result['alt'] );
@@ -673,11 +673,11 @@ final class MediaTest extends TestCase {
 	/** A registered attachment whose file is missing on disk is refused clearly. */
 	public function test_generate_alt_text_refuses_when_the_attachment_file_is_missing(): void {
 		$this->seedAttachment( 9 );
-		// No `senroflux_test_attached_files`/`senroflux_test_intermediate_sizes`
+		// No `specflux_site_agent_test_attached_files`/`specflux_site_agent_test_intermediate_sizes`
 		// entry for id 9: get_attached_file() and image_get_intermediate_size()
 		// both report nothing on disk.
 
-		$result = $this->ability( 'senroflux/generate-alt-text' )->execute( array( 'attachment_id' => 9 ) );
+		$result = $this->ability( 'specflux/generate-alt-text' )->execute( array( 'attachment_id' => 9 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'attachment_file_missing', $result->get_error_code() );
@@ -688,7 +688,7 @@ final class MediaTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_update_alt_refuses_a_26th_distinct_attachment(): void {
-		$ability = $this->ability( 'senroflux/update-alt' );
+		$ability = $this->ability( 'specflux/update-alt' );
 
 		for ( $i = 1; $i <= 25; $i++ ) {
 			$this->seedAttachment( $i );
@@ -724,7 +724,7 @@ final class MediaTest extends TestCase {
 
 	public function test_update_alt_refuses_empty_alt(): void {
 		$this->seedAttachment( 1 );
-		$result = $this->ability( 'senroflux/update-alt' )->execute(
+		$result = $this->ability( 'specflux/update-alt' )->execute(
 			array(
 				'attachment_id' => 1,
 				'alt'           => '',
@@ -741,12 +741,12 @@ final class MediaTest extends TestCase {
 
 	public function test_read_media_returns_the_current_snapshot(): void {
 		$this->seedAttachment( 9, 'a red bicycle' );
-		$GLOBALS['senroflux_test_attachment_metadata'][9] = array(
+		$GLOBALS['specflux_site_agent_test_attachment_metadata'][9] = array(
 			'width'  => 640,
 			'height' => 480,
 		);
 
-		$result = $this->ability( 'senroflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
+		$result = $this->ability( 'specflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 9, $result['attachment_id'] );
@@ -760,10 +760,10 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 9 );
 		$this->seedPost( 20 );
 		$this->seedPost( 21 );
-		$GLOBALS['senroflux_test_postmeta'][20]['_thumbnail_id'] = 9;
+		$GLOBALS['specflux_site_agent_test_postmeta'][20]['_thumbnail_id'] = 9;
 		$this->grant( 'read_post' );
 
-		$result = $this->ability( 'senroflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
+		$result = $this->ability( 'specflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( array( 20 ), $result['featured_on'] );
@@ -773,12 +773,12 @@ final class MediaTest extends TestCase {
 		$this->seedAttachment( 9 );
 		$this->seedPost( 20 );
 		$this->seedPost( 21 );
-		$GLOBALS['senroflux_test_postmeta'][20]['_thumbnail_id'] = 9;
-		$GLOBALS['senroflux_test_postmeta'][21]['_thumbnail_id'] = 9;
+		$GLOBALS['specflux_site_agent_test_postmeta'][20]['_thumbnail_id'] = 9;
+		$GLOBALS['specflux_site_agent_test_postmeta'][21]['_thumbnail_id'] = 9;
 		$this->grant( 'read_post' );
-		$GLOBALS['senroflux_test_user_caps']['read_post:21'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:21'] = false;
 
-		$result = $this->ability( 'senroflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
+		$result = $this->ability( 'specflux/read-media' )->execute( array( 'attachment_id' => 9 ) );
 
 		$this->assertSame( array( 20 ), $result['featured_on'] );
 	}
@@ -786,7 +786,7 @@ final class MediaTest extends TestCase {
 	public function test_read_media_refuses_a_non_attachment(): void {
 		$this->seedPost( 6 );
 
-		$result = $this->ability( 'senroflux/read-media' )->execute( array( 'attachment_id' => 6 ) );
+		$result = $this->ability( 'specflux/read-media' )->execute( array( 'attachment_id' => 6 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -858,7 +858,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_stock_image_search_permission_requires_edit_posts(): void {
-		$ability = $this->ability( 'senroflux/stock-image-search' );
+		$ability = $this->ability( 'specflux/stock-image-search' );
 
 		$this->assertFalse( (bool) $ability->check_permissions( array( 'query' => 'x' ) ) );
 		$this->grant( 'edit_posts' );
@@ -866,7 +866,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_stock_image_import_permission_requires_upload_files(): void {
-		$ability = $this->ability( 'senroflux/stock-image-import' );
+		$ability = $this->ability( 'specflux/stock-image-import' );
 
 		$this->grant( 'edit_posts' );
 		$this->assertFalse( (bool) $ability->check_permissions( array() ) );
@@ -890,7 +890,7 @@ final class MediaTest extends TestCase {
 		);
 		Media::setStockGateway( $this->fakeStockGateway( search_result: $raw ) );
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertCount( 1, $result['results'] );
@@ -941,7 +941,7 @@ final class MediaTest extends TestCase {
 	public function test_stock_image_search_drops_non_photo_results(): void {
 		Media::setStockGateway( $this->fakeStockGateway( search_result: $this->nonPhotoResultsRaw() ) );
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
 
 		$this->assertIsArray( $result );
 		$ids = array_column( $result['results'], 'id' );
@@ -990,7 +990,7 @@ final class MediaTest extends TestCase {
 			)
 		);
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'physiotherapy' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'physiotherapy' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( array( 'aaaaaaaa-0000-0000-0000-000000000001' ), array_column( $result['results'], 'id' ) );
@@ -1025,7 +1025,7 @@ final class MediaTest extends TestCase {
 			)
 		);
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'physiotherapy' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'physiotherapy' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( array( 'aaaaaaaa-0000-0000-0000-000000000003' ), array_column( $result['results'], 'id' ) );
@@ -1057,7 +1057,7 @@ final class MediaTest extends TestCase {
 			)
 		);
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'massage' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'massage' ) );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( array( 'aaaaaaaa-0000-0000-0000-000000000002' ), array_column( $result['results'], 'id' ) );
@@ -1069,7 +1069,7 @@ final class MediaTest extends TestCase {
 	 * hospital exterior); people and treatment queries returned real photos.
 	 */
 	public function test_stock_image_search_description_steers_queries_to_people_not_rooms(): void {
-		$description = $this->ability( 'senroflux/stock-image-search' )->get_description();
+		$description = $this->ability( 'specflux/stock-image-search' )->get_description();
 
 		$this->assertStringContainsString( 'people', $description );
 		$this->assertStringContainsString( 'not rooms', $description );
@@ -1082,7 +1082,7 @@ final class MediaTest extends TestCase {
 	 * The advice must not name any specific industry.
 	 */
 	public function test_stock_image_search_description_names_no_specific_industry(): void {
-		$description = $this->ability( 'senroflux/stock-image-search' )->get_description();
+		$description = $this->ability( 'specflux/stock-image-search' )->get_description();
 
 		foreach ( array( 'physio', 'massage', 'café', 'cafe', 'soup', 'pumpkin' ) as $word ) {
 			$this->assertStringNotContainsStringIgnoringCase( $word, $description );
@@ -1091,7 +1091,7 @@ final class MediaTest extends TestCase {
 
 	public function test_stock_image_search_ranks_an_already_imported_result_last(): void {
 		$this->seedAttachment( 501 );
-		$GLOBALS['senroflux_test_postmeta'][501]['_senroflux_stock_source_id'] = 'aaaaaaaa-0000-0000-0000-000000000001';
+		$GLOBALS['specflux_site_agent_test_postmeta'][501]['_specflux_site_agent_stock_source_id'] = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 		Media::setStockGateway(
 			$this->fakeStockGateway(
@@ -1110,7 +1110,7 @@ final class MediaTest extends TestCase {
 			)
 		);
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'a red bicycle' ) );
 
 		$this->assertIsArray( $result );
 		$ids = array_column( $result['results'], 'id' );
@@ -1124,21 +1124,21 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_stock_image_search_refuses_when_disabled_by_filter(): void {
-		add_filter( 'senroflux_stock_images_enabled', static fn () => false );
+		add_filter( 'specflux_site_agent_stock_images_enabled', static fn () => false );
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'x' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'x' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'stock_images_disabled', $result->get_error_code() );
 		$this->assertStringContainsString( 'no_image_reason', $result->get_error_message() );
 
-		remove_all_filters( 'senroflux_stock_images_enabled' );
+		remove_all_filters( 'specflux_site_agent_stock_images_enabled' );
 	}
 
 	public function test_stock_image_search_refuses_on_a_gateway_error(): void {
 		Media::setStockGateway( $this->fakeStockGateway( search_result: new WP_Error( 'http_request_failed', 'timed out' ) ) );
 
-		$result = $this->ability( 'senroflux/stock-image-search' )->execute( array( 'query' => 'x' ) );
+		$result = $this->ability( 'specflux/stock-image-search' )->execute( array( 'query' => 'x' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'stock_images_unavailable', $result->get_error_code() );
@@ -1149,7 +1149,7 @@ final class MediaTest extends TestCase {
 		$gateway = $this->fakeStockGateway();
 		Media::setStockGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => 'not-a-uuid',
 				'alt' => 'A red bicycle',
@@ -1162,7 +1162,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_stock_image_import_requires_non_empty_alt(): void {
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => '',
@@ -1174,9 +1174,9 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_stock_image_import_refuses_when_disabled_by_filter(): void {
-		add_filter( 'senroflux_stock_images_enabled', static fn () => false );
+		add_filter( 'specflux_site_agent_stock_images_enabled', static fn () => false );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1186,7 +1186,7 @@ final class MediaTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'stock_images_disabled', $result->get_error_code() );
 
-		remove_all_filters( 'senroflux_stock_images_enabled' );
+		remove_all_filters( 'specflux_site_agent_stock_images_enabled' );
 	}
 
 	/** @return array<string,array{0:array<string,mixed>}> */
@@ -1208,7 +1208,7 @@ final class MediaTest extends TestCase {
 		$gateway = $this->fakeStockGateway( fetch_result: $detail );
 		Media::setStockGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1234,11 +1234,11 @@ final class MediaTest extends TestCase {
 	 */
 	public function test_stock_image_import_of_an_already_imported_photo_returns_the_existing_attachment(): void {
 		$this->seedAttachment( 501 );
-		$GLOBALS['senroflux_test_postmeta'][501]['_senroflux_stock_source_id'] = self::VALID_STOCK_ID;
+		$GLOBALS['specflux_site_agent_test_postmeta'][501]['_specflux_site_agent_stock_source_id'] = self::VALID_STOCK_ID;
 		$gateway = $this->fakeStockGateway( fetch_result: $this->eligibleDetail() );
 		Media::setStockGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1252,7 +1252,7 @@ final class MediaTest extends TestCase {
 
 	public function test_stock_image_import_downloads_the_refetched_detail_never_a_model_url(): void {
 		$detail = $this->eligibleDetail();
-		$path   = sys_get_temp_dir() . '/senroflux-stock-import.jpg';
+		$path   = sys_get_temp_dir() . '/specflux-site-agent-stock-import.jpg';
 		touch( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
 		$gateway = $this->fakeStockGateway(
 			fetch_result: $detail,
@@ -1263,7 +1263,7 @@ final class MediaTest extends TestCase {
 		);
 		Media::setStockGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1275,16 +1275,16 @@ final class MediaTest extends TestCase {
 		$this->assertSame( array( $detail ), $gateway->downloadCalls );
 
 		$id = $result['attachment_id'];
-		$this->assertSame( 'A red bicycle', $GLOBALS['senroflux_test_postmeta'][ $id ]['_wp_attachment_image_alt'] ?? null );
-		$this->assertNotEmpty( $GLOBALS['senroflux_test_posts'][ $id ]->post_excerpt ?? '' );
-		$stored = $GLOBALS['senroflux_test_postmeta'][ $id ]['_senroflux_stock_source'] ?? null;
+		$this->assertSame( 'A red bicycle', $GLOBALS['specflux_site_agent_test_postmeta'][ $id ]['_wp_attachment_image_alt'] ?? null );
+		$this->assertNotEmpty( $GLOBALS['specflux_site_agent_test_posts'][ $id ]->post_excerpt ?? '' );
+		$stored = $GLOBALS['specflux_site_agent_test_postmeta'][ $id ]['_specflux_site_agent_stock_source'] ?? null;
 		$this->assertIsArray( $stored );
 		$this->assertSame( 'openverse', $stored['provider'] );
 		$this->assertSame( self::VALID_STOCK_ID, $stored['id'] );
 		// 0.3 quality fix (stock image choice): a plain-string companion key,
 		// simple enough for `stock-image-search` to filter used images by a
 		// direct `get_posts()` meta lookup without decoding the full record.
-		$this->assertSame( self::VALID_STOCK_ID, $GLOBALS['senroflux_test_postmeta'][ $id ]['_senroflux_stock_source_id'] ?? null );
+		$this->assertSame( self::VALID_STOCK_ID, $GLOBALS['specflux_site_agent_test_postmeta'][ $id ]['_specflux_site_agent_stock_source_id'] ?? null );
 	}
 
 	/**
@@ -1296,10 +1296,10 @@ final class MediaTest extends TestCase {
 	 */
 	public function test_stock_image_import_does_not_spend_the_images_budget(): void {
 		for ( $i = 0; $i < 6; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__stock-image-import', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__stock-image-import', null, 'ok' );
 		}
 
-		$path = sys_get_temp_dir() . '/senroflux-generate-after-stock.jpg';
+		$path = sys_get_temp_dir() . '/specflux-site-agent-generate-after-stock.jpg';
 		touch( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
 		$gateway = new class( $path ) implements MediaGatewayInterface {
 			public function __construct( private string $path ) {
@@ -1320,7 +1320,7 @@ final class MediaTest extends TestCase {
 		};
 		Media::setGateway( $gateway );
 
-		$result = $this->ability( 'senroflux/generate-image' )->execute( array( 'prompt' => 'a red bicycle' ) );
+		$result = $this->ability( 'specflux/generate-image' )->execute( array( 'prompt' => 'a red bicycle' ) );
 
 		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
 	}
@@ -1328,10 +1328,10 @@ final class MediaTest extends TestCase {
 	public function test_a_fourth_stock_image_import_is_not_capped(): void {
 		// Live J5: a four-page skeleton needs a fourth hero image; a cap of 3 dead-ended it.
 		for ( $i = 0; $i < 3; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__stock-image-import', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__stock-image-import', null, 'ok' );
 		}
 
-		$path = sys_get_temp_dir() . '/senroflux-stock-fourth.jpg';
+		$path = sys_get_temp_dir() . '/specflux-site-agent-stock-fourth.jpg';
 		touch( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- test fixture file, not a WP runtime path.
 		Media::setStockGateway(
 			$this->fakeStockGateway(
@@ -1343,7 +1343,7 @@ final class MediaTest extends TestCase {
 			)
 		);
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1356,13 +1356,13 @@ final class MediaTest extends TestCase {
 
 	public function test_the_stock_image_import_past_the_cap_in_one_run_is_refused(): void {
 		for ( $i = 0; $i < Media::STOCK_IMPORT_CAP; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__stock-image-import', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__stock-image-import', null, 'ok' );
 		}
 
 		$detail = $this->eligibleDetail();
 		Media::setStockGateway( $this->fakeStockGateway( fetch_result: $detail ) );
 
-		$result = $this->ability( 'senroflux/stock-image-import' )->execute(
+		$result = $this->ability( 'specflux/stock-image-import' )->execute(
 			array(
 				'id'  => self::VALID_STOCK_ID,
 				'alt' => 'A red bicycle',
@@ -1380,7 +1380,7 @@ final class MediaTest extends TestCase {
 	private function exhaustImagesBudget(): void {
 		$limit = Budget::defaults()[ Budget::IMAGES ];
 		for ( $i = 0; $i < $limit; $i++ ) {
-			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__senroflux__generate-image', null, 'ok' );
+			$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'wpab__specflux__generate-image', null, 'ok' );
 		}
 	}
 
@@ -1396,11 +1396,11 @@ final class MediaTest extends TestCase {
 
 	public function test_no_image_source_left_is_true_when_budget_exhausted_and_stock_disabled(): void {
 		$this->exhaustImagesBudget();
-		add_filter( 'senroflux_stock_images_enabled', static fn () => false );
+		add_filter( 'specflux_site_agent_stock_images_enabled', static fn () => false );
 
 		$this->assertTrue( Media::noImageSourceLeft() );
 
-		remove_all_filters( 'senroflux_stock_images_enabled' );
+		remove_all_filters( 'specflux_site_agent_stock_images_enabled' );
 	}
 
 	public function test_no_image_source_left_is_false_when_budget_exhausted_but_stock_not_yet_tried(): void {
@@ -1411,7 +1411,7 @@ final class MediaTest extends TestCase {
 
 	public function test_no_image_source_left_is_true_when_a_stock_search_errored(): void {
 		$this->exhaustImagesBudget();
-		$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'senroflux/stock-image-search', null, 'error' );
+		$this->store->appendStep( $this->runId, StepKind::ToolResult, null, 'specflux/stock-image-search', null, 'error' );
 
 		$this->assertTrue( Media::noImageSourceLeft() );
 	}
@@ -1425,13 +1425,13 @@ final class MediaTest extends TestCase {
 				array(
 					'functionResponse' => array(
 						'id'       => 'call-1',
-						'name'     => 'senroflux/stock-image-search',
+						'name'     => 'specflux/stock-image-search',
 						'response' => array( 'results' => array() ),
 					),
 				),
 			),
 		);
-		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'senroflux/stock-image-search', null, 'ok' );
+		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'specflux/stock-image-search', null, 'ok' );
 
 		$this->assertTrue( Media::noImageSourceLeft() );
 	}
@@ -1445,13 +1445,13 @@ final class MediaTest extends TestCase {
 				array(
 					'functionResponse' => array(
 						'id'       => 'call-1',
-						'name'     => 'senroflux/stock-image-search',
+						'name'     => 'specflux/stock-image-search',
 						'response' => array( 'results' => array( array( 'id' => 'x' ) ) ),
 					),
 				),
 			),
 		);
-		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'senroflux/stock-image-search', null, 'ok' );
+		$this->store->appendStep( $this->runId, StepKind::ToolResult, $message, 'specflux/stock-image-search', null, 'ok' );
 
 		$this->assertFalse( Media::noImageSourceLeft() );
 	}

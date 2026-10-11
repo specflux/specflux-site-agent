@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<ruleset name="SenroFlux">
-    <description>WordPress-Core + WordPress-Extra for the SenroFlux plugin.</description>
+<ruleset name="Specflux Site Agent">
+    <description>WordPress-Core + WordPress-Extra for the Specflux Site Agent plugin.</description>
 
-    <file>senroflux.php</file>
+    <file>specflux-site-agent.php</file>
     <file>src</file>
     <file>tests</file>
 
@@ -41,7 +41,7 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element value="senroflux"/>
+                <element value="specflux-site-agent"/>
             </property>
         </properties>
         <!--
@@ -49,7 +49,7 @@
             own block-pattern PHP files (see their own file headers), kept as
             fixtures for testing against real theme pattern markup. They
             correctly use the theme's OWN 'twentytwentyfive' text domain,
-            same as upstream — rewriting it to 'senroflux' would make them
+            same as upstream — rewriting it to 'specflux-site-agent' would make them
             stop matching the theme files they mirror.
         -->
         <exclude-pattern>tests/ThemePatterns/*</exclude-pattern>
@@ -57,13 +57,13 @@
 
     <!--
         Prefix every global the plugin introduces (hooks, options, tables,
-        ajax actions, functions) with senroflux_. Namespaces keep the
+        ajax actions, functions) with specflux_site_agent_. Namespaces keep the
         Specflux\ vendor prefix per the project layout decision.
     -->
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
-                <element value="senroflux"/>
+                <element value="specflux_site_agent"/>
                 <element value="Specflux"/>
             </property>
         </properties>
@@ -81,11 +81,11 @@
 
     <!--
         The spec fixes BOTH this ruleset (WPCS) AND a PSR-4 camelCase
-        namespace (Specflux\SenroFlux\) that integrates the AI Client SDK.
+        namespace (Specflux\SiteAgent\) that integrates the AI Client SDK.
         Case-enforcement sniffs cannot coexist with that decision, so they
         yield for namespaced OO code only — every other rule (escaping, SQL
         preparation, prefixes, yoda, formatting) stays fully enforced, and
-        senroflux.php keeps the complete standard.
+        specflux-site-agent.php keeps the complete standard.
     -->
     <rule ref="WordPress.NamingConventions.ValidFunctionName">
         <exclude-pattern>src/*</exclude-pattern>
@@ -101,7 +101,7 @@
     </rule>
 
     <!--
-        src/api.php exists to declare the global senroflux() locator: side
+        src/api.php exists to declare the global specflux_site_agent() locator: side
         effects are its contract, same as the plugin main file. Every other
         src file guards itself with `defined( 'ABSPATH' ) || exit;`, which the
         SideEffects sniff counts as a side effect — that guard is required
@@ -109,7 +109,7 @@
     -->
     <rule ref="PSR1.Files.SideEffects">
         <exclude-pattern>src/api.php</exclude-pattern>
-        <exclude-pattern>senroflux.php</exclude-pattern>
+        <exclude-pattern>specflux-site-agent.php</exclude-pattern>
         <exclude-pattern>src/*</exclude-pattern>
         <exclude-pattern>tests/bootstrap.php</exclude-pattern>
         <exclude-pattern>tests/stubs/*</exclude-pattern>

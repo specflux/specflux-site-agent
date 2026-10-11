@@ -4,7 +4,7 @@
  * the tick is still running server-side but reaches the browser after the
  * tick's response, its older snapshot used to replace the parked state: the
  * list said "waiting on the plan" while the detail pane showed no plan card
- * until a reload (seen in CI as a 30 s wait for #senroflux-park-heading).
+ * until a reload (seen in CI as a 30 s wait for #specflux-site-agent-park-heading).
  */
 
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -72,7 +72,7 @@ describe( 'a run-detail read that lands after the first tick', () => {
 			releaseTick( parked );
 		} );
 		await waitFor( () => {
-			expect( document.getElementById( 'senroflux-park-heading' ) ).not.toBeNull();
+			expect( document.getElementById( 'specflux-site-agent-park-heading' ) ).not.toBeNull();
 		} );
 
 		// The read was answered mid-tick: the model turn is recorded, the park is not.
@@ -80,6 +80,6 @@ describe( 'a run-detail read that lands after the first tick', () => {
 			releaseRead( { run: { ...thin, ...readRun, tokens_used: 15 }, steps: readSteps } );
 		} );
 
-		expect( document.getElementById( 'senroflux-park-heading' ) ).not.toBeNull();
+		expect( document.getElementById( 'specflux-site-agent-park-heading' ) ).not.toBeNull();
 	} );
 } );

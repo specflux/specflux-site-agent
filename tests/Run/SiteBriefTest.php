@@ -3,20 +3,20 @@
  * SiteBrief tests (0.3 S20): the 2,000-char cap refuses without truncating,
  * autoload-off persistence, append-under-cap, and the seq-0 fingerprint.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\SiteBrief;
+use Specflux\SiteAgent\Run\SiteBrief;
 
 final class SiteBriefTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_options'] = array();
+		$GLOBALS['specflux_site_agent_test_options'] = array();
 	}
 
 	public function test_get_defaults_to_empty_string(): void {

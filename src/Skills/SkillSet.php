@@ -2,15 +2,15 @@
 /**
  * The harness's skill set plus per-run skill collection.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Skills;
+namespace Specflux\SiteAgent\Skills;
 
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Run\Tail;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Run\Tail;
 use WP_Error;
 
 // Bail on direct access.
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Builds the skill list a run carries. The four harness skills are fixed and
  * undroppable; a pack may contribute its own guidance, and a consumer may add
- * skills through the `senroflux_run_skills` filter. The list is bounded by a
+ * skills through the `specflux_site_agent_run_skills` filter. The list is bounded by a
  * filterable token ceiling so the combined instructions cannot blow the
  * context window.
  */
@@ -57,7 +57,7 @@ final class SkillSet {
 			new Skill(
 				'harness/workflow',
 				'Workflow',
-				'Work in four phases: clarify, plan, act, verify. Clarify: first read what the site already says (its pages, especially home and contact). Then ask, in one `senroflux/ask-user` call, for every fact the goal needs that you still lack: the business name, the services or products and who each is for, phone, email, address, hours, how to book or buy, the tone, and one proof point (years open, a qualification, a named client). Ask a follow-up only when an answer leaves the plan open. Use only facts the site, brief or answers gave. Never invent a policy, process step, duration, frequency, referral, insurance or payment rule, access or parking detail, guarantee, credential, result or price. A visitor question (first visit, referral, how long) with no supplied answer: ask one question if any remain, else leave it out. Offer lasting facts the owner gives you with `senroflux/suggest-brief-addition`. Before your first write, call `senroflux/propose-plan`; every step must list the verbs it needs, spelled exactly as the guidance for this site gives them. Writes outside an accepted plan are refused. After writing, re-read every object you changed before you finish. A reply with no tool call ends the run immediately and becomes your final report to the human, whatever phase you are in — so never announce work you have not yet done in plain text. If work remains, call a tool: ask, propose or act; reply in text only once everything is finished. Finish with a short plain-language summary that names objects by title; do not paste URLs, and write it as plain sentences, no markdown (no **bold**, # headings, bullet lists or code spans). A refusal or error is yours to fix, not the user\'s.',
+				'Work in four phases: clarify, plan, act, verify. Clarify: first read what the site already says (its pages, especially home and contact). Then ask, in one `specflux/ask-user` call, for every fact the goal needs that you still lack: the business name, the services or products and who each is for, phone, email, address, hours, how to book or buy, the tone, and one proof point (years open, a qualification, a named client). Ask a follow-up only when an answer leaves the plan open. Use only facts the site, brief or answers gave. Never invent a policy, process step, duration, frequency, referral, insurance or payment rule, access or parking detail, guarantee, credential, result or price. A visitor question (first visit, referral, how long) with no supplied answer: ask one question if any remain, else leave it out. Offer lasting facts the owner gives you with `specflux/suggest-brief-addition`. Before your first write, call `specflux/propose-plan`; every step must list the verbs it needs, spelled exactly as the guidance for this site gives them. Writes outside an accepted plan are refused. After writing, re-read every object you changed before you finish. A reply with no tool call ends the run immediately and becomes your final report to the human, whatever phase you are in — so never announce work you have not yet done in plain text. If work remains, call a tool: ask, propose or act; reply in text only once everything is finished. Finish with a short plain-language summary that names objects by title; do not paste URLs, and write it as plain sentences, no markdown (no **bold**, # headings, bullet lists or code spans). A refusal or error is yours to fix, not the user\'s.',
 				true
 			),
 			new Skill(
@@ -94,7 +94,7 @@ final class SkillSet {
 	/**
 	 * Collect the skills for one run: harness skills first, then the pack's
 	 * skills in the given order, then consumer-added skills from the
-	 * `senroflux_run_skills` filter. A filter callback that removes an entry is
+	 * `specflux_site_agent_run_skills` filter. A filter callback that removes an entry is
 	 * ignored for required harness skills (they are re-added), the disable list
 	 * never drops a required skill, and duplicate ids resolve to the first
 	 * occurrence. The result is grouped by source (harness, pack, consumer) so
@@ -147,7 +147,7 @@ final class SkillSet {
 		 * @param string      $goal     The run's goal.
 		 * @return array<int,Skill>
 		 */
-		$filtered = apply_filters( 'senroflux_run_skills', array_values( $base ), $pack, $consumer, $goal );
+		$filtered = apply_filters( 'specflux_site_agent_run_skills', array_values( $base ), $pack, $consumer, $goal );
 
 		if ( ! is_array( $filtered ) ) {
 			$filtered = array();
@@ -206,7 +206,7 @@ final class SkillSet {
 	/**
 	 * Ceiling check: sum( mb_strlen( body ) ) / 4 over ALL given skills must be
 	 * <= max tokens, where max = (int) apply_filters(
-	 * 'senroflux_skills_max_tokens', self::DEFAULT_MAX_TOKENS ). Returns null
+	 * 'specflux_site_agent_skills_max_tokens', self::DEFAULT_MAX_TOKENS ). Returns null
 	 * when within ceiling, else a WP_Error( 'skills_too_large' ) carrying the
 	 * estimate, the ceiling, and HTTP 400. NEVER truncates the skills.
 	 *
@@ -215,7 +215,7 @@ final class SkillSet {
 	 */
 	public static function ceilingError( array $skills ): ?WP_Error {
 		/** Filters the skills-body token ceiling. `@internal`. */
-		$max_tokens = (int) apply_filters( 'senroflux_skills_max_tokens', self::DEFAULT_MAX_TOKENS );
+		$max_tokens = (int) apply_filters( 'specflux_site_agent_skills_max_tokens', self::DEFAULT_MAX_TOKENS );
 
 		// S8 says CHARACTERS / 4, not bytes / 4: a body of accented or CJK text
 		// would otherwise be counted two to four times over and refuse a run
@@ -233,7 +233,7 @@ final class SkillSet {
 
 		return new WP_Error(
 			'skills_too_large',
-			__( 'The run\'s skills exceed the instruction ceiling.', 'senroflux' ),
+			__( 'The run\'s skills exceed the instruction ceiling.', 'specflux-site-agent' ),
 			array(
 				'status'     => 400,
 				'tokens'     => $tokens,

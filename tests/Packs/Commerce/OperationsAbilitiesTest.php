@@ -5,17 +5,17 @@
  *
  * TARGET REPO PATH: tests/Packs/Commerce/OperationsAbilitiesTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use WP_Error;
 use wpdb;
 
@@ -34,26 +34,26 @@ final class OperationsAbilitiesTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']                = array();
-		$GLOBALS['senroflux_test_posts']                    = array();
-		$GLOBALS['senroflux_test_postmeta']                 = array();
-		$GLOBALS['senroflux_test_ability_categories']       = array();
-		$GLOBALS['senroflux_test_orders']                   = array();
-		$GLOBALS['senroflux_test_shipping_zones']           = array();
-		$GLOBALS['senroflux_test_next_zone_id']             = 1;
-		$GLOBALS['senroflux_test_next_instance_id']         = 1;
-		$GLOBALS['senroflux_test_options']                  = array();
-		$GLOBALS['senroflux_test_countries']                = array(
+		$GLOBALS['specflux_site_agent_test_abilities']                = array();
+		$GLOBALS['specflux_site_agent_test_posts']                    = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']                 = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories']       = array();
+		$GLOBALS['specflux_site_agent_test_orders']                   = array();
+		$GLOBALS['specflux_site_agent_test_shipping_zones']           = array();
+		$GLOBALS['specflux_site_agent_test_next_zone_id']             = 1;
+		$GLOBALS['specflux_site_agent_test_next_instance_id']         = 1;
+		$GLOBALS['specflux_site_agent_test_options']                  = array();
+		$GLOBALS['specflux_site_agent_test_countries']                = array(
 			'CA' => 'Canada',
 			'US' => 'United States',
 		);
-		$GLOBALS['senroflux_test_states']                   = array( 'CA' => array( 'ON' => 'Ontario' ) );
-		$GLOBALS['senroflux_test_continents']               = array( 'NA' => array( 'name' => 'North America' ) );
-		$GLOBALS['senroflux_test_tax_rates']                = array();
-		$GLOBALS['senroflux_test_next_tax_rate_id']         = 1;
-		$GLOBALS['senroflux_test_products']                 = array();
-		$GLOBALS['senroflux_test_gateway_supports_refunds'] = true;
-		$GLOBALS['senroflux_test_next_post_id']             = 100;
+		$GLOBALS['specflux_site_agent_test_states']                   = array( 'CA' => array( 'ON' => 'Ontario' ) );
+		$GLOBALS['specflux_site_agent_test_continents']               = array( 'NA' => array( 'name' => 'North America' ) );
+		$GLOBALS['specflux_site_agent_test_tax_rates']                = array();
+		$GLOBALS['specflux_site_agent_test_next_tax_rate_id']         = 1;
+		$GLOBALS['specflux_site_agent_test_products']                 = array();
+		$GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] = true;
+		$GLOBALS['specflux_site_agent_test_next_post_id']             = 100;
 
 		Abilities::reset();
 		Abilities::registerCategory();
@@ -80,7 +80,7 @@ final class OperationsAbilitiesTest extends TestCase {
 	}
 
 	private function makeOrder( int $id, float $total, float $refunded = 0.0, string $payment_method = 'bacs', string $status = 'processing', ?int $date_created = null ): void {
-		$GLOBALS['senroflux_test_orders'][ $id ] = (object) array(
+		$GLOBALS['specflux_site_agent_test_orders'][ $id ] = (object) array(
 			'total'          => $total,
 			'total_refunded' => $refunded,
 			'payment_method' => $payment_method,
@@ -93,7 +93,7 @@ final class OperationsAbilitiesTest extends TestCase {
 	private function recordSuccessfulStep( string $tool_name ): void {
 		$this->store->appendStep(
 			$this->runId,
-			\Specflux\SenroFlux\Run\StepKind::ToolResult,
+			\Specflux\SiteAgent\Run\StepKind::ToolResult,
 			array( 'ok' => true ),
 			$tool_name,
 			null,
@@ -109,7 +109,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		$this->makeOrder( 1, 100.00 );
 
 		$result = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 1,
 				'amount'   => 40.00,
@@ -129,7 +129,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		$this->makeOrder( 1, 100.00, 80.00 ); // Only 20 remains refundable.
 
 		$result = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 1,
 				'amount'   => 25.00,
@@ -147,7 +147,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		$this->makeOrder( 2, 100.00 );
 
 		$first = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 1,
 				'amount'   => 10.00,
@@ -161,10 +161,10 @@ final class OperationsAbilitiesTest extends TestCase {
 		// successful call the way Runner::executeCall() does — under the
 		// mangled function name the model called (live J12 refunded twice
 		// because only the `ns/name` form was ever counted).
-		$this->recordSuccessfulStep( 'wpab__senroflux__orders-refund' );
+		$this->recordSuccessfulStep( 'wpab__specflux__orders-refund' );
 
 		$second = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 2,
 				'amount'   => 10.00,
@@ -178,11 +178,11 @@ final class OperationsAbilitiesTest extends TestCase {
 	}
 
 	public function test_refund_is_record_only_when_the_gateway_does_not_support_refunds(): void {
-		$GLOBALS['senroflux_test_gateway_supports_refunds'] = false;
+		$GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] = false;
 		$this->makeOrder( 1, 100.00 );
 
 		$result = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 1,
 				'amount'   => 10.00,
@@ -197,7 +197,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_refund_of_an_unknown_order_is_refused(): void {
 		$result = $this->callAbility(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 999,
 				'amount'   => 10.00,
@@ -216,7 +216,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_creating_a_shipping_zone_reports_no_previous_value(): void {
 		$result = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'United States',
 				'locations' => array(
@@ -236,7 +236,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_updating_a_shipping_zone_records_the_previous_values(): void {
 		$created = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'United States',
 				'locations' => array(
@@ -250,7 +250,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		);
 
 		$updated = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'zone_id'   => $created['zone_id'],
 				'name'      => 'United States and Canada',
@@ -276,7 +276,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_live_zone_args_save_country_code_and_a_configured_flat_rate(): void {
 		$result = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'locations' => array( array( 'code' => 'country:CA' ) ),
 				'methods'   => array(
@@ -307,7 +307,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		$this->assertSame( '12', $result['methods'][0]['cost'] );
 		$this->assertTrue( $result['methods'][0]['enabled'] );
 
-		$settings = $GLOBALS['senroflux_test_options'][ 'woocommerce_flat_rate_' . $result['methods'][0]['instance_id'] . '_settings' ];
+		$settings = $GLOBALS['specflux_site_agent_test_options'][ 'woocommerce_flat_rate_' . $result['methods'][0]['instance_id'] . '_settings' ];
 		$this->assertSame( '12', $settings['cost'] );
 		$this->assertSame( 'Canada Shipping', $settings['title'] );
 		$this->assertSame( 'none', $settings['tax_status'] );
@@ -316,13 +316,13 @@ final class OperationsAbilitiesTest extends TestCase {
 				'code' => 'CA',
 				'type' => 'country',
 			),
-			$GLOBALS['senroflux_test_shipping_zones'][ $result['zone_id'] ]['locations'][0]
+			$GLOBALS['specflux_site_agent_test_shipping_zones'][ $result['zone_id'] ]['locations'][0]
 		);
 	}
 
 	public function test_prefixed_state_continent_and_postcode_codes_are_split(): void {
 		$result = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Mixed',
 				'locations' => array(
@@ -447,18 +447,18 @@ final class OperationsAbilitiesTest extends TestCase {
 	 * @param array<string,mixed> $input Ability input.
 	 */
 	public function test_invalid_zone_input_is_refused_and_nothing_is_saved( array $input, string $needle ): void {
-		$result = $this->callAbility( 'senroflux/shipping-zone-save', $input );
+		$result = $this->callAbility( 'specflux/shipping-zone-save', $input );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 400, $result->get_error_data()['status'] );
 		$this->assertStringContainsString( $needle, $result->get_error_message() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_shipping_zones'] );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_options'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_shipping_zones'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_options'] );
 	}
 
 	public function test_a_bad_second_method_leaves_the_first_unsaved(): void {
 		$result = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Half',
 				'locations' => array( array( 'code' => 'CA' ) ),
@@ -470,13 +470,13 @@ final class OperationsAbilitiesTest extends TestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_shipping_zones'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_shipping_zones'] );
 	}
 
 	public function test_local_pickup_holds_a_cost_and_a_method_can_be_disabled(): void {
 		$GLOBALS['wpdb'] = new wpdb();
 		$result          = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Pickup',
 				'locations' => array( array( 'code' => 'CA' ) ),
@@ -499,7 +499,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_existing_zone_replaces_locations_and_keeps_existing_methods(): void {
 		$created = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Old',
 				'locations' => array( array( 'code' => 'US' ) ),
@@ -508,7 +508,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		);
 
 		$updated = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'zone_id'   => $created['zone_id'],
 				'name'      => 'Canada',
@@ -532,13 +532,13 @@ final class OperationsAbilitiesTest extends TestCase {
 			),
 			$updated['locations']
 		);
-		$stored = $GLOBALS['senroflux_test_shipping_zones'][ $created['zone_id'] ];
+		$stored = $GLOBALS['specflux_site_agent_test_shipping_zones'][ $created['zone_id'] ];
 		$this->assertSame( array( 'free_shipping', 'flat_rate' ), array_column( $stored['methods'], 'method_id' ) );
 	}
 
 	public function test_updating_an_unknown_shipping_zone_is_refused(): void {
 		$result = $this->callAbility(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'zone_id'   => 999,
 				'name'      => 'Ghost',
@@ -557,7 +557,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_creating_a_tax_rate_reports_no_previous_value(): void {
 		$result = $this->callAbility(
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'country'  => 'us',
 				'rate'     => '7.25',
@@ -575,7 +575,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_updating_a_tax_rate_records_the_previous_values(): void {
 		$created = $this->callAbility(
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'country'  => 'US',
 				'rate'     => '7.25',
@@ -587,7 +587,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		);
 
 		$updated = $this->callAbility(
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'tax_rate_id' => $created['tax_rate_id'],
 				'country'     => 'US',
@@ -606,7 +606,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_updating_an_unknown_tax_rate_is_refused(): void {
 		$result = $this->callAbility(
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'tax_rate_id' => 999,
 				'country'     => 'US',
@@ -629,17 +629,17 @@ final class OperationsAbilitiesTest extends TestCase {
 	public function test_store_report_never_writes_anything(): void {
 		$this->makeOrder( 1, 100.00, 10.00, 'bacs', 'processing', strtotime( '2026-01-10' ) );
 		$this->makeOrder( 2, 50.00, 0.00, 'bacs', 'completed', strtotime( '2026-01-15' ) );
-		$GLOBALS['senroflux_test_products'] = array(
+		$GLOBALS['specflux_site_agent_test_products'] = array(
 			501 => 1, // At/below the default low-stock amount (2).
 			502 => 10, // Well above it.
 		);
 
-		$posts_before    = $GLOBALS['senroflux_test_posts'];
-		$orders_before   = $GLOBALS['senroflux_test_orders'];
-		$products_before = $GLOBALS['senroflux_test_products'];
+		$posts_before    = $GLOBALS['specflux_site_agent_test_posts'];
+		$orders_before   = $GLOBALS['specflux_site_agent_test_orders'];
+		$products_before = $GLOBALS['specflux_site_agent_test_products'];
 
 		$result = $this->callAbility(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
 				'from' => '2026-01-01',
 				'to'   => '2026-01-31',
@@ -655,30 +655,30 @@ final class OperationsAbilitiesTest extends TestCase {
 
 		// A write-recording assertion: nothing this call could have written
 		// to (orders, posts, products) changed.
-		$this->assertEquals( $posts_before, $GLOBALS['senroflux_test_posts'] );
-		$this->assertEquals( $orders_before, $GLOBALS['senroflux_test_orders'] );
-		$this->assertEquals( $products_before, $GLOBALS['senroflux_test_products'] );
+		$this->assertEquals( $posts_before, $GLOBALS['specflux_site_agent_test_posts'] );
+		$this->assertEquals( $orders_before, $GLOBALS['specflux_site_agent_test_orders'] );
+		$this->assertEquals( $products_before, $GLOBALS['specflux_site_agent_test_products'] );
 	}
 
 	public function test_store_report_uses_each_products_own_low_stock_threshold(): void {
-		$GLOBALS['senroflux_test_products']             = array(
+		$GLOBALS['specflux_site_agent_test_products']             = array(
 			501 => 4, // Above the store amount (2) but at its own threshold (5).
 			502 => 4, // Above the store amount and its own threshold (3).
 			503 => 2, // At the store amount, no product-level override.
 		);
-		$GLOBALS['senroflux_test_low_stock_by_product'] = array(
+		$GLOBALS['specflux_site_agent_test_low_stock_by_product'] = array(
 			501 => 5,
 			502 => 3,
 		);
 
 		$result = $this->callAbility(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
 				'from' => '2026-01-01',
 				'to'   => '2026-01-31',
 			)
 		);
-		unset( $GLOBALS['senroflux_test_low_stock_by_product'] );
+		unset( $GLOBALS['specflux_site_agent_test_low_stock_by_product'] );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( array( 501, 503 ), $result['low_stock_products'] );
@@ -686,7 +686,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_a_window_over_92_days_is_refused(): void {
 		$result = $this->callAbility(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
 				'from' => '2026-01-01',
 				'to'   => '2026-05-01',
@@ -699,7 +699,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_a_window_of_exactly_92_days_is_accepted(): void {
 		$result = $this->callAbility(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
 				'from' => '2026-01-01',
 				'to'   => '2026-04-02',
@@ -715,7 +715,7 @@ final class OperationsAbilitiesTest extends TestCase {
 
 	public function test_save_store_report_accepts_allowed_tags(): void {
 		$result = $this->callAbility(
-			'senroflux/save-store-report',
+			'specflux/save-store-report',
 			array(
 				'title'  => 'January report',
 				'markup' => '<h2>January</h2><table><thead><tr><th>Metric</th></tr></thead><tbody><tr><td>Sales</td></tr></tbody></table>',
@@ -724,12 +724,12 @@ final class OperationsAbilitiesTest extends TestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertIsInt( $result['page_id'] );
-		$this->assertSame( 'private', $GLOBALS['senroflux_test_posts'][ $result['page_id'] ]->post_status );
+		$this->assertSame( 'private', $GLOBALS['specflux_site_agent_test_posts'][ $result['page_id'] ]->post_status );
 	}
 
 	public function test_save_store_report_refuses_a_disallowed_tag_rather_than_stripping_it(): void {
 		$result = $this->callAbility(
-			'senroflux/save-store-report',
+			'specflux/save-store-report',
 			array(
 				'title'  => 'January report',
 				'markup' => '<h2>January</h2><script>alert(1)</script>',
@@ -743,7 +743,7 @@ final class OperationsAbilitiesTest extends TestCase {
 	public function test_save_store_report_refuses_a_link_tag(): void {
 		// No `a` in the allowed set at all (see ReportMarkupValidator's docblock).
 		$result = $this->callAbility(
-			'senroflux/save-store-report',
+			'specflux/save-store-report',
 			array(
 				'title'  => 'January report',
 				'markup' => '<p><a href="https://example.com">link</a></p>',
@@ -755,9 +755,9 @@ final class OperationsAbilitiesTest extends TestCase {
 	}
 
 	public function test_save_store_report_permission_uses_the_page_types_own_capabilities(): void {
-		$ability = wp_get_ability( 'senroflux/save-store-report' );
+		$ability = wp_get_ability( 'specflux/save-store-report' );
 		$grant   = static function ( string ...$caps ): void {
-			$GLOBALS['senroflux_test_user_caps'] = array_fill_keys( $caps, true );
+			$GLOBALS['specflux_site_agent_test_user_caps'] = array_fill_keys( $caps, true );
 		};
 
 		$grant( 'manage_woocommerce', 'publish_pages' );
@@ -770,7 +770,7 @@ final class OperationsAbilitiesTest extends TestCase {
 		$this->assertTrue( (bool) $ability->check_permissions( array() ) );
 
 		// A site that remaps the page capabilities is honoured, not bypassed.
-		$GLOBALS['senroflux_test_post_types']['page'] = (object) array(
+		$GLOBALS['specflux_site_agent_test_post_types']['page'] = (object) array(
 			'cap' => (object) array(
 				'create_posts'  => 'create_landing',
 				'publish_posts' => 'publish_landing',
@@ -781,8 +781,8 @@ final class OperationsAbilitiesTest extends TestCase {
 			$grant( 'manage_woocommerce', 'create_landing', 'publish_landing' );
 			$this->assertTrue( (bool) $ability->check_permissions( array() ) );
 		} finally {
-			unset( $GLOBALS['senroflux_test_post_types'] );
-			$GLOBALS['senroflux_test_user_caps'] = array();
+			unset( $GLOBALS['specflux_site_agent_test_post_types'] );
+			$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		}
 	}
 }
