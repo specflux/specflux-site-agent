@@ -49,16 +49,16 @@ jobs:
             echo "::error::Release $TAG is missing or still a draft. Publish it on GitHub first."
             exit 1
           fi
-          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "senroflux-${VERSION}.zip" -p "senroflux-${VERSION}.zip.sha256"
-          sha256sum -c "senroflux-${VERSION}.zip.sha256"
-          unzip -q "senroflux-${VERSION}.zip" -d wporg-build
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "specflux-site-agent-${VERSION}.zip" -p "specflux-site-agent-${VERSION}.zip.sha256"
+          sha256sum -c "specflux-site-agent-${VERSION}.zip.sha256"
+          unzip -q "specflux-site-agent-${VERSION}.zip" -d wporg-build
 
       - name: Assert the zip's versions match the tag
         env:
           VERSION: ${{ steps.resolve.outputs.version }}
-        working-directory: ${{ runner.temp }}/wporg-build/senroflux
+        working-directory: ${{ runner.temp }}/wporg-build/specflux-site-agent
         run: |
-          HEADER=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' senroflux.php)
+          HEADER=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' specflux-site-agent.php)
           STABLE=$(awk -F': *' 'tolower($1) == "stable tag" {print $2; exit}' readme.txt | tr -d '\r ')
           echo "tag=$VERSION header=$HEADER stable=$STABLE"
           if [ "$HEADER" != "$VERSION" ] || [ "$STABLE" != "$VERSION" ]; then
@@ -78,6 +78,6 @@ jobs:
         env:
           SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.WPORG_SVN_PASSWORD }}
-          SLUG: senroflux
+          SLUG: specflux-site-agent
           VERSION: ${{ steps.resolve.outputs.version }}
-          BUILD_DIR: ${{ runner.temp }}/wporg-build/senroflux
+          BUILD_DIR: ${{ runner.temp }}/wporg-build/specflux-site-agent
