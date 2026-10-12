@@ -114,4 +114,14 @@ interface RunStore {
 	 * @return list<Run>
 	 */
 	public function listRecent( int $limit = 50 ): array;
+
+	/**
+	 * One user's runs, most recently updated first. The owner filter is part
+	 * of the query, so the LIMIT counts only that user's rows.
+	 *
+	 * @param int $user_id Owner.
+	 * @param int $limit   Max rows.
+	 * @return list<Run>
+	 */
+	public function listRecentForUser( int $user_id, int $limit = 50 ): array;
 }

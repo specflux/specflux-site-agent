@@ -72,6 +72,9 @@ if ( ! defined( 'SPECFLUX_SITE_AGENT_URL' ) ) {
 if ( ! defined( 'SPECFLUX_SITE_AGENT_API_VERSION' ) ) {
 	define( 'SPECFLUX_SITE_AGENT_API_VERSION', '0.3.0' );
 }
+if ( ! defined( 'WEEK_IN_SECONDS' ) ) {
+	define( 'WEEK_IN_SECONDS', 604800 );
+}
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
 }
@@ -186,6 +189,13 @@ if ( ! function_exists( 'apply_filters' ) ) {
 		}
 
 		return $value;
+	}
+}
+
+if ( ! function_exists( 'has_filter' ) ) {
+	/** Registry-backed shim: is any callback attached to the hook? */
+	function has_filter( string $hook, $callback = false ): bool {
+		return ! empty( array_filter( $GLOBALS['specflux_site_agent_test_filters'][ $hook ] ?? array() ) );
 	}
 }
 
@@ -364,6 +374,22 @@ if ( ! function_exists( 'wp_safe_redirect' ) ) {
 	}
 }
 
+if ( ! function_exists( 'register_activation_hook' ) ) {
+	/** Recording shim so tests can load the main plugin file. */
+	function register_activation_hook( string $file, callable $callback ): void {
+		$GLOBALS['specflux_site_agent_test_activation_hooks'][] = $callback;
+	}
+}
+
+if ( ! function_exists( 'register_rest_route' ) ) {
+	/** Recording shim: $GLOBALS['specflux_site_agent_test_rest_routes'][] = [namespace, route, args]. */
+	function register_rest_route( string $route_namespace, string $route, array $args = array() ): bool {
+		$GLOBALS['specflux_site_agent_test_rest_routes'][] = array( $route_namespace, $route, $args );
+
+		return true;
+	}
+}
+
 if ( ! function_exists( 'is_multisite' ) ) {
 	/** Toggle shim: tests set $GLOBALS['specflux_site_agent_test_multisite']. */
 	function is_multisite(): bool {
@@ -508,7 +534,9 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 	}
 }
 
-if ( ! function_exists( 'dbDelta' ) ) {
+// activation-probe.php defines this to leave dbDelta() undefined, as it is during real
+// activation, so only Schema::install()'s own require_once can provide it.
+if ( ! function_exists( 'dbDelta' ) && empty( $GLOBALS['specflux_site_agent_test_lazy_dbdelta'] ) ) {
 	$GLOBALS['specflux_site_agent_test_dbdelta_queries'] = array();
 
 	/**

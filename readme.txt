@@ -227,7 +227,7 @@ enforces this.
 The JavaScript in `build/` is compiled from the sources in `assets/src/` in
 the public repository, https://github.com/specflux/specflux-site-agent. To rebuild it:
 
-1. `git clone https://github.com/specflux/specflux-site-agent.git && cd specflux-site-agent`
+1. `git clone https://github.com/specflux/specflux-site-agent && cd specflux-site-agent`
 2. `npm ci`
 3. `npm run build`
 

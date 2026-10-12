@@ -130,4 +130,27 @@ final class PluginListScopeTest extends TestCase {
 
 		$this->assertSame( array( $theirs ), $this->ids( Plugin::instance()->listRecent() ) );
 	}
+
+	/**
+	 * The scope is part of the query, so other users' newer runs cannot use up
+	 * the LIMIT and hide the viewer's own older run.
+	 */
+	public function test_own_old_run_is_not_crowded_out_by_newer_runs_of_others(): void {
+		$mine = $this->createRun( self::VIEWER );
+		$this->createRun( self::OTHER );
+		$this->createRun( self::OTHER );
+
+		$this->assertSame( array( $mine ), $this->ids( Plugin::instance()->listRecent( 2 ) ) );
+	}
+
+	public function test_the_scoped_query_filters_by_owner_in_sql(): void {
+		$this->createRun( self::VIEWER );
+		$db = $GLOBALS['wpdb'];
+
+		Plugin::instance()->listRecent();
+
+		$this->assertNotEmpty(
+			array_filter( $db->queries, static fn ( string $q ): bool => str_contains( $q, 'WHERE user_id = ' . self::VIEWER ) )
+		);
+	}
 }
