@@ -6,10 +6,10 @@
  *
  * `wp_remote_get()` never makes a real request: it records the URL called
  * and returns whatever the test queued in
- * `$GLOBALS['senroflux_test_remote_get_responses']` (a queue, so a single
+ * `$GLOBALS['specflux_site_agent_test_remote_get_responses']` (a queue, so a single
  * test can script search-then-detail-then-download in one gateway call).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -23,12 +23,12 @@ if ( ! function_exists( 'wp_remote_get' ) ) {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	function wp_remote_get( string $url, array $args = array() ) {
-		$GLOBALS['senroflux_test_remote_get_calls'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_calls'][] = array(
 			'url'  => $url,
 			'args' => $args,
 		);
 
-		$queue = &$GLOBALS['senroflux_test_remote_get_responses'];
+		$queue = &$GLOBALS['specflux_site_agent_test_remote_get_responses'];
 		if ( ! is_array( $queue ) || array() === $queue ) {
 			return new WP_Error( 'http_request_failed', 'No response queued.' );
 		}

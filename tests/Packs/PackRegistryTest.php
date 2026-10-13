@@ -2,26 +2,26 @@
 /**
  * PackRegistry + base Pack tests (stage 6): S9 registry contract (register /
  * resolve by name / unknown → null), S9 shape-compat resolution into
- * `core/*` vs `senroflux/*`, and the `start(pack)` unknown-pack path.
+ * `core/*` vs `specflux/*`, and the `start(pack)` unknown-pack path.
  *
  * The `pack_unknown` start test is a DIFF PROPOSAL against src/Plugin.php
  * (deliverable 4): it asserts behaviour that lands when `start()` gains the
  * `?string $pack` parameter. Until then it fails against the real plugin —
  * run it only after applying the proposal.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 use wpdb;
 
@@ -29,19 +29,19 @@ final class PackRegistryTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		remove_all_filters( 'senroflux_packs' );
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'agent_safety_governed_namespaces' );
-		remove_all_filters( 'agent_safety_verb_map' );
-		$GLOBALS['senroflux_test_abilities'] = array();
+		remove_all_filters( 'specflux_site_agent_packs' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'belayline_governed_namespaces' );
+		remove_all_filters( 'belayline_verb_map' );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_packs' );
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'agent_safety_governed_namespaces' );
-		remove_all_filters( 'agent_safety_verb_map' );
-		unset( $GLOBALS['wpdb'], $GLOBALS['senroflux_test_doing_it_wrong'] );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'belayline_governed_namespaces' );
+		remove_all_filters( 'belayline_verb_map' );
+		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_doing_it_wrong'] );
 		Plugin::reset();
 	}
 
@@ -141,7 +141,7 @@ final class PackRegistryTest extends TestCase {
 
 	public function test_from_filters_registers_only_packs_and_drops_junk(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
 				return array_merge(
 					$packs,
@@ -177,7 +177,7 @@ final class PackRegistryTest extends TestCase {
 
 	public function test_resolve_abilities_adopts_core_when_shape_compatible(): void {
 		// A core ability whose schema accepts every property the pack sends.
-		$GLOBALS['senroflux_test_abilities']['core/read-content'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['core/read-content'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'core/read-content',
 			true,
 			array(),
@@ -223,9 +223,9 @@ final class PackRegistryTest extends TestCase {
 		$this->assertSame( array( 'core/read-content' ), $pack->allowList() );
 	}
 
-	public function test_resolve_abilities_falls_back_to_senroflux_when_core_incompatible(): void {
+	public function test_resolve_abilities_falls_back_to_specflux_site_agent_when_core_incompatible(): void {
 		// Core ability exists but its schema lacks a property the pack sends.
-		$GLOBALS['senroflux_test_abilities']['core/update-post'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['core/update-post'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'core/update-post',
 			true,
 			array(),
@@ -265,7 +265,7 @@ final class PackRegistryTest extends TestCase {
 			}
 		};
 
-		$this->assertSame( array( 'update' => 'senroflux/update-post' ), $pack->resolveAbilities() );
+		$this->assertSame( array( 'update' => 'specflux/update-post' ), $pack->resolveAbilities() );
 	}
 
 	public function test_resolve_abilities_caches_per_request(): void {
@@ -283,7 +283,7 @@ final class PackRegistryTest extends TestCase {
 	/**
 	 * A pack whose namespace preference list, ungrantable verbs, and input
 	 * properties are all injectable — the S19 commerce-pack shape (prefers
-	 * `woocommerce/` and ends with `senroflux/`).
+	 * `woocommerce/` and ends with `specflux/`).
 	 *
 	 * @param list<string>         $namespaces        Preference-ordered namespaces.
 	 * @param list<string>         $input_properties  Properties the client sends.
@@ -342,7 +342,7 @@ final class PackRegistryTest extends TestCase {
 	}
 
 	public function test_resolver_prefers_a_registered_and_compatible_third_party_namespace(): void {
-		$GLOBALS['senroflux_test_abilities']['woocommerce/foo'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['woocommerce/foo'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'woocommerce/foo',
 			true,
 			array(),
@@ -350,20 +350,20 @@ final class PackRegistryTest extends TestCase {
 			array( 'properties' => array( 'id' => array( 'type' => 'integer' ) ) )
 		);
 
-		$pack = $this->namespacedPack( array( 'woocommerce/', 'senroflux/' ), array( 'id' ) );
+		$pack = $this->namespacedPack( array( 'woocommerce/', 'specflux/' ), array( 'id' ) );
 
 		$this->assertSame( array( 'read' => 'woocommerce/foo' ), $pack->resolveAbilities() );
 	}
 
-	public function test_resolver_falls_back_to_senroflux_when_the_preferred_namespace_is_not_registered(): void {
-		$pack = $this->namespacedPack( array( 'woocommerce/', 'senroflux/' ), array( 'id' ) );
+	public function test_resolver_falls_back_to_specflux_site_agent_when_the_preferred_namespace_is_not_registered(): void {
+		$pack = $this->namespacedPack( array( 'woocommerce/', 'specflux/' ), array( 'id' ) );
 
-		$this->assertSame( array( 'read' => 'senroflux/foo' ), $pack->resolveAbilities() );
+		$this->assertSame( array( 'read' => 'specflux/foo' ), $pack->resolveAbilities() );
 	}
 
-	public function test_resolver_falls_back_to_senroflux_when_the_preferred_namespace_is_incompatible(): void {
+	public function test_resolver_falls_back_to_specflux_site_agent_when_the_preferred_namespace_is_incompatible(): void {
 		// Registered, but missing a property the pack's client sends.
-		$GLOBALS['senroflux_test_abilities']['woocommerce/foo'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['woocommerce/foo'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'woocommerce/foo',
 			true,
 			array(),
@@ -371,37 +371,37 @@ final class PackRegistryTest extends TestCase {
 			array( 'properties' => array() )
 		);
 
-		$pack = $this->namespacedPack( array( 'woocommerce/', 'senroflux/' ), array( 'id' ) );
+		$pack = $this->namespacedPack( array( 'woocommerce/', 'specflux/' ), array( 'id' ) );
 
-		$this->assertSame( array( 'read' => 'senroflux/foo' ), $pack->resolveAbilities() );
+		$this->assertSame( array( 'read' => 'specflux/foo' ), $pack->resolveAbilities() );
 	}
 
-	public function test_default_ability_namespaces_is_core_then_senroflux(): void {
+	public function test_default_ability_namespaces_is_core_then_specflux_site_agent(): void {
 		$pack = $this->namespacedPack( array( 'core/', Pack::POLYFILL_NAMESPACE ), array() );
 
-		$this->assertSame( array( 'core/', 'senroflux/' ), $pack->abilityNamespaces() );
+		$this->assertSame( array( 'core/', 'specflux/' ), $pack->abilityNamespaces() );
 	}
 
-	public function test_base_pack_default_ability_namespaces_is_core_then_senroflux(): void {
+	public function test_base_pack_default_ability_namespaces_is_core_then_specflux_site_agent(): void {
 		$pack = $this->pack( 'pages', array( 'read' => 'read-content' ) );
 
-		$this->assertSame( array( 'core/', 'senroflux/' ), $pack->abilityNamespaces() );
+		$this->assertSame( array( 'core/', 'specflux/' ), $pack->abilityNamespaces() );
 	}
 
-	public function test_registry_refuses_a_pack_whose_namespace_list_does_not_end_with_senroflux(): void {
-		$GLOBALS['senroflux_test_doing_it_wrong'] = array();
+	public function test_registry_refuses_a_pack_whose_namespace_list_does_not_end_with_specflux_site_agent(): void {
+		$GLOBALS['specflux_site_agent_test_doing_it_wrong'] = array();
 
 		$registry = new PackRegistry();
 		$registry->register( $this->namespacedPack( array( 'woocommerce/', 'core/' ) ) );
 
 		$this->assertNull( $registry->get( 'commerce-fixture' ), 'a misconfigured pack is never stored' );
 		$this->assertSame( array(), $registry->all() );
-		$this->assertNotEmpty( $GLOBALS['senroflux_test_doing_it_wrong'] ?? array(), 'the refusal is reported' );
+		$this->assertNotEmpty( $GLOBALS['specflux_site_agent_test_doing_it_wrong'] ?? array(), 'the refusal is reported' );
 	}
 
-	public function test_registry_accepts_a_pack_whose_list_ends_with_senroflux(): void {
+	public function test_registry_accepts_a_pack_whose_list_ends_with_specflux_site_agent(): void {
 		$registry = new PackRegistry();
-		$registry->register( $this->namespacedPack( array( 'woocommerce/', 'senroflux/' ) ) );
+		$registry->register( $this->namespacedPack( array( 'woocommerce/', 'specflux/' ) ) );
 
 		$this->assertNotNull( $registry->get( 'commerce-fixture' ) );
 	}
@@ -411,29 +411,29 @@ final class PackRegistryTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_registry_refuses_a_pack_with_an_ungoverned_earlier_namespace(): void {
-		$GLOBALS['senroflux_test_doing_it_wrong'] = array();
+		$GLOBALS['specflux_site_agent_test_doing_it_wrong'] = array();
 
 		$registry = new PackRegistry();
-		$registry->register( $this->namespacedPack( array( 'novamira/', 'senroflux/' ) ) );
+		$registry->register( $this->namespacedPack( array( 'novamira/', 'specflux/' ) ) );
 
 		$this->assertNull( $registry->get( 'commerce-fixture' ), 'a pack with an ungoverned earlier namespace is never stored' );
 		$this->assertSame( array(), $registry->all() );
-		$this->assertNotEmpty( $GLOBALS['senroflux_test_doing_it_wrong'] ?? array(), 'the refusal is reported' );
+		$this->assertNotEmpty( $GLOBALS['specflux_site_agent_test_doing_it_wrong'] ?? array(), 'the refusal is reported' );
 
-		$reported = implode( ' ', array_column( $GLOBALS['senroflux_test_doing_it_wrong'], 'message' ) );
+		$reported = implode( ' ', array_column( $GLOBALS['specflux_site_agent_test_doing_it_wrong'], 'message' ) );
 		$this->assertStringContainsString( 'novamira/', $reported, 'the offending namespace is named' );
 	}
 
 	public function test_registry_accepts_woocommerce_as_an_earlier_namespace(): void {
 		$registry = new PackRegistry();
-		$registry->register( $this->namespacedPack( array( 'woocommerce/', 'senroflux/' ) ) );
+		$registry->register( $this->namespacedPack( array( 'woocommerce/', 'specflux/' ) ) );
 
 		$this->assertNotNull( $registry->get( 'commerce-fixture' ) );
 	}
 
 	public function test_registry_accepts_core_as_an_earlier_namespace(): void {
 		$registry = new PackRegistry();
-		$registry->register( $this->namespacedPack( array( 'core/', 'senroflux/' ) ) );
+		$registry->register( $this->namespacedPack( array( 'core/', 'specflux/' ) ) );
 
 		$this->assertNotNull( $registry->get( 'commerce-fixture' ) );
 	}
@@ -446,12 +446,12 @@ final class PackRegistryTest extends TestCase {
 
 			/** @return list<string> */
 			public function abilityNamespaces(): array {
-				return array( 'acme/', 'senroflux/' );
+				return array( 'acme/', 'specflux/' );
 			}
 
 			/** @return list<string> */
 			public function governedNamespaces(): array {
-				return array( 'senroflux/', 'acme/' );
+				return array( 'specflux/', 'acme/' );
 			}
 
 			/** @return array<string,int> */
@@ -474,7 +474,7 @@ final class PackRegistryTest extends TestCase {
 
 	public function test_registry_accepts_a_default_only_namespace_list(): void {
 		$registry = new PackRegistry();
-		$registry->register( $this->namespacedPack( array( 'senroflux/' ) ) );
+		$registry->register( $this->namespacedPack( array( 'specflux/' ) ) );
 
 		$this->assertNotNull( $registry->get( 'commerce-fixture' ) );
 	}
@@ -495,7 +495,7 @@ final class PackRegistryTest extends TestCase {
 
 	public function test_preflight_returns_skills_too_large_when_ceiling_exceeded(): void {
 		add_filter(
-			'senroflux_skills_max_tokens',
+			'specflux_site_agent_skills_max_tokens',
 			static fn ( int $max ): int => min( $max, 1 ),
 			10,
 			1
@@ -562,13 +562,13 @@ final class PackRegistryTest extends TestCase {
 
 		// S9 direct-allow reading: with no argument-aware predicate the verb
 		// IS the ability id.
-		$this->assertSame( 'senroflux/read-thing', $pack->verbFor( 'senroflux/read-thing', array( 'status' => 'publish' ) ) );
+		$this->assertSame( 'specflux/read-thing', $pack->verbFor( 'specflux/read-thing', array( 'status' => 'publish' ) ) );
 	}
 
 	public function test_a_pack_with_roles_governs_the_polyfill_namespace(): void {
 		$pack = $this->pack( 'shop', array( 'read' => 'read-thing' ) );
 
-		$this->assertSame( array( 'senroflux/' ), $pack->governedNamespaces() );
+		$this->assertSame( array( 'specflux/' ), $pack->governedNamespaces() );
 	}
 
 	public function test_a_pack_without_roles_governs_nothing(): void {
@@ -595,8 +595,8 @@ final class PackRegistryTest extends TestCase {
 
 		$this->assertSame(
 			array(
-				'senroflux/read-thing'   => 0,
-				'senroflux/update-thing' => 2,
+				'specflux/read-thing'   => 0,
+				'specflux/update-thing' => 2,
 			),
 			$pack->agentSafetyVerbMap()
 		);
@@ -605,7 +605,7 @@ final class PackRegistryTest extends TestCase {
 	public function test_agent_safety_verb_map_fails_closed_for_an_undeclared_role(): void {
 		$pack = $this->pack( 'shop', array( 'delete' => 'delete-thing' ) );
 
-		$this->assertSame( array( 'senroflux/delete-thing' => 2 ), $pack->agentSafetyVerbMap() );
+		$this->assertSame( array( 'specflux/delete-thing' => 2 ), $pack->agentSafetyVerbMap() );
 	}
 
 	public function test_agent_safety_verb_map_fails_closed_for_a_verb_missing_from_the_map(): void {
@@ -616,7 +616,7 @@ final class PackRegistryTest extends TestCase {
 			array( 'read' => array( 'shop/read' ) )
 		);
 
-		$this->assertSame( array( 'senroflux/read-thing' => 2 ), $pack->agentSafetyVerbMap() );
+		$this->assertSame( array( 'specflux/read-thing' => 2 ), $pack->agentSafetyVerbMap() );
 	}
 
 	public function test_registry_merge_keeps_the_higher_tier_for_a_shared_ability(): void {
@@ -638,13 +638,13 @@ final class PackRegistryTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( array( 'senroflux/update-thing' => 2 ), $registry->agentSafetyVerbMap() );
-		$this->assertSame( array( 'senroflux/' ), $registry->governedNamespaces() );
+		$this->assertSame( array( 'specflux/update-thing' => 2 ), $registry->agentSafetyVerbMap() );
+		$this->assertSame( array( 'specflux/' ), $registry->governedNamespaces() );
 	}
 
 	public function test_contribute_to_agent_safety_feeds_both_companion_filters(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			fn ( array $packs ): array => $packs + array(
 				'shop' => $this->pack(
 					'shop',
@@ -662,19 +662,19 @@ final class PackRegistryTest extends TestCase {
 
 		PackRegistry::contributeToAgentSafety();
 
-		$this->assertContains( 'senroflux/', $this->applyAgentSafetyFilter( 'agent_safety_governed_namespaces', array( 'core/' ) ) );
+		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'belayline_governed_namespaces', array( 'core/' ) ) );
 		$this->assertSame(
 			array(
-				'core/read-content'      => 0,
-				'senroflux/update-thing' => 2,
+				'core/read-content'     => 0,
+				'specflux/update-thing' => 2,
 			),
-			$this->applyAgentSafetyFilter( 'agent_safety_verb_map', array( 'core/read-content' => 0 ) )
+			$this->applyAgentSafetyFilter( 'belayline_verb_map', array( 'core/read-content' => 0 ) )
 		);
 	}
 
 	public function test_an_existing_verb_map_entry_is_never_overwritten(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			fn ( array $packs ): array => $packs + array(
 				'shop' => $this->pack(
 					'shop',
@@ -690,21 +690,21 @@ final class PackRegistryTest extends TestCase {
 		PackRegistry::contributeToAgentSafety();
 
 		// Another contributor already answered for this ability: leave it be.
-		$map = $this->applyAgentSafetyFilter( 'agent_safety_verb_map', array( 'senroflux/update-thing' => 1 ) );
-		$this->assertSame( array( 'senroflux/update-thing' => 1 ), $map );
+		$map = $this->applyAgentSafetyFilter( 'belayline_verb_map', array( 'specflux/update-thing' => 1 ) );
+		$this->assertSame( array( 'specflux/update-thing' => 1 ), $map );
 	}
 
 	public function test_plugin_govern_registers_the_pages_pack_governance(): void {
 		Plugin::instance()->govern();
 
-		$this->assertContains( 'senroflux/', $this->applyAgentSafetyFilter( 'agent_safety_governed_namespaces', array() ) );
+		$this->assertContains( 'specflux/', $this->applyAgentSafetyFilter( 'belayline_governed_namespaces', array() ) );
 
-		$map = $this->applyAgentSafetyFilter( 'agent_safety_verb_map', array() );
-		$this->assertSame( 0, $map['senroflux/read-content'] ?? null );
-		$this->assertSame( 1, $map['senroflux/create-post'] ?? null );
+		$map = $this->applyAgentSafetyFilter( 'belayline_verb_map', array() );
+		$this->assertSame( 0, $map['specflux/read-content'] ?? null );
+		$this->assertSame( 1, $map['specflux/create-post'] ?? null );
 		// 0.3 S4: update-post is draft-state edits only now (Tier 1); the
 		// publish transition moved to its own ability, publish-post (Tier 2).
-		$this->assertSame( 1, $map['senroflux/update-post'] ?? null );
-		$this->assertSame( 2, $map['senroflux/publish-post'] ?? null );
+		$this->assertSame( 1, $map['specflux/update-post'] ?? null );
+		$this->assertSame( 2, $map['specflux/publish-post'] ?? null );
 	}
 }

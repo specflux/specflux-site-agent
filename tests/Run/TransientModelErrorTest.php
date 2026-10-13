@@ -8,28 +8,28 @@
  * — even after the run had already published pages, set the front page, and
  * updated navigation. A transient network/timeout error (or a 429/5xx from
  * the AI Client's own HTTP exceptions, surfaced via
- * {@see \Specflux\SenroFlux\Model\AiClientGateway}'s WP_Error data) now keeps
+ * {@see \Specflux\SiteAgent\Model\AiClientGateway}'s WP_Error data) now keeps
  * the run `running` and retries on the caller's next tick, failing as
  * `model_error` only after 3 CONSECUTIVE transient failures with no
  * successful model turn in between. A non-transient error (e.g. an auth
  * failure) still fails immediately.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -69,9 +69,9 @@ final class TransientModelErrorTest extends TestCase {
 			}
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array();
 	}
 
 	private function createRun(): int {
@@ -233,7 +233,7 @@ final class TransientModelErrorTest extends TestCase {
 	 */
 	public function test_writes_finished_completes_unverified_when_transient_errors_exhaust_the_retry_budget(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'agsafe-smoke/write' => VerbTier::TIER_1 ),
 			20,
 			1
@@ -263,7 +263,7 @@ final class TransientModelErrorTest extends TestCase {
 		$this->store->updateRun( $run_id, array( 'accepted_plan_step_id' => $plan_seq ) );
 
 		$write_message              = ( new UserMessage(
-			array( new MessagePart( new FunctionResponse( 'call_w', 'agsafe_smoke_write', array( 'ok' => true ) ) ) )
+			array( new MessagePart( new FunctionResponse( 'call_w', 'belayline_smoke_write', array( 'ok' => true ) ) ) )
 		) )->toArray();
 		$write_message['plan_verb'] = 'agsafe-smoke/write';
 		$this->store->appendStep( $run_id, StepKind::ToolResult, $write_message, 'wpab__agsafe-smoke__write', null, 'ok' );

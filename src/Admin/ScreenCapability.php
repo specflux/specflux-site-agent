@@ -5,14 +5,14 @@
  * TARGET REPO PATH: src/Admin/ScreenCapability.php
  *
  * S13 gives one capability (`manage_options`, filterable through
- * `senroflux_runs_capability`) the right to see/start/answer/act/cancel ANY
+ * `specflux_site_agent_runs_capability`) the right to see/start/answer/act/cancel ANY
  * run from the Runs screen, not only the runs they own. The Runner enforces
- * owner-only ticking by default and opens the `senroflux_can_tick` seam for
+ * owner-only ticking by default and opens the `specflux_site_agent_can_tick` seam for
  * exactly this delegation.
  *
  * Both human seams need the SAME allowance:
  *   - the admin-post park handlers ({@see RunsScreen}), and
- *   - the admin-ajax poll the same screen drives ({@see \Specflux\SenroFlux\Http\Ajax}).
+ *   - the admin-ajax poll the same screen drives ({@see \Specflux\SiteAgent\Http\Ajax}).
  *
  * Before this helper existed only the first installed it, so polling a
  * DELEGATED run 403'd while the form submission on the very same page worked.
@@ -23,21 +23,21 @@
  *   - scoped to ONE run id (a screen tick never blanket-allows other runs);
  *   - removed in a `finally`, so it cannot leak past the call.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Admin;
+namespace Specflux\SiteAgent\Admin;
 
-use Specflux\SenroFlux\Packs\PackRegistry;
+use Specflux\SiteAgent\Packs\PackRegistry;
 use WP_Error;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The screen capability, and the scoped `senroflux_can_tick` allowance.
+ * The screen capability, and the scoped `specflux_site_agent_can_tick` allowance.
  */
 final class ScreenCapability {
 
@@ -52,12 +52,12 @@ final class ScreenCapability {
 	public const NOBODY = 'do_not_allow';
 
 	/** The filter a site uses to move the screen to another capability. */
-	public const FILTER = 'senroflux_runs_capability';
+	public const FILTER = 'specflux_site_agent_runs_capability';
 
 	/**
 	 * The capability required for the Runs screen (0.3 S10): the FIRST
 	 * registered pack's run capability the CURRENT viewer holds, else
-	 * {@see NOBODY}. `senroflux_runs_capability` is applied AFTER that
+	 * {@see NOBODY}. `specflux_site_agent_runs_capability` is applied AFTER that
 	 * computation, as the existing escape hatch.
 	 *
 	 * This one capability gates the top-level menu's visibility (S10) and
@@ -72,7 +72,7 @@ final class ScreenCapability {
 	 * the first pack a viewer is capable of running decides the screen
 	 * capability for everything they see there (a viewer capable of more than
 	 * one pack still only needs ONE to unlock the screen; which pack they may
-	 * actually start is decided again, per pack, by {@see \Specflux\SenroFlux\Packs\Pack::preflight()}).
+	 * actually start is decided again, per pack, by {@see \Specflux\SiteAgent\Packs\Pack::preflight()}).
 	 */
 	public static function current(): string {
 		$computed = self::computedDefault();
@@ -80,7 +80,7 @@ final class ScreenCapability {
 		// The hook name is spelled out (not `self::FILTER`) so static analysis
 		// and hook scanners can see it; the constant exists for callers/tests.
 		/** Filters the capability required for the Runs screen. `@internal`. */
-		$capability = apply_filters( 'senroflux_runs_capability', $computed );
+		$capability = apply_filters( 'specflux_site_agent_runs_capability', $computed );
 
 		// Fail closed: a filter that returns something unusable must not turn
 		// into an empty capability string (which `current_user_can` treats as
@@ -122,8 +122,8 @@ final class ScreenCapability {
 	public static function tickAsScreen( int $run_id, callable $tick ): array|WP_Error {
 		if ( ! self::held() ) {
 			return new WP_Error(
-				'senroflux_forbidden',
-				__( 'Insufficient permissions.', 'senroflux' ),
+				'specflux_site_agent_forbidden',
+				__( 'Insufficient permissions.', 'specflux-site-agent' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -138,7 +138,7 @@ final class ScreenCapability {
 			return $can;
 		};
 
-		add_filter( 'senroflux_can_tick', $callback, 10, 2 );
+		add_filter( 'specflux_site_agent_can_tick', $callback, 10, 2 );
 
 		try {
 			$result = $tick();
@@ -146,12 +146,12 @@ final class ScreenCapability {
 			return ( is_array( $result ) || $result instanceof WP_Error )
 				? $result
 				: new WP_Error(
-					'senroflux_bad_request',
-					__( 'The run could not be advanced.', 'senroflux' ),
+					'specflux_site_agent_bad_request',
+					__( 'The run could not be advanced.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 		} finally {
-			remove_filter( 'senroflux_can_tick', $callback, 10 );
+			remove_filter( 'specflux_site_agent_can_tick', $callback, 10 );
 		}
 	}
 }

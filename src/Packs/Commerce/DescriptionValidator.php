@@ -7,25 +7,25 @@
  * `woocommerce/product-create` and `woocommerce/product-update` are Woo-owned
  * abilities: this pack never registers them and can never add its own
  * validation inside their `execute_callback`. The enforcement seam is
- * {@see \Specflux\SenroFlux\Packs\Pack::validateCall()}, which
- * {@see \Specflux\SenroFlux\Run\Runner::executeCall()} calls BEFORE the
+ * {@see \Specflux\SiteAgent\Packs\Pack::validateCall()}, which
+ * {@see \Specflux\SiteAgent\Run\Runner::executeCall()} calls BEFORE the
  * ability's own `check_permissions()`/`execute()` — see
- * {@see \Specflux\SenroFlux\Packs\Commerce\CommercePack::validateCall()}.
+ * {@see \Specflux\SiteAgent\Packs\Commerce\CommercePack::validateCall()}.
  *
  * Allowed tags (S19): `p`, `ul`, `ol`, `li`, `strong`, `em`, `a` (href
  * checked by the SAME rule the pages pack's Validator uses — reused via
- * {@see \Specflux\SenroFlux\Packs\Pages\Validator::urlIsSafe()}, never
+ * {@see \Specflux\SiteAgent\Packs\Pages\Validator::urlIsSafe()}, never
  * copied) and `h3`. At most 1,500 words. Anything outside the allow-list is
  * REFUSED, never silently stripped (S19: "never stripped").
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
-use Specflux\SenroFlux\Packs\Pages\Validator as PagesValidator;
+use Specflux\SiteAgent\Packs\Pages\Validator as PagesValidator;
 use WP_Error;
 
 // Bail on direct access.
@@ -54,7 +54,7 @@ final class DescriptionValidator {
 				'disallowed_tag',
 				sprintf(
 					/* translators: %s: the disallowed HTML tag name. */
-					__( 'Product descriptions may not use <%s>. Allowed tags: p, ul, ol, li, strong, em, a, h3.', 'senroflux' ),
+					__( 'Product descriptions may not use <%s>. Allowed tags: p, ul, ol, li, strong, em, a, h3.', 'specflux-site-agent' ),
 					$tag
 				),
 				array( 'status' => 400 )
@@ -64,7 +64,7 @@ final class DescriptionValidator {
 		if ( $this->hasUnsafeHref( $html ) ) {
 			return new WP_Error(
 				'unsafe_url',
-				__( 'A link in this description uses a URL scheme that is not allowed.', 'senroflux' ),
+				__( 'A link in this description uses a URL scheme that is not allowed.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -75,7 +75,7 @@ final class DescriptionValidator {
 				'description_too_long',
 				sprintf(
 					/* translators: 1: word count sent, 2: the maximum allowed. */
-					__( 'This description is %1$d words; the maximum is %2$d.', 'senroflux' ),
+					__( 'This description is %1$d words; the maximum is %2$d.', 'specflux-site-agent' ),
 					$words,
 					self::MAX_WORDS
 				),

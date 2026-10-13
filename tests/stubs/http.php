@@ -11,19 +11,19 @@
  *
  * `wp_send_json_*` in real WordPress WRITES and then `die()`s. Dying is the
  * behaviour under test — a handler that "refuses" must not fall through to the
- * tick — so the shims throw {@see SenroFluxJsonResponse}, which carries the
+ * tick — so the shims throw {@see SpecfluxSiteAgentJsonResponse}, which carries the
  * payload and the HTTP status for assertions.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-if ( ! class_exists( 'SenroFluxJsonResponse', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgentJsonResponse', false ) ) {
 	/**
 	 * The JSON a handler sent, thrown in place of WordPress's `die()`.
 	 */
-	class SenroFluxJsonResponse extends RuntimeException {
+	class SpecfluxSiteAgentJsonResponse extends RuntimeException {
 
 		/**
 		 * @param bool                 $success Whether wp_send_json_success was used.
@@ -31,7 +31,7 @@ if ( ! class_exists( 'SenroFluxJsonResponse', false ) ) {
 		 * @param int                  $status  HTTP status.
 		 */
 		public function __construct( public readonly bool $success, public readonly mixed $data, public readonly int $status ) {
-			parent::__construct( 'senroflux-json' );
+			parent::__construct( 'specflux-site-agent-json' );
 		}
 
 		/** The error code in the payload, or '' when there is none. */
@@ -49,7 +49,7 @@ if ( ! function_exists( 'wp_send_json_error' ) ) {
 	 * @param int   $status_code HTTP status.
 	 */
 	function wp_send_json_error( mixed $data = null, int $status_code = 200 ): void {
-		throw new SenroFluxJsonResponse( false, $data, $status_code ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test double: nothing is printed, the payload is asserted on.
+		throw new SpecfluxSiteAgentJsonResponse( false, $data, $status_code ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test double: nothing is printed, the payload is asserted on.
 	}
 }
 
@@ -61,7 +61,7 @@ if ( ! function_exists( 'wp_send_json_success' ) ) {
 	 * @param int   $status_code HTTP status.
 	 */
 	function wp_send_json_success( mixed $data = null, int $status_code = 200 ): void {
-		throw new SenroFluxJsonResponse( true, $data, $status_code ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test double: nothing is printed, the payload is asserted on.
+		throw new SpecfluxSiteAgentJsonResponse( true, $data, $status_code ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- a test double: nothing is printed, the payload is asserted on.
 	}
 }
 

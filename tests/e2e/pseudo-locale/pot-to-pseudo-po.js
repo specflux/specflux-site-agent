@@ -164,14 +164,14 @@ const PSEUDO_HEADER = ( locale ) =>
 	[
 		'msgid ""',
 		'msgstr ""',
-		'"Project-Id-Version: SenroFlux pseudo-locale\\n"',
-		'"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/senroflux\\n"',
+		'"Project-Id-Version: Specflux Site Agent pseudo-locale\\n"',
+		'"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/specflux-site-agent\\n"',
 		'"MIME-Version: 1.0\\n"',
 		'"Content-Type: text/plain; charset=UTF-8\\n"',
 		'"Content-Transfer-Encoding: 8bit\\n"',
 		`"Language: ${ locale }\\n"`,
 		'"Plural-Forms: nplurals=2; plural=(n != 1);\\n"',
-		'"X-Domain: senroflux\\n"',
+		'"X-Domain: specflux-site-agent\\n"',
 	].join( '\n' );
 
 function serializeEntry( entry ) {

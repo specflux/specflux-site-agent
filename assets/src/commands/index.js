@@ -12,7 +12,7 @@
  * assumed: `useCommandLoader()`'s hook is called as `hook( { search } )` with
  * the RAW text currently typed into the palette input
  * (`node_modules/@wordpress/commands/src/hooks/use-command-loader.js`'s own
- * doc example builds a per-record label the exact same way), so "SenroFlux:
+ * doc example builds a per-record label the exact same way), so "Specflux Site Agent:
  * run "<typed text>"" is not a guess — it is what the documented loader
  * contract supports. No static fallback command is registered.
  *
@@ -36,14 +36,14 @@ import { addQueryArgs } from '@wordpress/url';
  * @param {Object} args
  * @param {string} args.search The text currently typed into the command palette.
  */
-export function useSenrofluxRunCommandLoader( { search } ) {
+export function useSpecfluxSiteAgentRunCommandLoader( { search } ) {
 	const goal = ( search || '' ).trim();
 
 	if ( '' === goal ) {
 		return { commands: [], isLoading: false };
 	}
 
-	const config = window.senrofluxCommandsConfig || {};
+	const config = window.specfluxSiteAgentCommandsConfig || {};
 	if ( ! config.runsUrl ) {
 		return { commands: [], isLoading: false };
 	}
@@ -51,16 +51,16 @@ export function useSenrofluxRunCommandLoader( { search } ) {
 	return {
 		commands: [
 			{
-				name: 'senroflux/run-typed-goal',
+				name: 'specflux/run-typed-goal',
 				label: sprintf(
 					/* translators: %s: the text currently typed into the command palette. */
-					__( 'SenroFlux: run "%s"', 'senroflux' ),
+					__( 'Specflux Site Agent: run "%s"', 'specflux-site-agent' ),
 					goal
 				),
 				// Never used as the palette's search value — the label above
 				// (which already contains the typed text) is what renders,
 				// this only keeps the item matchable while typing continues.
-				searchLabel: sprintf( 'senroflux run %s', goal ),
+				searchLabel: sprintf( 'specflux-site-agent run %s', goal ),
 				callback: ( { close } ) => {
 					close();
 					// A NEW TAB, not `window.location.href` — closing the
@@ -76,6 +76,6 @@ export function useSenrofluxRunCommandLoader( { search } ) {
 }
 
 dispatch( commandsStore ).registerCommandLoader( {
-	name: 'senroflux/run-goal',
-	hook: useSenrofluxRunCommandLoader,
+	name: 'specflux/run-goal',
+	hook: useSpecfluxSiteAgentRunCommandLoader,
 } );

@@ -4,17 +4,17 @@
  * the admin-ajax surface decodes are sanitized right after decoding, without
  * loosening the exact-shape checks that run afterwards.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Run\Resume;
-use Specflux\SenroFlux\Run\RunStatus;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Run\Resume;
+use Specflux\SiteAgent\Run\RunStatus;
 
 final class AjaxSanitizeTest extends TestCase {
 

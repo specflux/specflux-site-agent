@@ -2,12 +2,12 @@
 /**
  * Model-gateway contract (the Runner's single seam to the AI Client).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -25,9 +25,9 @@ interface ModelGatewayInterface {
 	 *
 	 * @param list<\WordPress\AiClient\Messages\DTO\Message> $history           History messages.
 	 * @param string                                          $system_instruction System instruction.
-	 * @param \Specflux\SenroFlux\Tools\ToolRegistry          $tools             Admitted tools.
+	 * @param \Specflux\SiteAgent\Tools\ToolRegistry          $tools             Admitted tools.
 	 * @param array{0:string,1:string}|null                   $model_preference  Optional `[provider id, model id]` preference; null lets the AI Client auto-select.
-	 * @return \Specflux\SenroFlux\Model\ModelTurn|\WP_Error
+	 * @return \Specflux\SiteAgent\Model\ModelTurn|\WP_Error
 	 */
-	public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error;
+	public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error;
 }

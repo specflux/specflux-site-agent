@@ -4,23 +4,23 @@
  * instruction record, the skills_changed drift note, the ceiling failure,
  * and the start-time snapshot.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -40,15 +40,15 @@ final class SkillsAuditTest extends TestCase {
 		$this->db      = new wpdb();
 		$this->store   = new WpdbRunStore( $this->db );
 		$this->gateway = new FakeGateway();
-		$this->runner  = new Runner( $this->store, new ToolExecutor(), $this->gateway, new \Specflux\SenroFlux\Approval\ApprovalBridge() );
+		$this->runner  = new Runner( $this->store, new ToolExecutor(), $this->gateway, new \Specflux\SiteAgent\Approval\ApprovalBridge() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array();
 		// The S7 plan fence is separately tested in PlanParkTest. These tests
 		// exercise the approval/park mechanics with fence-free (tier-0) verbs.
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array(
 				'agsafe-smoke/spend'   => 0,
 				'agsafe-smoke/blocked' => 0,
@@ -61,10 +61,10 @@ final class SkillsAuditTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_run_skills' );
-		remove_all_filters( 'senroflux_system_instruction' );
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
+		remove_all_filters( 'specflux_site_agent_system_instruction' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 	private function createRun(): int {
@@ -117,7 +117,7 @@ final class SkillsAuditTest extends TestCase {
 
 		// A consumer adds a skill between ticks: the fingerprint drifts.
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static fn ( array $skills ): array => array_merge(
 				$skills,
 				array( new Skill( 'consumer/extra', 'Extra', 'Extra guidance.', false, SkillSource::Consumer ) )
@@ -148,7 +148,7 @@ final class SkillsAuditTest extends TestCase {
 	public function test_a_ceiling_breach_fails_the_run_without_truncating(): void {
 		$run_id = $this->createRun();
 		add_filter(
-			'senroflux_skills_max_tokens',
+			'specflux_site_agent_skills_max_tokens',
 			static fn (): int => 1,
 			10,
 			0
@@ -163,7 +163,7 @@ final class SkillsAuditTest extends TestCase {
 		$this->assertCount( 0, $this->gateway->calls, 'no model call on a failed render' );
 
 		// The harness skills' bodies are untouched (never truncated).
-		foreach ( \Specflux\SenroFlux\Skills\SkillSet::harnessSkills() as $skill ) {
+		foreach ( \Specflux\SiteAgent\Skills\SkillSet::harnessSkills() as $skill ) {
 			$this->assertGreaterThan( 40, strlen( $skill->body ) );
 		}
 	}
@@ -173,8 +173,8 @@ final class SkillsAuditTest extends TestCase {
 	 *
 	 * @param list<Skill> $skills The pack's skills, in render order.
 	 */
-	private function packWith( array $skills ): \Specflux\SenroFlux\Packs\Pack {
-		$pack = new class() extends \Specflux\SenroFlux\Packs\Pack {
+	private function packWith( array $skills ): \Specflux\SiteAgent\Packs\Pack {
+		$pack = new class() extends \Specflux\SiteAgent\Packs\Pack {
 			/** @var list<Skill> */
 			public array $packSkills = array();
 
@@ -206,16 +206,16 @@ final class SkillsAuditTest extends TestCase {
 	}
 
 	/** A runner whose pack resolver always answers `$pack`. */
-	private function runnerWithPack( \Specflux\SenroFlux\Packs\Pack $pack ): Runner {
+	private function runnerWithPack( \Specflux\SiteAgent\Packs\Pack $pack ): Runner {
 		return new Runner(
 			$this->store,
 			new ToolExecutor(),
 			$this->gateway,
-			new \Specflux\SenroFlux\Approval\ApprovalBridge(),
+			new \Specflux\SiteAgent\Approval\ApprovalBridge(),
 			null,
 			null,
 			null,
-			static function ( \Specflux\SenroFlux\Run\Run $run ) use ( $pack ): \Specflux\SenroFlux\Packs\Pack {
+			static function ( \Specflux\SiteAgent\Run\Run $run ) use ( $pack ): \Specflux\SiteAgent\Packs\Pack {
 				unset( $run );
 
 				return $pack;
@@ -267,7 +267,7 @@ final class SkillsAuditTest extends TestCase {
 		// The drift appears once and STAYS: the same consumer filter is on for
 		// the rest of the run.
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static fn ( array $skills ): array => array_merge(
 				$skills,
 				array( new Skill( 'consumer/extra', 'Extra', 'Extra guidance.', false, SkillSource::Consumer ) )
@@ -296,7 +296,7 @@ final class SkillsAuditTest extends TestCase {
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = $this->textTurn( 'Done.' );
 		add_filter(
-			'senroflux_system_instruction',
+			'specflux_site_agent_system_instruction',
 			static fn ( string $text ): string => $text . "\nHOST OVERRIDE",
 			10,
 			1

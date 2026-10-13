@@ -7,17 +7,17 @@
  *
  * `Content\Abilities` checks `instanceof ThemePatternSource` before treating a
  * `sections` write item's `pattern`/`slots` form as anything but a refusal —
- * this keeps the posts pack (whose {@see \Specflux\SenroFlux\Packs\Posts\Vocabulary}
+ * this keeps the posts pack (whose {@see \Specflux\SiteAgent\Packs\Posts\Vocabulary}
  * does NOT implement this interface) from ever seeing a theme pattern, without
  * changing the shared {@see Vocabulary} contract every content pack must
  * implement.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -48,7 +48,7 @@ interface ThemePatternSource {
 	 * a `sections` item sent a curated pattern's name through the
 	 * numbered-slot `{pattern, slots}` form only theme-derived patterns
 	 * accept, and got the SAME generic "not available" message a genuine typo
-	 * would — {@see \Specflux\SenroFlux\Packs\Content\Abilities::themePatternUnknownError()}
+	 * would — {@see \Specflux\SiteAgent\Packs\Content\Abilities::themePatternUnknownError()}
 	 * uses this to say what is actually wrong instead).
 	 */
 	public function isCuratedPatternName( string $name ): bool;

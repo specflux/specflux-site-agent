@@ -8,7 +8,7 @@
  * ALWAYS from Agent Safety's classifier — never from the model.
  *
  * Stage 4 has no pack, so its verb map comes from the site-wide
- * `senroflux_verb_map` filter: verb => int (0 = read/free, 1 = write/fenced,
+ * `specflux_site_agent_verb_map` filter: verb => int (0 = read/free, 1 = write/fenced,
  * 2 = irreversible/grants). Stage 6 replaces this seam with the pack's real
  * map: the RUNNER resolves each call through {@see self::tierFor()} passing
  * the pack's map, and the plan annotation threads the same map through
@@ -18,12 +18,12 @@
  * (irreversible) — an unmapped verb in a plan or a call is the most
  * restrictive reading, never a free pass.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -45,12 +45,12 @@ final class VerbTier {
 	/**
 	 * The site-wide filter name backing the stage-4 verb map.
 	 */
-	public const VERB_MAP_FILTER = 'senroflux_verb_map';
+	public const VERB_MAP_FILTER = 'specflux_site_agent_verb_map';
 
 	/**
 	 * Resolve one verb's tier.
 	 *
-	 * When `$verb_map` is null the map is read from the `senroflux_verb_map`
+	 * When `$verb_map` is null the map is read from the `specflux_site_agent_verb_map`
 	 * filter (value: verb => int, optionally threaded with the run id so a
 	 * stage-6 pack can return a per-run map). Unknown verbs default to tier 2
 	 * (fail closed).
@@ -80,7 +80,7 @@ final class VerbTier {
 	}
 
 	/**
-	 * The verb map for a run, from the `senroflux_verb_map` filter. Value is a
+	 * The verb map for a run, from the `specflux_site_agent_verb_map` filter. Value is a
 	 * verb => int (0/1/2) map; non-array returns collapse to the empty map.
 	 *
 	 * @param int|null $run_id Optional run id (stage 6 pack seam).
@@ -94,7 +94,7 @@ final class VerbTier {
 		 * @param array<string,int> $verb_map Default empty map.
 		 * @param int|null          $run_id   The run id, when known (stage 6).
 		 */
-		$verb_map = apply_filters( 'senroflux_verb_map', array(), $run_id );
+		$verb_map = apply_filters( 'specflux_site_agent_verb_map', array(), $run_id );
 
 		return is_array( $verb_map ) ? $verb_map : array();
 	}

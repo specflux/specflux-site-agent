@@ -2,12 +2,12 @@
 /**
  * One model turn's outcome.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

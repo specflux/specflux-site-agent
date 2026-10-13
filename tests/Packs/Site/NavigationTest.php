@@ -10,17 +10,17 @@
  * `navigation_links_unpublished` ordering refusal, and the S8 stale-write
  * refusal.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Navigation;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Site\Navigation;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use wpdb;
 
 final class NavigationTest extends TestCase {
@@ -37,17 +37,17 @@ final class NavigationTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']               = array();
-		$GLOBALS['senroflux_test_ability_categories']      = array();
-		$GLOBALS['senroflux_test_posts']                   = array();
-		$GLOBALS['senroflux_test_next_post_id']            = 100;
-		$GLOBALS['senroflux_test_user_caps']               = array( 'edit_theme_options' => true );
-		$GLOBALS['senroflux_test_is_block_theme']          = true;
-		$GLOBALS['senroflux_test_header_template_content'] = null;
-		$GLOBALS['senroflux_test_nav_fallback']            = null;
-		$GLOBALS['senroflux_test_registered_nav_menus']    = array();
-		$GLOBALS['senroflux_test_nav_menu_locations']      = array();
-		$GLOBALS['senroflux_test_nav_menu_items']          = array();
+		$GLOBALS['specflux_site_agent_test_abilities']               = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories']      = array();
+		$GLOBALS['specflux_site_agent_test_posts']                   = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']            = 100;
+		$GLOBALS['specflux_site_agent_test_user_caps']               = array( 'edit_theme_options' => true );
+		$GLOBALS['specflux_site_agent_test_is_block_theme']          = true;
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = null;
+		$GLOBALS['specflux_site_agent_test_nav_fallback']            = null;
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus']    = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']      = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_items']          = array();
 
 		Navigation::reset();
 		Navigation::registerCategory();
@@ -63,11 +63,11 @@ final class NavigationTest extends TestCase {
 	}
 
 	private function readAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/read-navigation'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/read-navigation'];
 	}
 
 	private function updateAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/update-navigation'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/update-navigation'];
 	}
 
 	/**
@@ -106,7 +106,7 @@ final class NavigationTest extends TestCase {
 	public function test_block_theme_resolves_via_header_ref(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Home","url":"https://example.test/"} /-->' );
 
-		$GLOBALS['senroflux_test_header_template_content'] =
+		$GLOBALS['specflux_site_agent_test_header_template_content'] =
 			'<!-- wp:group --><div class="wp-block-group"><!-- wp:navigation {"ref":' . $nav_id . '} /--></div><!-- /wp:group -->';
 
 		$result = $this->readAbility()->execute();
@@ -120,10 +120,10 @@ final class NavigationTest extends TestCase {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Fallback item","url":"https://example.test/"} /-->' );
 
 		// The header DOES have a Navigation block, but it carries no ref —
-		// SenroFlux must never assume one and must fall through to the
+		// Specflux Site Agent must never assume one and must fall through to the
 		// fallback resolver instead.
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation /-->';
-		$GLOBALS['senroflux_test_nav_fallback']            = $nav_id;
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation /-->';
+		$GLOBALS['specflux_site_agent_test_nav_fallback']            = $nav_id;
 
 		$result = $this->readAbility()->execute();
 
@@ -134,8 +134,8 @@ final class NavigationTest extends TestCase {
 	public function test_block_theme_falls_back_when_no_header_template_exists(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Only via fallback","url":"https://example.test/"} /-->' );
 
-		$GLOBALS['senroflux_test_header_template_content'] = null;
-		$GLOBALS['senroflux_test_nav_fallback']            = $nav_id;
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = null;
+		$GLOBALS['specflux_site_agent_test_nav_fallback']            = $nav_id;
 
 		$result = $this->readAbility()->execute();
 
@@ -143,15 +143,15 @@ final class NavigationTest extends TestCase {
 	}
 
 	public function test_classic_theme_resolves_first_registered_location_with_an_assignment(): void {
-		$GLOBALS['senroflux_test_is_block_theme']       = false;
-		$GLOBALS['senroflux_test_registered_nav_menus'] = array(
+		$GLOBALS['specflux_site_agent_test_is_block_theme']       = false;
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus'] = array(
 			'primary' => 'Primary',
 			'footer'  => 'Footer',
 		);
 		// Only "footer" has an assignment — "primary" is registered FIRST but
 		// unassigned, so resolution must still land on "footer".
-		$GLOBALS['senroflux_test_nav_menu_locations'] = array( 'footer' => 5 );
-		$GLOBALS['senroflux_test_nav_menu_items'][5]  = array(
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations'] = array( 'footer' => 5 );
+		$GLOBALS['specflux_site_agent_test_nav_menu_items'][5]  = array(
 			1 => (object) array(
 				'ID'         => 1,
 				'title'      => 'Classic item',
@@ -170,7 +170,7 @@ final class NavigationTest extends TestCase {
 
 	public function test_page_list_navigation_is_reported_as_page_list(): void {
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] =
+		$GLOBALS['specflux_site_agent_test_header_template_content'] =
 			'<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$result = $this->readAbility()->execute();
@@ -188,7 +188,7 @@ final class NavigationTest extends TestCase {
 			)
 		);
 		$nav_id  = $this->insertNav( '' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 		$this->readAbility()->execute(); // Prime the read marker.
 
 		$result = $this->updateAbility()->execute(
@@ -209,7 +209,7 @@ final class NavigationTest extends TestCase {
 
 	public function test_update_navigation_refuses_a_stale_write(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Original","url":"https://example.test/"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		// Never read via the ability — the run has no recorded marker at all,
 		// which fails closed exactly like an external edit would.
@@ -231,7 +231,7 @@ final class NavigationTest extends TestCase {
 
 	public function test_update_navigation_succeeds_after_a_read_and_persists_items(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Original","url":"https://example.test/"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 		$this->readAbility()->execute();
 
 		$result = $this->updateAbility()->execute(
@@ -256,7 +256,7 @@ final class NavigationTest extends TestCase {
 
 	public function test_update_navigation_sanitizes_a_model_supplied_label_and_url(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Original","url":"https://example.test/"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 		$this->readAbility()->execute();
 
 		$this->updateAbility()->execute(
@@ -335,7 +335,7 @@ final class NavigationTest extends TestCase {
 		$this->insertRealPage( 'Home' );
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$error = Navigation::filterPlanError( null, $this->stepsWithVerbs( array( 'site/create-draft' ) ) );
 
@@ -353,7 +353,7 @@ final class NavigationTest extends TestCase {
 			'<!-- wp:navigation-link {"label":"Home","id":' . $home_id . ',"kind":"post-type","type":"page"} /-->'
 			. '<!-- wp:navigation-link {"label":"Sample Page","id":' . $sample_id . ',"kind":"post-type","type":"page"} /-->'
 		);
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$error = Navigation::filterPlanError( null, $this->stepsWithVerbs( array( 'site/publish' ) ) );
 
@@ -366,7 +366,7 @@ final class NavigationTest extends TestCase {
 		$this->insertRealPage( 'Home' );
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$steps = array_merge(
 			$this->stepsWithVerbs( array( 'site/create-draft' ) ),
@@ -381,7 +381,7 @@ final class NavigationTest extends TestCase {
 		$this->insertRealPage( 'Home' );
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$error = Navigation::filterPlanError( null, $this->stepsWithVerbs( array( 'site/create-draft' ) ) );
 
@@ -402,7 +402,7 @@ final class NavigationTest extends TestCase {
 		);
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$error = Navigation::filterPlanError( null, $this->stepsWithVerbs( array( 'site/create-draft' ) ) );
 
@@ -413,7 +413,7 @@ final class NavigationTest extends TestCase {
 		$this->insertStockSamplePage();
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		// 'pages/create-draft' is the PAGES pack's own verb, never the site
 		// pack's — this plan is not a site-pack plan and must be untouched.
@@ -426,7 +426,7 @@ final class NavigationTest extends TestCase {
 		$this->insertStockSamplePage();
 
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$earlier_error = new \WP_Error( 'page_needs_image', 'Some earlier check already refused this plan.' );
 
@@ -438,7 +438,7 @@ final class NavigationTest extends TestCase {
 	public function test_read_navigation_reports_the_stock_sample_page_id_as_a_hint(): void {
 		$sample_id = $this->insertStockSamplePage();
 		$nav_id    = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$result = $this->readAbility()->execute();
 
@@ -448,7 +448,7 @@ final class NavigationTest extends TestCase {
 	public function test_read_navigation_reports_null_stock_sample_page_when_there_is_none(): void {
 		$this->insertRealPage( 'Home' );
 		$nav_id = $this->insertNav( '<!-- wp:page-list /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$result = $this->readAbility()->execute();
 
@@ -507,10 +507,10 @@ final class NavigationTest extends TestCase {
 	}
 
 	private function useClassicMenu(): void {
-		$GLOBALS['senroflux_test_is_block_theme']       = false;
-		$GLOBALS['senroflux_test_registered_nav_menus'] = array( 'primary' => 'Primary' );
-		$GLOBALS['senroflux_test_nav_menu_locations']   = array( 'primary' => 5 );
-		$GLOBALS['senroflux_test_nav_menu_items'][5]    = array(
+		$GLOBALS['specflux_site_agent_test_is_block_theme']       = false;
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus'] = array( 'primary' => 'Primary' );
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']   = array( 'primary' => 5 );
+		$GLOBALS['specflux_site_agent_test_nav_menu_items'][5]    = array(
 			1 => (object) array(
 				'ID'               => 1,
 				'title'            => 'Old',
@@ -525,7 +525,7 @@ final class NavigationTest extends TestCase {
 
 	private function useBlockNav( string $content ): int {
 		$nav_id = $this->insertNav( $content );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		return $nav_id;
 	}
@@ -537,7 +537,7 @@ final class NavigationTest extends TestCase {
 		$result = $this->updateAbility()->execute( array( 'items' => $this->j6Items() ) );
 
 		$this->assertIsArray( $result );
-		$saved = array_values( $GLOBALS['senroflux_test_nav_menu_items'][5] );
+		$saved = array_values( $GLOBALS['specflux_site_agent_test_nav_menu_items'][5] );
 		usort( $saved, static fn ( $a, $b ): int => $a->menu_order <=> $b->menu_order );
 		$this->assertSame( array( 'Services', 'Web Design', 'SEO Audits', 'Hosting', 'Contact' ), array_map( static fn ( $i ) => $i->title, $saved ) );
 
@@ -585,7 +585,7 @@ final class NavigationTest extends TestCase {
 
 	public function test_read_returns_parents_for_a_classic_menu(): void {
 		$this->useClassicMenu();
-		$GLOBALS['senroflux_test_nav_menu_items'][5][2] = (object) array(
+		$GLOBALS['specflux_site_agent_test_nav_menu_items'][5][2] = (object) array(
 			'ID'               => 2,
 			'title'            => 'Child',
 			'url'              => 'https://example.test/child',
@@ -715,22 +715,22 @@ final class NavigationTest extends TestCase {
 	public function test_bad_nesting_is_refused_and_classic_menu_is_untouched( array $items, string $code ): void {
 		$this->useClassicMenu();
 		$this->readAbility()->execute();
-		$before = $GLOBALS['senroflux_test_nav_menu_items'];
+		$before = $GLOBALS['specflux_site_agent_test_nav_menu_items'];
 
 		$result = $this->updateAbility()->execute( array( 'items' => $items ) );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 		$this->assertSame( $code, $result->get_error_code() );
-		$this->assertEquals( $before, $GLOBALS['senroflux_test_nav_menu_items'] );
+		$this->assertEquals( $before, $GLOBALS['specflux_site_agent_test_nav_menu_items'] );
 	}
 
 	public function test_classic_write_surfaces_a_failed_menu_item_instead_of_dropping_it(): void {
 		$this->useClassicMenu();
 		$this->readAbility()->execute();
-		$GLOBALS['senroflux_test_nav_item_failure'] = 'Web Design';
+		$GLOBALS['specflux_site_agent_test_nav_item_failure'] = 'Web Design';
 
 		$result = $this->updateAbility()->execute( array( 'items' => $this->j6Items() ) );
-		unset( $GLOBALS['senroflux_test_nav_item_failure'] );
+		unset( $GLOBALS['specflux_site_agent_test_nav_item_failure'] );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 	}

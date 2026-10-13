@@ -9,15 +9,15 @@
  * and escaped; that the filter is registered once per request; and that
  * nothing renders for a non-matching verb.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
 
 final class CommerceSummaryTest extends TestCase {
 
@@ -28,16 +28,16 @@ final class CommerceSummaryTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_posts']                    = array();
-		$GLOBALS['senroflux_test_product_rows']             = array();
-		$GLOBALS['senroflux_test_products']                 = array();
-		$GLOBALS['senroflux_test_orders']                   = array();
-		$GLOBALS['senroflux_test_coupon_codes']             = array();
-		$GLOBALS['senroflux_test_coupon_meta']              = array();
-		$GLOBALS['senroflux_test_shipping_zones']           = array();
-		$GLOBALS['senroflux_test_tax_rates']                = array();
-		$GLOBALS['senroflux_test_countries']                = array();
-		$GLOBALS['senroflux_test_gateway_supports_refunds'] = true;
+		$GLOBALS['specflux_site_agent_test_posts']                    = array();
+		$GLOBALS['specflux_site_agent_test_product_rows']             = array();
+		$GLOBALS['specflux_site_agent_test_products']                 = array();
+		$GLOBALS['specflux_site_agent_test_orders']                   = array();
+		$GLOBALS['specflux_site_agent_test_coupon_codes']             = array();
+		$GLOBALS['specflux_site_agent_test_coupon_meta']              = array();
+		$GLOBALS['specflux_site_agent_test_shipping_zones']           = array();
+		$GLOBALS['specflux_site_agent_test_tax_rates']                = array();
+		$GLOBALS['specflux_site_agent_test_countries']                = array();
+		$GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] = true;
 		remove_all_filters( CommerceSummary::HOOK );
 	}
 
@@ -46,20 +46,20 @@ final class CommerceSummaryTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	private function seedPost( int $id, string $title, string $post_type = 'product' ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = $post_type;
-		$post->post_title                       = $title;
-		$post->post_status                      = 'publish';
-		$post->post_name                        = '';
-		$post->post_parent                      = 0;
-		$post->post_excerpt                     = '';
-		$post->post_content                     = '';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post               = new \stdClass();
+		$post->ID           = $id;
+		$post->post_type    = $post_type;
+		$post->post_title   = $title;
+		$post->post_status  = 'publish';
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$post->post_content = '';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	private function seedProduct( int $id, string $name, string $regular_price, string $sale_price = '', ?int $stock = null ): void {
-		$GLOBALS['senroflux_test_product_rows'][ $id ] = (object) array(
+		$GLOBALS['specflux_site_agent_test_product_rows'][ $id ] = (object) array(
 			'name'           => $name,
 			'regular_price'  => $regular_price,
 			'sale_price'     => $sale_price,
@@ -69,7 +69,7 @@ final class CommerceSummaryTest extends TestCase {
 	}
 
 	private function seedOrder( int $id, float $total, float $refunded = 0.0, string $payment_method = 'bacs', string $billing_email = '' ): void {
-		$GLOBALS['senroflux_test_orders'][ $id ] = (object) array(
+		$GLOBALS['specflux_site_agent_test_orders'][ $id ] = (object) array(
 			'total'          => $total,
 			'total_refunded' => $refunded,
 			'payment_method' => $payment_method,
@@ -81,7 +81,7 @@ final class CommerceSummaryTest extends TestCase {
 
 	private function seedCoupon( int $id, string $code, string $amount, string $discount_type, ?string $expires, ?int $usage_limit ): void {
 		$this->seedPost( $id, $code, 'shop_coupon' );
-		$GLOBALS['senroflux_test_coupon_meta'][ $id ] = (object) array(
+		$GLOBALS['specflux_site_agent_test_coupon_meta'][ $id ] = (object) array(
 			'discount_type' => $discount_type,
 			'amount'        => $amount,
 			'expires'       => $expires,
@@ -101,7 +101,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/product-update',
+			'specflux/product-update',
 			array(
 				'id'            => 100,
 				'regular_price' => '5.00',
@@ -119,7 +119,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/product-update',
+			'specflux/product-update',
 			array(
 				'id'         => 100,
 				'sale_price' => '7.00',
@@ -140,7 +140,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/product-update',
+			'specflux/product-update',
 			array(
 				'id'     => 100,
 				'status' => 'publish',
@@ -158,7 +158,7 @@ final class CommerceSummaryTest extends TestCase {
 		// for a product that has not been created yet.
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/product-create',
+			'specflux/product-create',
 			array(
 				'name'          => 'New Mug',
 				'status'        => 'publish',
@@ -182,7 +182,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 5,
 				'amount'   => 30.0,
@@ -205,7 +205,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 5,
 				'amount'   => 10.0,
@@ -223,7 +223,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
 				'order_id' => 5,
 				'amount'   => 10.0,
@@ -244,7 +244,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/order-add-note',
+			'specflux/order-add-note',
 			array(
 				'id'            => 5,
 				'note'          => 'Your order shipped today.',
@@ -261,7 +261,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/order-add-note',
+			'specflux/order-add-note',
 			array(
 				'id'            => 5,
 				'note'          => 'Internal only',
@@ -281,7 +281,7 @@ final class CommerceSummaryTest extends TestCase {
 		// a competing value — coupon-enable's input is just the id.
 		$this->seedCoupon( 200, 'SUMMER15', '15', 'percent', '2026-12-31', 3 );
 
-		$sum = CommerceSummary::filter( 'plain', 'senroflux/coupon-enable', array( 'coupon_id' => 200 ) );
+		$sum = CommerceSummary::filter( 'plain', 'specflux/coupon-enable', array( 'coupon_id' => 200 ) );
 
 		$this->assertStringContainsString( 'SUMMER15', $sum );
 		$this->assertStringContainsString( '15 percent', $sum );
@@ -292,7 +292,7 @@ final class CommerceSummaryTest extends TestCase {
 	public function test_coupon_enable_unlimited_usage_is_labelled(): void {
 		$this->seedCoupon( 200, 'FREESHIP', '0', 'fixed_cart', null, null );
 
-		$sum = CommerceSummary::filter( 'plain', 'senroflux/coupon-enable', array( 'coupon_id' => 200 ) );
+		$sum = CommerceSummary::filter( 'plain', 'specflux/coupon-enable', array( 'coupon_id' => 200 ) );
 
 		$this->assertStringContainsString( 'usage limit unlimited', $sum );
 		$this->assertStringContainsString( 'expiry none', $sum );
@@ -303,7 +303,7 @@ final class CommerceSummaryTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_shipping_zone_shows_previous_name_beside_proposed(): void {
-		$GLOBALS['senroflux_test_shipping_zones'][7] = array(
+		$GLOBALS['specflux_site_agent_test_shipping_zones'][7] = array(
 			'name'      => 'Old Zone',
 			'locations' => array(),
 			'methods'   => array(),
@@ -311,7 +311,7 @@ final class CommerceSummaryTest extends TestCase {
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'zone_id'   => 7,
 				'name'      => 'New Zone',
@@ -325,7 +325,7 @@ final class CommerceSummaryTest extends TestCase {
 	}
 
 	public function test_shipping_zone_existing_shows_current_regions_and_methods_beside_proposed(): void {
-		$GLOBALS['senroflux_test_shipping_zones'][7] = array(
+		$GLOBALS['specflux_site_agent_test_shipping_zones'][7] = array(
 			'name'      => 'Old Zone',
 			'locations' => array(
 				array(
@@ -335,14 +335,14 @@ final class CommerceSummaryTest extends TestCase {
 			),
 			'methods'   => array( 'free_shipping' ),
 		);
-		$GLOBALS['senroflux_test_countries']         = array(
+		$GLOBALS['specflux_site_agent_test_countries']         = array(
 			'US' => 'United States',
 			'CA' => 'Canada',
 		);
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'zone_id'   => 7,
 				'name'      => 'North America',
@@ -362,11 +362,11 @@ final class CommerceSummaryTest extends TestCase {
 	}
 
 	public function test_shipping_zone_new_shows_current_none_regions_and_each_method_cost(): void {
-		$GLOBALS['senroflux_test_countries'] = array( 'CA' => 'Canada' );
+		$GLOBALS['specflux_site_agent_test_countries'] = array( 'CA' => 'Canada' );
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Canada',
 				'locations' => array( array( 'code' => 'country:CA' ) ),
@@ -392,11 +392,11 @@ final class CommerceSummaryTest extends TestCase {
 	}
 
 	public function test_shipping_zone_unknown_region_falls_back_to_code(): void {
-		$GLOBALS['senroflux_test_countries'] = array( 'CA' => 'Canada' );
+		$GLOBALS['specflux_site_agent_test_countries'] = array( 'CA' => 'Canada' );
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Odd',
 				'locations' => array(
@@ -414,7 +414,7 @@ final class CommerceSummaryTest extends TestCase {
 	public function test_shipping_zone_escapes_html_in_method_label(): void {
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'Z',
 				'locations' => array(),
@@ -435,7 +435,7 @@ final class CommerceSummaryTest extends TestCase {
 	public function test_shipping_zone_create_has_no_previous(): void {
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
 				'name'      => 'New Zone',
 				'locations' => array(),
@@ -447,11 +447,11 @@ final class CommerceSummaryTest extends TestCase {
 	}
 
 	public function test_tax_rate_shows_previous_rate_beside_proposed(): void {
-		$GLOBALS['senroflux_test_tax_rates'][9] = array( 'tax_rate' => '5.0000' );
+		$GLOBALS['specflux_site_agent_test_tax_rates'][9] = array( 'tax_rate' => '5.0000' );
 
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'tax_rate_id' => 9,
 				'country'     => 'US',
@@ -470,7 +470,7 @@ final class CommerceSummaryTest extends TestCase {
 	public function test_tax_rate_new_shows_current_none_and_where(): void {
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
 				'country'  => 'CA',
 				'state'    => 'ON',
@@ -492,7 +492,7 @@ final class CommerceSummaryTest extends TestCase {
 	public function test_report_save_shows_title_and_private_note(): void {
 		$sum = CommerceSummary::filter(
 			'plain',
-			'senroflux/save-store-report',
+			'specflux/save-store-report',
 			array(
 				'title'  => 'Q3 store health',
 				'markup' => '<p>...</p>',
@@ -511,13 +511,13 @@ final class CommerceSummaryTest extends TestCase {
 		$this->seedPost( 100, 'Blue Mug' );
 		$this->seedProduct( 100, 'Blue Mug', '10.00' );
 
-		$sum = CommerceSummary::filter( 'plain', 'senroflux/product-update', array( 'id' => 100 ) );
+		$sum = CommerceSummary::filter( 'plain', 'specflux/product-update', array( 'id' => 100 ) );
 
 		$this->assertSame( 'plain', $sum );
 	}
 
 	public function test_passthrough_for_an_unrelated_verb(): void {
-		$sum = CommerceSummary::filter( 'plain', 'senroflux/read-content', array( 'id' => 100 ) );
+		$sum = CommerceSummary::filter( 'plain', 'specflux/read-content', array( 'id' => 100 ) );
 
 		$this->assertSame( 'plain', $sum );
 	}
@@ -533,7 +533,7 @@ final class CommerceSummaryTest extends TestCase {
 		remove_all_filters( CommerceSummary::HOOK );
 		CommerceSummary::boot();
 
-		$registered = $GLOBALS['senroflux_test_filters'][ CommerceSummary::HOOK ][10] ?? array();
+		$registered = $GLOBALS['specflux_site_agent_test_filters'][ CommerceSummary::HOOK ][10] ?? array();
 		$this->assertCount( 1, $registered );
 		$this->assertSame( array( CommerceSummary::class, 'filter' ), $registered[0][0] );
 	}

@@ -5,30 +5,30 @@
  *
  * TARGET REPO PATH: tests/Http/AjaxPollingAuthTest.php
  *
- * The defect these tests pin: `RunsScreen` installed a `senroflux_can_tick`
+ * The defect these tests pin: `RunsScreen` installed a `specflux_site_agent_can_tick`
  * allowance around its park handlers, but `Ajax::handleTick()` did not. So a
  * screen-capability holder viewing SOMEONE ELSE'S run could answer its park
  * (form → allowance → OK) while the poll on the very same page 403'd — and
  * `runs.js` swallowed it, leaving a frozen page.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFluxJsonResponse;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgentJsonResponse;
 use WP_Error;
 use wpdb;
 
@@ -40,35 +40,35 @@ final class AjaxPollingAuthTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
 		unset( $_POST );
 		// 0.3 S10: the screen capability is now computed from the registered
 		// packs; this file is about the DELEGATION allowance, not that
 		// computation — pin the pre-0.3 fixed value.
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'manage_options' );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 		unset( $_POST );
 	}
 
 	public function test_polling_someone_elses_run_without_the_screen_capability_is_forbidden(): void {
 		// `read` only: an ordinary logged-in user, no delegation.
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$json = $this->pollForeignRun();
 
 		$this->assertFalse( $json->success );
 		$this->assertSame( 403, $json->status );
-		$this->assertSame( 'senroflux_forbidden', $json->code() );
+		$this->assertSame( 'specflux_site_agent_forbidden', $json->code() );
 	}
 
 	public function test_polling_someone_elses_run_with_the_screen_capability_is_allowed(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'read'           => true,
 			'manage_options' => true,
 		);
@@ -78,12 +78,12 @@ final class AjaxPollingAuthTest extends TestCase {
 		// The tick gets PAST the ownership gate. What it does next (the fake
 		// gateway refuses to generate) is not this test's business — the point
 		// is that it is no longer a 403.
-		$this->assertNotSame( 'senroflux_forbidden', $json->code() );
+		$this->assertNotSame( 'specflux_site_agent_forbidden', $json->code() );
 		$this->assertNotSame( 403, $json->status );
 	}
 
 	public function test_the_allowance_is_gone_once_the_request_is_over(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'read'           => true,
 			'manage_options' => true,
 		);
@@ -98,10 +98,10 @@ final class AjaxPollingAuthTest extends TestCase {
 		);
 		$this->captureAjaxTick();
 
-		// Nothing may survive the handler: a later `senroflux_can_tick` in the
+		// Nothing may survive the handler: a later `specflux_site_agent_can_tick` in the
 		// same PHP process must fall back to the Runner's owner-only default.
 		$this->assertFalse(
-			(bool) apply_filters( 'senroflux_can_tick', false, $store->getRun( $run_id ) ),
+			(bool) apply_filters( 'specflux_site_agent_can_tick', false, $store->getRun( $run_id ) ),
 			'the delegation allowance was removed after the tick'
 		);
 	}
@@ -111,7 +111,7 @@ final class AjaxPollingAuthTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	/** Poll a run owned by somebody else. */
-	private function pollForeignRun(): SenroFluxJsonResponse {
+	private function pollForeignRun(): SpecfluxSiteAgentJsonResponse {
 		$this->seedRunnerGraph();
 		$run_id = $this->createRun( new WpdbRunStore( $GLOBALS['wpdb'] ) );
 
@@ -124,10 +124,10 @@ final class AjaxPollingAuthTest extends TestCase {
 	}
 
 	/** Run `Ajax::handleTick()` and capture the JSON it would have died with. */
-	private function captureAjaxTick(): SenroFluxJsonResponse {
+	private function captureAjaxTick(): SpecfluxSiteAgentJsonResponse {
 		try {
 			( new Ajax() )->handleTick();
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			return $json;
 		}
 
@@ -139,7 +139,7 @@ final class AjaxPollingAuthTest extends TestCase {
 			self::OWNER,
 			'tests',
 			'A goal',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(
 				'max_steps'      => 5,
 				'max_tool_calls' => 5,

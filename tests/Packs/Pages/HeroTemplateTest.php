@@ -4,15 +4,15 @@
  *
  * TARGET REPO PATH: tests/Packs/Pages/HeroTemplateTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\HeroTemplate;
+use Specflux\SiteAgent\Packs\Pages\HeroTemplate;
 
 final class HeroTemplateTest extends TestCase {
 
@@ -22,12 +22,12 @@ final class HeroTemplateTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = '/no-such-theme';
-		$GLOBALS['senroflux_test_template_dir']   = '/no-such-theme';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = '/no-such-theme';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = '/no-such-theme';
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'] );
 	}
 
 	private function themeDir(): string {
@@ -57,8 +57,8 @@ final class HeroTemplateTest extends TestCase {
 	}
 
 	public function test_theme_has_no_title_template_true_when_theme_ships_it(): void {
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $this->themeDir();
-		$GLOBALS['senroflux_test_template_dir']   = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $this->themeDir();
 
 		$this->assertTrue( HeroTemplate::themeHasNoTitleTemplate() );
 	}
@@ -66,8 +66,8 @@ final class HeroTemplateTest extends TestCase {
 	// --- shouldAssign (the decision the write path acts on) ---------------
 
 	public function test_should_assign_true_for_a_page_with_h1_on_a_theme_that_has_the_template(): void {
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $this->themeDir();
-		$GLOBALS['senroflux_test_template_dir']   = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $this->themeDir();
 
 		$this->assertTrue( HeroTemplate::shouldAssign( 'page', '<h1>Headline</h1>' ) );
 	}
@@ -77,15 +77,15 @@ final class HeroTemplateTest extends TestCase {
 	}
 
 	public function test_should_assign_false_without_an_h1(): void {
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $this->themeDir();
-		$GLOBALS['senroflux_test_template_dir']   = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $this->themeDir();
 
 		$this->assertFalse( HeroTemplate::shouldAssign( 'page', '<h2>Not a headline</h2>' ) );
 	}
 
 	public function test_should_assign_false_for_a_post_even_with_an_h1(): void {
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $this->themeDir();
-		$GLOBALS['senroflux_test_template_dir']   = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $this->themeDir();
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $this->themeDir();
 
 		$this->assertFalse( HeroTemplate::shouldAssign( 'post', '<h1>Headline</h1>' ) );
 	}

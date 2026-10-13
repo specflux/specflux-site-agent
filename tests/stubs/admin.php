@@ -8,7 +8,7 @@
  * guarded) so a real WP load order always wins. These cover the functions the
  * rewritten RunsScreen calls when rendering forms/handlers under bare PHPUnit.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -95,14 +95,14 @@ if ( ! function_exists( 'remove_filter' ) ) {
 	 * so the declared `bool` return raised a TypeError the moment any code
 	 * actually removed a filter, and (b) wiped EVERY callback on the hook —
 	 * including a test's own spy. Both made the scoped-allowance seams
-	 * (`senroflux_can_tick`) untestable.
+	 * (`specflux_site_agent_can_tick`) untestable.
 	 *
 	 * @param string $hook     Filter name.
 	 * @param mixed  $callback The exact callback to remove.
 	 * @param int    $priority The priority it was added at.
 	 */
 	function remove_filter( string $hook, $callback, int $priority = 10 ): bool {
-		$bucket = $GLOBALS['senroflux_test_filters'][ $hook ][ $priority ] ?? null;
+		$bucket = $GLOBALS['specflux_site_agent_test_filters'][ $hook ][ $priority ] ?? null;
 		if ( ! is_array( $bucket ) ) {
 			return false;
 		}
@@ -110,13 +110,13 @@ if ( ! function_exists( 'remove_filter' ) ) {
 		$removed = false;
 		foreach ( $bucket as $index => $entry ) {
 			if ( ( $entry[0] ?? null ) === $callback ) {
-				unset( $GLOBALS['senroflux_test_filters'][ $hook ][ $priority ][ $index ] );
+				unset( $GLOBALS['specflux_site_agent_test_filters'][ $hook ][ $priority ][ $index ] );
 				$removed = true;
 			}
 		}
 
-		if ( array() === $GLOBALS['senroflux_test_filters'][ $hook ][ $priority ] ) {
-			unset( $GLOBALS['senroflux_test_filters'][ $hook ][ $priority ] );
+		if ( array() === $GLOBALS['specflux_site_agent_test_filters'][ $hook ][ $priority ] ) {
+			unset( $GLOBALS['specflux_site_agent_test_filters'][ $hook ][ $priority ] );
 		}
 
 		return $removed;
@@ -149,15 +149,15 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 if ( ! function_exists( 'wp_localize_script' ) ) {
 	/**
 	 * Records the last payload localized under each JS object name, keyed by
-	 * `$object_name` (e.g. `senrofluxRunsConfig`) — a test wanting to assert
+	 * `$object_name` (e.g. `specfluxSiteAgentRunsConfig`) — a test wanting to assert
 	 * on what a screen handed its script reads
-	 * `$GLOBALS['senroflux_test_localized'][ $object_name ]` rather than
+	 * `$GLOBALS['specflux_site_agent_test_localized'][ $object_name ]` rather than
 	 * mocking the WP function itself.
 	 */
 	function wp_localize_script( string $handle, string $object_name, array $data ): bool {
 		unset( $handle );
 
-		$GLOBALS['senroflux_test_localized'][ $object_name ] = $data;
+		$GLOBALS['specflux_site_agent_test_localized'][ $object_name ] = $data;
 
 		return true;
 	}
@@ -203,6 +203,6 @@ if ( ! function_exists( 'checked' ) ) {
 if ( ! function_exists( 'register_setting' ) ) {
 	/** Test knob: records each registration under its option name. */
 	function register_setting( string $group, string $option, array $args = array() ): void {
-		$GLOBALS['senroflux_test_registered_settings'][ $option ] = array( 'group' => $group ) + $args;
+		$GLOBALS['specflux_site_agent_test_registered_settings'][ $option ] = array( 'group' => $group ) + $args;
 	}
 }

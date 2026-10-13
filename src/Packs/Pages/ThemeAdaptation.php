@@ -22,12 +22,12 @@
  * any other kind, a reordered or moved block, or a heading anywhere but the
  * top is not a pattern it knows.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

@@ -6,20 +6,20 @@
  * number. The proof run's report dropped the attachment and the category
  * because three verbs here declared nothing.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Packs\Site\SitePack;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Packs\Site\SitePack;
 
 final class WrittenObjectIdsTest extends TestCase {
 

@@ -5,33 +5,33 @@
  *
  * TARGET REPO PATH: tests/Packs/Commerce/CommercePackTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 final class CommercePackTest extends TestCase {
 
 	protected function setUp(): void {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'senroflux_run_skills' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
 		Plugin::reset();
 	}
 
 	protected function tearDown(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
-		unset( $GLOBALS['senroflux_test_user_caps_by_id'], $GLOBALS['senroflux_test_posts'] );
+		unset( $GLOBALS['specflux_site_agent_test_user_caps_by_id'], $GLOBALS['specflux_site_agent_test_posts'] );
 	}
 
 	public function test_name_is_commerce(): void {
@@ -42,18 +42,18 @@ final class CommercePackTest extends TestCase {
 		$this->assertSame( 'manage_woocommerce', ( new CommercePack() )->runCapability() );
 	}
 
-	public function test_ability_namespaces_prefer_woocommerce_then_senroflux(): void {
-		$this->assertSame( array( 'woocommerce/', 'senroflux/' ), ( new CommercePack() )->abilityNamespaces() );
+	public function test_ability_namespaces_prefer_woocommerce_then_specflux_site_agent(): void {
+		$this->assertSame( array( 'woocommerce/', 'specflux/' ), ( new CommercePack() )->abilityNamespaces() );
 	}
 
 	public function test_requires_agent_safety(): void {
 		$this->assertTrue( ( new CommercePack() )->requiresAgentSafety() );
 	}
 
-	public function test_governs_only_the_senroflux_namespace(): void {
+	public function test_governs_only_the_specflux_site_agent_namespace(): void {
 		// Woo's own module governs woocommerce/*; this pack governs only its
 		// own polyfills (S19).
-		$this->assertSame( array( 'senroflux/' ), ( new CommercePack() )->governedNamespaces() );
+		$this->assertSame( array( 'specflux/' ), ( new CommercePack() )->governedNamespaces() );
 	}
 
 	// ------------------------------------------------------------------
@@ -226,7 +226,7 @@ final class CommercePackTest extends TestCase {
 	public function test_set_product_image_is_product_image(): void {
 		$this->assertSame(
 			'commerce/product-image',
-			( new CommercePack() )->verbFor( 'senroflux/set-product-image', array( 'product_id' => 1 ) )
+			( new CommercePack() )->verbFor( 'specflux/set-product-image', array( 'product_id' => 1 ) )
 		);
 	}
 
@@ -234,32 +234,32 @@ final class CommercePackTest extends TestCase {
 		$pack = new CommercePack();
 
 		$this->assertSame( 'media-search', $pack->roles()['search'] );
-		$this->assertSame( 'commerce/media-search', $pack->verbFor( 'senroflux/media-search', array( 'query' => 'mug' ) ) );
+		$this->assertSame( 'commerce/media-search', $pack->verbFor( 'specflux/media-search', array( 'query' => 'mug' ) ) );
 		$this->assertSame( 0, $pack->verbMap()['commerce/media-search'] );
 		$this->assertSame( array( 'commerce/media-search' ), $pack->roleVerbs()['search'] );
-		$this->assertSame( 'senroflux/media-search', $pack->resolveAbilities()['search'] );
-		$this->assertSame( 'senroflux/media-search', $pack->gateVerbFor( 'commerce/media-search' ) );
-		$this->assertContains( 'senroflux/media-search', $pack->allowList() );
+		$this->assertSame( 'specflux/media-search', $pack->resolveAbilities()['search'] );
+		$this->assertSame( 'specflux/media-search', $pack->gateVerbFor( 'commerce/media-search' ) );
+		$this->assertContains( 'specflux/media-search', $pack->allowList() );
 	}
 
 	public function test_generate_image_is_image_generate(): void {
 		$this->assertSame(
 			'commerce/image-generate',
-			( new CommercePack() )->verbFor( 'senroflux/generate-image', array( 'prompt' => 'a widget' ) )
+			( new CommercePack() )->verbFor( 'specflux/generate-image', array( 'prompt' => 'a widget' ) )
 		);
 	}
 
 	public function test_coupon_create_is_coupon_draft(): void {
 		$this->assertSame(
 			'commerce/coupon-draft',
-			( new CommercePack() )->verbFor( 'senroflux/coupon-create', array( 'code' => 'SAVE10' ) )
+			( new CommercePack() )->verbFor( 'specflux/coupon-create', array( 'code' => 'SAVE10' ) )
 		);
 	}
 
 	public function test_coupon_enable_is_coupon_enable(): void {
 		$this->assertSame(
 			'commerce/coupon-enable',
-			( new CommercePack() )->verbFor( 'senroflux/coupon-enable', array( 'coupon_id' => 1 ) )
+			( new CommercePack() )->verbFor( 'specflux/coupon-enable', array( 'coupon_id' => 1 ) )
 		);
 	}
 
@@ -314,21 +314,21 @@ final class CommercePackTest extends TestCase {
 	public function test_orders_refund_is_refund(): void {
 		$this->assertSame(
 			'commerce/refund',
-			( new CommercePack() )->verbFor( 'senroflux/orders-refund', array( 'order_id' => 1 ) )
+			( new CommercePack() )->verbFor( 'specflux/orders-refund', array( 'order_id' => 1 ) )
 		);
 	}
 
 	public function test_shipping_zone_save_is_shipping_write(): void {
 		$this->assertSame(
 			'commerce/shipping-write',
-			( new CommercePack() )->verbFor( 'senroflux/shipping-zone-save', array( 'name' => 'US' ) )
+			( new CommercePack() )->verbFor( 'specflux/shipping-zone-save', array( 'name' => 'US' ) )
 		);
 	}
 
 	public function test_tax_rate_save_is_tax_write(): void {
 		$this->assertSame(
 			'commerce/tax-write',
-			( new CommercePack() )->verbFor( 'senroflux/tax-rate-save', array( 'country' => 'US' ) )
+			( new CommercePack() )->verbFor( 'specflux/tax-rate-save', array( 'country' => 'US' ) )
 		);
 	}
 
@@ -336,7 +336,7 @@ final class CommercePackTest extends TestCase {
 		$this->assertSame(
 			'commerce/store-report',
 			( new CommercePack() )->verbFor(
-				'senroflux/store-report',
+				'specflux/store-report',
 				array(
 					'from' => '2026-01-01',
 					'to'   => '2026-01-31',
@@ -348,7 +348,7 @@ final class CommercePackTest extends TestCase {
 	public function test_save_store_report_is_report_save(): void {
 		$this->assertSame(
 			'commerce/report-save',
-			( new CommercePack() )->verbFor( 'senroflux/save-store-report', array( 'title' => 'Q1' ) )
+			( new CommercePack() )->verbFor( 'specflux/save-store-report', array( 'title' => 'Q1' ) )
 		);
 	}
 
@@ -425,7 +425,7 @@ final class CommercePackTest extends TestCase {
 	public function test_validate_call_ignores_its_own_polyfills(): void {
 		$this->assertNull(
 			( new CommercePack() )->validateCall(
-				'senroflux/coupon-create',
+				'specflux/coupon-create',
 				array( 'code' => 'SAVE10' )
 			)
 		);
@@ -482,7 +482,7 @@ final class CommercePackTest extends TestCase {
 	}
 
 	public function test_agent_safety_pack_is_null_when_class_absent(): void {
-		if ( class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( class_exists( \Belayline\Packs\Pack::class ) ) {
 			$this->markTestSkipped( 'Agent Safety core is loaded in this environment.' );
 		}
 

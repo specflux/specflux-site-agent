@@ -2,20 +2,20 @@
 /**
  * Old model turns drop bulky structured call arguments from the resent history.
  *
- * @package Specflux\SenroFlux\Tests\Run
+ * @package Specflux\SiteAgent\Tests\Run
  */
 
 declare(strict_types=1);
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use wpdb;
 
 final class HistoryCompactionTest extends TestCase {
@@ -54,7 +54,7 @@ final class HistoryCompactionTest extends TestCase {
 					'type'         => 'function_call',
 					'functionCall' => array(
 						'id'   => 'call_1',
-						'name' => 'wpab__senroflux__publish-post',
+						'name' => 'wpab__specflux__publish-post',
 						'args' => array(
 							'id'       => 19,
 							'sections' => $sections,
@@ -97,7 +97,7 @@ final class HistoryCompactionTest extends TestCase {
 					'type'         => 'function_call',
 					'functionCall' => array(
 						'id'   => 'call_1',
-						'name' => 'wpab__senroflux__create-post',
+						'name' => 'wpab__specflux__create-post',
 						'args' => array( 'sections' => $sections ),
 					),
 				),
@@ -148,7 +148,7 @@ final class HistoryCompactionTest extends TestCase {
 						'type'         => 'function_call',
 						'functionCall' => array(
 							'id'   => 'call_create',
-							'name' => 'wpab__senroflux__create-post',
+							'name' => 'wpab__specflux__create-post',
 							'args' => array( 'sections' => $sections ),
 						),
 					),
@@ -162,7 +162,7 @@ final class HistoryCompactionTest extends TestCase {
 				'role'  => 'user',
 				'parts' => array(),
 			),
-			'wpab__senroflux__create-post',
+			'wpab__specflux__create-post',
 			null,
 			'error'
 		);
@@ -181,7 +181,7 @@ final class HistoryCompactionTest extends TestCase {
 							'type'         => 'function_call',
 							'functionCall' => array(
 								'id'   => $call_id,
-								'name' => 'wpab__senroflux__read-post',
+								'name' => 'wpab__specflux__read-post',
 								'args' => array( 'id' => 1 ),
 							),
 						),
@@ -195,7 +195,7 @@ final class HistoryCompactionTest extends TestCase {
 					'role'  => 'user',
 					'parts' => array(),
 				),
-				'wpab__senroflux__read-post',
+				'wpab__specflux__read-post',
 				null,
 				'ok'
 			);

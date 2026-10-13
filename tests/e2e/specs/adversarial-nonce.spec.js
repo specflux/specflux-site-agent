@@ -18,20 +18,20 @@ const {
  * `check_admin_referer()` as an unconditional no-op (see that file's
  * docblock). Both are exercised here, against REAL WordPress, by talking
  * directly to the admin-post endpoint the park's Approve/Reject buttons hit
- * (`admin_post_senroflux_approval_decision` ->
+ * (`admin_post_specflux_site_agent_approval_decision` ->
  * `RunsScreen::handleApprovalDecision()`), instead of through the screen's
  * own button — the point is to attack the handler itself, forged/replayed
  * nonce included, not the UI affordance around it.
  *
  * `handleApprovalDecision()`:
- *   1. `check_admin_referer( 'senroflux_approval_' . $run_id )` — default
+ *   1. `check_admin_referer( 'specflux_site_agent_approval_' . $run_id )` — default
  *      query arg `_wpnonce`. A failing check calls WordPress core's
  *      `wp_nonce_ays()`, which `wp_die()`s with HTTP 403 ("The link you
  *      followed has expired.") — case (a) below.
  *   2. On success, resumes the parked run via
- *      `senroflux()->tick( $run_id, $step_count, [ 'action' => ... ] )`.
+ *      `specflux_site_agent()->tick( $run_id, $step_count, [ 'action' => ... ] )`.
  *      `$step_count` must match the run's CURRENT step_count
- *      ({@see \Specflux\SenroFlux\Run\Runner::tick()}, `senroflux_conflict`)
+ *      ({@see \Specflux\SiteAgent\Run\Runner::tick()}, `specflux_site_agent_conflict`)
  *      — a stale step_count (a replay of a request whose step_count the
  *      first, successful decision already advanced past) is refused there,
  *      not by nonce single-use semantics (WordPress nonces are valid across
@@ -45,8 +45,8 @@ const {
  * UNRUN: this suite has no wp-env of its own available to the agent that
  * wrote it (see the S19e brief) — it is written against
  * `RunsScreen::handleApprovalDecision()`'s actual field names and error
- * codes (`run_id`, `step_count`, `senroflux_approval_action`, `_wpnonce`,
- * `senroflux_conflict`), but has never been executed. The owner should run
+ * codes (`run_id`, `step_count`, `specflux_site_agent_approval_action`, `_wpnonce`,
+ * `specflux_site_agent_conflict`), but has never been executed. The owner should run
  * it once under `npx playwright test tests/e2e/specs/adversarial-nonce.spec.js`
  * before trusting it as a green gate.
  */
@@ -68,7 +68,7 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 		await waitForPark( page, 'approval', 'Approve this change?' );
 
 		const row = dbQuery(
-			'SELECT id, status, step_count FROM wp_senroflux_runs ORDER BY id DESC LIMIT 1'
+			'SELECT id, status, step_count FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1'
 		);
 		const [ runId, status, stepCount ] = row.split( /\t/ );
 		expect( status, 'run must be parked awaiting_approval before either adversarial case runs' ).toBe(
@@ -78,9 +78,9 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 	}
 
 	function runSnapshot( runId ) {
-		const row = dbQuery( `SELECT status, step_count FROM wp_senroflux_runs WHERE id = ${ Number( runId ) }` );
+		const row = dbQuery( `SELECT status, step_count FROM wp_specflux_site_agent_runs WHERE id = ${ Number( runId ) }` );
 		const [ status, stepCount ] = row.split( /\t/ );
-		const stepRows = dbQuery( `SELECT COUNT(*) FROM wp_senroflux_steps WHERE run_id = ${ Number( runId ) }` );
+		const stepRows = dbQuery( `SELECT COUNT(*) FROM wp_specflux_site_agent_steps WHERE run_id = ${ Number( runId ) }` );
 		return { status, stepCount: Number( stepCount ), stepRows: Number( stepRows ) };
 	}
 
@@ -90,10 +90,10 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 
 		const response = await page.request.post( '/wp-admin/admin-post.php', {
 			form: {
-				action: 'senroflux_approval_decision',
+				action: 'specflux_site_agent_approval_decision',
 				run_id: runId,
 				step_count: String( stepCount ),
-				senroflux_approval_action: 'approve',
+				specflux_site_agent_approval_action: 'approve',
 				_wpnonce: 'deadbeef00', // Well-formed shape, never a real WP nonce for this action/user.
 			},
 			maxRedirects: 0,
@@ -110,8 +110,8 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 	} );
 
 	/**
-	 * The Runs screen resolves parks over admin-ajax `senroflux_tick` with the
-	 * `senroflux_run` nonce (window.senrofluxRunsConfig.nonce) and a `resume`
+	 * The Runs screen resolves parks over admin-ajax `specflux_site_agent_tick` with the
+	 * `specflux_site_agent_run` nonce (window.specfluxSiteAgentRunsConfig.nonce) and a `resume`
 	 * object — that's the real approval path, so both cases below attack it.
 	 * The nonce must come from the browser's own session: WordPress binds
 	 * nonces to the user's session token, so one minted over WP-CLI is never
@@ -119,7 +119,7 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 	 */
 	function tickForm( runId, stepCount, nonce ) {
 		return {
-			action: 'senroflux_tick',
+			action: 'specflux_site_agent_tick',
 			nonce,
 			run_id: runId,
 			step_count: String( stepCount ),
@@ -144,7 +144,7 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 	test( 'a replayed decision request (stale step_count) does not execute twice', async ( { page } ) => {
 		const { runId, stepCount } = await parkAtApproval( page );
 
-		const nonce = await page.evaluate( () => window.senrofluxRunsConfig && window.senrofluxRunsConfig.nonce );
+		const nonce = await page.evaluate( () => window.specfluxSiteAgentRunsConfig && window.specfluxSiteAgentRunsConfig.nonce );
 		expect( nonce, 'the Runs screen must expose its session nonce' ).toMatch( /^[a-f0-9]+$/ );
 		const form = tickForm( runId, stepCount, nonce );
 
@@ -166,7 +166,7 @@ test.describe( 'S22 adversarial: forged and replayed approval nonces', () => {
 		expect( replay.status() ).toBe( 409 );
 		const replayBody = await replay.json();
 		expect( replayBody.success ).toBe( false );
-		expect( replayBody.data.code, 'a replay must be refused as a conflict, not resumed' ).toBe( 'senroflux_conflict' );
+		expect( replayBody.data.code, 'a replay must be refused as a conflict, not resumed' ).toBe( 'specflux_site_agent_conflict' );
 
 		expect( runSnapshot( runId ), 'the replay must not change run state at all — no double execution' ).toEqual(
 			afterFirst

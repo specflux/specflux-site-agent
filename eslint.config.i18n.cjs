@@ -28,7 +28,7 @@ module.exports = [
 		},
 		rules: {
 			'@wordpress/i18n-translator-comments': 'error',
-			'@wordpress/i18n-text-domain': [ 'error', { allowedTextDomain: 'senroflux' } ],
+			'@wordpress/i18n-text-domain': [ 'error', { allowedTextDomain: 'specflux-site-agent' } ],
 			'@wordpress/i18n-no-collapsible-whitespace': 'error',
 			'@wordpress/i18n-no-placeholders-only': 'error',
 			'@wordpress/i18n-no-variables': 'error',

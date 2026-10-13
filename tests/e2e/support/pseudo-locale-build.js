@@ -5,7 +5,7 @@
  * needed for plain Node string work), then `wp i18n make-mo` +
  * `wp i18n make-json --no-purge` back inside the container. Everything
  * lands in `tests/e2e/pseudo-locale/build/` (gitignored, visible inside the
- * container through the existing `wp-content/plugins/senroflux` mount —
+ * container through the existing `wp-content/plugins/specflux-site-agent` mount —
  * this whole path IS that mount, so no extra `.wp-env.json` entry is needed
  * for the build artifacts themselves, only for the mu-plugin below).
  */
@@ -15,19 +15,19 @@ const { wpCli, ROOT } = require( './wp-cli' );
 const { potToPseudoPo } = require( '../pseudo-locale/pot-to-pseudo-po' );
 
 const LOCALE = 'en_XA';
-const CONTAINER_PLUGIN_DIR = '/var/www/html/wp-content/plugins/senroflux';
+const CONTAINER_PLUGIN_DIR = '/var/www/html/wp-content/plugins/specflux-site-agent';
 const BUILD_DIR = path.join( __dirname, '..', 'pseudo-locale', 'build' );
 const CONTAINER_BUILD_DIR = `${ CONTAINER_PLUGIN_DIR }/tests/e2e/pseudo-locale/build`;
 
-const POT_PATH = path.join( BUILD_DIR, 'senroflux.pot' );
-const PO_PATH = path.join( BUILD_DIR, `senroflux-${ LOCALE }.po` );
-const MERGED_JSON_PATH = path.join( BUILD_DIR, `senroflux-${ LOCALE }-merged.json` );
+const POT_PATH = path.join( BUILD_DIR, 'specflux-site-agent.pot' );
+const PO_PATH = path.join( BUILD_DIR, `specflux-site-agent-${ LOCALE }.po` );
+const MERGED_JSON_PATH = path.join( BUILD_DIR, `specflux-site-agent-${ LOCALE }-merged.json` );
 
 /** Merge every per-source-file Jed JSON `make-json` emitted into one file the mu-plugin always serves. */
 function mergeJedJsonFiles() {
 	const files = fs
 		.readdirSync( BUILD_DIR )
-		.filter( ( name ) => new RegExp( `^senroflux-${ LOCALE }-[0-9a-f]{32}\\.json$` ).test( name ) );
+		.filter( ( name ) => new RegExp( `^specflux-site-agent-${ LOCALE }-[0-9a-f]{32}\\.json$` ).test( name ) );
 
 	if ( 0 === files.length ) {
 		throw new Error( 'pseudo-locale setup: wp i18n make-json produced no per-source JSON files to merge' );
@@ -49,7 +49,7 @@ function mergeJedJsonFiles() {
 
 	const merged = {
 		'translation-revision-date': new Date().toISOString(),
-		generator: 'senroflux-pseudo-locale-build',
+		generator: 'specflux-site-agent-pseudo-locale-build',
 		domain: 'messages',
 		locale_data: {
 			messages: {
@@ -74,7 +74,7 @@ function buildPseudoLocale() {
 	// this is a plain generation call for the pseudo-locale build, not the
 	// CI audit step, so no --skip-audit flag either way.
 	wpCli( [
-		'i18n', 'make-pot', CONTAINER_PLUGIN_DIR, `${ CONTAINER_BUILD_DIR }/senroflux.pot`,
+		'i18n', 'make-pot', CONTAINER_PLUGIN_DIR, `${ CONTAINER_BUILD_DIR }/specflux-site-agent.pot`,
 		'--exclude=tests,vendor,node_modules,build,research',
 	] );
 
@@ -85,12 +85,12 @@ function buildPseudoLocale() {
 	fs.writeFileSync( PO_PATH, content, 'utf8' );
 
 	// 3 + 4. Compile to .mo (PHP) and per-file .json (JS), back in the container.
-	wpCli( [ 'i18n', 'make-mo', `${ CONTAINER_BUILD_DIR }/senroflux-${ LOCALE }.po`, CONTAINER_BUILD_DIR ] );
-	wpCli( [ 'i18n', 'make-json', `${ CONTAINER_BUILD_DIR }/senroflux-${ LOCALE }.po`, CONTAINER_BUILD_DIR, '--no-purge' ] );
+	wpCli( [ 'i18n', 'make-mo', `${ CONTAINER_BUILD_DIR }/specflux-site-agent-${ LOCALE }.po`, CONTAINER_BUILD_DIR ] );
+	wpCli( [ 'i18n', 'make-json', `${ CONTAINER_BUILD_DIR }/specflux-site-agent-${ LOCALE }.po`, CONTAINER_BUILD_DIR, '--no-purge' ] );
 
 	const mergedPath = mergeJedJsonFiles();
 
-	return { entryCount: count, poPath: PO_PATH, moPath: path.join( BUILD_DIR, `senroflux-${ LOCALE }.mo` ), jsonPath: mergedPath };
+	return { entryCount: count, poPath: PO_PATH, moPath: path.join( BUILD_DIR, `specflux-site-agent-${ LOCALE }.mo` ), jsonPath: mergedPath };
 }
 
 module.exports = { buildPseudoLocale, LOCALE, BUILD_DIR, ROOT };

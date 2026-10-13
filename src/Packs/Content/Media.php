@@ -2,20 +2,20 @@
 /**
  * The media/attachment/term registrar shared by every content pack (0.3 S5,
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
-use Specflux\SenroFlux\Model\AiClientMediaGateway;
-use Specflux\SenroFlux\Model\ImageCapability;
-use Specflux\SenroFlux\Model\MediaGatewayInterface;
-use Specflux\SenroFlux\Model\OpenverseStockImageGateway;
-use Specflux\SenroFlux\Model\StockImageGatewayInterface;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\RunStore;
+use Specflux\SiteAgent\Model\AiClientMediaGateway;
+use Specflux\SiteAgent\Model\ImageCapability;
+use Specflux\SiteAgent\Model\MediaGatewayInterface;
+use Specflux\SiteAgent\Model\OpenverseStockImageGateway;
+use Specflux\SiteAgent\Model\StockImageGatewayInterface;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\RunStore;
 use WP_Error;
 
 // Bail on direct access.
@@ -51,7 +51,7 @@ defined( 'ABSPATH' ) || exit;
  * giving the ability a real, persistent count across ticks.
  *
  * ATTACHMENT CAP (S5): `update-alt` refuses a 26th DISTINCT attachment in one
- * run. Tracked in the SAME `objects_json` map {@see \Specflux\SenroFlux\Run\Tracker}
+ * run. Tracked in the SAME `objects_json` map {@see \Specflux\SiteAgent\Run\Tracker}
  * already uses for the S12 re-read nudge, under keys prefixed `media-alt:` so
  * an attachment id can never collide with a post/page id recorded by
  * {@see Abilities}.
@@ -75,7 +75,7 @@ final class Media {
 	/**
 	 * The ability category for the media abilities.
 	 */
-	public const CATEGORY = 'senroflux-media';
+	public const CATEGORY = 'specflux-media';
 
 	/**
 	 * `list-missing-alt` never returns more than this many attachments, and
@@ -104,9 +104,9 @@ final class Media {
 
 	/**
 	 * The type-qualified id prefix an attachment carries in the S12
-	 * written-object set (defect fix): {@see \Specflux\SenroFlux\Packs\Pack::objectIdPrefix()}
+	 * written-object set (defect fix): {@see \Specflux\SiteAgent\Packs\Pack::objectIdPrefix()}
 	 * for `posts/update-alt` and `posts/read-media` names this, so the
-	 * generic {@see \Specflux\SenroFlux\Run\Runner} write/verify tracking
+	 * generic {@see \Specflux\SiteAgent\Run\Runner} write/verify tracking
 	 * never collides an attachment id with a post id sharing the same
 	 * number. The composition root's report lookup (wired in Plugin.php)
 	 * strips it back off before calling {@see attachmentLookup()} — the
@@ -118,7 +118,7 @@ final class Media {
 	 * The same qualification for a term `create-term` made (proof-run
 	 * defect fix): a term id shares its number space with posts and
 	 * attachments, and no ability reads a term back, so
-	 * {@see \Specflux\SenroFlux\Packs\ObjectLookup} resolves it through
+	 * {@see \Specflux\SiteAgent\Packs\ObjectLookup} resolves it through
 	 * {@see termLookup()} and its report row says it was not checked.
 	 */
 	public const TERM_ID_PREFIX = 'term:';
@@ -181,14 +181,14 @@ final class Media {
 
 	/**
 	 * `stock-image-import` records the provider id it downloaded under this
-	 * key (a plain string, alongside the full `_senroflux_stock_source`
+	 * key (a plain string, alongside the full `_specflux_site_agent_stock_source`
 	 * record) so {@see usedStockImageIds()} can find every already-imported
 	 * image with one `get_posts()` meta lookup, without decoding the full
 	 * record for every attachment on the site.
 	 *
 	 * @var string
 	 */
-	private const STOCK_SOURCE_ID_META_KEY = '_senroflux_stock_source_id';
+	private const STOCK_SOURCE_ID_META_KEY = '_specflux_site_agent_stock_source_id';
 
 	/**
 	 * Whether {@see register()} has run for this request.
@@ -285,8 +285,8 @@ final class Media {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux media', 'senroflux' ),
-				'description' => __( 'Media, attachment and taxonomy abilities shared by SenroFlux capability packs.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent media', 'specflux-site-agent' ),
+				'description' => __( 'Media, attachment and taxonomy abilities shared by Specflux Site Agent capability packs.', 'specflux-site-agent' ),
 			)
 		);
 	}
@@ -325,10 +325,10 @@ final class Media {
 
 	private static function registerMediaSearch(): void {
 		wp_register_ability(
-			'senroflux/media-search',
+			'specflux/media-search',
 			array(
-				'label'               => __( 'Search media', 'senroflux' ),
-				'description'         => __( 'Search the media library for an existing image before generating a new one.', 'senroflux' ),
+				'label'               => __( 'Search media', 'specflux-site-agent' ),
+				'description'         => __( 'Search the media library for an existing image before generating a new one.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -379,10 +379,10 @@ final class Media {
 
 	private static function registerListMissingAlt(): void {
 		wp_register_ability(
-			'senroflux/list-missing-alt',
+			'specflux/list-missing-alt',
 			array(
-				'label'               => __( 'List images missing alt text', 'senroflux' ),
-				'description'         => __( 'List up to 25 image attachments that have no alt text.', 'senroflux' ),
+				'label'               => __( 'List images missing alt text', 'specflux-site-agent' ),
+				'description'         => __( 'List up to 25 image attachments that have no alt text.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -431,10 +431,10 @@ final class Media {
 
 	private static function registerMediaUpload(): void {
 		wp_register_ability(
-			'senroflux/media-upload',
+			'specflux/media-upload',
 			array(
-				'label'               => __( 'Register an uploaded image', 'senroflux' ),
-				'description'         => __( 'Register a file already present in the uploads directory (e.g. a generated image) as a real attachment.', 'senroflux' ),
+				'label'               => __( 'Register an uploaded image', 'specflux-site-agent' ),
+				'description'         => __( 'Register a file already present in the uploads directory (e.g. a generated image) as a real attachment.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -466,10 +466,10 @@ final class Media {
 
 	private static function registerGenerateImage(): void {
 		wp_register_ability(
-			'senroflux/generate-image',
+			'specflux/generate-image',
 			array(
-				'label'               => __( 'Generate an image', 'senroflux' ),
-				'description'         => __( 'Generate a new image from a prompt and register it as an attachment. Spends the images budget.', 'senroflux' ),
+				'label'               => __( 'Generate an image', 'specflux-site-agent' ),
+				'description'         => __( 'Generate a new image from a prompt and register it as an attachment. Spends the images budget.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -501,10 +501,10 @@ final class Media {
 
 	private static function registerGenerateAltText(): void {
 		wp_register_ability(
-			'senroflux/generate-alt-text',
+			'specflux/generate-alt-text',
 			array(
-				'label'               => __( 'Draft alt text', 'senroflux' ),
-				'description'         => __( 'Ask the model to draft alt text for an attachment. Does not save it — call update-alt to persist it.', 'senroflux' ),
+				'label'               => __( 'Draft alt text', 'specflux-site-agent' ),
+				'description'         => __( 'Ask the model to draft alt text for an attachment. Does not save it — call update-alt to persist it.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -543,10 +543,10 @@ final class Media {
 
 	private static function registerSetFeaturedImage(): void {
 		wp_register_ability(
-			'senroflux/set-featured-image',
+			'specflux/set-featured-image',
 			array(
-				'label'               => __( 'Set featured image', 'senroflux' ),
-				'description'         => __( 'Set an existing attachment as a post\'s featured image.', 'senroflux' ),
+				'label'               => __( 'Set featured image', 'specflux-site-agent' ),
+				'description'         => __( 'Set an existing attachment as a post\'s featured image.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -588,10 +588,10 @@ final class Media {
 
 	private static function registerUpdateAlt(): void {
 		wp_register_ability(
-			'senroflux/update-alt',
+			'specflux/update-alt',
 			array(
-				'label'               => __( 'Update alt text', 'senroflux' ),
-				'description'         => __( 'Save alt text for an attachment. Refuses a 26th distinct attachment in one run.', 'senroflux' ),
+				'label'               => __( 'Update alt text', 'specflux-site-agent' ),
+				'description'         => __( 'Save alt text for an attachment. Refuses a 26th distinct attachment in one run.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -641,10 +641,10 @@ final class Media {
 	 */
 	private static function registerReadMedia(): void {
 		wp_register_ability(
-			'senroflux/read-media',
+			'specflux/read-media',
 			array(
-				'label'               => __( 'Read attachment details', 'senroflux' ),
-				'description'         => __( 'Re-read one attachment by id: its alt text, title, file, dimensions, and which posts use it as a featured image. Use this to confirm an alt-text or upload change actually saved.', 'senroflux' ),
+				'label'               => __( 'Read attachment details', 'specflux-site-agent' ),
+				'description'         => __( 'Re-read one attachment by id: its alt text, title, file, dimensions, and which posts use it as a featured image. Use this to confirm an alt-text or upload change actually saved.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -693,10 +693,10 @@ final class Media {
 
 	private static function registerSetTerms(): void {
 		wp_register_ability(
-			'senroflux/set-terms',
+			'specflux/set-terms',
 			array(
-				'label'               => __( 'Set terms', 'senroflux' ),
-				'description'         => __( 'Replace a post\'s terms in one taxonomy.', 'senroflux' ),
+				'label'               => __( 'Set terms', 'specflux-site-agent' ),
+				'description'         => __( 'Replace a post\'s terms in one taxonomy.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -742,10 +742,10 @@ final class Media {
 
 	private static function registerCreateTerm(): void {
 		wp_register_ability(
-			'senroflux/create-term',
+			'specflux/create-term',
 			array(
-				'label'               => __( 'Create term', 'senroflux' ),
-				'description'         => __( 'Create a taxonomy term, or return an existing one of the same name.', 'senroflux' ),
+				'label'               => __( 'Create term', 'specflux-site-agent' ),
+				'description'         => __( 'Create a taxonomy term, or return an existing one of the same name.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -788,10 +788,10 @@ final class Media {
 	 */
 	private static function registerListTerms(): void {
 		wp_register_ability(
-			'senroflux/list-terms',
+			'specflux/list-terms',
 			array(
-				'label'               => __( 'List terms', 'senroflux' ),
-				'description'         => __( 'List the existing categories or tags, most used first (up to 50), optionally narrowed by a search word. Call this before choosing terms for a post and reuse an existing name.', 'senroflux' ),
+				'label'               => __( 'List terms', 'specflux-site-agent' ),
+				'description'         => __( 'List the existing categories or tags, most used first (up to 50), optionally narrowed by a search word. Call this before choosing terms for a post and reuse an existing name.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -851,10 +851,10 @@ final class Media {
 	 */
 	private static function registerStockImageSearch(): void {
 		wp_register_ability(
-			'senroflux/stock-image-search',
+			'specflux/stock-image-search',
 			array(
-				'label'               => __( 'Search stock photos', 'senroflux' ),
-				'description'         => __( 'Search Openverse for a CC0/public-domain stock photo when the media library has nothing suitable and the image-generation budget is exhausted. Use one or two plain words about the people or the work itself — not rooms, desks, corridors or buildings, which return off-topic photos. Skip results whose title does not match the page.', 'senroflux' ),
+				'label'               => __( 'Search stock photos', 'specflux-site-agent' ),
+				'description'         => __( 'Search Openverse for a CC0/public-domain stock photo when the media library has nothing suitable and the image-generation budget is exhausted. Use one or two plain words about the people or the work itself — not rooms, desks, corridors or buildings, which return off-topic photos. Skip results whose title does not match the page.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -919,10 +919,10 @@ final class Media {
 	 */
 	private static function registerStockImageImport(): void {
 		wp_register_ability(
-			'senroflux/stock-image-import',
+			'specflux/stock-image-import',
 			array(
-				'label'               => __( 'Import a stock photo', 'senroflux' ),
-				'description'         => __( 'Download a stock photo previously found with stock-image-search and register it as an attachment. Does not spend the images budget; capped at 3 imports per run.', 'senroflux' ),
+				'label'               => __( 'Import a stock photo', 'specflux-site-agent' ),
+				'description'         => __( 'Download a stock photo previously found with stock-image-search and register it as an attachment. Does not spend the images budget; capped at 3 imports per run.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -1111,7 +1111,7 @@ final class Media {
 		if ( null === $absolute ) {
 			return new WP_Error(
 				'file_not_found',
-				__( 'That file was not found under the uploads directory.', 'senroflux' ),
+				__( 'That file was not found under the uploads directory.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -1126,13 +1126,13 @@ final class Media {
 	private static function executeGenerateImage( array $input ): array|WP_Error {
 		$prompt = is_string( $input['prompt'] ?? null ) ? trim( $input['prompt'] ) : '';
 		if ( '' === $prompt ) {
-			return new WP_Error( 'invalid_input', __( 'A prompt is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A prompt is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( self::imagesExhausted() ) {
 			return new WP_Error(
 				'budget_exhausted',
-				__( 'This run has used up its image-generation budget. Try stock-image-search next; if that finds nothing either, publish without an image using `no_image_reason`.', 'senroflux' ),
+				__( 'This run has used up its image-generation budget. Try stock-image-search next; if that finds nothing either, publish without an image using `no_image_reason`.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -1160,7 +1160,7 @@ final class Media {
 	private static function imageGenerationUnavailable(): WP_Error {
 		return new WP_Error(
 			'image_generation_unavailable',
-			__( 'Image generation is not available on this site: none of its configured AI models can generate images. Do not call generate-image again. Use stock-image-search then stock-image-import (or media-search for an existing library image) instead.', 'senroflux' ),
+			__( 'Image generation is not available on this site: none of its configured AI models can generate images. Do not call generate-image again. Use stock-image-search then stock-image-import (or media-search for an existing library image) instead.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
 	}
@@ -1173,21 +1173,21 @@ final class Media {
 		if ( ! self::stockImagesEnabled() ) {
 			return new WP_Error(
 				'stock_images_disabled',
-				__( 'Stock image search is disabled on this site. Publish without an image using `no_image_reason` instead.', 'senroflux' ),
+				__( 'Stock image search is disabled on this site. Publish without an image using `no_image_reason` instead.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
 
 		$query = is_string( $input['query'] ?? null ) ? trim( $input['query'] ) : '';
 		if ( '' === $query ) {
-			return new WP_Error( 'invalid_input', __( 'A query is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A query is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$raw = self::stockGateway()->search( $query );
 		if ( $raw instanceof WP_Error ) {
 			return new WP_Error(
 				'stock_images_unavailable',
-				$raw->get_error_message() . ' ' . __( 'Publish without an image using `no_image_reason` instead.', 'senroflux' ),
+				$raw->get_error_message() . ' ' . __( 'Publish without an image using `no_image_reason` instead.', 'specflux-site-agent' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -1361,7 +1361,7 @@ final class Media {
 		if ( ! self::stockImagesEnabled() ) {
 			return new WP_Error(
 				'stock_images_disabled',
-				__( 'Stock image import is disabled on this site. Publish without an image using `no_image_reason` instead.', 'senroflux' ),
+				__( 'Stock image import is disabled on this site. Publish without an image using `no_image_reason` instead.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -1370,10 +1370,10 @@ final class Media {
 		$alt = is_string( $input['alt'] ?? null ) ? trim( $input['alt'] ) : '';
 
 		if ( ! self::isValidStockImageId( $id ) ) {
-			return new WP_Error( 'invalid_input', __( 'A valid stock image id is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A valid stock image id is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( '' === $alt ) {
-			return new WP_Error( 'invalid_input', __( 'Alt text is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'Alt text is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		// Same photo, same attachment: a second copy would carry a new url
 		// and slip past the hero-reuse check (live batch 2026-09-29-final).
@@ -1390,7 +1390,7 @@ final class Media {
 				'stock_import_cap',
 				sprintf(
 					/* translators: %d: the most stock images one run may import. */
-					__( 'This run has already imported %d stock images — the most one run may.', 'senroflux' ),
+					__( 'This run has already imported %d stock images — the most one run may.', 'specflux-site-agent' ),
 					self::STOCK_IMPORT_CAP
 				),
 				array( 'status' => 409 )
@@ -1439,7 +1439,7 @@ final class Media {
 		if ( function_exists( 'update_post_meta' ) ) {
 			update_post_meta(
 				$attachment_id,
-				'_senroflux_stock_source',
+				'_specflux_site_agent_stock_source',
 				array(
 					'provider'        => 'openverse',
 					'id'              => $id,
@@ -1472,21 +1472,21 @@ final class Media {
 	private static function stockImageIneligibilityReason( array $detail ): ?string {
 		$license = strtolower( (string) ( $detail['license'] ?? '' ) );
 		if ( ! in_array( $license, array( 'cc0', 'pdm' ), true ) ) {
-			return __( "That image's license is not CC0 or public domain.", 'senroflux' );
+			return __( "That image's license is not CC0 or public domain.", 'specflux-site-agent' );
 		}
 
 		$source = (string) ( $detail['source'] ?? '' );
 		if ( ! in_array( $source, OpenverseStockImageGateway::defaultSources(), true ) ) {
-			return __( 'That image is not from an allowed stock source.', 'senroflux' );
+			return __( 'That image is not from an allowed stock source.', 'specflux-site-agent' );
 		}
 
 		if ( true === ( $detail['mature'] ?? false ) ) {
-			return __( 'That image is flagged as mature content.', 'senroflux' );
+			return __( 'That image is flagged as mature content.', 'specflux-site-agent' );
 		}
 
 		$url = is_string( $detail['url'] ?? null ) ? $detail['url'] : '';
 		if ( ! str_starts_with( $url, 'https://' ) ) {
-			return __( "That image's file URL is not https.", 'senroflux' );
+			return __( "That image's file URL is not https.", 'specflux-site-agent' );
 		}
 
 		return null;
@@ -1510,7 +1510,7 @@ final class Media {
 				array(
 					'' !== $title ? '"' . $title . '"' : null,
 					/* translators: %s: the image's creator/photographer. */
-					'' !== $creator ? sprintf( __( 'by %s', 'senroflux' ), $creator ) : null,
+					'' !== $creator ? sprintf( __( 'by %s', 'specflux-site-agent' ), $creator ) : null,
 					'' !== $license ? $license : null,
 					'' !== $source ? $source : null,
 				)
@@ -1533,7 +1533,7 @@ final class Media {
 	private static function executeGenerateAltText( array $input ): array|WP_Error {
 		$id = (int) ( $input['attachment_id'] ?? 0 );
 		if ( 'attachment' !== self::postType( $id ) ) {
-			return new WP_Error( 'not_found', __( 'Attachment not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Attachment not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// 0.3 quality fix 3 (live run): the gateway used to send the
@@ -1572,7 +1572,7 @@ final class Media {
 		if ( ! is_string( $path ) || '' === $path || ! file_exists( $path ) ) {
 			return new WP_Error(
 				'attachment_file_missing',
-				__( 'The attachment file could not be found on disk.', 'senroflux' ),
+				__( 'The attachment file could not be found on disk.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -1581,7 +1581,7 @@ final class Media {
 		if ( is_int( $size ) && $size > self::ALT_TEXT_MAX_FILE_BYTES ) {
 			return new WP_Error(
 				'attachment_file_too_large',
-				__( 'The attachment file is too large to send for alt-text generation.', 'senroflux' ),
+				__( 'The attachment file is too large to send for alt-text generation.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -1621,11 +1621,11 @@ final class Media {
 		$attachment_id = (int) ( $input['attachment_id'] ?? 0 );
 
 		if ( 'attachment' !== self::postType( $attachment_id ) ) {
-			return new WP_Error( 'not_found', __( 'Attachment not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Attachment not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		$post = function_exists( 'get_post' ) ? get_post( $post_id ) : null;
 		if ( null === $post ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// 0.3 quality fix (bug 2, live run: a café photo repeated at the top
@@ -1639,7 +1639,7 @@ final class Media {
 			if ( '' !== $url && ContentImages::containsUrl( (string) ( $post->post_content ?? '' ), $url ) ) {
 				return new WP_Error(
 					'featured_image_duplicated',
-					__( 'This image is already in the post\'s content, and the theme shows the featured image above the post, so it would appear twice. Remove it from the content with update-draft, or pick a different featured image.', 'senroflux' ),
+					__( 'This image is already in the post\'s content, and the theme shows the featured image above the post, so it would appear twice. Remove it from the content with update-draft, or pick a different featured image.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1661,15 +1661,15 @@ final class Media {
 		$alt = is_string( $input['alt'] ?? null ) ? trim( $input['alt'] ) : '';
 
 		if ( 'attachment' !== self::postType( $id ) ) {
-			return new WP_Error( 'not_found', __( 'Attachment not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Attachment not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( '' === $alt ) {
-			return new WP_Error( 'invalid_alt', __( 'Alt text may not be empty.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_alt', __( 'Alt text may not be empty.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( self::isOverAttachmentCap( $id ) ) {
 			return new WP_Error(
 				'attachment_cap',
-				__( 'This run has already touched 25 attachments\' alt text — the most one run may.', 'senroflux' ),
+				__( 'This run has already touched 25 attachments\' alt text — the most one run may.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -1684,7 +1684,7 @@ final class Media {
 
 	/**
 	 * `read-media` (defect fix): re-read one attachment. The generic S12
-	 * write/verify tracking (wired through {@see \Specflux\SenroFlux\Packs\Posts\PostsPack::objectIdKey()}
+	 * write/verify tracking (wired through {@see \Specflux\SiteAgent\Packs\Posts\PostsPack::objectIdKey()}
 	 * / `objectIdPrefix()`) marks the attachment verified automatically once
 	 * this succeeds — this method only has to return the fresh snapshot.
 	 *
@@ -1694,7 +1694,7 @@ final class Media {
 	private static function executeReadMedia( array $input ): array|WP_Error {
 		$id = (int) ( $input['attachment_id'] ?? 0 );
 		if ( 'attachment' !== self::postType( $id ) ) {
-			return new WP_Error( 'not_found', __( 'Attachment not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Attachment not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// Optional S8-style marker (defect fix): cheap to record, not yet
@@ -1704,7 +1704,7 @@ final class Media {
 		// S8's stale_write refusal against). Recording it here only makes a
 		// future refusal possible without another schema change.
 		if ( null !== self::$current_run_id && null !== self::$store ) {
-			$objects = \Specflux\SenroFlux\Run\Tracker::recordRead(
+			$objects = \Specflux\SiteAgent\Run\Tracker::recordRead(
 				self::currentObjects(),
 				self::OBJECT_ID_PREFIX . $id,
 				self::altText( $id )
@@ -1786,7 +1786,7 @@ final class Media {
 
 	/**
 	 * The S12 report lookup for one attachment (defect fix): the shape
-	 * {@see \Specflux\SenroFlux\Run\Report::LOOKUP_KEYS} needs, resolved from
+	 * {@see \Specflux\SiteAgent\Run\Report::LOOKUP_KEYS} needs, resolved from
 	 * the SAME attachment data `read-media` returns — never taught to the
 	 * harness by name (wired through the composition root's `$post_lookup`,
 	 * Plugin.php, which strips {@see OBJECT_ID_PREFIX} before calling this).
@@ -1866,7 +1866,7 @@ final class Media {
 		$term_ids = is_array( $input['term_ids'] ?? null ) ? array_map( 'intval', $input['term_ids'] ) : array();
 
 		if ( ! function_exists( 'get_post' ) || null === get_post( $post_id ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( function_exists( 'wp_set_post_terms' ) ) {
@@ -1891,7 +1891,7 @@ final class Media {
 		$name     = is_string( $input['name'] ?? null ) ? trim( $input['name'] ) : '';
 
 		if ( '' === $name ) {
-			return new WP_Error( 'invalid_input', __( 'A term name is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A term name is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( function_exists( 'term_exists' ) ) {
@@ -1902,7 +1902,7 @@ final class Media {
 		}
 
 		if ( ! function_exists( 'wp_insert_term' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$inserted = wp_insert_term( $name, $taxonomy );
@@ -1920,10 +1920,10 @@ final class Media {
 	private static function executeListTerms( array $input ): array|WP_Error {
 		$taxonomy = is_string( $input['taxonomy'] ?? null ) ? $input['taxonomy'] : '';
 		if ( ! in_array( $taxonomy, self::LISTABLE_TAXONOMIES, true ) ) {
-			return new WP_Error( 'invalid_input', __( 'taxonomy must be category or post_tag.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'taxonomy must be category or post_tag.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( ! function_exists( 'get_terms' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Terms are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$args   = array(
@@ -2023,8 +2023,8 @@ final class Media {
 		return new WP_Error(
 			'term_create_forbidden',
 			'category' === $taxonomy
-				? __( 'Your account can\'t create categories. Call list-terms and use a category that already exists.', 'senroflux' )
-				: __( 'Your account can\'t create terms in this taxonomy. Call list-terms and use one that already exists.', 'senroflux' ),
+				? __( 'Your account can\'t create categories. Call list-terms and use a category that already exists.', 'specflux-site-agent' )
+				: __( 'Your account can\'t create terms in this taxonomy. Call list-terms and use one that already exists.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -2155,7 +2155,7 @@ final class Media {
 	 */
 	private static function insertAttachmentFromFile( string $absolute_path, ?string $title = null ): array|WP_Error {
 		if ( ! function_exists( 'wp_insert_attachment' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Attachments are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Attachments are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$filetype = function_exists( 'wp_check_filetype' ) ? wp_check_filetype( basename( $absolute_path ) ) : array( 'type' => 'image/jpeg' );
@@ -2205,11 +2205,11 @@ final class Media {
 	}
 
 	/**
-	 * `senroflux_stock_images_enabled` (build plan): a site that forbids
+	 * `specflux_site_agent_stock_images_enabled` (build plan): a site that forbids
 	 * outbound requests turns the whole stock-photo feature off. `@internal`.
 	 */
 	private static function stockImagesEnabled(): bool {
-		return function_exists( 'apply_filters' ) ? (bool) apply_filters( 'senroflux_stock_images_enabled', true ) : true;
+		return function_exists( 'apply_filters' ) ? (bool) apply_filters( 'specflux_site_agent_stock_images_enabled', true ) : true;
 	}
 
 	/**
@@ -2283,11 +2283,11 @@ final class Media {
 
 	/**
 	 * The ability name's final segment (namespace stripped). Steps store the
-	 * mangled function name the model called (`wpab__senroflux__stock-image-search`),
+	 * mangled function name the model called (`wpab__specflux__stock-image-search`),
 	 * so it is un-mangled first or nothing would ever match.
 	 */
 	private static function baseAbilityName( string $ability ): string {
-		$ability = \Specflux\SenroFlux\Tools\ToolRegistry::abilityName( $ability );
+		$ability = \Specflux\SiteAgent\Tools\ToolRegistry::abilityName( $ability );
 		$pos     = strrpos( $ability, '/' );
 
 		return false === $pos ? $ability : substr( $ability, $pos + 1 );
@@ -2295,12 +2295,12 @@ final class Media {
 
 	/**
 	 * Extract the `functionResponse.response` payload a tool_result step's
-	 * `message_json` carries (see {@see \Specflux\SenroFlux\Run\Runner::appendToolResult()}),
+	 * `message_json` carries (see {@see \Specflux\SiteAgent\Run\Runner::appendToolResult()}),
 	 * or null when the step carries no such part.
 	 *
 	 * @return array<string,mixed>|null
 	 */
-	private static function stepFunctionResponse( \Specflux\SenroFlux\Run\Step $step ): ?array {
+	private static function stepFunctionResponse( \Specflux\SiteAgent\Run\Step $step ): ?array {
 		$parts = is_array( $step->messageArray ) ? ( $step->messageArray['parts'] ?? null ) : null;
 		if ( ! is_array( $parts ) ) {
 			return null;
@@ -2403,8 +2403,8 @@ final class Media {
 
 		$objects = self::currentObjects();
 		// Defect fix (live run, 2026-09-27 baseline): this entry must stay
-		// invisible to {@see \Specflux\SenroFlux\Run\Tracker} and
-		// {@see \Specflux\SenroFlux\Run\Report} — both fail-close a
+		// invisible to {@see \Specflux\SiteAgent\Run\Tracker} and
+		// {@see \Specflux\SiteAgent\Run\Report} — both fail-close a
 		// non-array `objects_json` value to "permanently unverified", and
 		// this id is never qualified with {@see OBJECT_ID_PREFIX} so no read
 		// could ever clear it. Deliberately omitting `last_write_seq` makes
@@ -2421,7 +2421,7 @@ final class Media {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

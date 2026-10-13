@@ -5,18 +5,18 @@
  * slugs are rewritten to ones the active theme defines. Also the built-in
  * Ollie layout profile, filled from real Ollie pattern files.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 final class CuratedFallbackTest extends TestCase {
@@ -44,15 +44,15 @@ final class CuratedFallbackTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/theme-patterns.php';
 
-		$GLOBALS['senroflux_test_theme_patterns']  = array();
-		$GLOBALS['senroflux_test_stylesheet']      = 'ollie';
-		$GLOBALS['senroflux_test_global_settings'] = self::settings( self::OLLIE_PALETTE, self::OLLIE_SPACING );
+		$GLOBALS['specflux_site_agent_test_theme_patterns']  = array();
+		$GLOBALS['specflux_site_agent_test_stylesheet']      = 'ollie';
+		$GLOBALS['specflux_site_agent_test_global_settings'] = self::settings( self::OLLIE_PALETTE, self::OLLIE_SPACING );
 		ThemePatterns::resetCache();
 	}
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'], $GLOBALS['senroflux_test_stylesheet'], $GLOBALS['senroflux_test_template'], $GLOBALS['senroflux_test_global_settings'], $GLOBALS['senroflux_test_declared_patterns'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'], $GLOBALS['specflux_site_agent_test_stylesheet'], $GLOBALS['specflux_site_agent_test_template'], $GLOBALS['specflux_site_agent_test_global_settings'], $GLOBALS['specflux_site_agent_test_declared_patterns'] );
 	}
 
 	/**
@@ -117,12 +117,12 @@ final class CuratedFallbackTest extends TestCase {
 	 */
 	public static function layouts(): array {
 		return array(
-			'hero with image' => array( 0, 'senroflux/cover-hero' ),
-			'text'            => array( 1, 'senroflux/text-section' ),
-			'services'        => array( 2, 'senroflux/feature-grid' ),
-			'text-with-image' => array( 3, 'senroflux/media-text' ),
-			'faq'             => array( 4, 'senroflux/faq' ),
-			'cta'             => array( 5, 'senroflux/cta' ),
+			'hero with image' => array( 0, 'specflux/cover-hero' ),
+			'text'            => array( 1, 'specflux/text-section' ),
+			'services'        => array( 2, 'specflux/feature-grid' ),
+			'text-with-image' => array( 3, 'specflux/media-text' ),
+			'faq'             => array( 4, 'specflux/faq' ),
+			'cta'             => array( 5, 'specflux/cta' ),
 		);
 	}
 
@@ -143,7 +143,7 @@ final class CuratedFallbackTest extends TestCase {
 		$built = Layouts::render( $section, 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/hero', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 		$this->assertStringContainsString( 'Back to running, properly', $built );
 	}
 
@@ -200,7 +200,7 @@ final class CuratedFallbackTest extends TestCase {
 	}
 
 	public function test_spacing_slugs_the_theme_defines_are_kept(): void {
-		$GLOBALS['senroflux_test_global_settings'] = self::settings( array( 'contrast' => '#111111' ), array( '20', '30', '40', '50', '60', '70', '80' ), true );
+		$GLOBALS['specflux_site_agent_test_global_settings'] = self::settings( array( 'contrast' => '#111111' ), array( '20', '30', '40', '50', '60', '70', '80' ), true );
 
 		$built = Layouts::render( LayoutsTest::outline()[1], 1, new Vocabulary() );
 
@@ -211,7 +211,7 @@ final class CuratedFallbackTest extends TestCase {
 
 	public function test_spacing_is_mapped_by_rank_on_a_shorter_scale(): void {
 		// Five sizes: 50 is rank 3 of 7 (index 3 of 0..6), so index round(3/6 * 4) = 2 of 5; 60 is index round(4/6 * 4) = 3.
-		$GLOBALS['senroflux_test_global_settings'] = self::settings( array( 'dark' => '#000000' ), array( 'xs', 's', 'm', 'l', 'xl' ) );
+		$GLOBALS['specflux_site_agent_test_global_settings'] = self::settings( array( 'dark' => '#000000' ), array( 'xs', 's', 'm', 'l', 'xl' ) );
 
 		$built = Layouts::render( LayoutsTest::outline()[0], 0, new Vocabulary() );
 
@@ -234,7 +234,7 @@ final class CuratedFallbackTest extends TestCase {
 		$settings                                   = self::settings( self::OLLIE_PALETTE, self::OLLIE_SPACING );
 		$settings['spacing']['defaultSpacingSizes'] = true;
 		$settings['color']['defaultPalette']        = true;
-		$GLOBALS['senroflux_test_global_settings']  = $settings;
+		$GLOBALS['specflux_site_agent_test_global_settings'] = $settings;
 
 		$built = Layouts::render( LayoutsTest::outline()[0], 0, new Vocabulary() );
 
@@ -244,7 +244,7 @@ final class CuratedFallbackTest extends TestCase {
 	}
 
 	public function test_a_theme_with_no_spacing_list_leaves_the_curated_slugs_alone(): void {
-		unset( $GLOBALS['senroflux_test_global_settings'] );
+		unset( $GLOBALS['specflux_site_agent_test_global_settings'] );
 
 		$built = Layouts::render( LayoutsTest::outline()[1], 1, new Vocabulary() );
 
@@ -254,7 +254,7 @@ final class CuratedFallbackTest extends TestCase {
 
 	public function test_the_overlay_is_the_darkest_palette_colour_by_relative_luminance(): void {
 		// Pure blue is darker than mid grey and pure green by relative luminance, though its channel sum is not the smallest.
-		$GLOBALS['senroflux_test_global_settings'] = self::settings(
+		$GLOBALS['specflux_site_agent_test_global_settings'] = self::settings(
 			array(
 				'grey'  => '#777777',
 				'green' => '#00ff00',
@@ -301,9 +301,9 @@ final class CuratedFallbackTest extends TestCase {
 			);
 		}
 
-		$GLOBALS['senroflux_test_theme_patterns'] = $patterns;
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $dir;
-		$GLOBALS['senroflux_test_template_dir']   = $dir;
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = $patterns;
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $dir;
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $dir;
 		ThemePatterns::resetCache();
 	}
 
@@ -335,7 +335,7 @@ final class CuratedFallbackTest extends TestCase {
 		$built = Layouts::render( self::ollieHero(), 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_code() . ': ' . $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 		$this->assertStringContainsString( 'Evening physiotherapy', $built );
 		$this->assertStringContainsString( '>Back to running, properly</h1>', $built );
 		$this->assertStringContainsString( 'href="tel:+441234567890"', $built );
@@ -372,15 +372,15 @@ final class CuratedFallbackTest extends TestCase {
 	 */
 	public function test_theme_patterns_are_found_when_core_has_dropped_their_file_path(): void {
 		self::registerOllie( array( 'hero-light', 'text-call-to-action-buttons' ) );
-		$GLOBALS['senroflux_test_theme_patterns']    = array_map(
+		$GLOBALS['specflux_site_agent_test_theme_patterns']    = array_map(
 			static function ( array $pattern ): array {
 				unset( $pattern['filePath'] );
 
 				return $pattern;
 			},
-			$GLOBALS['senroflux_test_theme_patterns']
+			$GLOBALS['specflux_site_agent_test_theme_patterns']
 		);
-		$GLOBALS['senroflux_test_declared_patterns'] = array(
+		$GLOBALS['specflux_site_agent_test_declared_patterns'] = array(
 			array( 'slug' => 'ollie/hero-light' ),
 			array( 'slug' => 'ollie/text-call-to-action-buttons' ),
 		);
@@ -389,7 +389,7 @@ final class CuratedFallbackTest extends TestCase {
 		$built = Layouts::render( self::ollieHero(), 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 	}
 
 	public function test_a_half_given_second_button_is_refused_by_name(): void {
@@ -405,13 +405,13 @@ final class CuratedFallbackTest extends TestCase {
 
 	public function test_the_ollie_profile_resolves_through_a_child_theme(): void {
 		self::registerOllie( array( 'hero-light', 'text-call-to-action-buttons' ) );
-		$GLOBALS['senroflux_test_stylesheet'] = 'ollie-child';
-		$GLOBALS['senroflux_test_template']   = 'ollie';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'ollie-child';
+		$GLOBALS['specflux_site_agent_test_template']   = 'ollie';
 
 		$built = Layouts::render( self::ollieHero(), 0, new Vocabulary() );
 
 		$this->assertIsString( $built, $built instanceof WP_Error ? $built->get_error_message() : '' );
-		$this->assertSame( 'senroflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/ollie/hero-light', parse_blocks( $built )[0]['attrs']['metadata']['name'] ?? '' );
 	}
 
 	public function test_a_page_mixing_ollie_patterns_and_curated_fallbacks_passes_validator_clean(): void {
@@ -438,12 +438,12 @@ final class CuratedFallbackTest extends TestCase {
 		}
 		$this->assertSame(
 			array(
-				'senroflux/ollie/hero-light',
-				'senroflux/text-section',
-				'senroflux/feature-grid',
-				'senroflux/media-text',
-				'senroflux/faq',
-				'senroflux/ollie/text-call-to-action-buttons',
+				'specflux/ollie/hero-light',
+				'specflux/text-section',
+				'specflux/feature-grid',
+				'specflux/media-text',
+				'specflux/faq',
+				'specflux/ollie/text-call-to-action-buttons',
 			),
 			$names
 		);

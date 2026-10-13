@@ -16,21 +16,21 @@
  * 1, a group-wrapped call to action structurally identical in spirit to the
  * pages pack's `cta`) and `pull-quote` (a `core/pullquote`, capped so a post
  * cannot be built entirely out of pulled quotes). Both are registered as real
- * block patterns (`senroflux/<slug>`) so an editor can insert them by hand;
- * prose entries are NOT — there is no `senroflux/paragraph` pattern, only the
+ * block patterns (`specflux/<slug>`) so an editor can insert them by hand;
+ * prose entries are NOT — there is no `specflux/paragraph` pattern, only the
  * bare core block.
  *
  * `constraints.stated` is the single source the `posts/copy-rules` skill body
  * is rendered from (mirrors the pages pack's copy-rules single-source test).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Posts;
+namespace Specflux\SiteAgent\Packs\Posts;
 
-use Specflux\SenroFlux\Packs\Content\Vocabulary as ContentVocabulary;
+use Specflux\SiteAgent\Packs\Content\Vocabulary as ContentVocabulary;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -46,7 +46,7 @@ final class Vocabulary implements ContentVocabulary {
 	 * The pattern category registered with the block editor, for the two
 	 * feature patterns only.
 	 */
-	public const CATEGORY = 'senroflux-posts';
+	public const CATEGORY = 'specflux-posts';
 
 	/**
 	 * A post needs at least one counted instance (prose or feature) — S5.
@@ -132,15 +132,15 @@ final class Vocabulary implements ContentVocabulary {
 	}
 
 	/**
-	 * The `senroflux/list-patterns` payload (S5), same shape as the pages
+	 * The `specflux/list-patterns` payload (S5), same shape as the pages
 	 * pack's (0.3 S7 gap fix): metadata, constraints AND sample markup where
 	 * a pattern has any — the exact input a model can copy verbatim instead
 	 * of reconstructing structure from a prose summary. A prose entry's
 	 * `name` is the bare core block name (there is no wrapper pattern, so no
 	 * fixed markup either — `markup` is omitted for it); a feature entry's
-	 * `name` is `senroflux/<slug>` and always carries its shipped markup.
+	 * `name` is `specflux/<slug>` and always carries its shipped markup.
 	 * Posts do NOT run the pages pack's `BlockShells` editor-parity check
-	 * (S5 scope decision, {@see \Specflux\SenroFlux\Packs\Posts\Validator}),
+	 * (S5 scope decision, {@see \Specflux\SiteAgent\Packs\Posts\Validator}),
 	 * so unlike the pages/site packs there is no optional-attribute rule to
 	 * document here.
 	 *
@@ -209,8 +209,8 @@ final class Vocabulary implements ContentVocabulary {
 		register_block_pattern_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux posts', 'senroflux' ),
-				'description' => __( 'Feature blocks for SenroFlux posts.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent posts', 'specflux-site-agent' ),
+				'description' => __( 'Feature blocks for Specflux Site Agent posts.', 'specflux-site-agent' ),
 			)
 		);
 
@@ -246,7 +246,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'paragraph',
 			'name'        => 'core/paragraph',
 			'title'       => 'Paragraph',
-			'description' => __( 'A prose paragraph. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'A prose paragraph. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -263,7 +263,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'heading',
 			'name'        => 'core/heading',
 			'title'       => 'Heading',
-			'description' => __( 'A section heading. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'A section heading. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -280,7 +280,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'list',
 			'name'        => 'core/list',
 			'title'       => 'List',
-			'description' => __( 'A bulleted or numbered list. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'A bulleted or numbered list. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -297,7 +297,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'quote',
 			'name'        => 'core/quote',
 			'title'       => 'Quote',
-			'description' => __( 'An inline quotation. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'An inline quotation. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -318,7 +318,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'image',
 			'name'        => 'core/image',
 			'title'       => 'Image',
-			'description' => __( 'An inline image. Requires non-empty alt text. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'An inline image. Requires non-empty alt text. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -335,7 +335,7 @@ final class Vocabulary implements ContentVocabulary {
 			'slug'        => 'code',
 			'name'        => 'core/code',
 			'title'       => 'Code',
-			'description' => __( 'A preformatted code block. Repeats without limit.', 'senroflux' ),
+			'description' => __( 'A preformatted code block. Repeats without limit.', 'specflux-site-agent' ),
 			'kind'        => 'prose',
 			'constraints' => array(
 				'slots'  => array(),
@@ -353,9 +353,9 @@ final class Vocabulary implements ContentVocabulary {
 	private function closingCta(): array {
 		return array(
 			'slug'        => 'closing-cta',
-			'name'        => 'senroflux/closing-cta',
+			'name'        => 'specflux/closing-cta',
 			'title'       => 'Closing call to action',
-			'description' => __( 'A full-width closing call to action. At most one per post.', 'senroflux' ),
+			'description' => __( 'A full-width closing call to action. At most one per post.', 'specflux-site-agent' ),
 			'kind'        => 'feature',
 			'markup'      => $this->markup( 'closing-cta' ),
 			'repeatable'  => array(),
@@ -378,9 +378,9 @@ final class Vocabulary implements ContentVocabulary {
 	private function pullQuote(): array {
 		return array(
 			'slug'        => 'pull-quote',
-			'name'        => 'senroflux/pull-quote',
+			'name'        => 'specflux/pull-quote',
 			'title'       => 'Pull quote',
-			'description' => __( 'A pulled-out quotation, visually distinct from an inline quote.', 'senroflux' ),
+			'description' => __( 'A pulled-out quotation, visually distinct from an inline quote.', 'specflux-site-agent' ),
 			'kind'        => 'feature',
 			'markup'      => $this->markup( 'pull-quote' ),
 			'repeatable'  => array(),

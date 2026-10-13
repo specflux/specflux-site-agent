@@ -2,18 +2,18 @@
 /**
  * Tail elapsed-gap rendering (0.3 S9).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Run\InstructionRenderer;
-use Specflux\SenroFlux\Run\Tail;
-use Specflux\SenroFlux\Skills\SkillSet;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\InstructionRenderer;
+use Specflux\SiteAgent\Run\Tail;
+use Specflux\SiteAgent\Skills\SkillSet;
 
 final class TailTest extends TestCase {
 
@@ -63,12 +63,12 @@ final class TailTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['senroflux_test_timezone'] );
+		unset( $GLOBALS['specflux_site_agent_test_timezone'] );
 		Clock::reset();
 	}
 
 	public function test_date_line_states_site_local_date_and_timezone(): void {
-		$GLOBALS['senroflux_test_timezone'] = 'Asia/Singapore';
+		$GLOBALS['specflux_site_agent_test_timezone'] = 'Asia/Singapore';
 		// 2026-10-02 23:10 UTC is 07:10 on Saturday 3 October in Singapore.
 		$tail = new Tail( 2, 1, 5, 3, 1000, now_utc: gmmktime( 23, 10, 0, 10, 2, 2026 ) );
 

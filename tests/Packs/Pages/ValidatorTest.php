@@ -15,18 +15,18 @@
  * page_shape (pattern_count, hero_first, max_cta, max_repeat) — plus the step-5
  * mutations and the stored-XSS payloads the pack must refuse.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Content\ImageAlt;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Content\ImageAlt;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 final class ValidatorTest extends TestCase {
@@ -317,8 +317,8 @@ HTML;
 	public function test_a_cover_hero_with_a_focal_point_is_accepted(): void {
 		// core/cover's own save() output for a chosen focal point.
 		$content = str_replace(
-			array( '"url":"' . SENROFLUX_URL . 'images/placeholder.jpg",', 'data-object-fit="cover"' ),
-			array( '"focalPoint":{"x":0.5,"y":0.3},"url":"' . SENROFLUX_URL . 'images/placeholder.jpg",', 'style="object-position:50% 30%" data-object-fit="cover" data-object-position="50% 30%"' ),
+			array( '"url":"' . SPECFLUX_SITE_AGENT_URL . 'images/placeholder.jpg",', 'data-object-fit="cover"' ),
+			array( '"focalPoint":{"x":0.5,"y":0.3},"url":"' . SPECFLUX_SITE_AGENT_URL . 'images/placeholder.jpg",', 'style="object-position:50% 30%" data-object-fit="cover" data-object-position="50% 30%"' ),
 			$this->page( 'cover-hero', 'text-section' )
 		);
 		$this->assertStringContainsString( 'data-object-position', $content );
@@ -447,7 +447,7 @@ HTML;
 		// An image slipped inside an otherwise-valid pattern (e.g. a group) is
 		// still caught — the check walks the WHOLE tree, not just top-level
 		// blocks.
-		$content = '<!-- wp:group {"metadata":{"name":"senroflux/text-section"}} --><div class="wp-block-group">'
+		$content = '<!-- wp:group {"metadata":{"name":"specflux/text-section"}} --><div class="wp-block-group">'
 			. '<!-- wp:heading --><h2>Title</h2><!-- /wp:heading -->'
 			. '<!-- wp:image --><figure class="wp-block-image"><img src="https://example.test/x.jpg" alt=""/></figure><!-- /wp:image -->'
 			. '</div><!-- /wp:group -->';
@@ -480,7 +480,7 @@ HTML;
 		$result = $this->validator->validate( $this->markup( 'hero' ) . "\n\n" . $section );
 
 		$this->assertSame( 'unknown_pattern', $this->errorCode( $result ) );
-		$this->assertSame( 'senroflux/text-section', $result->get_error_data()['name'] );
+		$this->assertSame( 'specflux/text-section', $result->get_error_data()['name'] );
 	}
 
 	public function test_explicit_default_attributes_keep_pattern_identity(): void {
@@ -755,13 +755,13 @@ HTML;
 	// --- Step 5: mutations ------------------------------------------------
 
 	public function test_clean_normalises_pattern_metadata_name(): void {
-		$hero    = str_replace( '"name":"senroflux/hero"', '"name":"My hero"', $this->markup( 'hero' ) );
+		$hero    = str_replace( '"name":"specflux/hero"', '"name":"My hero"', $this->markup( 'hero' ) );
 		$content = $hero . "\n\n" . $this->markup( 'text-section' );
 
 		$result = $this->validator->clean( $content );
 
 		$this->assertTrue( $result['ok'] );
-		$this->assertStringContainsString( '"name":"senroflux/hero"', $result['content'] );
+		$this->assertStringContainsString( '"name":"specflux/hero"', $result['content'] );
 		$this->assertStringNotContainsString( 'My hero', $result['content'] );
 	}
 
@@ -812,7 +812,7 @@ HTML;
 
 		$hero_markup = $this->markup( 'hero' );
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array(
 			array(
 				'name'        => 'twentytwentyfive/fake-hero',
 				'title'       => 'Fake hero',
@@ -829,7 +829,7 @@ HTML;
 			),
 		);
 		ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
 
 		// A fresh Vocabulary/Validator pair so `all()` picks up the stubbed
 		// theme pattern registered just above.
@@ -842,11 +842,11 @@ HTML;
 		$result  = $validator->clean( $content );
 
 		$this->assertTrue( $result['ok'] );
-		$this->assertStringContainsString( '"name":"senroflux/hero"', $result['content'], 'the curated slug wins the tie' );
+		$this->assertStringContainsString( '"name":"specflux/hero"', $result['content'], 'the curated slug wins the tie' );
 		$this->assertStringNotContainsString( 'fake-hero', $result['content'] );
 
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'] );
 	}
 
 	/**
@@ -888,11 +888,11 @@ HTML;
 	 * unrelated real content patterns, and one real dedicated CTA pattern —
 	 * still passes the S11 page-shape rules (hero first, at most one cta, 2–8
 	 * patterns, no repeats). Uses the same real Twenty Twenty-Five fixtures
-	 * as {@see \Specflux\SenroFlux\Tests\Packs\Pages\CopyRulesCeilingTest}.
+	 * as {@see \Specflux\SiteAgent\Tests\Packs\Pages\CopyRulesCeilingTest}.
 	 * `pricing-3-col` is included deliberately: it carries `banner,
 	 * call-to-action, services` all at once, so it exercises the same
 	 * multi-category fix as
-	 * {@see \Specflux\SenroFlux\Tests\Packs\Pages\ThemePatternsTest::test_a_pattern_with_multiple_categories_is_neither_hero_nor_cta()}
+	 * {@see \Specflux\SiteAgent\Tests\Packs\Pages\ThemePatternsTest::test_a_pattern_with_multiple_categories_is_neither_hero_nor_cta()}
 	 * inside a real page (it must NOT count as a second hero or a second
 	 * cta alongside `banner-intro`/`cta-centered-heading`).
 	 * `testimonials-6-col` is left out: its shipped CSS `var(--...)` value
@@ -905,13 +905,13 @@ HTML;
 
 		$slugs = array( 'banner-intro', 'text-faqs', 'pricing-3-col', 'cta-centered-heading' );
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array_map(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array_map(
 			fn ( string $slug ) => $this->loadThemeFixture( $slug ),
 			$slugs
 		);
 		ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
 
 		$vocabulary = new Vocabulary();
 		$validator  = new Validator( $vocabulary );
@@ -922,7 +922,7 @@ HTML;
 			"\n\n",
 			array_map(
 				static fn ( array $fixture ): string => $fixture['content'],
-				$GLOBALS['senroflux_test_theme_patterns']
+				$GLOBALS['specflux_site_agent_test_theme_patterns']
 			)
 		);
 
@@ -931,7 +931,7 @@ HTML;
 		$this->assertTrue( $result['ok'], $result['wp_error']?->get_error_message() ?? '' );
 
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'] );
 	}
 
 	/**
@@ -939,7 +939,7 @@ HTML;
 	 * filled with a NEW attachment (never the shipped sample's), passes the
 	 * pack's real Validator — the same block-shape match ({@see BlockShells}'s
 	 * `core/image` `id`-attribute exception) and the same alt-text gate
-	 * ({@see \Specflux\SenroFlux\Packs\Content\ImageAlt}) a live run's write
+	 * ({@see \Specflux\SiteAgent\Packs\Content\ImageAlt}) a live run's write
 	 * goes through.
 	 */
 	public function test_a_theme_patterns_image_slot_filled_with_a_new_attachment_passes_validation(): void {
@@ -950,7 +950,7 @@ HTML;
 		include $path; // Same technique CopyRulesCeilingTest/ThemePatternsTest use to render a fixture exactly as WP_Theme::get_block_patterns() would.
 		$content = trim( (string) ob_get_clean() );
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array(
 			array(
 				'name'        => 'twentytwentyfive/banner-about-book',
 				'title'       => 'Banner with book description',
@@ -961,7 +961,7 @@ HTML;
 			),
 		);
 		ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
 
 		$vocabulary = new Vocabulary();
 		$validator  = new Validator( $vocabulary );
@@ -988,7 +988,7 @@ HTML;
 		$this->assertStringContainsString( 'A new book cover', $result['content'] );
 
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'] );
 	}
 
 	// --- D3a (S4): theme-shipped colour ----------------------------------
@@ -996,9 +996,9 @@ HTML;
 	/**
 	 * Registers the REAL Ollie fixture `tests/ThemePatterns/ollie/numbers-stacked.php`
 	 * (GPL, same licence as this plugin; original header kept for
-	 * provenance — `.scratch/senroflux-design/themes/ollie/patterns/numbers-stacked.php`
+	 * provenance — `.scratch/site-agent-design/themes/ollie/patterns/numbers-stacked.php`
 	 * from the S3 scan) as the active theme's own pattern, under Ollie's
-	 * real palette (`.scratch/senroflux-design/theme-scan.md`'s ollie
+	 * real palette (`.scratch/site-agent-design/theme-scan.md`'s ollie
 	 * section) rather than the stub's Twenty Twenty-Five default — this
 	 * pattern's shipped `backgroundColor`/`textColor` (`primary`/`base`/
 	 * `primary-accent`) are Ollie slugs, not Twenty Twenty-Five ones.
@@ -1022,10 +1022,10 @@ HTML;
 			'categories'  => array( 'ollie/features' ),
 		);
 
-		$GLOBALS['senroflux_test_theme_patterns']  = array( $fixture );
-		$GLOBALS['senroflux_test_stylesheet_dir']  = dirname( __DIR__, 2 ) . '/ThemePatterns/ollie';
-		$GLOBALS['senroflux_test_template_dir']    = dirname( __DIR__, 2 ) . '/ThemePatterns/ollie';
-		$GLOBALS['senroflux_test_global_settings'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns']  = array( $fixture );
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir']  = dirname( __DIR__, 2 ) . '/ThemePatterns/ollie';
+		$GLOBALS['specflux_site_agent_test_template_dir']    = dirname( __DIR__, 2 ) . '/ThemePatterns/ollie';
+		$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 			'color' => array(
 				'palette'   => array(
 					array( 'slug' => 'primary' ),
@@ -1051,10 +1051,10 @@ HTML;
 	private function teardownOllieFixture(): void {
 		ThemePatterns::resetCache();
 		unset(
-			$GLOBALS['senroflux_test_theme_patterns'],
-			$GLOBALS['senroflux_test_stylesheet_dir'],
-			$GLOBALS['senroflux_test_template_dir'],
-			$GLOBALS['senroflux_test_global_settings']
+			$GLOBALS['specflux_site_agent_test_theme_patterns'],
+			$GLOBALS['specflux_site_agent_test_stylesheet_dir'],
+			$GLOBALS['specflux_site_agent_test_template_dir'],
+			$GLOBALS['specflux_site_agent_test_global_settings']
 		);
 	}
 

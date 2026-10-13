@@ -11,17 +11,17 @@
  * read the front page, or when an external change happened between the read
  * and the write.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\FrontPage;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Site\FrontPage;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use wpdb;
 
 final class FrontPageTest extends TestCase {
@@ -37,12 +37,12 @@ final class FrontPageTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_options']            = array();
-		$GLOBALS['senroflux_test_user_caps']          = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_options']            = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array( 'manage_options' => true );
 
 		FrontPage::reset();
 		FrontPage::register();
@@ -57,11 +57,11 @@ final class FrontPageTest extends TestCase {
 	}
 
 	private function readAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/read-front-page'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/read-front-page'];
 	}
 
 	private function setAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/set-front-page'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/set-front-page'];
 	}
 
 	public function test_read_reports_latest_posts_by_default(): void {

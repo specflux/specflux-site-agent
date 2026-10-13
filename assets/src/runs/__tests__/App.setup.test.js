@@ -19,18 +19,18 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 		listRuns.mockResolvedValue( [] );
 		document.body.insertAdjacentHTML(
 			'afterbegin',
-			'<div id="senroflux-setup-panel"><div class="notice">Configure a model provider in Settings → Connectors.</div></div>'
+			'<div id="specflux-site-agent-setup-panel"><div class="notice">Configure a model provider in Settings → Connectors.</div></div>'
 		);
 	} );
 
 	afterEach( () => {
-		const panel = document.getElementById( 'senroflux-setup-panel' );
+		const panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 		if ( panel ) {
 			panel.remove();
 		}
 	} );
 
-	const config = { nonce: 'n', consumer: 'senroflux-admin', gateMode: 'built_in', packs, startBlocked: true, examples: [] };
+	const config = { nonce: 'n', consumer: 'specflux-site-agent-admin', gateMode: 'built_in', packs, startBlocked: true, examples: [] };
 
 	it( 'keeps Start disabled while the blocking check fails', async () => {
 		render( <App config={ config } /> );
@@ -43,7 +43,7 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 
 	it( 're-enables Start after a window focus that finds the check passing, and refreshes the panel', async () => {
 		fetchSetupState.mockResolvedValue( {
-			html: '<div id="senroflux-setup-panel"></div>',
+			html: '<div id="specflux-site-agent-setup-panel"></div>',
 			start_enabled: true,
 			packs,
 			unavailable_packs: [],
@@ -61,7 +61,7 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 			expect( screen.getByRole( 'button', { name: 'Start run' } ) ).not.toBeDisabled();
 		} );
 		expect( fetchSetupState ).toHaveBeenCalledTimes( 1 );
-		expect( document.getElementById( 'senroflux-setup-panel' ).textContent ).toBe( '' );
+		expect( document.getElementById( 'specflux-site-agent-setup-panel' ).textContent ).toBe( '' );
 	} );
 
 	it( 'also refreshes when the tab becomes visible again', async () => {
@@ -125,7 +125,7 @@ describe( 'a follow-up run from the screen (S20)', () => {
 		tickRun.mockResolvedValue( { run: { id: 5, status: 'completed', step_count: 2 }, new_steps: [] } );
 	} );
 
-	const config = { initialRunId: '4', nonce: 'n', consumer: 'senroflux-admin', gateMode: 'built_in', packs, examples: [] };
+	const config = { initialRunId: '4', nonce: 'n', consumer: 'specflux-site-agent-admin', gateMode: 'built_in', packs, examples: [] };
 
 	it( 'starts the follow-up from a cancelled run with follow_up_of and an empty goal box', async () => {
 		render( <App config={ config } /> );
@@ -168,7 +168,7 @@ describe( 'the report arrives with the terminal tick', () => {
 		listRuns.mockResolvedValue( [ parked ] );
 		getRun.mockResolvedValue( {
 			run: parked,
-			steps: [ { seq: 1, kind: 'approval', status: 'parked', message: { verb: 'senroflux/publish-post', tier: 2, args: {} } } ],
+			steps: [ { seq: 1, kind: 'approval', status: 'parked', message: { verb: 'specflux/publish-post', tier: 2, args: {} } } ],
 		} );
 		const report = {
 			summary: 'Done',
@@ -189,15 +189,15 @@ describe( 'the report arrives with the terminal tick', () => {
 		expect( await screen.findByText( '1 change, 1 not checked' ) ).toBeInTheDocument();
 		expect( screen.getByText( 'Not checked after the change' ) ).toBeInTheDocument();
 		// The fields the thin ajax row lacks survive the merge.
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toHaveTextContent( /Images are off/ );
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toHaveTextContent( /Images are off/ );
 		expect( screen.getByRole( 'button', { name: 'Start a follow-up' } ) ).toBeInTheDocument();
 	} );
 } );
 
-describe( 'the SenroGate advisory Dismiss button (J1)', () => {
+describe( 'the Belayline Agent Governance advisory Dismiss button (J1)', () => {
 	const advisory =
-		'<div id="senroflux-setup-panel"><div class="notice" data-check-id="senroflux/agent-safety"><p>Install SenroGate.</p>' +
-		'<p><button type="button" class="button senroflux-dismiss-check" data-nonce="dn1">Dismiss</button></p></div></div>';
+		'<div id="specflux-site-agent-setup-panel"><div class="notice" data-check-id="specflux/agent-safety"><p>Install Belayline Agent Governance.</p>' +
+		'<p><button type="button" class="button specflux-site-agent-dismiss-check" data-nonce="dn1">Dismiss</button></p></div></div>';
 
 	beforeEach( () => {
 		jest.clearAllMocks();
@@ -206,7 +206,7 @@ describe( 'the SenroGate advisory Dismiss button (J1)', () => {
 	} );
 
 	afterEach( () => {
-		const panel = document.getElementById( 'senroflux-setup-panel' );
+		const panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 		if ( panel ) {
 			panel.remove();
 		}
@@ -215,31 +215,31 @@ describe( 'the SenroGate advisory Dismiss button (J1)', () => {
 	const config = { nonce: 'n', consumer: 'c', gateMode: 'built_in', packs, examples: [] };
 
 	it( 'posts the dismissal with the button\'s own nonce, removes the advisory, and focuses the goal box', async () => {
-		dismissAdvisory.mockResolvedValue( { html: '<div id="senroflux-setup-panel"></div>' } );
+		dismissAdvisory.mockResolvedValue( { html: '<div id="specflux-site-agent-setup-panel"></div>' } );
 		render( <App config={ config } /> );
 		const box = await screen.findByPlaceholderText( 'Describe what you want done…' );
 
-		fireEvent.click( document.querySelector( '.senroflux-dismiss-check' ) );
+		fireEvent.click( document.querySelector( '.specflux-site-agent-dismiss-check' ) );
 
-		await waitFor( () => expect( document.querySelector( '.senroflux-dismiss-check' ) ).toBeNull() );
+		await waitFor( () => expect( document.querySelector( '.specflux-site-agent-dismiss-check' ) ).toBeNull() );
 		expect( dismissAdvisory ).toHaveBeenCalledWith( expect.objectContaining( { nonce: 'dn1' } ) );
 		expect( document.activeElement ).toBe( box );
 	} );
 
 	it( 'stays hidden after a later setup refresh, which carries the server\'s dismissed state', async () => {
-		dismissAdvisory.mockResolvedValue( { html: '<div id="senroflux-setup-panel"></div>' } );
-		fetchSetupState.mockResolvedValue( { html: '<div id="senroflux-setup-panel"></div>', start_enabled: true, packs, unavailable_packs: [] } );
+		dismissAdvisory.mockResolvedValue( { html: '<div id="specflux-site-agent-setup-panel"></div>' } );
+		fetchSetupState.mockResolvedValue( { html: '<div id="specflux-site-agent-setup-panel"></div>', start_enabled: true, packs, unavailable_packs: [] } );
 		render( <App config={ config } /> );
 		await screen.findByPlaceholderText( 'Describe what you want done…' );
 
-		fireEvent.click( document.querySelector( '.senroflux-dismiss-check' ) );
-		await waitFor( () => expect( document.querySelector( '.senroflux-dismiss-check' ) ).toBeNull() );
+		fireEvent.click( document.querySelector( '.specflux-site-agent-dismiss-check' ) );
+		await waitFor( () => expect( document.querySelector( '.specflux-site-agent-dismiss-check' ) ).toBeNull() );
 		await act( async () => {
 			window.dispatchEvent( new Event( 'focus' ) );
 		} );
 
 		await waitFor( () => expect( fetchSetupState ).toHaveBeenCalled() );
-		expect( document.querySelector( '.senroflux-dismiss-check' ) ).toBeNull();
+		expect( document.querySelector( '.specflux-site-agent-dismiss-check' ) ).toBeNull();
 	} );
 
 	it( 'keeps the advisory when the request fails', async () => {
@@ -247,9 +247,9 @@ describe( 'the SenroGate advisory Dismiss button (J1)', () => {
 		render( <App config={ config } /> );
 		await screen.findByPlaceholderText( 'Describe what you want done…' );
 
-		fireEvent.click( document.querySelector( '.senroflux-dismiss-check' ) );
+		fireEvent.click( document.querySelector( '.specflux-site-agent-dismiss-check' ) );
 
 		await act( async () => {} );
-		expect( document.querySelector( '.senroflux-dismiss-check' ) ).not.toBeNull();
+		expect( document.querySelector( '.specflux-site-agent-dismiss-check' ) ).not.toBeNull();
 	} );
 } );

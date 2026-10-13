@@ -2,12 +2,12 @@
 /**
  * Park-resolution validation (0.2 S5).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 use WP_Error;
 
@@ -56,13 +56,13 @@ final class Resume {
 
 		if ( ! $status->isParked() ) {
 			return $mismatch(
-				__( 'This run is not waiting on a human; it accepts no park resolution.', 'senroflux' )
+				__( 'This run is not waiting on a human; it accepts no park resolution.', 'specflux-site-agent' )
 			);
 		}
 
 		if ( ! is_array( $resume ) ) {
 			return $mismatch(
-				__( 'The resume payload must be a JSON object matching the run\'s park kind.', 'senroflux' )
+				__( 'The resume payload must be a JSON object matching the run\'s park kind.', 'specflux-site-agent' )
 			);
 		}
 
@@ -71,7 +71,7 @@ final class Resume {
 			RunStatus::AwaitingUser     => self::checkUser( $resume, $mismatch ),
 			RunStatus::AwaitingPlan     => self::checkPlan( $resume, $mismatch ),
 			default                     => $mismatch(
-				__( 'This run\'s park kind accepts no park resolution.', 'senroflux' )
+				__( 'This run\'s park kind accepts no park resolution.', 'specflux-site-agent' )
 			),
 		};
 	}
@@ -83,13 +83,13 @@ final class Resume {
 	private static function checkApproval( array $resume, callable $mismatch ): bool|WP_Error {
 		if ( array_keys( $resume ) !== array( 'action' ) ) {
 			return $mismatch(
-				__( 'An approval park resumes with exactly { "action": "approve" | "reject" }.', 'senroflux' )
+				__( 'An approval park resumes with exactly { "action": "approve" | "reject" }.', 'specflux-site-agent' )
 			);
 		}
 
 		if ( ! in_array( $resume['action'], array( 'approve', 'reject' ), true ) ) {
 			return $mismatch(
-				__( 'An approval park resumes with action "approve" or "reject".', 'senroflux' )
+				__( 'An approval park resumes with action "approve" or "reject".', 'specflux-site-agent' )
 			);
 		}
 
@@ -104,33 +104,33 @@ final class Resume {
 		if ( array_keys( $resume ) === array( 'skip' ) ) {
 			return true === $resume['skip']
 				? true
-				: $mismatch( __( 'A question park resumes with skip set to true.', 'senroflux' ) );
+				: $mismatch( __( 'A question park resumes with skip set to true.', 'specflux-site-agent' ) );
 		}
 
 		if ( array_keys( $resume ) !== array( 'answer' ) ) {
 			return $mismatch(
-				__( 'A question park resumes with { "answer": { "text"?, "choice"? } } or { "skip": true }.', 'senroflux' )
+				__( 'A question park resumes with { "answer": { "text"?, "choice"? } } or { "skip": true }.', 'specflux-site-agent' )
 			);
 		}
 
 		$answer = $resume['answer'];
 		if ( ! is_array( $answer ) ) {
-			return $mismatch( __( 'The answer payload must be an object.', 'senroflux' ) );
+			return $mismatch( __( 'The answer payload must be an object.', 'specflux-site-agent' ) );
 		}
 
 		foreach ( array_keys( $answer ) as $key ) {
 			if ( ! in_array( $key, array( 'text', 'choice' ), true ) ) {
 				return $mismatch(
-					__( 'An answer may only carry "text" and/or "choice".', 'senroflux' )
+					__( 'An answer may only carry "text" and/or "choice".', 'specflux-site-agent' )
 				);
 			}
 			if ( ! is_string( $answer[ $key ] ) ) {
-				return $mismatch( __( 'The answer text and choice must be strings.', 'senroflux' ) );
+				return $mismatch( __( 'The answer text and choice must be strings.', 'specflux-site-agent' ) );
 			}
 		}
 
 		if ( array() === $answer ) {
-			return $mismatch( __( 'The answer payload must carry a "text" and/or a "choice".', 'senroflux' ) );
+			return $mismatch( __( 'The answer payload must carry a "text" and/or a "choice".', 'specflux-site-agent' ) );
 		}
 
 		return true;
@@ -143,38 +143,38 @@ final class Resume {
 	private static function checkPlan( array $resume, callable $mismatch ): bool|WP_Error {
 		if ( array_keys( $resume ) !== array( 'plan' ) ) {
 			return $mismatch(
-				__( 'A plan park resumes with exactly { "plan": { "action": ..., "note"? } }.', 'senroflux' )
+				__( 'A plan park resumes with exactly { "plan": { "action": ..., "note"? } }.', 'specflux-site-agent' )
 			);
 		}
 
 		$plan = $resume['plan'];
 		if ( ! is_array( $plan ) ) {
-			return $mismatch( __( 'The plan payload must be an object.', 'senroflux' ) );
+			return $mismatch( __( 'The plan payload must be an object.', 'specflux-site-agent' ) );
 		}
 
 		$keys = array_keys( $plan );
 		sort( $keys );
 		if ( array( 'action' ) !== $keys && array( 'action', 'note' ) !== $keys ) {
 			return $mismatch(
-				__( 'A plan resolution carries "action" and an optional "note".', 'senroflux' )
+				__( 'A plan resolution carries "action" and an optional "note".', 'specflux-site-agent' )
 			);
 		}
 
 		if ( ! in_array( $plan['action'], array( 'accept', 'accept_preapprove', 'veto' ), true ) ) {
 			return $mismatch(
-				__( 'A plan resolution acts with "accept", "accept_preapprove" or "veto".', 'senroflux' )
+				__( 'A plan resolution acts with "accept", "accept_preapprove" or "veto".', 'specflux-site-agent' )
 			);
 		}
 
 		if ( isset( $plan['note'] ) ) {
 			if ( ! is_string( $plan['note'] ) ) {
-				return $mismatch( __( 'The plan note must be a string.', 'senroflux' ) );
+				return $mismatch( __( 'The plan note must be a string.', 'specflux-site-agent' ) );
 			}
 			if ( mb_strlen( $plan['note'] ) > self::MAX_NOTE_CHARS ) {
 				return $mismatch(
 					sprintf(
 						// Translators: %d is the maximum number of characters.
-						__( 'The plan note may be at most %d characters.', 'senroflux' ),
+						__( 'The plan note may be at most %d characters.', 'specflux-site-agent' ),
 						self::MAX_NOTE_CHARS
 					)
 				);
@@ -182,7 +182,7 @@ final class Resume {
 		}
 
 		if ( 'veto' === $plan['action'] && ( ! isset( $plan['note'] ) || '' === trim( $plan['note'] ) ) ) {
-			return $mismatch( __( 'A veto carries a note explaining it.', 'senroflux' ) );
+			return $mismatch( __( 'A veto carries a note explaining it.', 'specflux-site-agent' ) );
 		}
 
 		return true;

@@ -4,20 +4,20 @@
  * `upload_files` can add no image, so no image tool is offered, planned or
  * mentioned — across all three packs.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Posts;
+namespace Specflux\SiteAgent\Tests\Packs\Posts;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Tools\PlanTools;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Tools\PlanTools;
 use wpdb;
 
 final class WithheldImagesTest extends TestCase {
@@ -26,21 +26,21 @@ final class WithheldImagesTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		remove_all_filters( 'senroflux_packs' );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array(
+		remove_all_filters( 'specflux_site_agent_packs' );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array(
 			1 => array(
 				'edit_posts'   => true,
 				'upload_files' => false,
 			),
 		);
-		$GLOBALS['wpdb']                           = new wpdb();
+		$GLOBALS['wpdb']                                     = new wpdb();
 		Plugin::set_dependency_probe( true );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_packs' );
-		unset( $GLOBALS['wpdb'], $GLOBALS['senroflux_test_user_caps_by_id'] );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_user_caps_by_id'] );
 		Plugin::reset();
 	}
 
@@ -78,9 +78,9 @@ final class WithheldImagesTest extends TestCase {
 		foreach ( $this->imageAbilities( $pack ) as $ability ) {
 			$this->assertNotContains( $ability, $allow, $ability );
 		}
-		$this->assertContains( 'senroflux/create-post', $allow );
-		$this->assertContains( 'senroflux/set-terms', $allow );
-		$this->assertContains( 'senroflux/list-terms', $allow );
+		$this->assertContains( 'specflux/create-post', $allow );
+		$this->assertContains( 'specflux/set-terms', $allow );
+		$this->assertContains( 'specflux/list-terms', $allow );
 		$this->assertEqualsCanonicalizing( self::IMAGE_ROLES, $withheld );
 		$this->assertSame( 'Images are off for this run — your account can\'t upload files.', $pack->withheldRoleNotice( $withheld ) );
 	}

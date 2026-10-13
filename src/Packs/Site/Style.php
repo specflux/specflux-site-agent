@@ -1,7 +1,7 @@
 <?php
 /**
  * The style-variation registrar (0.3 quality feature 5):
- * `senroflux/read-style` (Tier 0) and `senroflux/set-style` (Tier 2, one
+ * `specflux/read-style` (Tier 0) and `specflux/set-style` (Tier 2, one
  * write).
  *
  * TARGET REPO PATH: src/Packs/Site/Style.php
@@ -34,15 +34,15 @@
  * runs against PHP stubs of those APIs (`tests/stubs/style.php`), never a
  * real WordPress install.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Run\RunStore;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\RunStore;
+use Specflux\SiteAgent\Run\Tracker;
 use WP_Error;
 
 // Bail on direct access.
@@ -67,7 +67,7 @@ final class Style {
 	 * The postmeta key this registrar's own "which variation is active"
 	 * record lives under, on the user global styles post.
 	 */
-	private const VARIATION_META = '_senroflux_style_variation';
+	private const VARIATION_META = '_specflux_site_agent_style_variation';
 
 	/** The slug reported when no variation has ever been recorded. */
 	private const DEFAULT_SLUG = 'default';
@@ -84,7 +84,7 @@ final class Style {
 	/**
 	 * Wire the ability registration hook (call once, from the composition
 	 * root). The category is registered by {@see Navigation::registerCategory()}
-	 * (shared `senroflux-site` category) — boot() here only needs the
+	 * (shared `specflux-site` category) — boot() here only needs the
 	 * ability-init hook.
 	 */
 	public static function boot(): void {
@@ -188,14 +188,14 @@ final class Style {
 	}
 
 	/**
-	 * senroflux/read-style — Tier 0.
+	 * specflux/read-style — Tier 0.
 	 */
 	private static function registerReadStyle(): void {
 		wp_register_ability(
-			'senroflux/read-style',
+			'specflux/read-style',
 			array(
-				'label'               => __( 'Read style variation', 'senroflux' ),
-				'description'         => __( 'Read the active block theme\'s current style variation and every variation available to switch to.', 'senroflux' ),
+				'label'               => __( 'Read style variation', 'specflux-site-agent' ),
+				'description'         => __( 'Read the active block theme\'s current style variation and every variation available to switch to.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -222,14 +222,14 @@ final class Style {
 	}
 
 	/**
-	 * senroflux/set-style — Tier 2, one write.
+	 * specflux/set-style — Tier 2, one write.
 	 */
 	private static function registerSetStyle(): void {
 		wp_register_ability(
-			'senroflux/set-style',
+			'specflux/set-style',
 			array(
-				'label'               => __( 'Set style variation', 'senroflux' ),
-				'description'         => __( 'Apply one of the active block theme\'s own style variations to the site\'s global styles.', 'senroflux' ),
+				'label'               => __( 'Set style variation', 'specflux-site-agent' ),
+				'description'         => __( 'Apply one of the active block theme\'s own style variations to the site\'s global styles.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -309,7 +309,7 @@ final class Style {
 		if ( self::isStaleWrite( self::marker( self::currentState() ) ) ) {
 			return new WP_Error(
 				'stale_write',
-				__( 'The style variation changed since this run last read it. Re-read it before writing again.', 'senroflux' ),
+				__( 'The style variation changed since this run last read it. Re-read it before writing again.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -317,7 +317,7 @@ final class Style {
 		if ( ! self::isBlockTheme() ) {
 			return new WP_Error(
 				'not_block_theme',
-				__( 'The active theme is not a block theme; it has no style variations to switch between.', 'senroflux' ),
+				__( 'The active theme is not a block theme; it has no style variations to switch between.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -326,7 +326,7 @@ final class Style {
 		if ( '' === $slug ) {
 			return new WP_Error(
 				'style_bad_request',
-				__( 'slug is required.', 'senroflux' ),
+				__( 'slug is required.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -335,7 +335,7 @@ final class Style {
 		if ( null === $variation ) {
 			return new WP_Error(
 				'not_found',
-				__( 'That style variation does not exist.', 'senroflux' ),
+				__( 'That style variation does not exist.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -465,7 +465,7 @@ final class Style {
 		if ( is_array( $palette ) && array() !== $palette ) {
 			$parts[] = sprintf(
 				/* translators: %d: number of colours in the palette. */
-				__( '%d colours', 'senroflux' ),
+				__( '%d colours', 'specflux-site-agent' ),
 				count( $palette )
 			);
 		}
@@ -516,7 +516,7 @@ final class Style {
 			}
 		}
 		if ( self::DEFAULT_SLUG === $slug ) {
-			$title = __( 'Default', 'senroflux' );
+			$title = __( 'Default', 'specflux-site-agent' );
 		}
 
 		return array(
@@ -556,7 +556,7 @@ final class Style {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -571,7 +571,7 @@ final class Style {
 	public static function reportLookup(): array {
 		return array(
 			'object_type' => 'setting',
-			'title'       => __( 'Site style', 'senroflux' ),
+			'title'       => __( 'Site style', 'specflux-site-agent' ),
 			'status'      => '',
 			'edit_url'    => function_exists( 'admin_url' ) ? admin_url( 'site-editor.php?path=%2Fwp_global_styles' ) : null,
 			'preview_url' => null,

@@ -3,23 +3,23 @@
  * Runner-level defence in depth for 0.3 S6: a withheld role's ability is
  * refused at execution even when it still reaches `executeCall()` (a stale
  * allow-list, a hallucinated/injected call) — never merely relying on the
- * tool-set drop {@see \Specflux\SenroFlux\Plugin::start()} performs.
+ * tool-set drop {@see \Specflux\SiteAgent\Plugin::start()} performs.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use wpdb;
 
 final class WithheldRolesTest extends TestCase {
@@ -48,27 +48,27 @@ final class WithheldRolesTest extends TestCase {
 			// the S7 plan fence and Agent Safety tiering are NOT what this
 			// test is about (that seam is exercised elsewhere); an unmapped
 			// verb fails closed to tier 2 and would park for a plan instead.
-			static fn (): array => array( 'senroflux/generate-image' => 0 ),
+			static fn (): array => array( 'specflux/generate-image' => 0 ),
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			null,
 			// S6: the withheld-abilities resolver — mirrors the small closure
 			// Plugin::runner() wires from a real Pack, without needing one here.
-			static fn ( \Specflux\SenroFlux\Run\Run $run ): array => in_array( 'generate', $run->withheldRoles, true )
-				? array( 'senroflux/generate-image' )
+			static fn ( \Specflux\SiteAgent\Run\Run $run ): array => in_array( 'generate', $run->withheldRoles, true )
+				? array( 'specflux/generate-image' )
 				: array()
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 		// The ability IS registered (a model could still name it, e.g. an
 		// injected call) — the refusal must come from the withheld check,
 		// never from the ability being merely unregistered.
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'senroflux/generate-image' => new SenroFlux_Test_Fake_Ability( 'senroflux/generate-image' ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'specflux/generate-image' => new SpecfluxSiteAgent_Test_Fake_Ability( 'specflux/generate-image' ),
 		);
 	}
 
@@ -77,7 +77,7 @@ final class WithheldRolesTest extends TestCase {
 			1,
 			'test-consumer',
 			'Write a post',
-			array( 'senroflux/generate-image' ), // Allow-list still admits it — proving this is NOT the allow-list check.
+			array( 'specflux/generate-image' ), // Allow-list still admits it — proving this is NOT the allow-list check.
 			Budget::defaults(),
 			null,
 			null,
@@ -87,8 +87,8 @@ final class WithheldRolesTest extends TestCase {
 		);
 	}
 
-	private static function callTurn( string $function_name, array $args ): \Specflux\SenroFlux\Model\ModelTurn {
-		return new \Specflux\SenroFlux\Model\ModelTurn(
+	private static function callTurn( string $function_name, array $args ): \Specflux\SiteAgent\Model\ModelTurn {
+		return new \Specflux\SiteAgent\Model\ModelTurn(
 			new \WordPress\AiClient\Messages\DTO\ModelMessage(
 				array(
 					new \WordPress\AiClient\Messages\DTO\MessagePart(
@@ -101,8 +101,8 @@ final class WithheldRolesTest extends TestCase {
 		);
 	}
 
-	private static function textTurn( string $text ): \Specflux\SenroFlux\Model\ModelTurn {
-		return new \Specflux\SenroFlux\Model\ModelTurn(
+	private static function textTurn( string $text ): \Specflux\SiteAgent\Model\ModelTurn {
+		return new \Specflux\SiteAgent\Model\ModelTurn(
 			new \WordPress\AiClient\Messages\DTO\ModelMessage(
 				array( new \WordPress\AiClient\Messages\DTO\MessagePart( $text ) )
 			),
@@ -114,7 +114,7 @@ final class WithheldRolesTest extends TestCase {
 	public function test_a_withheld_roles_ability_is_refused_never_parked(): void {
 		$run_id = $this->createRun( array( 'generate' ) );
 
-		$this->gateway->script[] = self::callTurn( 'wpab__senroflux__generate-image', array() );
+		$this->gateway->script[] = self::callTurn( 'wpab__specflux__generate-image', array() );
 		$this->gateway->script[] = self::textTurn( 'Could not add an image.' );
 		$this->gateway->script[] = self::textTurn( 'Could not add an image.' );
 
@@ -137,7 +137,7 @@ final class WithheldRolesTest extends TestCase {
 	public function test_a_run_with_no_withheld_roles_may_call_the_same_ability(): void {
 		$run_id = $this->createRun( array() ); // Nothing withheld.
 
-		$this->gateway->script[] = self::callTurn( 'wpab__senroflux__generate-image', array() );
+		$this->gateway->script[] = self::callTurn( 'wpab__specflux__generate-image', array() );
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 
 		$result = $this->runner->tick( $run_id, 0, null );
@@ -147,8 +147,8 @@ final class WithheldRolesTest extends TestCase {
 	}
 
 	/** A minimal fixture pack whose `generate` role names its withheld-role line. */
-	private function fixturePack(): \Specflux\SenroFlux\Packs\Pack {
-		return new class() extends \Specflux\SenroFlux\Packs\Pack {
+	private function fixturePack(): \Specflux\SiteAgent\Packs\Pack {
+		return new class() extends \Specflux\SiteAgent\Packs\Pack {
 			public function __construct() {
 				parent::__construct( array( 'generate' => 'generate-image' ) );
 			}
@@ -158,7 +158,7 @@ final class WithheldRolesTest extends TestCase {
 			}
 
 			public function verbMap(): array {
-				return array( 'senroflux/generate-image' => 0 );
+				return array( 'specflux/generate-image' => 0 );
 			}
 
 			public function roleCapabilities(): array {
@@ -195,14 +195,14 @@ final class WithheldRolesTest extends TestCase {
 			null,
 			static fn (): array => $pack->verbMap(),
 			null,
-			static fn (): \Specflux\SenroFlux\Packs\Pack => $pack
+			static fn (): \Specflux\SiteAgent\Packs\Pack => $pack
 		);
 
 		$run_id = $this->store->createRun(
 			1,
 			'test-consumer',
 			'Write a post',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults(),
 			'fixture',
 			null,
@@ -228,14 +228,14 @@ final class WithheldRolesTest extends TestCase {
 			null,
 			static fn (): array => $pack->verbMap(),
 			null,
-			static fn (): \Specflux\SenroFlux\Packs\Pack => $pack
+			static fn (): \Specflux\SiteAgent\Packs\Pack => $pack
 		);
 
 		$run_id = $this->store->createRun(
 			1,
 			'test-consumer',
 			'Write a post',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults(),
 			'fixture',
 			null,

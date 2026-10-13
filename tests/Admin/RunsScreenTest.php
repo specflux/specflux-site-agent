@@ -3,45 +3,45 @@
  * RunsScreen tests (stage 9): the new-run form, the S13 preflight gate, the
  * server-side start/answer handlers, and the S5 resume-shape assembly.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Admin;
+namespace Specflux\SiteAgent\Tests\Admin;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\ConsumerPolicy;
-use Specflux\SenroFlux\Model\ModelChoice;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use SenroFluxJsonResponse;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\ConsumerPolicy;
+use Specflux\SiteAgent\Model\ModelChoice;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use SpecfluxSiteAgentJsonResponse;
 use WP_Error;
 use wpdb;
 
 final class RunsScreenTest extends TestCase {
 
-	private const SLUG = 'senroflux-runs';
+	private const SLUG = 'specflux-site-agent-runs';
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_user_caps']       = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_actions']         = array();
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['senroflux_test_localized']       = array();
-		unset( $GLOBALS['senroflux_test_redirect'] );
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_actions']         = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_localized']       = array();
+		unset( $GLOBALS['specflux_site_agent_test_redirect'] );
 		unset( $_POST );
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 		remove_all_filters( ConsumerPolicy::FILTER );
 		// 0.3 S10: the screen capability is now computed from the registered
 		// packs. Most of this file registers a NAMELESS fixture pack that
@@ -50,13 +50,13 @@ final class RunsScreenTest extends TestCase {
 		// in ScreenCapabilityTest and the dedicated tests below) — pin the
 		// pre-0.3 fixed value so every other test here keeps its original
 		// meaning.
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'manage_options' );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_packs' );
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 		remove_all_filters( ConsumerPolicy::FILTER );
 	}
 
@@ -71,7 +71,7 @@ final class RunsScreenTest extends TestCase {
 			public string $packName               = 'pages';
 
 			/** @var list<string> */
-			public array $allow = array( 'senroflux/read-content' );
+			public array $allow = array( 'specflux/read-content' );
 
 			public function name(): string {
 				return $this->packName;
@@ -110,7 +110,7 @@ final class RunsScreenTest extends TestCase {
 	private function registerFakePack( bool|WP_Error $preflight, string $name = 'pages' ): Pack {
 		$pack = $this->fakePack( $preflight, $name );
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array( $name => $pack ),
 			10,
 			1
@@ -120,7 +120,7 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	/**
-	 * Register `senroflux-admin` in the consumer map the way `register()` does
+	 * Register `specflux-site-agent-admin` in the consumer map the way `register()` does
 	 * in production, so `handleNewRun()` can resolve its policy (S13).
 	 */
 	private function registerAdminConsumer(): void {
@@ -151,7 +151,7 @@ final class RunsScreenTest extends TestCase {
 		( new RunsScreen() )->render();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( '<div id="senroflux-runs-root">', $html );
+		$this->assertStringContainsString( '<div id="specflux-site-agent-runs-root">', $html );
 		$this->assertStringContainsString( '<noscript>', $html );
 		$this->assertStringNotContainsString( 'name="goal"', $html, '0.2\'s server-rendered new-run form is retired' );
 	}
@@ -178,13 +178,13 @@ final class RunsScreenTest extends TestCase {
 		ModelChoice::setAvailableChoicesProbe( $fixture );
 
 		try {
-			( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
+			( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
 		} finally {
 			ModelChoice::setAvailableChoicesProbe( null );
 		}
 
-		$this->assertArrayHasKey( 'senrofluxRunsConfig', $GLOBALS['senroflux_test_localized'] );
-		$this->assertSame( $fixture, $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['modelChoices'] );
+		$this->assertArrayHasKey( 'specfluxSiteAgentRunsConfig', $GLOBALS['specflux_site_agent_test_localized'] );
+		$this->assertSame( $fixture, $GLOBALS['specflux_site_agent_test_localized']['specfluxSiteAgentRunsConfig']['modelChoices'] );
 	}
 
 	/**
@@ -195,20 +195,20 @@ final class RunsScreenTest extends TestCase {
 	public function test_assets_localizes_start_blocked_when_a_blocking_harness_check_fails(): void {
 		Checks::setProviderProbe( false );
 		try {
-			( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
-			$blocked = $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['startBlocked'] ?? null;
+			( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
+			$blocked = $GLOBALS['specflux_site_agent_test_localized']['specfluxSiteAgentRunsConfig']['startBlocked'] ?? null;
 		} finally {
 			Checks::setProviderProbe( true ); // suite-wide default, not the real registry.
 		}
 
 		$this->assertTrue( $blocked );
 
-		( new RunsScreen() )->assets( 'toplevel_page_senroflux-runs' );
-		$this->assertFalse( $GLOBALS['senroflux_test_localized']['senrofluxRunsConfig']['startBlocked'] );
+		( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
+		$this->assertFalse( $GLOBALS['specflux_site_agent_test_localized']['specfluxSiteAgentRunsConfig']['startBlocked'] );
 	}
 
 	// ------------------------------------------------------------------
-	// handleNewRun: one start path through senroflux()->start
+	// handleNewRun: one start path through specflux_site_agent()->start
 	// ------------------------------------------------------------------
 
 	public function test_handle_new_run_starts_a_run_and_redirects_to_detail(): void {
@@ -231,7 +231,7 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=senroflux-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 		};
 
@@ -259,8 +259,8 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_answer_action'] = 'answer';
-		$_POST['senroflux_answer_choice'] = 'light';
+		$_POST['specflux_site_agent_answer_action'] = 'answer';
+		$_POST['specflux_site_agent_answer_choice'] = 'light';
 
 		$this->assertSame( array( 'answer' => array( 'choice' => 'light' ) ), $screen->exposeAnswer() );
 	}
@@ -272,9 +272,9 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_answer_action'] = 'answer';
-		$_POST['senroflux_answer_choice'] = '__other__';
-		$_POST['senroflux_answer_other']  = 'A custom answer';
+		$_POST['specflux_site_agent_answer_action'] = 'answer';
+		$_POST['specflux_site_agent_answer_choice'] = '__other__';
+		$_POST['specflux_site_agent_answer_other']  = 'A custom answer';
 
 		$this->assertSame( array( 'answer' => array( 'text' => 'A custom answer' ) ), $screen->exposeAnswer() );
 	}
@@ -286,7 +286,7 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_answer_action'] = 'skip';
+		$_POST['specflux_site_agent_answer_action'] = 'skip';
 
 		$this->assertSame( array( 'skip' => true ), $screen->exposeAnswer() );
 	}
@@ -298,9 +298,9 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_answer_action'] = 'answer';
-		$_POST['senroflux_answer_choice'] = '';
-		$_POST['senroflux_answer_text']   = '';
+		$_POST['specflux_site_agent_answer_action'] = 'answer';
+		$_POST['specflux_site_agent_answer_choice'] = '';
+		$_POST['specflux_site_agent_answer_text']   = '';
 
 		$result = $screen->exposeAnswer();
 		$this->assertInstanceOf( WP_Error::class, $result );
@@ -314,8 +314,8 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_plan_action'] = 'veto';
-		$_POST['senroflux_plan_note']   = '';
+		$_POST['specflux_site_agent_plan_action'] = 'veto';
+		$_POST['specflux_site_agent_plan_note']   = '';
 
 		$result = $screen->exposePlan();
 		$this->assertInstanceOf( WP_Error::class, $result );
@@ -329,7 +329,7 @@ final class RunsScreenTest extends TestCase {
 			}
 		};
 
-		$_POST['senroflux_plan_action'] = 'accept';
+		$_POST['specflux_site_agent_plan_action'] = 'accept';
 
 		$this->assertSame( array( 'plan' => array( 'action' => 'accept' ) ), $screen->exposePlan() );
 	}
@@ -347,14 +347,14 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=senroflux-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 		};
 
 		$_POST = array(
-			'run_id'                  => '7',
-			'step_count'              => '3',
-			'senroflux_answer_action' => 'answer',
+			'run_id'                            => '7',
+			'step_count'                        => '3',
+			'specflux_site_agent_answer_action' => 'answer',
 		);
 
 		$screen->handleAnswer();
@@ -373,9 +373,9 @@ final class RunsScreenTest extends TestCase {
 		$screen = $this->recordingScreen();
 
 		$_POST = array(
-			'run_id'                    => '7',
-			'step_count'                => '0',
-			'senroflux_approval_action' => 'maybe',
+			'run_id'                              => '7',
+			'step_count'                          => '0',
+			'specflux_site_agent_approval_action' => 'maybe',
 		);
 
 		$screen->handleApprovalDecision();
@@ -391,9 +391,9 @@ final class RunsScreenTest extends TestCase {
 		$screen = $this->recordingScreen();
 
 		$_POST = array(
-			'run_id'                    => '404',
-			'step_count'                => '0',
-			'senroflux_approval_action' => 'approve',
+			'run_id'                              => '404',
+			'step_count'                          => '0',
+			'specflux_site_agent_approval_action' => 'approve',
 		);
 
 		$screen->handleApprovalDecision();
@@ -402,25 +402,25 @@ final class RunsScreenTest extends TestCase {
 		// to an unchanged card with no explanation at all.
 		$this->assertSame( 404, $screen->redirectedRunId );
 		$this->assertNotNull( $screen->redirectedError, 'a failed tick must surface an error code' );
-		$this->assertSame( 'senroflux_not_found', $screen->redirectedError );
+		$this->assertSame( 'specflux_site_agent_not_found', $screen->redirectedError );
 	}
 
 	public function test_handle_approval_decision_without_the_capability_redirects_with_forbidden(): void {
 		Plugin::set_dependency_probe( true );
 		$this->seedRunnerGraph();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$screen = $this->recordingScreen();
 
 		$_POST = array(
-			'run_id'                    => '1',
-			'step_count'                => '0',
-			'senroflux_approval_action' => 'approve',
+			'run_id'                              => '1',
+			'step_count'                          => '0',
+			'specflux_site_agent_approval_action' => 'approve',
 		);
 
 		$screen->handleApprovalDecision();
 
-		$this->assertSame( 'senroflux_forbidden', $screen->redirectedError );
+		$this->assertSame( 'specflux_site_agent_forbidden', $screen->redirectedError );
 	}
 
 	// ------------------------------------------------------------------
@@ -431,18 +431,18 @@ final class RunsScreenTest extends TestCase {
 		$this->registerFakePack( true );
 		$screen = new RunsScreen();
 
-		$this->assertArrayHasKey( 'senroflux-admin', $screen->registerAdminConsumer( array() ) );
+		$this->assertArrayHasKey( 'specflux-site-agent-admin', $screen->registerAdminConsumer( array() ) );
 
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
-		$this->assertArrayNotHasKey( 'senroflux-admin', $screen->registerAdminConsumer( array() ) );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
+		$this->assertArrayNotHasKey( 'specflux-site-agent-admin', $screen->registerAdminConsumer( array() ) );
 	}
 
 	public function test_the_admin_consumer_carries_the_pack_allow_list_and_no_budget_cap(): void {
 		$this->registerFakePack( true );
 
-		$entry = ( new RunsScreen() )->registerAdminConsumer( array() )['senroflux-admin'];
+		$entry = ( new RunsScreen() )->registerAdminConsumer( array() )['specflux-site-agent-admin'];
 
-		$this->assertSame( array( 'senroflux/read-content' ), $entry['allow'] );
+		$this->assertSame( array( 'specflux/read-content' ), $entry['allow'] );
 		$this->assertArrayNotHasKey( 'budget', $entry );
 	}
 
@@ -450,7 +450,7 @@ final class RunsScreenTest extends TestCase {
 		$this->registerFakePack( true );
 		add_filter( ConsumerPolicy::FILTER, array( new RunsScreen(), 'registerAdminConsumer' ) );
 
-		$policy = ConsumerPolicy::resolve( 'senroflux-admin', array(), array( Budget::MAX_TOKENS => 1000000 ) );
+		$policy = ConsumerPolicy::resolve( 'specflux-site-agent-admin', array(), array( Budget::MAX_TOKENS => 1000000 ) );
 		remove_all_filters( ConsumerPolicy::FILTER );
 
 		$this->assertIsArray( $policy );
@@ -473,7 +473,7 @@ final class RunsScreenTest extends TestCase {
 
 		$screen->handleNewRun();
 
-		$this->assertSame( 'senroflux_unknown_consumer', $screen->redirectedListError );
+		$this->assertSame( 'specflux_site_agent_unknown_consumer', $screen->redirectedListError );
 	}
 
 	// ------------------------------------------------------------------
@@ -513,7 +513,7 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	/**
-	 * Runs-pack fix: `senrofluxRunsConfig.packs` (what the message box's pack
+	 * Runs-pack fix: `specfluxSiteAgentRunsConfig.packs` (what the message box's pack
 	 * picker offers) is exactly the same preflight-passing set `exampleGoals()`
 	 * already names — a pack the viewer's preflight refuses must never be
 	 * offered as something they can start a run with.
@@ -546,7 +546,7 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	/**
-	 * Runs-pack fix: `senrofluxRunsConfig.unavailablePacks` names every pack
+	 * Runs-pack fix: `specfluxSiteAgentRunsConfig.unavailablePacks` names every pack
 	 * whose preflight refuses this viewer, carrying that WP_Error's own
 	 * message as `reason` — so a viewer who can run nothing still learns why.
 	 */
@@ -624,7 +624,7 @@ final class RunsScreenTest extends TestCase {
 
 	public function test_capability_defaults_to_manage_options_and_is_filterable(): void {
 		add_filter(
-			'senroflux_runs_capability',
+			'specflux_site_agent_runs_capability',
 			static fn (): string => 'edit_pages',
 			10,
 			1
@@ -635,31 +635,31 @@ final class RunsScreenTest extends TestCase {
 
 	/** S10: the menu/screen capability is computed from the REGISTERED packs, no filter needed. */
 	public function test_an_editor_with_edit_pages_gets_the_menu_capability_edit_pages(): void {
-		remove_all_filters( 'senroflux_runs_capability' ); // Override this file's blanket pin.
+		remove_all_filters( 'specflux_site_agent_runs_capability' ); // Override this file's blanket pin.
 		$this->fakePackWithCapability( 'pages', 'edit_pages' );
 		$this->fakePackWithCapability( 'site', 'manage_options' );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'edit_pages' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'edit_pages' => true );
 
 		$this->assertSame( 'edit_pages', ( new RunsScreen() )->capability() );
 	}
 
 	/** S10: a Subscriber holding no pack's run capability gets `do_not_allow`. */
 	public function test_a_subscriber_gets_do_not_allow(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
 		$this->fakePackWithCapability( 'pages', 'edit_pages' );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$this->assertSame( 'do_not_allow', ( new RunsScreen() )->capability() );
 	}
 
 	/** S10: an editor may start the pages pack but not the (manage_options) site pack. */
 	public function test_an_editor_can_start_pages_but_not_site(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
 		Plugin::set_dependency_probe( false ); // built-in mode: runCapability() is the whole test.
 		$this->seedRunnerGraph();
 		$this->fakePackWithCapability( 'pages', 'edit_pages' );
 		$this->fakePackWithCapability( 'site', 'manage_options' );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'edit_pages' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'edit_pages' => true );
 		$this->registerAdminConsumer();
 
 		$screen = $this->recordingScreen();
@@ -675,7 +675,7 @@ final class RunsScreenTest extends TestCase {
 		$this->assertSame( 'pack_unbound', $screen->redirectedListError );
 	}
 
-	/** A fixture pack with a chosen run capability, registered under `senroflux_packs`. */
+	/** A fixture pack with a chosen run capability, registered under `specflux_site_agent_packs`. */
 	private function fakePackWithCapability( string $name, string $capability ): void {
 		$pack = new class( $name, $capability ) extends Pack {
 			public function __construct( private readonly string $packName, private readonly string $capability ) {
@@ -702,7 +702,7 @@ final class RunsScreenTest extends TestCase {
 		};
 
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array( $name => $pack ),
 			10,
 			1
@@ -712,17 +712,17 @@ final class RunsScreenTest extends TestCase {
 	public function test_register_wires_menu_assets_and_all_post_endpoints(): void {
 		( new RunsScreen() )->register();
 
-		$hooks = array_keys( $GLOBALS['senroflux_test_actions'] );
+		$hooks = array_keys( $GLOBALS['specflux_site_agent_test_actions'] );
 		$this->assertContains( 'admin_menu', $hooks );
 		$this->assertContains( 'admin_enqueue_scripts', $hooks );
-		$this->assertContains( 'admin_post_senroflux_cancel_run', $hooks );
-		$this->assertContains( 'admin_post_senroflux_new_run', $hooks );
-		$this->assertContains( 'admin_post_senroflux_answer', $hooks );
-		$this->assertContains( 'admin_post_senroflux_plan_decision', $hooks );
-		$this->assertContains( 'admin_post_senroflux_approval_decision', $hooks );
+		$this->assertContains( 'admin_post_specflux_site_agent_cancel_run', $hooks );
+		$this->assertContains( 'admin_post_specflux_site_agent_new_run', $hooks );
+		$this->assertContains( 'admin_post_specflux_site_agent_answer', $hooks );
+		$this->assertContains( 'admin_post_specflux_site_agent_plan_decision', $hooks );
+		$this->assertContains( 'admin_post_specflux_site_agent_approval_decision', $hooks );
 		$this->assertContains( 'admin_init', $hooks, 'the old tools.php URL redirect (S10)' );
-		$this->assertContains( 'wp_ajax_senroflux_setup_panel', $hooks );
-		$this->assertContains( 'wp_ajax_senroflux_dismiss_agent_safety_check', $hooks );
+		$this->assertContains( 'wp_ajax_specflux_site_agent_setup_panel', $hooks );
+		$this->assertContains( 'wp_ajax_specflux_site_agent_dismiss_agent_safety_check', $hooks );
 		$this->assertContains( 'admin_notices', $hooks, 'the one-time activation notice (S10)' );
 	}
 
@@ -744,7 +744,7 @@ final class RunsScreenTest extends TestCase {
 		global $pagenow;
 		$pagenow = 'tools.php';
 		$_GET    = array(
-			'page'   => 'senroflux-runs',
+			'page'   => 'specflux-site-agent-runs',
 			'run_id' => '7',
 		);
 
@@ -753,7 +753,7 @@ final class RunsScreenTest extends TestCase {
 
 		$this->assertNotNull( $screen->redirectedUrl );
 		$this->assertStringContainsString( 'admin.php', $screen->redirectedUrl );
-		$this->assertStringContainsString( 'page=senroflux-runs', $screen->redirectedUrl );
+		$this->assertStringContainsString( 'page=specflux-site-agent-runs', $screen->redirectedUrl );
 		$this->assertStringContainsString( 'run_id=7', $screen->redirectedUrl );
 
 		unset( $_GET );
@@ -763,7 +763,7 @@ final class RunsScreenTest extends TestCase {
 		global $pagenow;
 		$pagenow = 'tools.php';
 		$_GET    = array(
-			'page'    => 'senroflux-runs',
+			'page'    => 'specflux-site-agent-runs',
 			'goal'    => 'Publish the spring page',
 			'run_id'  => '7',
 			'unknown' => 'x',
@@ -799,7 +799,7 @@ final class RunsScreenTest extends TestCase {
 	public function test_a_non_tools_page_is_left_alone(): void {
 		global $pagenow;
 		$pagenow = 'admin.php';
-		$_GET    = array( 'page' => 'senroflux-runs' );
+		$_GET    = array( 'page' => 'specflux-site-agent-runs' );
 
 		$screen = $this->redirectingScreen();
 		$screen->redirectOldToolsUrl();
@@ -811,8 +811,8 @@ final class RunsScreenTest extends TestCase {
 
 	public function test_the_activation_notice_shows_once_on_the_plugins_screen_only(): void {
 		global $pagenow;
-		$pagenow                              = 'plugins.php';
-		$GLOBALS['senroflux_test_transients'] = array( RunsScreen::ACTIVATION_NOTICE_TRANSIENT => 1 );
+		$pagenow                                        = 'plugins.php';
+		$GLOBALS['specflux_site_agent_test_transients'] = array( RunsScreen::ACTIVATION_NOTICE_TRANSIENT => 1 );
 
 		ob_start();
 		( new RunsScreen() )->maybeRenderActivationNotice();
@@ -822,14 +822,14 @@ final class RunsScreenTest extends TestCase {
 		( new RunsScreen() )->maybeRenderActivationNotice();
 		$second = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'SenroFlux is active', $first );
+		$this->assertStringContainsString( 'Specflux Site Agent is active', $first );
 		$this->assertSame( '', $second, 'the transient is cleared after the first render — it never shows twice' );
 	}
 
 	public function test_the_activation_notice_never_renders_off_the_plugins_screen(): void {
 		global $pagenow;
-		$pagenow                              = 'admin.php';
-		$GLOBALS['senroflux_test_transients'] = array( RunsScreen::ACTIVATION_NOTICE_TRANSIENT => 1 );
+		$pagenow                                        = 'admin.php';
+		$GLOBALS['specflux_site_agent_test_transients'] = array( RunsScreen::ACTIVATION_NOTICE_TRANSIENT => 1 );
 
 		ob_start();
 		( new RunsScreen() )->maybeRenderActivationNotice();
@@ -852,12 +852,12 @@ final class RunsScreenTest extends TestCase {
 		( new RunsScreen() )->render();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'senroflux-setup-panel', $html );
-		$this->assertStringContainsString( 'data-check-id="senroflux/agent-safety"', $html );
-		$this->assertStringContainsString( 'senroflux-dismiss-check', $html );
+		$this->assertStringContainsString( 'specflux-site-agent-setup-panel', $html );
+		$this->assertStringContainsString( 'data-check-id="specflux/agent-safety"', $html );
+		$this->assertStringContainsString( 'specflux-site-agent-dismiss-check', $html );
 		// The React root still mounts below a merely-advisory panel (S11:
 		// "a blocked screen still renders the empty state").
-		$this->assertStringContainsString( '<div id="senroflux-runs-root">', $html );
+		$this->assertStringContainsString( '<div id="specflux-site-agent-runs-root">', $html );
 
 		Checks::setProviderProbe( true ); // suite-wide default, not the real registry.
 	}
@@ -866,7 +866,7 @@ final class RunsScreenTest extends TestCase {
 	 * Defect 3 (0.3 live run + S11): WordPress core's admin JS relocates
 	 * every `.wrap .notice` element below the page heading EXCEPT
 	 * `.notice.inline` — a setup-check notice left as a bare `.notice`
-	 * therefore gets pulled out of `#senroflux-setup-panel` and shown a
+	 * therefore gets pulled out of `#specflux-site-agent-setup-panel` and shown a
 	 * second time (and, after the panel's own focus refresh re-renders it,
 	 * a stale relocated copy can linger).
 	 */
@@ -881,7 +881,7 @@ final class RunsScreenTest extends TestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertMatchesRegularExpression(
-			'/<div class="notice [^"]*\binline\b[^"]*senroflux-setup-check"/',
+			'/<div class="notice [^"]*\binline\b[^"]*specflux-site-agent-setup-check"/',
 			$html,
 			'a setup-check notice must carry the "inline" class core skips when relocating .wrap .notice elements'
 		);
@@ -897,7 +897,7 @@ final class RunsScreenTest extends TestCase {
 		( new RunsScreen() )->render();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringNotContainsString( 'senroflux-setup-check', $html );
+		$this->assertStringNotContainsString( 'specflux-site-agent-setup-check', $html );
 
 		Checks::setProviderProbe( true ); // suite-wide default, not the real registry.
 	}
@@ -911,10 +911,10 @@ final class RunsScreenTest extends TestCase {
 		try {
 			$screen->handleSetupPanel();
 			$this->fail( 'handleSetupPanel() returned without sending a JSON response.' );
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			$this->assertTrue( $json->success );
 			$this->assertFalse( $json->data['start_enabled'] );
-			$this->assertStringContainsString( 'senroflux-setup-panel', $json->data['html'] );
+			$this->assertStringContainsString( 'specflux-site-agent-setup-panel', $json->data['html'] );
 			// Stage 22b: the pack lists ride along so the screen refreshes its
 			// whole start state on focus, not only the panel.
 			$this->assertArrayHasKey( 'packs', $json->data );
@@ -925,8 +925,8 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	public function test_handle_setup_panel_refuses_without_the_capability(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read' => true );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$screen = new RunsScreen();
 		$_POST  = array( 'nonce' => 'x' );
@@ -934,7 +934,7 @@ final class RunsScreenTest extends TestCase {
 		try {
 			$screen->handleSetupPanel();
 			$this->fail( 'handleSetupPanel() returned without sending a JSON response.' );
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			$this->assertFalse( $json->success );
 			$this->assertSame( 403, $json->status );
 		}
@@ -942,7 +942,7 @@ final class RunsScreenTest extends TestCase {
 
 	public function test_handle_dismiss_agent_safety_check_records_the_dismissal_for_the_current_user_only(): void {
 		Plugin::set_dependency_probe( false );
-		$GLOBALS['senroflux_test_current_user_id'] = 5;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 5;
 
 		$screen = new RunsScreen();
 		$_POST  = array( 'nonce' => 'x' );
@@ -950,9 +950,9 @@ final class RunsScreenTest extends TestCase {
 		try {
 			$screen->handleDismissAgentSafetyCheck();
 			$this->fail( 'handleDismissAgentSafetyCheck() returned without sending a JSON response.' );
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			$this->assertTrue( $json->success );
-			$this->assertStringNotContainsString( 'senroflux/agent-safety', $json->data['html'] );
+			$this->assertStringNotContainsString( 'specflux/agent-safety', $json->data['html'] );
 		}
 
 		$this->assertTrue( Checks::agentSafetyDismissedBy( 5 ) );
@@ -972,12 +972,12 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=senroflux-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 
 			protected function redirectList( string $error_code ): void {
 				$this->redirectedListError = $error_code;
-				$this->redirectedTo        = admin_url( 'tools.php?page=senroflux-runs' );
+				$this->redirectedTo        = admin_url( 'tools.php?page=specflux-site-agent-runs' );
 			}
 		};
 	}
@@ -998,8 +998,8 @@ final class RunsScreenTest extends TestCase {
 		$runner = new Runner(
 			new WpdbRunStore( $db ),
 			new ToolExecutor(),
-			new class() implements \Specflux\SenroFlux\Model\ModelGatewayInterface {
-				public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): \Specflux\SenroFlux\Model\ModelTurn|\WP_Error {
+			new class() implements \Specflux\SiteAgent\Model\ModelGatewayInterface {
+				public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): \Specflux\SiteAgent\Model\ModelTurn|\WP_Error {
 					return new WP_Error( 'unused', 'no model calls on this screen' );
 				}
 			},

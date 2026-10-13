@@ -1,18 +1,18 @@
 <?php
 /**
- * Rewrites the preset slugs in SenroFlux's curated markup to ones the active
+ * Rewrites the preset slugs in Specflux Site Agent's curated markup to ones the active
  * theme defines (0.3 quality, D4), so a curated section keeps its padding and
  * its overlay on a theme that does not ship Core's numeric spacing scale.
  *
  * Runs on the markup a layout builds, before {@see Validator::clean()}; the
  * validator and {@see BlockShells} accept any preset slug, so neither changes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

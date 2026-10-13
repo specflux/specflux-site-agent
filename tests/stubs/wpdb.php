@@ -10,7 +10,7 @@
  * query + canned-return knobs (queryReturn/varReturn/…), which remain
  * available for string-level assertions.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -79,7 +79,7 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			if ( str_contains( $query, 'SET step_count = step_count + 1' )
 				&& preg_match( '/WHERE id = (\d+)\b/', $query, $m ) ) {
 				foreach ( array_keys( $this->tables ) as $name ) {
-					if ( ! str_ends_with( $name, 'senroflux_runs' ) ) {
+					if ( ! str_ends_with( $name, 'specflux_site_agent_runs' ) ) {
 						continue;
 					}
 					$count = count( $this->tables[ $name ] );
@@ -153,9 +153,12 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			if (
 				$this->emulateRows
 				&& null !== $query
-				&& preg_match( '/SELECT \* FROM (\S+) ORDER BY updated_at DESC, id DESC LIMIT (\d+)/', $query, $m )
+				&& preg_match( '/SELECT \* FROM (\S+) (?:WHERE user_id = (\d+) )?ORDER BY updated_at DESC, id DESC LIMIT (\d+)/', $query, $m )
 			) {
 				$rows = $this->tables[ $m[1] ] ?? array();
+				if ( '' !== $m[2] ) {
+					$rows = array_values( array_filter( $rows, static fn ( array $row ): bool => (int) ( $row['user_id'] ?? 0 ) === (int) $m[2] ) );
+				}
 				usort(
 					$rows,
 					static fn ( array $a, array $b ): int => array(
@@ -167,7 +170,7 @@ if ( ! class_exists( 'wpdb', false ) ) {
 					)
 				);
 
-				return array_slice( $rows, 0, max( 1, (int) $m[2] ) );
+				return array_slice( $rows, 0, max( 1, (int) $m[3] ) );
 			}
 
 			if (

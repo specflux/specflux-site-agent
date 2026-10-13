@@ -2,18 +2,18 @@
 /**
  * Step kinds — what one persisted row records.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Per S4 (as amended by SPEC-SENROFLUX-0.2 S4):
+ * Per S4 (as amended by SPEC-SITE-AGENT-0.2 S4):
  *   - user        — the goal text or a follow-up message.
  *   - model       — one assistant turn (an AI Client ModelMessage).
  *   - tool_result — one function response (a UserMessage carrying a

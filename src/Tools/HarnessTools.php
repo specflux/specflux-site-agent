@@ -9,21 +9,21 @@
  * declaration shape and the payload validation so the Runner neither knows
  * about the JSON schema nor invents its own rules.
  *
- * S6 names the only harness tool today: `senroflux/ask-user`. Its function
- * name in a declaration is `senroflux__ask-user` (the 0.1 namespace mapping),
- * and its `tool_name` column value is `senroflux/ask-user`.
+ * S6 names the only harness tool today: `specflux/ask-user`. Its function
+ * name in a declaration is `specflux__ask-user` (the 0.1 namespace mapping),
+ * and its `tool_name` column value is `specflux/ask-user`.
  *
  * The difference from an ability is deliberate: a harness tool has no Agent
  * Safety tier, no allow-list entry and no `wpab__` prefix, so
  * `functionNameFor()`/`abilityName()` MUST NOT round-trip it — the answer path
  * uses {@see self::functionName()} directly instead of the ability mapping.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 use WP_Error;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -39,8 +39,8 @@ final class HarnessTools {
 	/**
 	 * The harness tool's identity, in the two forms the repo uses.
 	 */
-	public const TOOL_NAME     = 'senroflux/ask-user';
-	public const FUNCTION_NAME = 'senroflux__ask-user';
+	public const TOOL_NAME     = 'specflux/ask-user';
+	public const FUNCTION_NAME = 'specflux__ask-user';
 
 	/** Field caps/limits per S6. */
 	public const MAX_TEXT_CHARS = 300;
@@ -90,7 +90,7 @@ final class HarnessTools {
 	}
 
 	/**
-	 * One FunctionDeclaration for `senroflux__ask-user`, built directly (the
+	 * One FunctionDeclaration for `specflux__ask-user`, built directly (the
 	 * harness tool is not an ability, so it cannot come from an ability's
 	 * get_input_schema()).
 	 *
@@ -106,26 +106,26 @@ final class HarnessTools {
 			'properties'           => array(
 				'text'        => array(
 					'type'        => 'string',
-					'description' => __( 'The clarifying question to the user.', 'senroflux' ) . ' ' . PlanTools::lengthNote( self::MAX_TEXT_CHARS ),
+					'description' => __( 'The clarifying question to the user.', 'specflux-site-agent' ) . ' ' . PlanTools::lengthNote( self::MAX_TEXT_CHARS ),
 				),
 				'choices'     => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'maxItems'    => self::MAX_CHOICES,
-					'description' => __( 'Optional fixed choices for the user to pick from.', 'senroflux' ),
+					'description' => __( 'Optional fixed choices for the user to pick from.', 'specflux-site-agent' ),
 				),
 				'allow_other' => array(
 					'type'        => 'boolean',
 					'default'     => true,
-					'description' => __( 'Whether the user may type a free-text answer instead of a choice.', 'senroflux' ),
+					'description' => __( 'Whether the user may type a free-text answer instead of a choice.', 'specflux-site-agent' ),
 				),
 				'default'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional default/placeholder answer.', 'senroflux' ),
+					'description' => __( 'Optional default/placeholder answer.', 'specflux-site-agent' ),
 				),
 				'rationale'   => array(
 					'type'        => 'string',
-					'description' => __( 'One line explaining why you are asking — the user sees it.', 'senroflux' ),
+					'description' => __( 'One line explaining why you are asking — the user sees it.', 'specflux-site-agent' ),
 				),
 			),
 			'required'             => array( 'text', 'rationale' ),
@@ -135,7 +135,7 @@ final class HarnessTools {
 
 		$description = __(
 			'Ask the user a clarifying question and stop to wait for their answer before continuing. One call may ask for several missing facts at once; list them plainly.',
-			'senroflux'
+			'specflux-site-agent'
 		);
 
 		if ( class_exists( FunctionDeclaration::class ) ) {
@@ -165,23 +165,23 @@ final class HarnessTools {
 		$invalid = static fn ( string $what ): WP_Error => new WP_Error(
 			self::ERROR_INVALID_QUESTION,
 			/* translators: %s names the offending field. */
-			sprintf( __( 'Invalid ask-user call: %s', 'senroflux' ), $what )
+			sprintf( __( 'Invalid ask-user call: %s', 'specflux-site-agent' ), $what )
 		);
 
 		if ( ! is_array( $args ) ) {
-			return $invalid( __( 'the payload must be an object.', 'senroflux' ) );
+			return $invalid( __( 'the payload must be an object.', 'specflux-site-agent' ) );
 		}
 
 		// text: required, ≤ 300 chars.
 		$text = $args['text'] ?? null;
 		if ( ! is_string( $text ) || '' === trim( $text ) ) {
-			return $invalid( __( 'a non-empty "text" is required.', 'senroflux' ) );
+			return $invalid( __( 'a non-empty "text" is required.', 'specflux-site-agent' ) );
 		}
 		if ( PlanTools::overCap( $text, self::MAX_TEXT_CHARS ) ) {
 			return $invalid(
 				sprintf(
 				/* translators: %1$d is the actual character count, %2$d is the character cap. */
-					__( '"text" is %1$d characters; the limit is %2$d. Shorten it and ask again.', 'senroflux' ),
+					__( '"text" is %1$d characters; the limit is %2$d. Shorten it and ask again.', 'specflux-site-agent' ),
 					mb_strlen( $text ),
 					self::MAX_TEXT_CHARS
 				)
@@ -191,22 +191,22 @@ final class HarnessTools {
 		// rationale: required, one line.
 		$rationale = $args['rationale'] ?? null;
 		if ( ! is_string( $rationale ) || '' === trim( $rationale ) ) {
-			return $invalid( __( 'a non-empty "rationale" is required.', 'senroflux' ) );
+			return $invalid( __( 'a non-empty "rationale" is required.', 'specflux-site-agent' ) );
 		}
 		if ( str_contains( $rationale, "\n" ) || str_contains( $rationale, "\r" ) ) {
-			return $invalid( __( '"rationale" must be a single line.', 'senroflux' ) );
+			return $invalid( __( '"rationale" must be a single line.', 'specflux-site-agent' ) );
 		}
 
 		// choices: optional, array of strings, ≤ 6. Null coalescing already
 		// mapped an absent or null field onto the empty array.
 		$choices = $args['choices'] ?? array();
 		if ( ! is_array( $choices ) ) {
-			return $invalid( __( '"choices" must be an array of strings.', 'senroflux' ) );
+			return $invalid( __( '"choices" must be an array of strings.', 'specflux-site-agent' ) );
 		}
 		$normalized_choices = array();
 		foreach ( $choices as $choice ) {
 			if ( ! is_string( $choice ) ) {
-				return $invalid( __( 'every "choices" entry must be a string.', 'senroflux' ) );
+				return $invalid( __( 'every "choices" entry must be a string.', 'specflux-site-agent' ) );
 			}
 			$normalized_choices[] = $choice;
 		}
@@ -214,7 +214,7 @@ final class HarnessTools {
 			return $invalid(
 				sprintf(
 				/* translators: %d is the maximum number of choices. */
-					__( '"choices" may contain at most %d entries.', 'senroflux' ),
+					__( '"choices" may contain at most %d entries.', 'specflux-site-agent' ),
 					self::MAX_CHOICES
 				)
 			);
@@ -223,14 +223,14 @@ final class HarnessTools {
 		// allow_other: optional, boolean, default true.
 		$allow_other = $args['allow_other'] ?? true;
 		if ( ! is_bool( $allow_other ) ) {
-			return $invalid( __( '"allow_other" must be a boolean.', 'senroflux' ) );
+			return $invalid( __( '"allow_other" must be a boolean.', 'specflux-site-agent' ) );
 		}
 
 		// default: optional, string, default ''. Null coalescing already
 		// mapped an absent or null field onto the default.
 		$default = $args['default'] ?? '';
 		if ( ! is_string( $default ) ) {
-			return $invalid( __( '"default" must be a string.', 'senroflux' ) );
+			return $invalid( __( '"default" must be a string.', 'specflux-site-agent' ) );
 		}
 
 		return array(

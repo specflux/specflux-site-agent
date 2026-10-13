@@ -10,14 +10,14 @@
  * document order and is filled through {@see ThemePatterns::fill()}, so the
  * result goes through exactly the same validation as any other write.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
-use Specflux\SenroFlux\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\PlanTools;
 use WP_Error;
 
 // Bail on direct access.
@@ -231,7 +231,7 @@ final class Layouts {
 			 *
 			 * @param array<string,string> $when Layout name => sentence.
 			 */
-			$filtered = apply_filters( 'senroflux_layout_use_when', $when );
+			$filtered = apply_filters( 'specflux_site_agent_layout_use_when', $when );
 			if ( is_array( $filtered ) ) {
 				$when = array_replace( $when, array_intersect_key( array_map( 'strval', $filtered ), $when ) );
 			}
@@ -268,8 +268,8 @@ final class Layouts {
 			'Give a visitor what they need to decide: for each service, who it is for, what happens and how to book, as far as the supplied facts say. In faq and what-to-expect sections, answer only from supplied facts; omit a question they cannot answer. Name every service the brief lists on Home and Services. Use services, text and faq layouts; most pages need 5–7 sections. Never put two text sections back to back; add faq, services or text-with-image between.',
 			'If the brief gives a phone number or email, the cta button links to it (tel: or mailto:) and the text states it.',
 			'Markup patterns are the shapes below. Use at most one cta. A page is 2–8 sections. No pattern more than twice except text-section. No colour attributes except cover-hero\'s own preset overlayColor. Spacing and typography: standard preset slugs only.',
-			'A pattern is NOT a block: it is a core/group (or core/cover, or core/media-text) you write yourself out of core blocks. Never write a block whose name starts with senroflux/. Use only core/group, heading, paragraph, buttons, button, columns, column, list, details, quote, cover, media-text.',
-			'Write each block comment with compact JSON (no spaces after : or ,). Give every top-level group `{"metadata":{"name":"senroflux/<slug>"},"layout":{"type":"constrained"}}`. Write list items as plain <li> inside one core/list block; never core/list-item. In an faq, the question is the <summary> element inside the core/details block and the answer is a core/paragraph block inside it.',
+			'A pattern is NOT a block: it is a core/group (or core/cover, or core/media-text) you write yourself out of core blocks. Never write a block whose name starts with specflux/. Use only core/group, heading, paragraph, buttons, button, columns, column, list, details, quote, cover, media-text.',
+			'Write each block comment with compact JSON (no spaces after : or ,). Give every top-level group `{"metadata":{"name":"specflux/<slug>"},"layout":{"type":"constrained"}}`. Write list items as plain <li> inside one core/list block; never core/list-item. In an faq, the question is the <summary> element inside the core/details block and the answer is a core/paragraph block inside it.',
 			'To publish a page you already created, call the update ability with the id and status only; omit content entirely. Never resend unchanged content.',
 			'Close everything you open: every `<!-- wp:x -->` needs its `<!-- /wp:x -->`, and every wrapper element (a group\'s <div>, a details, a list) must close before its block ends. Markup that fails a parse-and-reserialise round trip is refused as invalid_markup.',
 			// 0.3 quality fix (instruction ceiling): the full verb list used
@@ -312,7 +312,7 @@ final class Layouts {
 			 *
 			 * @param array<string, array<string, array{pattern:string, slots?:list<string>, limits?:array<string,int>, optional?:list<string>}>> $profiles Profiles.
 			 */
-			$profiles = apply_filters( 'senroflux_layout_profiles', $profiles );
+			$profiles = apply_filters( 'specflux_site_agent_layout_profiles', $profiles );
 		}
 		if ( ! is_array( $profiles ) ) {
 			return array();
@@ -359,7 +359,7 @@ final class Layouts {
 				'layout_field',
 				sprintf(
 					/* translators: 1: section number, 2: layout name. */
-					__( 'Section %1$d (%2$s): `tone` must be default, contrast or accent.', 'senroflux' ),
+					__( 'Section %1$d (%2$s): `tone` must be default, contrast or accent.', 'specflux-site-agent' ),
 					$index + 1,
 					$layout
 				),
@@ -376,7 +376,7 @@ final class Layouts {
 				'layout_unknown',
 				sprintf(
 					/* translators: 1: section number, 2: the requested layout, 3: comma-separated layout names. */
-					__( 'Section %1$d: "%2$s" is not a layout. Use one of: %3$s.', 'senroflux' ),
+					__( 'Section %1$d: "%2$s" is not a layout. Use one of: %3$s.', 'specflux-site-agent' ),
 					$index + 1,
 					$layout,
 					implode( ', ', self::names() )
@@ -461,7 +461,7 @@ final class Layouts {
 			return $content;
 		}
 
-		// D3b: only SenroFlux's own sections take a tone, and an image-less hero
+		// D3b: only Specflux Site Agent's own sections take a tone, and an image-less hero
 		// (the curated `hero`, not `cover-hero`) reads as a band by default.
 		$tone = is_string( $section['tone'] ?? null ) ? $section['tone'] : ( 'hero' === $name ? Tone::CONTRAST : Tone::DEFAULT );
 
@@ -471,7 +471,7 @@ final class Layouts {
 	/**
 	 * Where a layout's section is built from (D1): the active profile's explicit
 	 * slot map, else a theme pattern adapted to the fields (the profile's choice,
-	 * or on a theme with no profile an automatic match), else SenroFlux's own
+	 * or on a theme with no profile an automatic match), else Specflux Site Agent's own
 	 * curated pattern.
 	 *
 	 * @param array<string,mixed> $section The item.
@@ -514,7 +514,7 @@ final class Layouts {
 			}
 		}
 
-		// D1 step 3: the theme has no pattern for this layout, so SenroFlux's
+		// D1 step 3: the theme has no pattern for this layout, so Specflux Site Agent's
 		// own pattern is filled from the same fields.
 		$plan   = self::curatedPlan( $layout, $section );
 		$markup = self::curatedMarkup( $vocabulary, $plan['pattern'], $plan['repeat'] );
@@ -999,7 +999,7 @@ final class Layouts {
 			'layout_unavailable',
 			sprintf(
 				/* translators: 1: section number, 2: layout name. */
-				__( 'Section %1$d: the "%2$s" layout has no pattern to build from. Write this section as `markup` instead.', 'senroflux' ),
+				__( 'Section %1$d: the "%2$s" layout has no pattern to build from. Write this section as `markup` instead.', 'specflux-site-agent' ),
 				$index + 1,
 				$layout
 			),
@@ -1080,7 +1080,7 @@ final class Layouts {
 			'layout_field',
 			sprintf(
 				/* translators: %d: section number. */
-				__( 'Section %1$d (services): give every card a photo, or none — a mix is not allowed.', 'senroflux' ),
+				__( 'Section %1$d (services): give every card a photo, or none — a mix is not allowed.', 'specflux-site-agent' ),
 				$index + 1
 			),
 			$index
@@ -1161,7 +1161,7 @@ final class Layouts {
 			'layout_field',
 			sprintf(
 				/* translators: 1: section number, 2: layout name, 3: items needed, 4: items given. */
-				__( 'Section %1$d (%2$s) takes exactly %3$d items; it has %4$d. Split or merge them, or use a second section.', 'senroflux' ),
+				__( 'Section %1$d (%2$s) takes exactly %3$d items; it has %4$d. Split or merge them, or use a second section.', 'specflux-site-agent' ),
 				$index + 1,
 				$layout,
 				$wanted,
@@ -1214,9 +1214,9 @@ final class Layouts {
 					return self::fieldError(
 						$images_budget_zero
 							/* translators: 1: section number, 2: layout name, 3: field name. */
-							? __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search, or stock-image-search then stock-image-import) and descriptive `alt` text — or leave every card without a photo if there are not three distinct, relevant ones.', 'senroflux' )
+							? __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search, or stock-image-search then stock-image-import) and descriptive `alt` text — or leave every card without a photo if there are not three distinct, relevant ones.', 'specflux-site-agent' )
 							/* translators: 1: section number, 2: layout name, 3: field name. */
-							: __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search or media-generate) and descriptive `alt` text — or leave every card without a photo if there are not three distinct, relevant ones.', 'senroflux' ),
+							: __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search or media-generate) and descriptive `alt` text — or leave every card without a photo if there are not three distinct, relevant ones.', 'specflux-site-agent' ),
 						$index,
 						$layout,
 						$field
@@ -1230,9 +1230,9 @@ final class Layouts {
 					// (see ToolRegistry::forRun()).
 					$images_budget_zero
 						/* translators: 1: section number, 2: layout name, 3: field name. */
-						? __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search, or stock-image-search then stock-image-import) and descriptive `alt` text.', 'senroflux' )
+						? __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search, or stock-image-search then stock-image-import) and descriptive `alt` text.', 'specflux-site-agent' )
 						/* translators: 1: section number, 2: layout name, 3: field name. */
-						: __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search or media-generate) and descriptive `alt` text.', 'senroflux' ),
+						: __( 'Section %1$d (%2$s): `%3$s` needs a `url` from the media library (media-search or media-generate) and descriptive `alt` text.', 'specflux-site-agent' ),
 					$index,
 					$layout,
 					$field
@@ -1246,7 +1246,7 @@ final class Layouts {
 			if ( '' === $value || '#' === $value || ! Validator::urlIsSafe( $value ) ) {
 				return self::fieldError(
 					/* translators: 1: section number, 2: layout name, 3: field name. */
-					__( 'Section %1$d (%2$s): `%3$s` needs a real destination: a page URL, a tel: number or a mailto: address.', 'senroflux' ),
+					__( 'Section %1$d (%2$s): `%3$s` needs a real destination: a page URL, a tel: number or a mailto: address.', 'specflux-site-agent' ),
 					$index,
 					$layout,
 					$field
@@ -1259,7 +1259,7 @@ final class Layouts {
 		if ( '' === $value ) {
 			return self::fieldError(
 				/* translators: 1: section number, 2: layout name, 3: field name. */
-				__( 'Section %1$d (%2$s): `%3$s` is missing.', 'senroflux' ),
+				__( 'Section %1$d (%2$s): `%3$s` is missing.', 'specflux-site-agent' ),
 				$index,
 				$layout,
 				$field
@@ -1273,7 +1273,7 @@ final class Layouts {
 				'layout_field',
 				sprintf(
 					/* translators: 1: section number, 2: layout name, 3: field name, 4: words given, 5: word limit. */
-					__( 'Section %1$d (%2$s): `%3$s` has %4$d words; the limit is %5$d. Shorten it, or move the detail into a `text` section.', 'senroflux' ),
+					__( 'Section %1$d (%2$s): `%3$s` has %4$d words; the limit is %5$d. Shorten it, or move the detail into a `text` section.', 'specflux-site-agent' ),
 					$index + 1,
 					$layout,
 					$field,
@@ -1306,7 +1306,7 @@ final class Layouts {
 		foreach ( $blocks as $offset => $block ) {
 			if ( ! $named && null !== ( $block['blockName'] ?? null ) ) {
 				$attrs                      = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
-				$attrs['metadata']          = array( 'name' => 'senroflux/' . $pattern );
+				$attrs['metadata']          = array( 'name' => 'specflux/' . $pattern );
 				$blocks[ $offset ]['attrs'] = $attrs;
 				$block                      = $blocks[ $offset ];
 				$named                      = true;
@@ -1368,7 +1368,7 @@ final class Layouts {
 		if ( '' === $heading ) {
 			return self::fieldError(
 				/* translators: 1: section number, 2: layout name, 3: field name. */
-				__( 'Section %1$d (%2$s): `%3$s` is missing.', 'senroflux' ),
+				__( 'Section %1$d (%2$s): `%3$s` is missing.', 'specflux-site-agent' ),
 				$index,
 				self::TEXT,
 				'heading'
@@ -1379,7 +1379,7 @@ final class Layouts {
 				'layout_field',
 				sprintf(
 					/* translators: 1: section number, 2: layout name, 3: field name, 4: words given, 5: word limit. */
-					__( 'Section %1$d (%2$s): `%3$s` has %4$d words; the limit is %5$d. Shorten it, or move the detail into a `text` section.', 'senroflux' ),
+					__( 'Section %1$d (%2$s): `%3$s` has %4$d words; the limit is %5$d. Shorten it, or move the detail into a `text` section.', 'specflux-site-agent' ),
 					$index + 1,
 					self::TEXT,
 					'heading',
@@ -1405,7 +1405,7 @@ final class Layouts {
 				'layout_field',
 				sprintf(
 					/* translators: 1: section number, 2: layout name, 3: minimum paragraphs, 4: maximum paragraphs, 5: paragraphs given. */
-					__( 'Section %1$d (%2$s): `paragraphs` takes %3$d to %4$d paragraphs; it has %5$d.', 'senroflux' ),
+					__( 'Section %1$d (%2$s): `paragraphs` takes %3$d to %4$d paragraphs; it has %5$d.', 'specflux-site-agent' ),
 					$index + 1,
 					self::TEXT,
 					$min,

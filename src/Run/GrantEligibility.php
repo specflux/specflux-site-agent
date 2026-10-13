@@ -2,18 +2,18 @@
 /**
  * Object binding for Agent Safety pre-approval grants (S14 AS-12).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * S14: `agent_safety_grant_eligible` defaults to FALSE, and this is the only
+ * S14: `belayline_grant_eligible` defaults to FALSE, and this is the only
  * thing that ever answers it true.
  *
  * A grant is per-verb and per-count, never per-object — deliberately, because
@@ -40,7 +40,7 @@ defined( 'ABSPATH' ) || exit;
  * the payload might be an id.
  *
  * Everything is static per-request context, mirroring
- * {@see \Specflux\SenroFlux\Packs\Pages\PublishSummary}: the filter fires deep
+ * {@see \Specflux\SiteAgent\Packs\Pages\PublishSummary}: the filter fires deep
  * inside Agent Safety's pipeline, several frames below anything the harness
  * hands an object to. The Runner sets the context for the length of one tick
  * and clears it in a `finally`, so a filter fired outside a tick — by another
@@ -88,7 +88,7 @@ final class GrantEligibility {
 	 * is inert (answers false) until a tick opens a run context.
 	 */
 	public static function boot(): void {
-		add_filter( 'agent_safety_grant_eligible', array( self::class, 'eligible' ), 10, 4 );
+		add_filter( 'belayline_grant_eligible', array( self::class, 'eligible' ), 10, 4 );
 	}
 
 	/**
@@ -124,7 +124,7 @@ final class GrantEligibility {
 	}
 
 	/**
-	 * Answer `agent_safety_grant_eligible`.
+	 * Answer `belayline_grant_eligible`.
 	 *
 	 * Returns a literal bool, never the incoming value: Agent Safety accepts
 	 * only `true`, and a filter may narrow but never widen — so a `true` that

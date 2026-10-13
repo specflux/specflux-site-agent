@@ -21,7 +21,7 @@
  * by construction. Only the real parser — with its `innerContent` null markers
  * and its freeform (`blockName === null`) handling — can fail them.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 /**

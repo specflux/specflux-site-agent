@@ -5,7 +5,7 @@
  *
  * TARGET REPO PATH: src/Packs/Site/Vocabulary.php
  *
- * Extends {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary} rather than
+ * Extends {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary} rather than
  * re-authoring the seven shared patterns (S7: "extends the pages vocabulary
  * for site runs only"). Both new patterns use ONLY blocks already in the
  * pages allow-list (`blockNames()` is inherited unchanged) — `core/columns`,
@@ -13,14 +13,14 @@
  * `core/button` — so nothing about block-safety or markup-safety validation
  * needs touching for them.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Packs\Pages\Vocabulary as PagesVocabulary;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary as PagesVocabulary;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -60,7 +60,7 @@ final class Vocabulary extends PagesVocabulary {
 	 * page-links — group[align=full] › heading(h2) › columns › column(2–6)
 	 * each › (heading(h3) › paragraph › buttons › button linking one skeleton
 	 * page). Structurally identical to `feature-grid`'s column shape, which is
-	 * why {@see \Specflux\SenroFlux\Packs\Site\Validator::countSlots()} reuses
+	 * why {@see \Specflux\SiteAgent\Packs\Site\Validator::countSlots()} reuses
 	 * the SAME `columns` slot-counting logic.
 	 *
 	 * @return array<string,mixed>
@@ -68,9 +68,9 @@ final class Vocabulary extends PagesVocabulary {
 	private function pageLinks(): array {
 		return array(
 			'slug'        => 'page-links',
-			'name'        => 'senroflux/page-links',
+			'name'        => 'specflux/page-links',
 			'title'       => 'Page links',
-			'description' => __( 'A homepage card grid linking to the site\'s other pages: an H2 heading and two-to-six cards, each with a title, a line of copy and a button to one page.', 'senroflux' ),
+			'description' => __( 'A homepage card grid linking to the site\'s other pages: an H2 heading and two-to-six cards, each with a title, a line of copy and a button to one page.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'page-links' ),
 			'repeatable'  => array( 'core/column' ),
 			'constraints' => array(
@@ -100,9 +100,9 @@ final class Vocabulary extends PagesVocabulary {
 	private function intro(): array {
 		return array(
 			'slug'        => 'intro',
-			'name'        => 'senroflux/intro',
+			'name'        => 'specflux/intro',
 			'title'       => 'Intro',
-			'description' => __( 'A short homepage introduction: an H2 heading, one paragraph and one button.', 'senroflux' ),
+			'description' => __( 'A short homepage introduction: an H2 heading, one paragraph and one button.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'intro' ),
 			'repeatable'  => array(),
 			'constraints' => array(

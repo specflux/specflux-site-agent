@@ -2,16 +2,16 @@
 /**
  * Pack-owned write validation for the pages pack (S10).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
-use Specflux\SenroFlux\Packs\BlockRoundTrip;
-use Specflux\SenroFlux\Packs\Content\ImageAlt;
-use Specflux\SenroFlux\Packs\Content\Validator as ContentValidator;
+use Specflux\SiteAgent\Packs\BlockRoundTrip;
+use Specflux\SiteAgent\Packs\Content\ImageAlt;
+use Specflux\SiteAgent\Packs\Content\Validator as ContentValidator;
 use WP_Error;
 
 // Bail on direct access.
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * {@see ContentValidator} seam so `Packs\Content\Abilities` can validate a
  * write without knowing any pack's concrete vocabulary.
  *
- * NOT final (0.3 S7): {@see \Specflux\SenroFlux\Packs\Site\Validator} extends
+ * NOT final (0.3 S7): {@see \Specflux\SiteAgent\Packs\Site\Validator} extends
  * this to validate the two extra homepage-only patterns on top of the same
  * seven-pattern shape rules, rather than re-authoring ~1000 lines of generic
  * block-shape/markup-safety checking. `countSlots()`, `columns()` and
@@ -56,7 +56,7 @@ defined( 'ABSPATH' ) || exit;
  *      the colour survives the strip anyway.
  *   3. unresolved `{{placeholder}}` text → `unresolved_placeholder`.
  *   3b. `core/image` admitted only with non-empty alt (0.3 quality feature 4,
- *      reusing {@see \Specflux\SenroFlux\Packs\Content\ImageAlt}, the same
+ *      reusing {@see \Specflux\SiteAgent\Packs\Content\ImageAlt}, the same
  *      walker the posts pack's own alt check uses) → `missing_alt` (index).
  *   4. pattern identity is STRUCTURAL (blockName tree + layout-defining attrs +
  *      slot counts in min..max) → `unknown_pattern` (index + nearest name),
@@ -204,7 +204,7 @@ class Validator implements ContentValidator {
 	private const MIN_COVER_DIM_RATIO = 50;
 
 	/**
-	 * Preset colour-slug fragments ({@see \Specflux\SenroFlux\Packs\Pages\BlockShells}'s
+	 * Preset colour-slug fragments ({@see \Specflux\SiteAgent\Packs\Pages\BlockShells}'s
 	 * `has-<slug>-color` convention) read as "already dark enough" —
 	 * {@see coverHasExplicitDarkText()}. A heuristic on the SLUG, never a raw
 	 * colour value (S11: this pack never reasons about a hex/rgb value), and
@@ -313,7 +313,7 @@ class Validator implements ContentValidator {
 			return $this->refuse( $markup_error );
 		}
 
-		// Step 2c — colour attributes. D3b (S6): the tone pair SenroFlux itself
+		// Step 2c — colour attributes. D3b (S6): the tone pair Specflux Site Agent itself
 		// writes on a curated group is the one colour this step lets through,
 		// here and in the step 4b shell match.
 		$judged      = array_map( fn ( array $block ): array => $this->withoutToneColors( $block ), $blocks );
@@ -655,7 +655,7 @@ class Validator implements ContentValidator {
 
 	/**
 	 * D3b (S6): a top-level block without the `backgroundColor`/`textColor`
-	 * pair of a tone (and its buttons' inverse pair), when SenroFlux's own tone wrote it. That is a curated
+	 * pair of a tone (and its buttons' inverse pair), when Specflux Site Agent's own tone wrote it. That is a curated
 	 * (never theme) `core/group` wearing exactly the pair, and the four classes,
 	 * that {@see Tone::apply()} derives from the active palette. A model can't
 	 * pick the pair: any other slug, a lone attribute, the pair on a nested
@@ -889,7 +889,7 @@ class Validator implements ContentValidator {
 	 * `java&#9;script:` and `&#106;avascript:` are caught.
 	 *
 	 * `public static` (0.3 S19, stage 12): shared with
-	 * {@see \Specflux\SenroFlux\Packs\Commerce\DescriptionValidator}, which
+	 * {@see \Specflux\SiteAgent\Packs\Commerce\DescriptionValidator}, which
 	 * reuses this exact rule for a product description's `<a href>` rather
 	 * than duplicating it — a pure function of the string, so making it
 	 * static changes no behaviour here.
@@ -1044,7 +1044,7 @@ class Validator implements ContentValidator {
 		$patterns = $this->vocabulary->all();
 		usort(
 			$patterns,
-			static fn ( array $a, array $b ): int => (int) ( 'senroflux/' . $b['slug'] === $claimed ) <=> (int) ( 'senroflux/' . $a['slug'] === $claimed )
+			static fn ( array $a, array $b ): int => (int) ( 'specflux/' . $b['slug'] === $claimed ) <=> (int) ( 'specflux/' . $a['slug'] === $claimed )
 		);
 
 		foreach ( $patterns as $pattern ) {
@@ -1699,7 +1699,7 @@ class Validator implements ContentValidator {
 
 	/**
 	 * Step 5 — the mutation pass: normalise `metadata.name` to
-	 * `senroflux/<slug>` on each top-level pattern block, and raise a
+	 * `specflux/<slug>` on each top-level pattern block, and raise a
 	 * too-light `core/cover` overlay (0.3 quality fix, hero readability;
 	 * {@see normalizeCoverDim()}) anywhere in the tree.
 	 *
@@ -1712,7 +1712,7 @@ class Validator implements ContentValidator {
 			$mutated[ $i ] = $this->normalizeCoverDim( $block );
 			if ( isset( $identities[ $i ] ) ) {
 				$attrs                  = is_array( $mutated[ $i ]['attrs'] ?? null ) ? $mutated[ $i ]['attrs'] : array();
-				$attrs['metadata']      = array( 'name' => 'senroflux/' . $identities[ $i ] );
+				$attrs['metadata']      = array( 'name' => 'specflux/' . $identities[ $i ] );
 				$mutated[ $i ]['attrs'] = $attrs;
 			}
 		}
@@ -1861,7 +1861,7 @@ class Validator implements ContentValidator {
 	 * Whether a matched slug counts as a HERO for the S11/S21 "hero first"
 	 * rule: the curated `hero` slug itself, or a theme-derived pattern
 	 * carrying the `banner` category (0.3 S21: "core category `banner` counts
-	 * as a hero"). `protected` so {@see \Specflux\SenroFlux\Packs\Site\Validator}'s
+	 * as a hero"). `protected` so {@see \Specflux\SiteAgent\Packs\Site\Validator}'s
 	 * own `checkPageShape()` override applies the same rule.
 	 */
 	protected function isHeroSlug( string $slug ): bool {
@@ -1911,7 +1911,7 @@ class Validator implements ContentValidator {
 
 	/**
 	 * Human message for a refusal code (S15: harness/pack error codes via `__()`
-	 * text domain `senroflux`; the code string itself stays machine-stable).
+	 * text domain `specflux-site-agent`; the code string itself stays machine-stable).
 	 *
 	 * @param string              $code Refusal code.
 	 * @param array<string,mixed> $ctx  Context.
@@ -1923,19 +1923,19 @@ class Validator implements ContentValidator {
 		return match ( $code ) {
 			'invalid_markup'         => sprintf(
 				/* translators: %s: post type. */
-				__( 'The %1$s content is not well-formed block markup.', 'senroflux' ),
+				__( 'The %1$s content is not well-formed block markup.', 'specflux-site-agent' ),
 				$context
 			),
 			'unknown_block'          => sprintf(
 				/* translators: %1$d: block index, %2$s: block name. */
-				__( 'Block %1$d "%2$s" is not a page-vocabulary block.', 'senroflux' ),
+				__( 'Block %1$d "%2$s" is not a page-vocabulary block.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['name'] ?? 'unknown'
 			),
 			'disallowed_markup'      => $this->disallowedMarkupMessage( $data ),
 			'decorative_color'       => sprintf(
 				/* translators: %1$d: pattern index, %2$s: block name, %3$s: attribute. */
-				__( 'Pattern %1$d: block "%2$s" sets the colour attribute "%3$s". Remove it; pages take their colours from the theme.', 'senroflux' ),
+				__( 'Pattern %1$d: block "%2$s" sets the colour attribute "%3$s". Remove it; pages take their colours from the theme.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['name'] ?? '',
 				$data['attr'] ?? ''
@@ -1943,7 +1943,7 @@ class Validator implements ContentValidator {
 			'block_mismatch'         => 'attributes' === ( $data['reason'] ?? '' )
 				? sprintf(
 					/* translators: %1$d: pattern index, %2$s: block name, %3$s: attributes written, %4$s: allowed attribute sets. */
-					__( 'Pattern %1$d: block "%2$s" has attributes %3$s, which no page pattern uses for this block. Use one of: %4$s ({{pN}} is any preset slug; the same N must be the same slug).', 'senroflux' ),
+					__( 'Pattern %1$d: block "%2$s" has attributes %3$s, which no page pattern uses for this block. Use one of: %4$s ({{pN}} is any preset slug; the same N must be the same slug).', 'specflux-site-agent' ),
 					$data['index'] ?? 0,
 					$data['name'] ?? '',
 					$data['found'] ?? '',
@@ -1951,7 +1951,7 @@ class Validator implements ContentValidator {
 				)
 				: sprintf(
 					/* translators: %1$d: pattern index, %2$s: block name, %3$s: expected HTML, %4$s: HTML written. */
-					__( 'Pattern %1$d: block "%2$s" HTML does not match its attributes, so the editor would reject it. Expected %3$s but found %4$s (… is your text).', 'senroflux' ),
+					__( 'Pattern %1$d: block "%2$s" HTML does not match its attributes, so the editor would reject it. Expected %3$s but found %4$s (… is your text).', 'specflux-site-agent' ),
 					$data['index'] ?? 0,
 					$data['name'] ?? '',
 					$data['expected'] ?? '',
@@ -1959,37 +1959,37 @@ class Validator implements ContentValidator {
 				),
 			'unresolved_placeholder' => sprintf(
 				/* translators: %s: placeholder. */
-				__( 'Unresolved placeholder "{{%s}}" must be filled before writing.', 'senroflux' ),
+				__( 'Unresolved placeholder "{{%s}}" must be filled before writing.', 'specflux-site-agent' ),
 				$data['placeholder'] ?? ''
 			),
 			'missing_alt'            => sprintf(
 				/* translators: %d: pattern index. */
-				__( 'Pattern %d has an image with no alt text; every image needs non-empty, descriptive alt text.', 'senroflux' ),
+				__( 'Pattern %d has an image with no alt text; every image needs non-empty, descriptive alt text.', 'specflux-site-agent' ),
 				$data['index'] ?? 0
 			),
 			'unknown_pattern'        => '' !== ( $data['shape'] ?? '' )
 				? sprintf(
 					/* translators: %1$d: pattern index, %2$s: nearest pattern name, %3$s: nearest pattern's expected block sequence. */
-					__( 'Pattern %1$d does not match any page pattern (nearest: %2$s, expected shape: %3$s).', 'senroflux' ),
+					__( 'Pattern %1$d does not match any page pattern (nearest: %2$s, expected shape: %3$s).', 'specflux-site-agent' ),
 					$data['index'] ?? 0,
 					$data['name'] ?? 'unknown',
 					$data['shape'] ?? ''
 				)
 				: sprintf(
 					/* translators: %1$d: pattern index, %2$s: nearest pattern name. */
-					__( 'Pattern %1$d does not match any page pattern (nearest: %2$s).', 'senroflux' ),
+					__( 'Pattern %1$d does not match any page pattern (nearest: %2$s).', 'specflux-site-agent' ),
 					$data['index'] ?? 0,
 					$data['name'] ?? 'unknown'
 				),
 			'slot_count'             => sprintf(
 				/* translators: %1$s: slot, %2$d: min, %3$d: max. */
-				__( 'Slot "%1$s" must have %2$d to %3$d items.', 'senroflux' ),
+				__( 'Slot "%1$s" must have %2$d to %3$d items.', 'specflux-site-agent' ),
 				$data['slot'] ?? '',
 				$data['min'] ?? 0,
 				$data['max'] ?? 0
 			),
 			'page_shape'             => $this->pageShapeMessage( $data ),
-			default                  => __( 'Invalid page content.', 'senroflux' ),
+			default                  => __( 'Invalid page content.', 'specflux-site-agent' ),
 		};
 	}
 
@@ -2000,31 +2000,31 @@ class Validator implements ContentValidator {
 		return match ( $data['reason'] ?? '' ) {
 			'tag'   => sprintf(
 				/* translators: %1$d: pattern index, %2$s: HTML tag. */
-				__( 'Pattern %1$d contains the disallowed HTML tag "<%2$s>".', 'senroflux' ),
+				__( 'Pattern %1$d contains the disallowed HTML tag "<%2$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['tag'] ?? ''
 			),
 			'attr'  => sprintf(
 				/* translators: %1$d: pattern index, %2$s: attribute, %3$s: HTML tag. */
-				__( 'Pattern %1$d contains the disallowed attribute "%2$s" on "<%3$s>".', 'senroflux' ),
+				__( 'Pattern %1$d contains the disallowed attribute "%2$s" on "<%3$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['attr'] ?? '',
 				$data['tag'] ?? ''
 			),
 			'style' => sprintf(
 				/* translators: %1$d: pattern index, %2$s: HTML tag. */
-				__( 'Pattern %1$d has an unsafe style attribute on "<%2$s>".', 'senroflux' ),
+				__( 'Pattern %1$d has an unsafe style attribute on "<%2$s>".', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['tag'] ?? ''
 			),
 			'url'   => sprintf(
 				/* translators: %1$d: pattern index, %2$s: attribute, %3$s: HTML tag. */
-				__( 'Pattern %1$d has an unsafe URL in "%2$s" on "<%3$s>"; use http, https, mailto, tel or a relative link.', 'senroflux' ),
+				__( 'Pattern %1$d has an unsafe URL in "%2$s" on "<%3$s>"; use http, https, mailto, tel or a relative link.', 'specflux-site-agent' ),
 				$data['index'] ?? 0,
 				$data['attr'] ?? '',
 				$data['tag'] ?? ''
 			),
-			default => __( 'The page contains markup that is not allowed.', 'senroflux' ),
+			default => __( 'The page contains markup that is not allowed.', 'specflux-site-agent' ),
 		};
 	}
 
@@ -2035,25 +2035,25 @@ class Validator implements ContentValidator {
 		return match ( $data['rule'] ?? '' ) {
 			'pattern_count' => sprintf(
 				/* translators: %d: pattern count. */
-				__( 'A page needs 2 to 8 patterns; %d given.', 'senroflux' ),
+				__( 'A page needs 2 to 8 patterns; %d given.', 'specflux-site-agent' ),
 				$data['count'] ?? 0
 			),
-			'hero_first'    => __( 'The first pattern on a page must be a hero.', 'senroflux' ),
-			'max_cta'       => __( 'A page may contain at most one call-to-action.', 'senroflux' ),
-			'h1_first'      => __( 'Only the hero may have a level-1 heading, and only one; use level 2 or 3 elsewhere.', 'senroflux' ),
+			'hero_first'    => __( 'The first pattern on a page must be a hero.', 'specflux-site-agent' ),
+			'max_cta'       => __( 'A page may contain at most one call-to-action.', 'specflux-site-agent' ),
+			'h1_first'      => __( 'Only the hero may have a level-1 heading, and only one; use level 2 or 3 elsewhere.', 'specflux-site-agent' ),
 			'max_repeat'    => sprintf(
 				/* translators: %1$s: pattern, %2$d: occurrences. */
-				__( 'No pattern may repeat more than twice; "%1$s" was used %2$d times.', 'senroflux' ),
+				__( 'No pattern may repeat more than twice; "%1$s" was used %2$d times.', 'specflux-site-agent' ),
 				$data['slug'] ?? '',
 				$data['seen'] ?? 0
 			),
 			'text_run'      => sprintf(
 				/* translators: %1$d: first pattern number, %2$d: last pattern number. */
-				__( 'Page patterns %1$d to %2$d are all text-sections in a row, so the page reads as a wall of text. Make one of them a media-text or feature-grid with its own image, or an FAQ where the content fits, or merge two of them.', 'senroflux' ),
+				__( 'Page patterns %1$d to %2$d are all text-sections in a row, so the page reads as a wall of text. Make one of them a media-text or feature-grid with its own image, or an FAQ where the content fits, or merge two of them.', 'specflux-site-agent' ),
 				$data['first'] ?? 0,
 				$data['last'] ?? 0
 			),
-			default         => __( 'The page does not satisfy the page-shape rules.', 'senroflux' ),
+			default         => __( 'The page does not satisfy the page-shape rules.', 'specflux-site-agent' ),
 		};
 	}
 }

@@ -2,21 +2,21 @@
 /**
  * Abstract capability pack: role → ability resolution, verb map, skills, preflight.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs;
+namespace Specflux\SiteAgent\Packs;
 
-use Specflux\SenroFlux\Packs\Content\Abilities;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Setup\SetupCheck;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Content\Abilities;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Setup\SetupCheck;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 // Bail on direct access.
@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
  * shape-compat check), and override `skills()` / `agentSafetyPack()` /
  * `verbMap()` / `preflight()` as needed.
  *
- * S9 (SPEC-SENROFLUX-0.2) — the pack is the ONLY source of a run's ability
+ * S9 (SPEC-SITE-AGENT-0.2) — the pack is the ONLY source of a run's ability
  * allow-list when `start()` is given a pack name. It also owns the S10 verb
  * map (what Agent Safety tiers/grants/audits), the pack skills that ride the
  * instruction, and the S13 preflight that gates a start on skills ceiling +
@@ -46,7 +46,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * TWO VERB VOCABULARIES, deliberately. They are NOT the same string space and
  * conflating them is the bug this class exists to prevent:
- *   - PACK verbs (`pages/publish`) are SenroFlux's own, argument-aware names.
+ *   - PACK verbs (`pages/publish`) are Specflux Site Agent's own, argument-aware names.
  *     They key the S7 plan fence, the plan's `verbs` list and the approval card.
  *   - AGENT SAFETY verbs are, at the gate seam this plugin is governed by, the
  *     ABILITY ID itself: `AbilityPermissionGate::wrap()` passes the registered
@@ -55,7 +55,7 @@ defined( 'ABSPATH' ) || exit;
  *     plugin/src/Hooks/AbilityPermissionGate.php:113, plugin/src/Verdict/VerdictPipeline.php:70,
  *     src/Gate/Gate.php:31-41). Agent Safety's own core module does exactly
  *     this — `CorePacks` allows `core/read-content` etc. So everything Agent
- *     Safety sees (`agent_safety_governed_namespaces`, `agent_safety_verb_map`,
+ *     Safety sees (`belayline_governed_namespaces`, `belayline_verb_map`,
  *     a `Packs\Pack`'s allow-list, the approval-summary `$verb`) is keyed on
  *     ABILITY IDS, never on `pages/*`.
  * {@see agentSafetyVerbMap()} is the bridge: it collapses the pack verbs a role
@@ -68,7 +68,7 @@ abstract class Pack {
 	 * namespace the pack asks Agent Safety to govern — `core/*` is governed by
 	 * Agent Safety's own core module and must never be re-declared here (S9).
 	 */
-	public const POLYFILL_NAMESPACE = 'senroflux/';
+	public const POLYFILL_NAMESPACE = 'specflux/';
 
 	/** @var array<string,string> role => ability-id template (e.g. 'read' => 'read-content'). */
 	private array $roles = array();
@@ -96,7 +96,7 @@ abstract class Pack {
 
 	/**
 	 * role => ability-id template. The template is the name segment WITHOUT the
-	 * namespace prefix; resolution decides 'core/<template>' vs 'senroflux/<template>'.
+	 * namespace prefix; resolution decides 'core/<template>' vs 'specflux/<template>'.
 	 * `@api` (S23).
 	 *
 	 * @return array<string,string>
@@ -110,13 +110,13 @@ abstract class Pack {
 	 *
 	 * Resolution (generalised, S19): {@see abilityNamespaces()} lists the
 	 * candidate namespaces in preference order (default `['core/',
-	 * 'senroflux/']`). Each is tried in turn — the first whose
+	 * 'specflux/']`). Each is tried in turn — the first whose
 	 * `<namespace><template>` ability is REGISTERED and shape-compatible
 	 * (every input property the pack sends for that role exists in the
 	 * ability's `get_input_schema()`) is adopted. The LAST namespace in the
 	 * list is the pack's own polyfill and is always accepted without a
 	 * compat check (it is authored to match the pack's own calls) — this is
-	 * the pre-S19 "otherwise senroflux/<template>" fallback, generalised.
+	 * the pre-S19 "otherwise specflux/<template>" fallback, generalised.
 	 * Cached per request. `@internal` (S23): a third-party pack reads its own
 	 * roles through `roles()`/the resolved allow-list through `allowList()`,
 	 * not this.
@@ -142,7 +142,7 @@ abstract class Pack {
 	/**
 	 * The ability namespaces this pack's roles resolve through, in
 	 * preference order (S19, `@api`). The default is the pre-S19 behaviour
-	 * unchanged: try `core/`, otherwise `senroflux/`. A pack that prefers a
+	 * unchanged: try `core/`, otherwise `specflux/`. A pack that prefers a
 	 * third-party namespace (e.g. `woocommerce/`) lists it first; the LAST
 	 * entry MUST be `self::POLYFILL_NAMESPACE` — {@see PackRegistry::register()}
 	 * refuses a pack whose list doesn't end with it, because a pack with no
@@ -390,7 +390,7 @@ abstract class Pack {
 	 * S12 (defect fix): the id a Tier >= 1 write just wrote, for a pack verb
 	 * whose ability output carries no natural id of its own (a singleton
 	 * object such as a site's navigation or front-page setting — see
-	 * `Specflux\SenroFlux\Packs\Site\SitePack::objectIdForWrite()`). Null
+	 * `Specflux\SiteAgent\Packs\Site\SitePack::objectIdForWrite()`). Null
 	 * (the base) means "no opinion": the harness falls back to
 	 * {@see objectIdKey()}'s output[key] extraction, S12's pre-existing
 	 * behaviour, for every pre-existing pack.
@@ -487,7 +487,7 @@ abstract class Pack {
 	 * parks for a human).
 	 *
 	 * The inverse of {@see roleVerbs()}, and the only place that knows a grant
-	 * on `pages/publish` has to be issued against `senroflux/publish-post`.
+	 * on `pages/publish` has to be issued against `specflux/publish-post`.
 	 * Several pack verbs legitimately collapse onto one ability — the caller
 	 * aggregates their counts.
 	 *
@@ -510,7 +510,7 @@ abstract class Pack {
 	}
 
 	/**
-	 * PACK verbs (S19, `@api`) that {@see \Specflux\SenroFlux\Run\Runner::grantCounts()}
+	 * PACK verbs (S19, `@api`) that {@see \Specflux\SiteAgent\Run\Runner::grantCounts()}
 	 * must NEVER issue a pre-approval grant for, however many times the
 	 * accepted plan lists them. Default empty (every 0.2/0.3-era verb stays
 	 * grantable). A verb here still gates and audits normally — it just asks
@@ -527,7 +527,7 @@ abstract class Pack {
 
 	/**
 	 * The ability namespaces this pack asks Agent Safety to govern, contributed
-	 * to `agent_safety_governed_namespaces`. Only the POLYFILL namespace: a
+	 * to `belayline_governed_namespaces`. Only the POLYFILL namespace: a
 	 * role that resolved to `core/*` is already governed unconditionally by
 	 * Agent Safety's own core module (S9), and re-declaring it here would be a
 	 * second, weaker opinion on the same ability.
@@ -543,7 +543,7 @@ abstract class Pack {
 	}
 
 	/**
-	 * The pack's contribution to `agent_safety_verb_map`: Agent Safety verb
+	 * The pack's contribution to `belayline_verb_map`: Agent Safety verb
 	 * (= polyfill ability id) => tier. Without this, governing the namespace
 	 * would deny every call in it as `unknown_verb` — the gate fails closed on
 	 * unclassified verbs by design (agent-safety README, plugin/agent-safety.php:177).
@@ -592,8 +592,8 @@ abstract class Pack {
 
 	/**
 	 * S7: key => value overrides applied over the SHIPPED budget table for
-	 * this pack's runs, BEFORE the `senroflux_default_budget` filter runs
-	 * (see {@see \Specflux\SenroFlux\Run\Budget::defaults()}). The base
+	 * this pack's runs, BEFORE the `specflux_site_agent_default_budget` filter runs
+	 * (see {@see \Specflux\SiteAgent\Run\Budget::defaults()}). The base
 	 * returns an empty table — no override — which is what keeps every
 	 * pre-0.3 pack's budget byte-for-byte unchanged; the site pack (stage 7)
 	 * was the first to override this with its own flat-and-high table, and
@@ -619,7 +619,7 @@ abstract class Pack {
 	 *                                that mention entirely rather than
 	 *                                pointing the model at a tool the run's
 	 *                                surface has already withheld (see
-	 *                                {@see \Specflux\SenroFlux\Tools\ToolRegistry::forRun()}).
+	 *                                {@see \Specflux\SiteAgent\Tools\ToolRegistry::forRun()}).
 	 *
 	 * `@api` (S23).
 	 *
@@ -653,18 +653,18 @@ abstract class Pack {
 	/**
 	 * The pages/site `copy-rules` skill body, shared. It points the model at
 	 * `list-patterns` for each pattern's copy limits instead of restating them:
-	 * {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary::listPayload()} already
+	 * {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary::listPayload()} already
 	 * ships every pattern's `constraints.stated` lines, and restating them here
 	 * grows with the pattern count — on Twenty Twenty-Five (9 eligible theme
 	 * patterns) it pushed pages to ~4227 and site to ~4571 tokens, over the
-	 * 2000-token ceiling ({@see \Specflux\SenroFlux\Skills\SkillSet::ceilingError()}).
+	 * 2000-token ceiling ({@see \Specflux\SiteAgent\Skills\SkillSet::ceilingError()}).
 	 * Theme-derived patterns are counted, not named, so the model knows they
 	 * exist without the skill growing with the theme. Skill bodies stay English (S15), so nothing here is translated.
 	 *
 	 * `@internal` (S23): a Pages-pack-family implementation helper, not part
 	 * of the declared third-party contract.
 	 *
-	 * @param list<array<string,mixed>> $vocabulary {@see \Specflux\SenroFlux\Packs\Pages\Vocabulary::all()}.
+	 * @param list<array<string,mixed>> $vocabulary {@see \Specflux\SiteAgent\Packs\Pages\Vocabulary::all()}.
 	 * @param string                    $list_verb  This pack's list-patterns verb (e.g. `pages/list-patterns`).
 	 * @return list<string>
 	 */
@@ -698,7 +698,7 @@ abstract class Pack {
 
 	/**
 	 * The Agent Safety pack descriptor (allow/deny/approvalByTier) registered on
-	 * `agent_safety_pack_registry`; null when the pack contributes none. Stage 8
+	 * `belayline_pack_registry`; null when the pack contributes none. Stage 8
 	 * fills the pages pack's; the base contributes nothing. `@api` (S23).
 	 */
 	public function agentSafetyPack(): ?object {
@@ -715,12 +715,12 @@ abstract class Pack {
 	 * polyfill cannot cover — the commerce pack's description-tag rule over
 	 * WooCommerce's own `product-create`/`product-update` abilities.
 	 *
-	 * Called by {@see \Specflux\SenroFlux\Run\Runner::executeCall()} for
+	 * Called by {@see \Specflux\SiteAgent\Run\Runner::executeCall()} for
 	 * every admitted call, in AS and built-in gate modes alike, after the S7
 	 * plan fence and the gate's own approval decision but before the
 	 * ability's own permission/execute pair — so a refusal here can never be
 	 * bypassed by anything downstream. The base refuses an invalid
-	 * `senroflux/` content write (create-post, update-post, publish-post) via
+	 * `specflux/` content write (create-post, update-post, publish-post) via
 	 * {@see Abilities::preflight()} — the same input checks the ability's
 	 * execute runs — so a call that could never succeed is never parked for
 	 * approval; every other ability gets no opinion (null).
@@ -729,7 +729,7 @@ abstract class Pack {
 	 * @param array<string,mixed>  $input   The call input.
 	 */
 	public function validateCall( string $ability, array $input ): ?WP_Error {
-		if ( 0 === strpos( $ability, 'senroflux/' ) ) {
+		if ( 0 === strpos( $ability, 'specflux/' ) ) {
 			return Abilities::preflight( $this->baseName( $ability ), $input );
 		}
 
@@ -743,7 +743,7 @@ abstract class Pack {
 	 * tier 2. Returns true, or a WP_Error (`skills_too_large` from the ceiling,
 	 * or `pack_unbound`).
 	 *
-	 * The binding check is NOT conditional on `function_exists('agent_safety')`:
+	 * The binding check is NOT conditional on `function_exists('belayline')`:
 	 * Agent Safety is a hard runtime dependency (S2) and the Capability Pack IS
 	 * the governance seam, so a missing seam is a refusal, never a gated pass.
 	 * Answering that question is each pack's own job — see
@@ -751,7 +751,7 @@ abstract class Pack {
 	 *
 	 * The skills arguments exist so this check and `start()`'s are the SAME
 	 * question: `start()` passes the run's real consumer, goal and disable list,
-	 * so the `senroflux_run_skills` filter sees identical inputs in both places
+	 * so the `specflux_site_agent_run_skills` filter sees identical inputs in both places
 	 * and the two can never disagree about the ceiling. The screen-time caller
 	 * (no run yet) keeps the empty defaults, which is the pre-run approximation
 	 * and is documented as such.
@@ -827,7 +827,7 @@ abstract class Pack {
 	private function capabilityCheck( int $user_id ): SetupCheck {
 		$capability = $this->runCapability();
 		$passed     = '' === $capability || ( function_exists( 'user_can' ) && user_can( $user_id, $capability ) );
-		$message    = __( 'You do not have the capability this pack needs to start a run.', 'senroflux' );
+		$message    = __( 'You do not have the capability this pack needs to start a run.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			$this->name() . '/capability',
@@ -857,14 +857,14 @@ abstract class Pack {
 			false,
 			sprintf(
 				/* translators: %s: capability pack name, e.g. "posts". */
-				__( 'The %s pack is not turned on for your account. Turn it on for your role in Tools > Agent Capability Packs.', 'senroflux' ),
+				__( 'The %s pack is not turned on for your account. Turn it on for your role in Tools > Agent Capability Packs.', 'specflux-site-agent' ),
 				$this->name()
 			),
-			admin_url( 'tools.php?page=agent-safety-packs' ),
+			admin_url( 'tools.php?page=belayline-packs' ),
 			'manage_options',
 			sprintf(
 				/* translators: %s: capability pack name, e.g. "posts". */
-				__( 'The %s pack is not turned on for your account. Ask a site administrator to turn it on.', 'senroflux' ),
+				__( 'The %s pack is not turned on for your account. Ask a site administrator to turn it on.', 'specflux-site-agent' ),
 				$this->name()
 			),
 			$code
@@ -873,7 +873,7 @@ abstract class Pack {
 
 	/** The `<pack>/agent-safety-required` setup check (built-in mode, {@see requiresAgentSafety()}). */
 	private function agentSafetyRequiredCheck(): SetupCheck {
-		$message = __( 'This pack requires the SenroGate plugin to be active.', 'senroflux' );
+		$message = __( 'This pack requires the Belayline Agent Governance plugin to be active.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			$this->name() . '/agent-safety-required',
@@ -927,8 +927,8 @@ abstract class Pack {
 	/**
 	 * A content hash of this pack's guidance material outside its skills'
 	 * own bodies — e.g. layout/vocabulary rules text a skill only POINTS AT
-	 * (see {@see \Specflux\SenroFlux\Packs\Pages\PagesPack} and
-	 * `Api\LayoutVocabulary::rulesLines()`). SPEC-SENROFLUX-PRO.md §5 F4:
+	 * (see {@see \Specflux\SiteAgent\Packs\Pages\PagesPack} and
+	 * `Api\LayoutVocabulary::rulesLines()`). SPEC-SITE-AGENT-PRO.md §5 F4:
 	 * recorded in the run report next to the skills hash (S23) so a saved
 	 * report can be told apart from one built under guidance text that has
 	 * since changed, even though the SKILL bodies (already hashed) never

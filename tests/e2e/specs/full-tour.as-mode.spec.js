@@ -14,13 +14,13 @@ const {
 	waitSettled,
 } = require( '../support/actions' );
 
-test.describe( 'S10/S12 full run tour (SenroGate mode)', () => {
+test.describe( 'S10/S12 full run tour (Belayline Agent Governance mode)', () => {
 	test.beforeEach( () => {
 		resetRuns();
 		setScript( fullTour() );
 	} );
 
-	test( 'the SAME tour shows the tier badge, because SenroGate is the active gate', async ( { page } ) => {
+	test( 'the SAME tour shows the tier badge, because Belayline Agent Governance is the active gate', async ( { page } ) => {
 		await gotoRuns( page );
 		await waitLoaded( page );
 		await startRun( page, 'Build the launch page' );
@@ -43,7 +43,7 @@ test.describe( 'S10/S12 full run tour (SenroGate mode)', () => {
 		// unscoped `[data-testid="tier-badge"]` matches one of those first —
 		// this assertion means the approval card's own badge, not whichever
 		// badge happens to be first in DOM order.
-		const approvalTierBadge = page.locator( '.senroflux-park-card [data-testid="tier-badge"]' ).first();
+		const approvalTierBadge = page.locator( '.specflux-site-agent-park-card [data-testid="tier-badge"]' ).first();
 		await expect( approvalTierBadge ).toBeVisible();
 		await expect( approvalTierBadge ).toContainText( 'Makes changes' );
 		await assertNoSeriousA11y( page, 'approval park' );

@@ -2,16 +2,16 @@
 /**
  * The commerce pack's own polyfill abilities: catalogue (S19 stage 12 —
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\RunStore;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\RunStore;
+use Specflux\SiteAgent\Run\Tracker;
 use WP_Error;
 
 // Bail on direct access.
@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * TARGET REPO PATH: src/Packs/Commerce/Abilities.php
  *
- * Each lives in `senroflux/` (S19's polyfill rule: the mirror is the
+ * Each lives in `specflux/` (S19's polyfill rule: the mirror is the
  * ability's NAME, never its namespace) and calls WooCommerce's PHP API
  * directly — never internal REST. Every docblock below names the upstream
  * ask these abilities stand in for (S17).
@@ -38,7 +38,7 @@ defined( 'ABSPATH' ) || exit;
  *   - `coupon-enable` gets REAL stale-write coverage. `coupon-create` is
  *     this pack's OWN polyfill, so its successful write records the new
  *     coupon's `post_modified_gmt` marker in the run's tracker (mirroring
- *     {@see \Specflux\SenroFlux\Packs\Content\Abilities}'s create-post
+ *     {@see \Specflux\SiteAgent\Packs\Content\Abilities}'s create-post
  *     pattern) — that marker is the "read" S8 needs. `coupon-enable`
  *     compares it against the coupon's CURRENT `post_modified_gmt` and
  *     refuses `stale_write` (409) on a mismatch or an unrecorded id (fail
@@ -82,7 +82,7 @@ defined( 'ABSPATH' ) || exit;
 final class Abilities {
 
 	/** The ability category for the commerce polyfills. */
-	public const CATEGORY = 'senroflux-commerce';
+	public const CATEGORY = 'specflux-commerce';
 
 	/** `products-catalogue` page size when the caller names none. */
 	private const CATALOGUE_DEFAULT_PER_PAGE = 20;
@@ -135,7 +135,7 @@ final class Abilities {
 	 * Enter the run context for one tick: which run's row backs the S8
 	 * stale-write compare. Set by the composition root from the ticking
 	 * run's id, NEVER from the model — same discipline as
-	 * {@see \Specflux\SenroFlux\Packs\Content\Abilities::useRunContext()}.
+	 * {@see \Specflux\SiteAgent\Packs\Content\Abilities::useRunContext()}.
 	 *
 	 * @param int|null      $run_id The ticking run's id, or null.
 	 * @param RunStore|null $store  The store backing that run, or null.
@@ -160,8 +160,8 @@ final class Abilities {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux commerce', 'senroflux' ),
-				'description' => __( 'Commerce abilities the commerce capability pack polyfills ahead of WooCommerce.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent commerce', 'specflux-site-agent' ),
+				'description' => __( 'Commerce abilities the commerce capability pack polyfills ahead of WooCommerce.', 'specflux-site-agent' ),
 			)
 		);
 	}
@@ -193,16 +193,16 @@ final class Abilities {
 	// ------------------------------------------------------------------
 
 	/**
-	 * `senroflux/set-product-image` — upstream ask: a WooCommerce
+	 * `specflux/set-product-image` — upstream ask: a WooCommerce
 	 * `product-image` ability (S19/S17). Sets or appends an existing media
 	 * library attachment as a product's image; never fetches a URL.
 	 */
 	private static function registerSetProductImage(): void {
 		wp_register_ability(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
-				'label'               => __( 'Set product image', 'senroflux' ),
-				'description'         => __( 'Set (or add to the gallery of) a product\'s image from an existing media library attachment.', 'senroflux' ),
+				'label'               => __( 'Set product image', 'specflux-site-agent' ),
+				'description'         => __( 'Set (or add to the gallery of) a product\'s image from an existing media library attachment.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -245,16 +245,16 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/coupon-create` — upstream ask: a WooCommerce coupon-create
+	 * `specflux/coupon-create` — upstream ask: a WooCommerce coupon-create
 	 * ability (S19/S17). Creates a `WC_Coupon` as a DRAFT; refuses a code
 	 * collision (S4's slug-collision rule, applied to coupons).
 	 */
 	private static function registerCouponCreate(): void {
 		wp_register_ability(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
-				'label'               => __( 'Create coupon (draft)', 'senroflux' ),
-				'description'         => __( 'Create a draft coupon. Refuses a code that already exists.', 'senroflux' ),
+				'label'               => __( 'Create coupon (draft)', 'specflux-site-agent' ),
+				'description'         => __( 'Create a draft coupon. Refuses a code that already exists.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -293,16 +293,16 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/coupon-enable` — companion to `coupon-create` (draft →
+	 * `specflux/coupon-enable` — companion to `coupon-create` (draft →
 	 * publish), the same "adopted object" a plan names before acting on it.
 	 * Stale-write checked (see the class docblock).
 	 */
 	private static function registerCouponEnable(): void {
 		wp_register_ability(
-			'senroflux/coupon-enable',
+			'specflux/coupon-enable',
 			array(
-				'label'               => __( 'Enable coupon', 'senroflux' ),
-				'description'         => __( 'Publish a draft coupon. Refuses a stale write if the coupon changed since it was created.', 'senroflux' ),
+				'label'               => __( 'Enable coupon', 'specflux-site-agent' ),
+				'description'         => __( 'Publish a draft coupon. Refuses a stale write if the coupon changed since it was created.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -334,7 +334,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/orders-refund` — upstream ask: a WooCommerce order-refund
+	 * `specflux/orders-refund` — upstream ask: a WooCommerce order-refund
 	 * ability (S19/S17). Reads the order fresh, refuses an amount over what
 	 * remains refundable, refuses once this run's `refunds` budget (default
 	 * 1, lower-only) is spent, then calls `wc_create_refund()`.
@@ -351,10 +351,10 @@ final class Abilities {
 	 */
 	private static function registerOrdersRefund(): void {
 		wp_register_ability(
-			'senroflux/orders-refund',
+			'specflux/orders-refund',
 			array(
-				'label'               => __( 'Refund order', 'senroflux' ),
-				'description'         => __( 'Refund part or all of an order. Refuses an amount over what remains refundable, and a second refund once this run\'s refund budget is spent.', 'senroflux' ),
+				'label'               => __( 'Refund order', 'specflux-site-agent' ),
+				'description'         => __( 'Refund part or all of an order. Refuses an amount over what remains refundable, and a second refund once this run\'s refund budget is spent.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -401,7 +401,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/shipping-zone-save` — upstream ask: a WooCommerce
+	 * `specflux/shipping-zone-save` — upstream ask: a WooCommerce
 	 * shipping-zone-write ability (S19/S17). Create-or-update only, via
 	 * `WC_Shipping_Zone`; records the PREVIOUS values on an update so the
 	 * approval card can show current beside proposed.
@@ -412,10 +412,10 @@ final class Abilities {
 	 */
 	private static function registerShippingZoneSave(): void {
 		wp_register_ability(
-			'senroflux/shipping-zone-save',
+			'specflux/shipping-zone-save',
 			array(
-				'label'               => __( 'Save shipping zone', 'senroflux' ),
-				'description'         => __( 'Create or update a shipping zone. Never deletes one. On an existing zone the locations given REPLACE its current ones, and the methods given are ADDED to its existing methods (none are removed or edited).', 'senroflux' ),
+				'label'               => __( 'Save shipping zone', 'specflux-site-agent' ),
+				'description'         => __( 'Create or update a shipping zone. Never deletes one. On an existing zone the locations given REPLACE its current ones, and the methods given are ADDED to its existing methods (none are removed or edited).', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -433,12 +433,12 @@ final class Abilities {
 								'properties'           => array(
 									'code' => array(
 										'type'        => 'string',
-										'description' => __( 'Region code: "CA" (country), "CA:ON" (state), "NA" (continent) or a postcode such as "90210".', 'senroflux' ),
+										'description' => __( 'Region code: "CA" (country), "CA:ON" (state), "NA" (continent) or a postcode such as "90210".', 'specflux-site-agent' ),
 									),
 									'type' => array(
 										'type'        => 'string',
 										'enum'        => ShippingZoneInput::LOCATION_TYPES,
-										'description' => __( 'Defaults to country.', 'senroflux' ),
+										'description' => __( 'Defaults to country.', 'specflux-site-agent' ),
 									),
 								),
 							),
@@ -457,12 +457,12 @@ final class Abilities {
 									'title'      => array( 'type' => 'string' ),
 									'cost'       => array(
 										'type'        => 'string',
-										'description' => __( 'Decimal such as "12" or "4.50". Not for free_shipping.', 'senroflux' ),
+										'description' => __( 'Decimal such as "12" or "4.50". Not for free_shipping.', 'specflux-site-agent' ),
 									),
 									'tax_status' => array(
 										'type'        => 'string',
 										'enum'        => array( 'taxable', 'none' ),
-										'description' => __( 'Not for free_shipping.', 'senroflux' ),
+										'description' => __( 'Not for free_shipping.', 'specflux-site-agent' ),
 									),
 									'enabled'    => array( 'type' => 'boolean' ),
 								),
@@ -526,7 +526,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/tax-rate-save` — upstream ask: a WooCommerce tax-rate-write
+	 * `specflux/tax-rate-save` — upstream ask: a WooCommerce tax-rate-write
 	 * ability (S19/S17). Create-or-update only, via `WC_Tax`; records the
 	 * PREVIOUS rate row on an update.
 	 *
@@ -535,10 +535,10 @@ final class Abilities {
 	 */
 	private static function registerTaxRateSave(): void {
 		wp_register_ability(
-			'senroflux/tax-rate-save',
+			'specflux/tax-rate-save',
 			array(
-				'label'               => __( 'Save tax rate', 'senroflux' ),
-				'description'         => __( 'Create or update a tax rate. Never deletes one.', 'senroflux' ),
+				'label'               => __( 'Save tax rate', 'specflux-site-agent' ),
+				'description'         => __( 'Create or update a tax rate. Never deletes one.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -586,7 +586,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/products-catalogue` — upstream ask: a category filter and
+	 * `specflux/products-catalogue` — upstream ask: a category filter and
 	 * category/description fields on WooCommerce's `products-query` (live
 	 * journeys J10/J11: the model could not read category assignments or tell
 	 * which products lack a description, asked the human, and guessed).
@@ -610,10 +610,10 @@ final class Abilities {
 		);
 
 		wp_register_ability(
-			'senroflux/products-catalogue',
+			'specflux/products-catalogue',
 			array(
-				'label'               => __( 'Products catalogue', 'senroflux' ),
-				'description'         => __( 'A read-only product listing that shows each product\'s categories and whether it has a description (with a short excerpt), filterable by category and by missing description. Without a filter it also returns the category list with product counts.', 'senroflux' ),
+				'label'               => __( 'Products catalogue', 'specflux-site-agent' ),
+				'description'         => __( 'A read-only product listing that shows each product\'s categories and whether it has a description (with a short excerpt), filterable by category and by missing description. Without a filter it also returns the category list with product counts.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -708,7 +708,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/store-report` — upstream ask: a WooCommerce sales-report
+	 * `specflux/store-report` — upstream ask: a WooCommerce sales-report
 	 * ability (S19/S17). Read-only: order count, gross/net sales and refunds
 	 * over paid statuses via `wc_get_orders()`, in store currency, plus
 	 * products at or below `wc_get_low_stock_amount()`. Refuses a window
@@ -718,10 +718,10 @@ final class Abilities {
 	 */
 	private static function registerStoreReport(): void {
 		wp_register_ability(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
-				'label'               => __( 'Store health report', 'senroflux' ),
-				'description'         => __( 'A read-only sales/refunds/low-stock report over a date window of at most 92 days.', 'senroflux' ),
+				'label'               => __( 'Store health report', 'specflux-site-agent' ),
+				'description'         => __( 'A read-only sales/refunds/low-stock report over a date window of at most 92 days.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -768,7 +768,7 @@ final class Abilities {
 	}
 
 	/**
-	 * `senroflux/save-store-report` — upstream ask: none (a harness-side
+	 * `specflux/save-store-report` — upstream ask: none (a harness-side
 	 * convenience over the report above, not a WooCommerce ask). Creates a
 	 * PRIVATE page from the report's harness-built table markup; refuses
 	 * (never strips) any tag outside the allowed set.
@@ -781,10 +781,10 @@ final class Abilities {
 	 */
 	private static function registerSaveStoreReport(): void {
 		wp_register_ability(
-			'senroflux/save-store-report',
+			'specflux/save-store-report',
 			array(
-				'label'               => __( 'Save store report as a page', 'senroflux' ),
-				'description'         => __( 'Save a store report as a new private page. Refuses markup outside a small allowed tag set.', 'senroflux' ),
+				'label'               => __( 'Save store report as a page', 'specflux-site-agent' ),
+				'description'         => __( 'Save a store report as a new private page. Refuses markup outside a small allowed tag set.', 'specflux-site-agent' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -848,13 +848,13 @@ final class Abilities {
 		$gallery       = true === ( $input['gallery'] ?? false );
 
 		if ( 'product' !== self::postType( $product_id ) ) {
-			return new WP_Error( 'not_found', __( 'Product not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Product not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( 'attachment' !== self::postType( $attachment_id ) || ! self::isImageAttachment( $attachment_id ) ) {
-			return new WP_Error( 'not_an_image', __( 'That attachment is not an image.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_an_image', __( 'That attachment is not an image.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( '' === self::altText( $attachment_id ) ) {
-			return new WP_Error( 'missing_alt', __( 'That image has no alt text.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_alt', __( 'That image has no alt text.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( $gallery ) {
@@ -876,17 +876,17 @@ final class Abilities {
 	private static function executeCouponCreate( array $input ): array|WP_Error {
 		$code = is_string( $input['code'] ?? null ) ? trim( $input['code'] ) : '';
 		if ( '' === $code ) {
-			return new WP_Error( 'invalid_input', __( 'A coupon code is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A coupon code is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( self::couponCodeExists( $code ) ) {
 			return new WP_Error(
 				'slug_collision',
-				__( 'A coupon with that code already exists.', 'senroflux' ),
+				__( 'A coupon with that code already exists.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
 		if ( ! class_exists( '\WC_Coupon' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Coupons are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Coupons are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$coupon = new \WC_Coupon();
@@ -921,13 +921,13 @@ final class Abilities {
 		$id = (int) ( $input['coupon_id'] ?? 0 );
 
 		if ( 'shop_coupon' !== self::postType( $id ) ) {
-			return new WP_Error( 'not_found', __( 'Coupon not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Coupon not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( self::isStaleWrite( $id, self::modifiedMarker( $id ) ) ) {
 			return new WP_Error(
 				'stale_write',
-				__( 'This coupon changed since this run last saw it — re-read it before enabling it.', 'senroflux' ),
+				__( 'This coupon changed since this run last saw it — re-read it before enabling it.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -961,16 +961,16 @@ final class Abilities {
 		$restock  = true === ( $input['restock'] ?? false );
 
 		if ( $amount <= 0 ) {
-			return new WP_Error( 'invalid_input', __( 'The refund amount must be greater than zero.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'The refund amount must be greater than zero.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! function_exists( 'wc_get_order' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$order = wc_get_order( $order_id );
 		if ( ! is_object( $order ) ) {
-			return new WP_Error( 'not_found', __( 'Order not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Order not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$total            = self::orderTotal( $order );
@@ -980,7 +980,7 @@ final class Abilities {
 		if ( $amount > $remaining + 0.001 ) {
 			return new WP_Error(
 				'refund_too_large',
-				__( 'That refund is more than remains refundable on this order.', 'senroflux' ),
+				__( 'That refund is more than remains refundable on this order.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -988,13 +988,13 @@ final class Abilities {
 		if ( self::refundsExhausted() ) {
 			return new WP_Error(
 				'budget_exhausted',
-				__( 'This run has used up its refund budget.', 'senroflux' ),
+				__( 'This run has used up its refund budget.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
 
 		if ( ! function_exists( 'wc_create_refund' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Refunds are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Refunds are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// D4/S19: `refund_payment` = whether the order's payment gateway
@@ -1040,10 +1040,10 @@ final class Abilities {
 		$name    = is_string( $input['name'] ?? null ) ? trim( $input['name'] ) : '';
 
 		if ( '' === $name ) {
-			return new WP_Error( 'invalid_input', __( 'A zone name is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A zone name is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( ! class_exists( '\WC_Shipping_Zone' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Shipping zones are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Shipping zones are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$locations = self::resolveZoneLocations( is_array( $input['locations'] ?? null ) ? $input['locations'] : array() );
@@ -1059,7 +1059,7 @@ final class Abilities {
 		if ( $zone_id > 0 ) {
 			$zone = new \WC_Shipping_Zone( $zone_id );
 			if ( 0 === $zone->get_id() ) {
-				return new WP_Error( 'not_found', __( 'Shipping zone not found.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'not_found', __( 'Shipping zone not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 			$previous = array(
 				'name'      => $zone->get_zone_name(),
@@ -1115,7 +1115,7 @@ final class Abilities {
 
 		foreach ( $locations as $location ) {
 			if ( ! is_array( $location ) ) {
-				return new WP_Error( 'invalid_input', __( 'Each location must be an object with a code.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_input', __( 'Each location must be an object with a code.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 			$extra = array_diff( array_keys( $location ), array( 'code', 'type' ) );
 			if ( array() !== $extra ) {
@@ -1123,7 +1123,7 @@ final class Abilities {
 					'invalid_input',
 					sprintf(
 						/* translators: %s: unexpected location field names. */
-						__( 'Unknown location field: %s. A location takes only code and type.', 'senroflux' ),
+						__( 'Unknown location field: %s. A location takes only code and type.', 'specflux-site-agent' ),
 						implode( ', ', array_map( 'strval', $extra ) )
 					),
 					array( 'status' => 400 )
@@ -1139,7 +1139,7 @@ final class Abilities {
 					'unknown_location',
 					sprintf(
 						/* translators: 1: location type, 2: location code. */
-						__( 'WooCommerce has no %1$s "%2$s".', 'senroflux' ),
+						__( 'WooCommerce has no %1$s "%2$s".', 'specflux-site-agent' ),
 						$parsed['type'],
 						$parsed['code']
 					),
@@ -1204,7 +1204,7 @@ final class Abilities {
 
 		foreach ( $methods as $method ) {
 			if ( ! is_array( $method ) ) {
-				return new WP_Error( 'invalid_input', __( 'Each method must be an object with a method_id.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_input', __( 'Each method must be an object with a method_id.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 			$extra = array_diff( array_keys( $method ), array( 'method_id', 'title', 'cost', 'tax_status', 'enabled' ) );
 			if ( array() !== $extra ) {
@@ -1212,7 +1212,7 @@ final class Abilities {
 					'invalid_input',
 					sprintf(
 						/* translators: %s: unexpected method field names. */
-						__( 'Unknown method field: %s. A method takes method_id, title, cost, tax_status and enabled.', 'senroflux' ),
+						__( 'Unknown method field: %s. A method takes method_id, title, cost, tax_status and enabled.', 'specflux-site-agent' ),
 						implode( ', ', array_map( 'strval', $extra ) )
 					),
 					array( 'status' => 400 )
@@ -1225,7 +1225,7 @@ final class Abilities {
 					'invalid_input',
 					sprintf(
 						/* translators: %s: comma-separated shipping method ids. */
-						__( 'method_id must be one of: %s.', 'senroflux' ),
+						__( 'method_id must be one of: %s.', 'specflux-site-agent' ),
 						implode( ', ', array_intersect( array_keys( self::ZONE_METHOD_FIELDS ), $known ) )
 					),
 					array( 'status' => 400 )
@@ -1239,14 +1239,14 @@ final class Abilities {
 				}
 				$value = $method[ $field ];
 				if ( ! is_string( $value ) ) {
-					return new WP_Error( 'invalid_input', sprintf( /* translators: %s: field name. */ __( 'Method %s must be a string.', 'senroflux' ), $field ), array( 'status' => 400 ) );
+					return new WP_Error( 'invalid_input', sprintf( /* translators: %s: field name. */ __( 'Method %s must be a string.', 'specflux-site-agent' ), $field ), array( 'status' => 400 ) );
 				}
 				if ( 'title' !== $field && ! in_array( $field, self::ZONE_METHOD_FIELDS[ $method_id ], true ) ) {
 					return new WP_Error(
 						'invalid_input',
 						sprintf(
 							/* translators: 1: method field name, 2: shipping method id. */
-							__( '%1$s cannot be set on %2$s.', 'senroflux' ),
+							__( '%1$s cannot be set on %2$s.', 'specflux-site-agent' ),
 							$field,
 							$method_id
 						),
@@ -1254,15 +1254,15 @@ final class Abilities {
 					);
 				}
 				if ( 'cost' === $field && 1 !== preg_match( '/^\d+(\.\d+)?$/', $value ) ) {
-					return new WP_Error( 'invalid_input', __( 'Method cost must be a plain decimal such as "12" or "4.50".', 'senroflux' ), array( 'status' => 400 ) );
+					return new WP_Error( 'invalid_input', __( 'Method cost must be a plain decimal such as "12" or "4.50".', 'specflux-site-agent' ), array( 'status' => 400 ) );
 				}
 				if ( 'tax_status' === $field && ! in_array( $value, array( 'taxable', 'none' ), true ) ) {
-					return new WP_Error( 'invalid_input', __( 'Method tax_status must be "taxable" or "none".', 'senroflux' ), array( 'status' => 400 ) );
+					return new WP_Error( 'invalid_input', __( 'Method tax_status must be "taxable" or "none".', 'specflux-site-agent' ), array( 'status' => 400 ) );
 				}
 				if ( 'title' === $field ) {
 					$value = sanitize_text_field( $value );
 					if ( '' === $value ) {
-						return new WP_Error( 'invalid_input', __( 'A method title cannot be empty.', 'senroflux' ), array( 'status' => 400 ) );
+						return new WP_Error( 'invalid_input', __( 'A method title cannot be empty.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 					}
 				}
 				$settings[ $field ] = $value;
@@ -1272,7 +1272,7 @@ final class Abilities {
 			if ( array_key_exists( 'enabled', $method ) ) {
 				$enabled = filter_var( $method['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 				if ( null === $enabled ) {
-					return new WP_Error( 'invalid_input', __( 'Method enabled must be true or false.', 'senroflux' ), array( 'status' => 400 ) );
+					return new WP_Error( 'invalid_input', __( 'Method enabled must be true or false.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 				}
 			}
 
@@ -1326,7 +1326,7 @@ final class Abilities {
 				'method_not_added',
 				sprintf(
 					/* translators: %s: shipping method id. */
-					__( 'WooCommerce could not add the %s method to the zone.', 'senroflux' ),
+					__( 'WooCommerce could not add the %s method to the zone.', 'specflux-site-agent' ),
 					$method['method_id']
 				),
 				array( 'status' => 500 )
@@ -1375,10 +1375,10 @@ final class Abilities {
 		$country     = is_string( $input['country'] ?? null ) ? strtoupper( trim( $input['country'] ) ) : '';
 
 		if ( '' === $country ) {
-			return new WP_Error( 'invalid_input', __( 'A country is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A country is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( ! class_exists( '\WC_Tax' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Tax rates are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Tax rates are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$data = array(
@@ -1396,7 +1396,7 @@ final class Abilities {
 		if ( $tax_rate_id > 0 ) {
 			$previous = \WC_Tax::_get_tax_rate( $tax_rate_id );
 			if ( ! is_array( $previous ) || array() === $previous ) {
-				return new WP_Error( 'not_found', __( 'Tax rate not found.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'not_found', __( 'Tax rate not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 			\WC_Tax::_update_tax_rate( $tax_rate_id, $data );
 			$id = $tax_rate_id;
@@ -1416,7 +1416,7 @@ final class Abilities {
 	 */
 	private static function executeProductsCatalogue( array $input ): array|WP_Error {
 		if ( ! function_exists( 'wc_get_products' ) ) {
-			return new WP_Error( 'woocommerce_unavailable', __( 'Products are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'woocommerce_unavailable', __( 'Products are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$page     = max( 1, is_numeric( $input['page'] ?? null ) ? (int) $input['page'] : 1 );
@@ -1440,7 +1440,7 @@ final class Abilities {
 					'unknown_category',
 					sprintf(
 						/* translators: %s: comma-separated list of product category slugs. */
-						__( 'No product category matches that. Known category slugs: %s', 'senroflux' ),
+						__( 'No product category matches that. Known category slugs: %s', 'specflux-site-agent' ),
 						implode( ', ', array_column( $categories, 'slug' ) )
 					),
 					array( 'status' => 400 )
@@ -1621,20 +1621,20 @@ final class Abilities {
 		$from_ts = strtotime( $from . ' 00:00:00' );
 		$to_ts   = strtotime( $to . ' 23:59:59' );
 		if ( false === $from_ts || false === $to_ts || $to_ts < $from_ts ) {
-			return new WP_Error( 'invalid_input', __( 'A valid from/to date range is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A valid from/to date range is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$days = ( $to_ts - $from_ts ) / DAY_IN_SECONDS;
 		if ( $days > 92 ) {
 			return new WP_Error(
 				'window_too_long',
-				__( 'A store report window may not exceed 92 days.', 'senroflux' ),
+				__( 'A store report window may not exceed 92 days.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		if ( ! function_exists( 'wc_get_orders' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$paid_statuses = function_exists( 'wc_get_is_paid_statuses' ) ? wc_get_is_paid_statuses() : array( 'processing', 'completed' );
@@ -1682,7 +1682,7 @@ final class Abilities {
 		$markup = is_string( $input['markup'] ?? null ) ? $input['markup'] : '';
 
 		if ( '' === $title ) {
-			return new WP_Error( 'invalid_input', __( 'A title is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_input', __( 'A title is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$violation = ( new ReportMarkupValidator() )->validate( $markup );
@@ -1691,7 +1691,7 @@ final class Abilities {
 		}
 
 		if ( ! function_exists( 'wp_insert_post' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Pages are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Pages are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$page_id = wp_insert_post(
@@ -1835,7 +1835,7 @@ final class Abilities {
 	/**
 	 * Whether the run's `refunds` budget key is already spent. Fails OPEN
 	 * (never exhausted) with no run context resolved — same reasoning as
-	 * {@see \Specflux\SenroFlux\Packs\Content\Media::imagesExhausted()}: a
+	 * {@see \Specflux\SiteAgent\Packs\Content\Media::imagesExhausted()}: a
 	 * resource cap, not a security gate, and a call reached with no run in
 	 * flight has no meaningful budget to check.
 	 */
@@ -1955,7 +1955,7 @@ final class Abilities {
 
 	/**
 	 * Fails CLOSED (true, i.e. refuse) with no run context resolved — same
-	 * fail-closed rule as {@see \Specflux\SenroFlux\Packs\Content\Abilities}.
+	 * fail-closed rule as {@see \Specflux\SiteAgent\Packs\Content\Abilities}.
 	 */
 	private static function isStaleWrite( int $object_id, string $current_marker ): bool {
 		if ( null === self::$current_run_id || null === self::$store ) {
@@ -1981,7 +1981,7 @@ final class Abilities {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

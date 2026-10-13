@@ -5,16 +5,16 @@
  * any DB write, and a follow-up run inherits the source's pin unless the
  * caller names one explicitly.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelChoice;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Model\ModelChoice;
+use Specflux\SiteAgent\Plugin;
 use WP_Error;
 use wpdb;
 
@@ -22,10 +22,10 @@ final class PluginModelPinTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array();
-		$GLOBALS['senroflux_test_user_caps']       = array();
-		$GLOBALS['wpdb']                           = new wpdb();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array();
+		$GLOBALS['wpdb']                                     = new wpdb();
 		Plugin::set_dependency_probe( true );
 
 		ModelChoice::setAvailableChoicesProbe(
@@ -53,7 +53,7 @@ final class PluginModelPinTest extends TestCase {
 		$result = Plugin::instance()->start(
 			'specflux-mac',
 			'Write a post',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(),
 			null,
 			null,
@@ -86,7 +86,7 @@ final class PluginModelPinTest extends TestCase {
 		$result = Plugin::instance()->start(
 			'specflux-mac',
 			'Write a post',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array()
 		);
 
@@ -103,7 +103,7 @@ final class PluginModelPinTest extends TestCase {
 		$result = Plugin::instance()->start(
 			'specflux-mac',
 			'Write a post',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(),
 			null,
 			null,
@@ -123,7 +123,7 @@ final class PluginModelPinTest extends TestCase {
 		$result = Plugin::instance()->start(
 			'specflux-mac',
 			'Write a post',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(),
 			null,
 			null,
@@ -133,7 +133,7 @@ final class PluginModelPinTest extends TestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_bad_request', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_bad_request', $result->get_error_code() );
 	}
 
 	public function test_a_follow_up_with_no_explicit_pair_inherits_the_sources_pin(): void {
@@ -152,7 +152,7 @@ final class PluginModelPinTest extends TestCase {
 			$result['run']['model']
 		);
 
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 	}
 
 	public function test_a_follow_up_with_an_explicit_pair_overrides_the_sources_pin(): void {
@@ -199,7 +199,7 @@ final class PluginModelPinTest extends TestCase {
 			$result['run']['model']
 		);
 
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 	}
 
 	public function test_a_follow_up_inheriting_a_no_longer_available_pin_still_starts_with_it(): void {
@@ -220,15 +220,15 @@ final class PluginModelPinTest extends TestCase {
 			$result['run']['model']
 		);
 
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 	}
 
 	/** Registers a pack-bound fixture the current user may run (follow-ups need a pack source). */
 	private function registerFixturePack(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
-				$packs['fixture'] = new class() extends \Specflux\SenroFlux\Packs\Pack {
+				$packs['fixture'] = new class() extends \Specflux\SiteAgent\Packs\Pack {
 					public function __construct() {
 						parent::__construct( array( 'read' => 'read-content' ) );
 					}
@@ -238,7 +238,7 @@ final class PluginModelPinTest extends TestCase {
 					}
 
 					public function verbMap(): array {
-						return array( 'senroflux/read-content' => 0 );
+						return array( 'specflux/read-content' => 0 );
 					}
 
 					public function runCapability(): string {
@@ -255,8 +255,8 @@ final class PluginModelPinTest extends TestCase {
 				return $packs;
 			}
 		);
-		$GLOBALS['senroflux_test_user_caps_by_id'][1]['edit_posts'] = true;
-		$GLOBALS['senroflux_test_user_caps']['edit_posts']          = true;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][1]['edit_posts'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_posts']          = true;
 	}
 
 	/** @return int A fresh, finished, pack-bound source run pinned to openai/gpt-4o. */
@@ -270,12 +270,12 @@ final class PluginModelPinTest extends TestCase {
 			1,
 			'test-consumer',
 			'Original goal',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(),
 			'fixture',
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::AgentSafety,
+			\Specflux\SiteAgent\Run\GateMode::AgentSafety,
 			array(),
 			null,
 			'openai',

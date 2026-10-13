@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# build-zip.sh — the single allowlisted build for the SenroFlux plugin.
+# build-zip.sh — the single allowlisted build for the Specflux Site Agent plugin.
 #
 # Unlike agent-safety's build-zip.sh (two-package layout, path-repo mirror),
-# SenroFlux is one composer package with no runtime dependencies (composer.json
+# Specflux Site Agent is one composer package with no runtime dependencies (composer.json
 # `require` is just `php: >=8.1`), so the build is a straight DENYLIST copy
 # driven by the same .distignore the plugin-check CI job already used inline
 # (ci.yml's old `Assemble distribution copy` step) — this script replaces
@@ -22,7 +22,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$REPO_ROOT/dist"
-STAGE_DIR="$BUILD_DIR/senroflux"
+STAGE_DIR="$BUILD_DIR/specflux-site-agent"
 
 log() { echo "[build-zip] $*"; }
 fail() {
@@ -34,36 +34,36 @@ command -v rsync >/dev/null 2>&1 || fail "rsync not found on PATH"
 command -v zip >/dev/null 2>&1 || fail "zip not found on PATH"
 command -v unzip >/dev/null 2>&1 || fail "unzip not found on PATH"
 
-[ -f "$REPO_ROOT/senroflux.php" ] || fail "plugin header not found at $REPO_ROOT/senroflux.php"
+[ -f "$REPO_ROOT/specflux-site-agent.php" ] || fail "plugin header not found at $REPO_ROOT/specflux-site-agent.php"
 [ -f "$REPO_ROOT/.distignore" ] || fail ".distignore not found at $REPO_ROOT/.distignore"
 
 # ---------------------------------------------------------------------------
 # 1. Version, from the plugin header (same field the release workflow
 #    asserts the tag against).
 # ---------------------------------------------------------------------------
-VERSION=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' "$REPO_ROOT/senroflux.php")
+VERSION=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' "$REPO_ROOT/specflux-site-agent.php")
 [ -n "$VERSION" ] || fail "could not read Version: from plugin header"
 log "plugin header Version: $VERSION"
 
-ZIP_PATH="$REPO_ROOT/senroflux-${VERSION}.zip"
+ZIP_PATH="$REPO_ROOT/specflux-site-agent-${VERSION}.zip"
 
 # ---------------------------------------------------------------------------
 # 2. Stage a distribution-shaped copy: everything EXCEPT .distignore's list
 #    (dev tooling, tests, vendor — the plugin ships no vendor/ since it has
 #    no runtime composer deps).
 # ---------------------------------------------------------------------------
-log "staging dist/senroflux/"
+log "staging dist/specflux-site-agent/"
 rm -rf "$BUILD_DIR" "$ZIP_PATH"
 mkdir -p "$STAGE_DIR"
 rsync -a --exclude-from="$REPO_ROOT/.distignore" "$REPO_ROOT/" "$STAGE_DIR/"
 
-[ -f "$STAGE_DIR/senroflux.php" ] || fail "staged copy is missing senroflux.php — .distignore excluded a required file"
+[ -f "$STAGE_DIR/specflux-site-agent.php" ] || fail "staged copy is missing specflux-site-agent.php — .distignore excluded a required file"
 
 # ---------------------------------------------------------------------------
-# 3. Zip it, top-level folder senroflux/.
+# 3. Zip it, top-level folder specflux/.
 # ---------------------------------------------------------------------------
 log "zipping $ZIP_PATH"
-(cd "$BUILD_DIR" && zip -rq -X "$ZIP_PATH" senroflux)
+(cd "$BUILD_DIR" && zip -rq -X "$ZIP_PATH" specflux-site-agent)
 
 # ---------------------------------------------------------------------------
 # 4. Independent verification: read the zip's own entry list back and fail,

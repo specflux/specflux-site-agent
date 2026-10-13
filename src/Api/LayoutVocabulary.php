@@ -1,17 +1,17 @@
 <?php
 /**
- * `@api` facade over the pages pack's layout vocabulary (S23; SPEC-SENROFLUX-PRO.md
+ * `@api` facade over the pages pack's layout vocabulary (S23; SPEC-SITE-AGENT-PRO.md
  * §5 F3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Api;
+namespace Specflux\SiteAgent\Api;
 
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 // Bail on direct access.

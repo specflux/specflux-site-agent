@@ -11,23 +11,23 @@
  *
  * Payloads come from tests/fixtures/injection-corpus.php.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GrantEligibility;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GrantEligibility;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -61,39 +61,39 @@ final class InjectionTest extends TestCase {
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, new RecordingBridge() );
 		$this->wrote           = false;
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 
 		// The write the injections are after. Its execute() must never run:
 		// reaching it at all is the failure this file is written to catch.
-		$update             = new SenroFlux_Test_Fake_Ability( 'senroflux/update-post', permission_result: true );
+		$update             = new SpecfluxSiteAgent_Test_Fake_Ability( 'specflux/update-post', permission_result: true );
 		$update->on_execute = function (): void {
 			$this->wrote = true;
 			throw new RuntimeException( 'the injected write reached execute()' );
 		};
 
 		// Outside the run's allow globs entirely.
-		$outside             = new SenroFlux_Test_Fake_Ability( 'other-plugin/wipe', permission_result: true );
+		$outside             = new SpecfluxSiteAgent_Test_Fake_Ability( 'other-plugin/wipe', permission_result: true );
 		$outside->on_execute = function (): void {
 			$this->wrote = true;
 			throw new RuntimeException( 'an out-of-list ability reached execute()' );
 		};
 
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'senroflux/read-content' => new SenroFlux_Test_Fake_Ability(
-				'senroflux/read-content',
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'specflux/read-content' => new SpecfluxSiteAgent_Test_Fake_Ability(
+				'specflux/read-content',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
-			'senroflux/update-post'  => $update,
-			'other-plugin/wipe'      => $outside,
+			'specflux/update-post'  => $update,
+			'other-plugin/wipe'     => $outside,
 		);
 
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
-				'senroflux/read-content' => VerbTier::TIER_0,
-				'senroflux/update-post'  => VerbTier::TIER_2,
+				'specflux/read-content' => VerbTier::TIER_0,
+				'specflux/update-post'  => VerbTier::TIER_2,
 			),
 			10,
 			1
@@ -101,7 +101,7 @@ final class InjectionTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		GrantEligibility::forgetRun();
 	}
 
@@ -109,26 +109,26 @@ final class InjectionTest extends TestCase {
 	// Helpers
 	// ------------------------------------------------------------------
 
-	/** A run whose human-set allow list is `senroflux/*` and whose goal is the About page. */
+	/** A run whose human-set allow list is `specflux/*` and whose goal is the About page. */
 	private function createRun(): int {
 		return $this->store->createRun(
 			1,
 			'test-consumer',
 			'Add a short closing note to the About page.',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults()
 		);
 	}
 
 	/**
-	 * Arm `senroflux/read-content` to hand back one corpus rung as its output —
+	 * Arm `specflux/read-content` to hand back one corpus rung as its output —
 	 * the payload therefore enters model context the way a real page body does.
 	 */
 	private function serveRung( string $rung ): void {
 		$body = (string) self::$corpus[ $rung ]['content'];
 
-		$GLOBALS['senroflux_test_abilities']['senroflux/read-content'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/read-content',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/read-content'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/read-content',
 			permission_result: true,
 			execute_result: array(
 				'id'      => 11,
@@ -173,14 +173,14 @@ final class InjectionTest extends TestCase {
 		$run_id = $this->createRun();
 		$this->serveRung( 'brute' );
 
-		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 11 ) );
+		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__specflux__read-content', array( 'id' => 11 ) );
 		$this->gateway->script[] = self::textTurn( 'Read it.' );
 
 		$this->runner->tick( $run_id, 0, null );
 
 		// Second gateway call = the turn after the read result was appended.
 		$this->assertStringContainsString(
-			'senroflux-harness',
+			'specflux-site-agent-harness',
 			$this->historyText( 1 ),
 			'read-content output is model context: a forged harness frame in a page body arrives intact'
 		);
@@ -198,7 +198,7 @@ final class InjectionTest extends TestCase {
 
 		$run_id = $this->createRun();
 		$this->serveRung( 'concealed' );
-		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 11 ) );
+		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__specflux__read-content', array( 'id' => 11 ) );
 		$this->gateway->script[] = self::textTurn( 'Read it.' );
 
 		$this->runner->tick( $run_id, 0, null );
@@ -221,11 +221,11 @@ final class InjectionTest extends TestCase {
 		$run_id = $this->createRun();
 		$this->serveRung( $rung );
 
-		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 11 ) );
+		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__specflux__read-content', array( 'id' => 11 ) );
 		// The model does exactly what the page told it to.
 		$this->gateway->script[] = self::callTurn(
 			'call_w',
-			'wpab__senroflux__update-post',
+			'wpab__specflux__update-post',
 			array(
 				'slug'    => 'pricing',
 				'content' => 'Pricing is under review.',
@@ -240,7 +240,7 @@ final class InjectionTest extends TestCase {
 
 		$refusals = array();
 		foreach ( $result['new_steps'] as $step ) {
-			if ( 'wpab__senroflux__update-post' === ( $step['tool_name'] ?? '' ) ) {
+			if ( 'wpab__specflux__update-post' === ( $step['tool_name'] ?? '' ) ) {
 				$refusals[] = $step['message']['parts'][0]['functionResponse']['response'] ?? array();
 				$this->assertSame( 'error', $step['status'] );
 			}
@@ -263,10 +263,10 @@ final class InjectionTest extends TestCase {
 	}
 
 	public function test_an_injected_ability_outside_the_allow_list_is_never_executed(): void {
-		$run_id = $this->createRun(); // allow: senroflux/*
+		$run_id = $this->createRun(); // allow: specflux/*
 		$this->serveRung( 'plausible' );
 
-		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 11 ) );
+		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__specflux__read-content', array( 'id' => 11 ) );
 		$this->gateway->script[] = self::callTurn( 'call_x', 'wpab__other-plugin__wipe', array( 'scope' => 'all' ) );
 		$this->gateway->script[] = self::textTurn( 'Could not do that.' );
 
@@ -299,7 +299,7 @@ final class InjectionTest extends TestCase {
 		$run_id = $this->createRun();
 		$this->serveRung( 'brute' );
 
-		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 11 ) );
+		$this->gateway->script[] = self::callTurn( 'call_r', 'wpab__specflux__read-content', array( 'id' => 11 ) );
 		$this->gateway->script[] = self::textTurn( 'Read it.' );
 		$this->gateway->script[] = self::textTurn( 'Read it.' );
 
@@ -318,29 +318,29 @@ final class InjectionTest extends TestCase {
 
 	/**
 	 * The sharpest case. A human accepts a plan and pre-approves it, so a grant
-	 * for `senroflux/update-post` exists and the plan fence is satisfied — the
+	 * for `specflux/update-post` exists and the plan fence is satisfied — the
 	 * verb the injection wants is the verb the human authorised. What must
 	 * still hold is the OBJECT: the human authorised edits to the page this run
 	 * is working on, not to whatever page a poisoned body names.
 	 */
 	public function test_a_grant_does_not_authorise_an_injected_write_to_a_page_the_run_never_touched(): void {
-		$correlation = 'senroflux:run:1';
+		$correlation = 'specflux:run:1';
 		GrantEligibility::useRun(
 			$correlation,
 			// The run wrote exactly one object: the About page, id 11.
-			static fn (): array => array( '11' => array( 'verb' => 'senroflux/update-post' ) ),
+			static fn (): array => array( '11' => array( 'verb' => 'specflux/update-post' ) ),
 			static fn (): string => 'id'
 		);
 
-		$grant = self::grant( $correlation, 'senroflux/update-post' );
+		$grant = self::grant( $correlation, 'specflux/update-post' );
 
 		$this->assertFalse(
-			GrantEligibility::eligible( false, $grant, 'senroflux/update-post', array( 'id' => 99 ) ),
+			GrantEligibility::eligible( false, $grant, 'specflux/update-post', array( 'id' => 99 ) ),
 			'the pricing page is not an object this run wrote, so the grant does not reach it'
 		);
 
 		$this->assertTrue(
-			GrantEligibility::eligible( false, $grant, 'senroflux/update-post', array( 'id' => 11 ) ),
+			GrantEligibility::eligible( false, $grant, 'specflux/update-post', array( 'id' => 11 ) ),
 			'control: the same grant does cover the run\'s own object'
 		);
 	}
@@ -354,7 +354,7 @@ final class InjectionTest extends TestCase {
 	 * than parking. The ceiling on that is the count the human set.
 	 */
 	public function test_known_residual_a_grant_does_cover_an_injected_create(): void {
-		$correlation = 'senroflux:run:1';
+		$correlation = 'specflux:run:1';
 		GrantEligibility::useRun(
 			$correlation,
 			static fn (): array => array(),
@@ -364,8 +364,8 @@ final class InjectionTest extends TestCase {
 		$this->assertTrue(
 			GrantEligibility::eligible(
 				false,
-				self::grant( $correlation, 'senroflux/update-post' ),
-				'senroflux/update-post',
+				self::grant( $correlation, 'specflux/update-post' ),
+				'specflux/update-post',
 				array( 'content' => 'Pricing is under review.' )
 			),
 			'documented residual: an objectless call is bounded by grant count, not by target'

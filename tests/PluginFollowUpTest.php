@@ -4,16 +4,16 @@
  * statuses, the forced pack, the source pack's run capability, and the new
  * `follow_up_of` column round-tripping through start()/get().
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
 use WP_Error;
 use wpdb;
 
@@ -21,28 +21,28 @@ final class PluginFollowUpTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		remove_all_filters( 'senroflux_packs' );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array();
-		$GLOBALS['senroflux_test_user_caps']       = array();
-		$GLOBALS['wpdb']                           = new wpdb();
+		remove_all_filters( 'specflux_site_agent_packs' );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array();
+		$GLOBALS['wpdb']                                     = new wpdb();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['senroflux_test_user_caps_by_id'][1]['edit_posts'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][1]['edit_posts'] = true;
 		// follow_up_of's capability check reads the CURRENT user (current_user_can()),
 		// unlike S6's withheld-roles check (a per-owner user_can() check) — both
 		// knobs are set so this file doesn't depend on which one start() uses.
-		$GLOBALS['senroflux_test_user_caps']['edit_posts'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_posts'] = true;
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_packs' );
-		unset( $GLOBALS['wpdb'], $GLOBALS['senroflux_test_user_caps_by_id'], $GLOBALS['senroflux_test_user_caps'] );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_user_caps_by_id'], $GLOBALS['specflux_site_agent_test_user_caps'] );
 		Plugin::reset();
 	}
 
 	private function registerFixturePack(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
 				$packs['fixture'] = new class() extends Pack {
 					public function __construct() {
@@ -54,7 +54,7 @@ final class PluginFollowUpTest extends TestCase {
 					}
 
 					public function verbMap(): array {
-						return array( 'senroflux/read-content' => 0 );
+						return array( 'specflux/read-content' => 0 );
 					}
 
 					public function runCapability(): string {
@@ -82,7 +82,7 @@ final class PluginFollowUpTest extends TestCase {
 		$runner = $prop->invoke( Plugin::instance() );
 		$store  = $runner->store();
 
-		$run_id = $store->createRun( 1, 'test-consumer', 'Original goal', array( 'senroflux/read-content' ), array(), $pack );
+		$run_id = $store->createRun( 1, 'test-consumer', 'Original goal', array( 'specflux/read-content' ), array(), $pack );
 		$store->updateRun(
 			$run_id,
 			array(
@@ -162,8 +162,8 @@ final class PluginFollowUpTest extends TestCase {
 
 	public function test_a_starter_lacking_the_source_packs_capability_is_forbidden(): void {
 		$source_id = $this->seedFinishedSourceRun( 'completed' );
-		$GLOBALS['senroflux_test_user_caps_by_id'][1]['edit_posts'] = false;
-		$GLOBALS['senroflux_test_user_caps']['edit_posts']          = false;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][1]['edit_posts'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_posts']          = false;
 
 		$result = Plugin::instance()->start( 'specflux-mac', 'Follow up', array(), array(), null, null, $source_id );
 

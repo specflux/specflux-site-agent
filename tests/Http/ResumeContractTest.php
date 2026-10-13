@@ -17,25 +17,25 @@
  * misnamed — it never touches an HTTP seam. Rename it to something like
  * `..._is_refused_by_the_php_signature`, or drop it now that these tests exist.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Http;
+namespace Specflux\SiteAgent\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Http\Rest;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFluxJsonResponse;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Http\Rest;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgentJsonResponse;
 use WP_Error;
 use WP_REST_Request;
 use wpdb;
@@ -45,16 +45,16 @@ final class ResumeContractTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['senroflux_test_user_caps']       = array( 'read' => true );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
 		unset( $_POST );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_runs_capability' );
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 		unset( $_POST );
 	}
 
@@ -75,7 +75,7 @@ final class ResumeContractTest extends TestCase {
 
 		$this->assertFalse( $json->success );
 		$this->assertSame( 400, $json->status );
-		$this->assertSame( 'senroflux_bad_request', $json->code() );
+		$this->assertSame( 'specflux_site_agent_bad_request', $json->code() );
 	}
 
 	public function test_ajax_tick_refuses_a_resume_that_is_not_an_object(): void {
@@ -129,7 +129,7 @@ final class ResumeContractTest extends TestCase {
 		);
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertSame( 'senroflux_bad_request', $response->get_data()['code'] );
+		$this->assertSame( 'specflux_site_agent_bad_request', $response->get_data()['code'] );
 	}
 
 	public function test_rest_tick_refuses_a_resume_on_a_run_that_is_not_parked(): void {
@@ -154,10 +154,10 @@ final class ResumeContractTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	/** Run `Ajax::handleTick()` and capture the JSON it would have died with. */
-	private function captureAjaxTick(): SenroFluxJsonResponse {
+	private function captureAjaxTick(): SpecfluxSiteAgentJsonResponse {
 		try {
 			( new Ajax() )->handleTick();
-		} catch ( SenroFluxJsonResponse $json ) {
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
 			return $json;
 		}
 
@@ -172,7 +172,7 @@ final class ResumeContractTest extends TestCase {
 			1,
 			'tests',
 			'A goal',
-			array( 'senroflux/read-content' ),
+			array( 'specflux/read-content' ),
 			array(
 				'max_steps'      => 5,
 				'max_tool_calls' => 5,

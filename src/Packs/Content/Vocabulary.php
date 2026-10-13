@@ -5,17 +5,17 @@
  * TARGET REPO PATH: src/Packs/Content/Vocabulary.php
  *
  * `Content\Abilities::registerSource()` holds one of these per pack slug, so
- * `senroflux/list-patterns` can answer with the RUNNING pack's vocabulary
+ * `specflux/list-patterns` can answer with the RUNNING pack's vocabulary
  * without ever taking a `pack` argument from the model (S4 point 4). Only
  * `Pages\Vocabulary` implements it today; a posts or site vocabulary (S5/S7)
  * plugs into the same registrar by implementing this and nothing else.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
 interface Vocabulary {
 
 	/**
-	 * The `senroflux/list-patterns` payload for this pack: metadata + constraints.
+	 * The `specflux/list-patterns` payload for this pack: metadata + constraints.
 	 *
 	 * With `$names` empty, returns the compact INDEX shape (name, title,
 	 * description, theme_derived when true — no markup/constraints/slots).

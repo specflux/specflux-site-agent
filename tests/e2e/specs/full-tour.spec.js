@@ -28,7 +28,7 @@ test.describe( 'S10/S12 full run tour (built-in mode)', () => {
 
 		// --- Plan park -------------------------------------------------
 		await waitForPark( page, 'plan', 'Plan: needs your OK' );
-		await expect( page.locator( '.senroflux-plan-steps li' ) ).toContainText( 'Create the launch post' );
+		await expect( page.locator( '.specflux-site-agent-plan-steps li' ) ).toContainText( 'Create the launch post' );
 		await assertNoSeriousA11y( page, 'plan park' );
 		await acceptPlan( page );
 
@@ -49,7 +49,7 @@ test.describe( 'S10/S12 full run tour (built-in mode)', () => {
 		// about). Find the group that actually collapsed them, rather than
 		// assuming it is the first one on the page.
 		await waitForPark( page, 'approval', 'Approve this change?' );
-		const ledgerGroup = page.locator( '.senroflux-ledger-group', { hasText: '4 actions' } );
+		const ledgerGroup = page.locator( '.specflux-site-agent-ledger-group', { hasText: '4 actions' } );
 		await expect( ledgerGroup ).toHaveCount( 1 );
 		await expect( ledgerGroup.locator( 'summary' ) ).toContainText( '4 actions' );
 		await expect( ledgerGroup.locator( 'summary' ) ).toContainText( 'Search things' );
@@ -57,15 +57,15 @@ test.describe( 'S10/S12 full run tour (built-in mode)', () => {
 		// ability id doing double duty as its own label (S10 spec: expanded,
 		// each call shows a label AND the ability id, as two separate
 		// fields — the ability id is expected to appear too, in
-		// .senroflux-ledger-verb; the defect this guards against is the
+		// .specflux-site-agent-ledger-verb; the defect this guards against is the
 		// label field itself falling back to the raw id).
-		const expandedLabel = ledgerGroup.locator( '.senroflux-ledger-label' ).last();
+		const expandedLabel = ledgerGroup.locator( '.specflux-site-agent-ledger-label' ).last();
 		await expect( expandedLabel ).toHaveText( 'Search things' );
 		await expect( expandedLabel ).not.toContainText( 'wpab__' );
 
 		// --- Approval park: tier badge ABSENT (built-in mode), args wrap in full (regression #6) ---
 		await expect( page.locator( '[data-testid="tier-badge"]' ) ).toHaveCount( 0 );
-		const argsPre = page.locator( '.senroflux-args' );
+		const argsPre = page.locator( '.specflux-site-agent-args' );
 		await expect( argsPre ).toContainText( 'Launch Day' );
 		const overflow = await argsPre.evaluate( ( el ) => getComputedStyle( el ).overflowWrap );
 		expect( overflow ).toBe( 'anywhere' );
@@ -77,32 +77,32 @@ test.describe( 'S10/S12 full run tour (built-in mode)', () => {
 
 		// The live-tick case is live-suggestion.spec.js; here the suggestion
 		// must also survive a fresh read of the run, as after a reload.
-		const runId = wpCli( [ 'db', 'query', 'SELECT id FROM wp_senroflux_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] ).trim();
-		await page.goto( `/wp-admin/admin.php?page=senroflux-runs&run_id=${ runId }` );
+		const runId = wpCli( [ 'db', 'query', 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] ).trim();
+		await page.goto( `/wp-admin/admin.php?page=specflux-site-agent-runs&run_id=${ runId }` );
 		await waitLoaded( page );
 
-		const suggestion = page.locator( '.senroflux-suggestion-card' );
+		const suggestion = page.locator( '.specflux-site-agent-suggestion-card' );
 		await expect( suggestion ).toBeVisible();
 		await expect( suggestion ).toContainText( 'Mention the launch post' );
 		await expect( suggestion.locator( 'button:has-text("Save")' ) ).toBeVisible();
 		await expect( suggestion.locator( 'button:has-text("Dismiss")' ) ).toBeVisible();
 
 		// --- Terminal run: no Cancel button, report/report-a11y --------
-		await expect( page.locator( '.senroflux-run-actions button' ) ).toHaveCount( 0 );
-		await expect( page.locator( '.senroflux-chat-stream' ) ).toContainText( 'All done' );
+		await expect( page.locator( '.specflux-site-agent-run-actions button' ) ).toHaveCount( 0 );
+		await expect( page.locator( '.specflux-site-agent-chat-stream' ) ).toContainText( 'All done' );
 
 		// --- The report view (S12, stage 22b) ----------------------------
 		// Built-in mode: the gate-mode line and "approvals recorded only on
 		// this page"; the one change the run made, re-read, so a verified row.
-		const report = page.locator( '.senroflux-report' );
+		const report = page.locator( '.specflux-site-agent-report' );
 		await expect( report ).toBeVisible();
-		await expect( report.locator( '.senroflux-report-summary' ) ).toHaveText( '1 change' );
-		await expect( report.locator( '.senroflux-report-gate' ) ).toContainText( 'Gate mode: Built-in approvals' );
-		await expect( report.locator( '.senroflux-report-gate-note' ) ).toHaveText( 'Approvals for this run are recorded only on this page.' );
-		const verifiedRow = report.locator( '.senroflux-report-change.is-verified' );
+		await expect( report.locator( '.specflux-site-agent-report-summary' ) ).toHaveText( '1 change' );
+		await expect( report.locator( '.specflux-site-agent-report-gate' ) ).toContainText( 'Gate mode: Built-in approvals' );
+		await expect( report.locator( '.specflux-site-agent-report-gate-note' ) ).toHaveText( 'Approvals for this run are recorded only on this page.' );
+		const verifiedRow = report.locator( '.specflux-site-agent-report-change.is-verified' );
 		await expect( verifiedRow ).toHaveCount( 1 );
 		await expect( verifiedRow ).toContainText( 'Verified' );
-		await expect( report.locator( '.senroflux-report-change.is-unchecked' ) ).toHaveCount( 0 );
+		await expect( report.locator( '.specflux-site-agent-report-change.is-unchecked' ) ).toHaveCount( 0 );
 		await assertNoSeriousA11y( page, 'terminal report view' );
 	} );
 } );

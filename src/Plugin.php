@@ -2,31 +2,31 @@
 /**
  * Plugin bootstrap, dependency gate, service container + PHP API.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux;
+namespace Specflux\SiteAgent;
 
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Http\Ajax;
-use Specflux\SenroFlux\Http\Rest;
-use Specflux\SenroFlux\Model\AiClientGateway;
-use Specflux\SenroFlux\Model\ImageCapability;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Packs\ObjectLookup;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Http\Ajax;
+use Specflux\SiteAgent\Http\Rest;
+use Specflux\SiteAgent\Model\AiClientGateway;
+use Specflux\SiteAgent\Model\ImageCapability;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Packs\ObjectLookup;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 
 // Bail on direct access.
@@ -45,7 +45,7 @@ final class Plugin {
 	 * loaded and its seams are wired", which is the property runs actually
 	 * depend on.
 	 */
-	public const AGENT_SAFETY_MARKER = 'Specflux\AgentSafety\Plugin\Hooks\AbilityPermissionGate';
+	public const AGENT_SAFETY_MARKER = 'Belayline\Plugin\Hooks\AbilityPermissionGate';
 
 	/** Singleton instance. */
 	private static ?self $instance = null;
@@ -60,23 +60,23 @@ final class Plugin {
 	private ?Runner $runner = null;
 
 	/** The one pages-pack instance this request shares. */
-	private ?\Specflux\SenroFlux\Packs\Pages\PagesPack $pages_pack = null;
+	private ?\Specflux\SiteAgent\Packs\Pages\PagesPack $pages_pack = null;
 
 	/** The one posts-pack instance this request shares (S5). */
-	private ?\Specflux\SenroFlux\Packs\Posts\PostsPack $posts_pack = null;
+	private ?\Specflux\SiteAgent\Packs\Posts\PostsPack $posts_pack = null;
 
 	/** The one site-pack instance this request shares (S7). */
-	private ?\Specflux\SenroFlux\Packs\Site\SitePack $site_pack = null;
+	private ?\Specflux\SiteAgent\Packs\Site\SitePack $site_pack = null;
 
 	/** The one commerce-pack instance this request shares (S19), when WooCommerce is active. */
-	private ?\Specflux\SenroFlux\Packs\Commerce\CommercePack $commerce_pack = null;
+	private ?\Specflux\SiteAgent\Packs\Commerce\CommercePack $commerce_pack = null;
 
 	/** Whether {@see govern()} has already wired its filters this request. */
 	private bool $governed = false;
 
 	/**
 	 * Get (and lazily create) the plugin instance. Non-nullable by design:
-	 * consumers feature-detect the FUNCTION (function_exists('senroflux')),
+	 * consumers feature-detect the FUNCTION (function_exists('specflux_site_agent')),
 	 * then ask this instance whether the Agent Safety dependency holds.
 	 */
 	public static function instance(): self {
@@ -117,16 +117,16 @@ final class Plugin {
 	 * Register the packs and hand their governance data to Agent Safety.
 	 *
 	 * Split out of {@see boot()} and run EARLIER for one reason: Agent Safety
-	 * reads `agent_safety_governed_namespaces` and `agent_safety_verb_map`
-	 * inside its own `plugins_loaded` priority-0 bootstrap, while SenroFlux
+	 * reads `belayline_governed_namespaces` and `belayline_verb_map`
+	 * inside its own `plugins_loaded` priority-0 bootstrap, while Specflux Site Agent
 	 * boots at priority 5. A pack registered in `boot()` would therefore be
-	 * ungoverned — the gate would return early for every `senroflux/*` ability
+	 * ungoverned — the gate would return early for every `specflux/*` ability
 	 * and no write would produce a verdict, an approval park or an audit row.
-	 * senroflux.php calls this on `plugins_loaded` priority -1.
+	 * specflux-site-agent.php calls this on `plugins_loaded` priority -1.
 	 *
 	 * Idempotent, and deliberately NOT gated on the Agent Safety dependency
 	 * check: with Agent Safety absent both filters are inert, and `start()`
-	 * still refuses every run as `senroflux_ungoverned`.
+	 * still refuses every run as `specflux_site_agent_ungoverned`.
 	 */
 	public function govern(): void {
 		if ( $this->governed ) {
@@ -138,7 +138,7 @@ final class Plugin {
 		$posts_pack = $this->posts_pack();
 		$site_pack  = $this->site_pack();
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static fn ( array $packs ): array => $packs + array(
 				'pages' => $pages_pack,
 				'posts' => $posts_pack,
@@ -157,23 +157,23 @@ final class Plugin {
 		if ( class_exists( 'WooCommerce' ) ) {
 			$commerce_pack = $this->commerce_pack();
 			add_filter(
-				'senroflux_packs',
+				'specflux_site_agent_packs',
 				static fn ( array $packs ): array => $packs + array( 'commerce' => $commerce_pack ),
 				10,
 				1
 			);
 		}
 
-		\Specflux\SenroFlux\Packs\PackRegistry::contributeToAgentSafety();
+		\Specflux\SiteAgent\Packs\PackRegistry::contributeToAgentSafety();
 	}
 
 	/**
 	 * The request's one commerce-pack instance (S19), lazily created only
 	 * when {@see govern()}/{@see boot()} decided WooCommerce is active.
 	 */
-	private function commerce_pack(): \Specflux\SenroFlux\Packs\Commerce\CommercePack {
+	private function commerce_pack(): \Specflux\SiteAgent\Packs\Commerce\CommercePack {
 		if ( null === $this->commerce_pack ) {
-			$this->commerce_pack = new \Specflux\SenroFlux\Packs\Commerce\CommercePack();
+			$this->commerce_pack = new \Specflux\SiteAgent\Packs\Commerce\CommercePack();
 		}
 
 		return $this->commerce_pack;
@@ -182,9 +182,9 @@ final class Plugin {
 	/**
 	 * The request's one pages-pack instance (S10/S11).
 	 */
-	private function pages_pack(): \Specflux\SenroFlux\Packs\Pages\PagesPack {
+	private function pages_pack(): \Specflux\SiteAgent\Packs\Pages\PagesPack {
 		if ( null === $this->pages_pack ) {
-			$this->pages_pack = new \Specflux\SenroFlux\Packs\Pages\PagesPack();
+			$this->pages_pack = new \Specflux\SiteAgent\Packs\Pages\PagesPack();
 		}
 
 		return $this->pages_pack;
@@ -193,9 +193,9 @@ final class Plugin {
 	/**
 	 * The request's one posts-pack instance (S5).
 	 */
-	private function posts_pack(): \Specflux\SenroFlux\Packs\Posts\PostsPack {
+	private function posts_pack(): \Specflux\SiteAgent\Packs\Posts\PostsPack {
 		if ( null === $this->posts_pack ) {
-			$this->posts_pack = new \Specflux\SenroFlux\Packs\Posts\PostsPack();
+			$this->posts_pack = new \Specflux\SiteAgent\Packs\Posts\PostsPack();
 		}
 
 		return $this->posts_pack;
@@ -204,9 +204,9 @@ final class Plugin {
 	/**
 	 * The request's one site-pack instance (S7).
 	 */
-	private function site_pack(): \Specflux\SenroFlux\Packs\Site\SitePack {
+	private function site_pack(): \Specflux\SiteAgent\Packs\Site\SitePack {
 		if ( null === $this->site_pack ) {
-			$this->site_pack = new \Specflux\SenroFlux\Packs\Site\SitePack();
+			$this->site_pack = new \Specflux\SiteAgent\Packs\Site\SitePack();
 		}
 
 		return $this->site_pack;
@@ -258,7 +258,7 @@ final class Plugin {
 						continue;
 					}
 					add_filter(
-						'agent_safety_pack_registry',
+						'belayline_pack_registry',
 						static function ( $registry ) use ( $as_pack ) {
 							if ( is_object( $registry ) && method_exists( $registry, 'register' ) ) {
 								$registry->register( $as_pack );
@@ -273,54 +273,54 @@ final class Plugin {
 			},
 			5
 		);
-		\Specflux\SenroFlux\Packs\Content\Abilities::boot();
-		\Specflux\SenroFlux\Packs\Content\Media::boot();
+		\Specflux\SiteAgent\Packs\Content\Abilities::boot();
+		\Specflux\SiteAgent\Packs\Content\Media::boot();
 		// S19: the commerce pack's own polyfill abilities. Registered
 		// unconditionally like the other registrars above — `wp_register_ability`
 		// is harmless with WooCommerce absent, and the pack itself never
 		// reaches the model's tool set unless it was registered on
-		// `senroflux_packs` above (WooCommerce active).
-		\Specflux\SenroFlux\Packs\Commerce\Abilities::boot();
-		\Specflux\SenroFlux\Packs\Pages\PublishSummary::boot();
+		// `specflux_site_agent_packs` above (WooCommerce active).
+		\Specflux\SiteAgent\Packs\Commerce\Abilities::boot();
+		\Specflux\SiteAgent\Packs\Pages\PublishSummary::boot();
 		// Stage 14 (AS-15/S19): the commerce pack's own approval-summary
 		// builder, plus the sibling covering the new Tier-2 content calls
 		// (posts publish, site navigation, front page) — same
-		// `agent_safety_approval_summary` hook, each inert for verbs it
+		// `belayline_approval_summary` hook, each inert for verbs it
 		// does not own.
-		\Specflux\SenroFlux\Packs\Commerce\CommerceSummary::boot();
-		\Specflux\SenroFlux\Packs\Site\ContentSummary::boot();
+		\Specflux\SiteAgent\Packs\Commerce\CommerceSummary::boot();
+		\Specflux\SiteAgent\Packs\Site\ContentSummary::boot();
 		// S7: site navigation + front-page abilities. Navigation::boot() also
-		// registers the shared `senroflux-site` ability category.
-		\Specflux\SenroFlux\Packs\Site\Navigation::boot();
-		\Specflux\SenroFlux\Packs\Site\FrontPage::boot();
+		// registers the shared `specflux-site` ability category.
+		\Specflux\SiteAgent\Packs\Site\Navigation::boot();
+		\Specflux\SiteAgent\Packs\Site\FrontPage::boot();
 		// 0.3 quality feature 5: the style-variation abilities.
-		\Specflux\SenroFlux\Packs\Site\Style::boot();
+		\Specflux\SiteAgent\Packs\Site\Style::boot();
 		// 0.3 S4: the pages pack's vocabulary/validator plug into the shared
 		// content registrar under its own slug — `list-patterns` and the write
 		// abilities resolve THIS pair only while a 'pages' run is ticking (see
 		// the useRunPack()/forgetRunPack() scoping in tick() below).
-		$pages_vocabulary = new \Specflux\SenroFlux\Packs\Pages\Vocabulary();
-		\Specflux\SenroFlux\Packs\Content\Abilities::registerSource(
+		$pages_vocabulary = new \Specflux\SiteAgent\Packs\Pages\Vocabulary();
+		\Specflux\SiteAgent\Packs\Content\Abilities::registerSource(
 			'pages',
-			new \Specflux\SenroFlux\Packs\Pages\Validator( $pages_vocabulary ),
+			new \Specflux\SiteAgent\Packs\Pages\Validator( $pages_vocabulary ),
 			$pages_vocabulary,
 			'edit_pages'
 		);
 		// S5: same registration for the posts pack, under its own slug.
-		$posts_vocabulary = new \Specflux\SenroFlux\Packs\Posts\Vocabulary();
-		\Specflux\SenroFlux\Packs\Content\Abilities::registerSource(
+		$posts_vocabulary = new \Specflux\SiteAgent\Packs\Posts\Vocabulary();
+		\Specflux\SiteAgent\Packs\Content\Abilities::registerSource(
 			'posts',
-			new \Specflux\SenroFlux\Packs\Posts\Validator( $posts_vocabulary ),
+			new \Specflux\SiteAgent\Packs\Posts\Validator( $posts_vocabulary ),
 			$posts_vocabulary,
 			'edit_posts'
 		);
 		// S7: same registration for the site pack, under its own slug — its
 		// Vocabulary/Validator extend the pages pack's with the two
 		// homepage-only patterns (page-links, intro).
-		$site_vocabulary = new \Specflux\SenroFlux\Packs\Site\Vocabulary();
-		\Specflux\SenroFlux\Packs\Content\Abilities::registerSource(
+		$site_vocabulary = new \Specflux\SiteAgent\Packs\Site\Vocabulary();
+		\Specflux\SiteAgent\Packs\Content\Abilities::registerSource(
 			'site',
-			new \Specflux\SenroFlux\Packs\Site\Validator( $site_vocabulary ),
+			new \Specflux\SiteAgent\Packs\Site\Validator( $site_vocabulary ),
 			$site_vocabulary,
 			'manage_options'
 		);
@@ -328,7 +328,7 @@ final class Plugin {
 		// unconditionally and answering FALSE until a tick opens a run context
 		// — a missing hook would mean "no grant applies", never "every grant
 		// applies", so the harness always speaks for itself.
-		\Specflux\SenroFlux\Run\GrantEligibility::boot();
+		\Specflux\SiteAgent\Run\GrantEligibility::boot();
 		add_action(
 			'init',
 			static function () use ( $pages_pack, $posts_pack, $site_pack ): void {
@@ -348,10 +348,10 @@ final class Plugin {
 
 		// Observation screen (S10).
 		if ( function_exists( 'is_admin' ) && is_admin() ) {
-			( new \Specflux\SenroFlux\Admin\RunsScreen() )->register();
+			( new \Specflux\SiteAgent\Admin\RunsScreen() )->register();
 			// 0.3 S20: the site-brief settings submenu.
-			( new \Specflux\SenroFlux\Admin\SettingsScreen() )->register();
-			( new \Specflux\SenroFlux\Admin\PrivacyPolicy() )->register();
+			( new \Specflux\SiteAgent\Admin\SettingsScreen() )->register();
+			( new \Specflux\SiteAgent\Admin\PrivacyPolicy() )->register();
 		}
 
 		// 0.3 S3: Agent Safety's absence is advisory only — runs still start
@@ -362,7 +362,7 @@ final class Plugin {
 	}
 
 	/**
-	 * Can this plugin start runs? Consumers MUST treat false as "SenroFlux
+	 * Can this plugin start runs? Consumers MUST treat false as "Specflux Site Agent
 	 * absent" and keep their existing behaviour.
 	 */
 	public function available(): bool {
@@ -396,12 +396,12 @@ final class Plugin {
 	 *                                          inherits the source run's pinned model.
 	 * @param string|null       $model_id       Pinned model id; must be given
 	 *                                          together with $model_provider or not at all.
-	 * @return array<string,mixed>|WP_Error RunState or senroflux_ungoverned /
-	 *                                      senroflux_bad_request / pack_unknown /
+	 * @return array<string,mixed>|WP_Error RunState or specflux_site_agent_ungoverned /
+	 *                                      specflux_site_agent_bad_request / pack_unknown /
 	 *                                      pack_unbound / skills_too_large /
 	 *                                      follow_up_not_found / follow_up_not_finished /
 	 *                                      follow_up_unsupported / follow_up_forbidden /
-	 *                                      senroflux_model_unavailable.
+	 *                                      specflux_site_agent_model_unavailable.
 	 */
 	public function start(
 		string $consumer,
@@ -419,9 +419,9 @@ final class Plugin {
 		}
 
 		// 0.3 S3: a third-party consumer may not drive a built-in-mode run —
-		// its approval park can only be resolved on SenroFlux's own Runs
+		// its approval park can only be resolved on Specflux Site Agent's own Runs
 		// screen, which is the one consumer this refusal exempts.
-		if ( GateMode::BuiltIn === self::currentGateMode() && \Specflux\SenroFlux\Admin\RunsScreen::CONSUMER !== $consumer ) {
+		if ( GateMode::BuiltIn === self::currentGateMode() && \Specflux\SiteAgent\Admin\RunsScreen::CONSUMER !== $consumer ) {
 			return $this->ungoverned_error();
 		}
 
@@ -437,25 +437,25 @@ final class Plugin {
 		if ( null !== $follow_up_of ) {
 			$source = $this->runner()->store()->getRun( $follow_up_of );
 			if ( null === $source ) {
-				return new WP_Error( 'follow_up_not_found', __( 'The source run was not found.', 'senroflux' ), array( 'status' => 404 ) );
+				return new WP_Error( 'follow_up_not_found', __( 'The source run was not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 			}
 			// Stage 22b: the viewer must also be able to SEE the source run — its
 			// object list seeds the follow-up, so a run `get()` would refuse
 			// must not leak through here.
 			if ( ! $this->maySee( $source ) ) {
-				return new WP_Error( 'follow_up_forbidden', __( 'This run belongs to another user.', 'senroflux' ), array( 'status' => 403 ) );
+				return new WP_Error( 'follow_up_forbidden', __( 'This run belongs to another user.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 			}
 			if ( ! in_array( $source->status, array( RunStatus::Completed, RunStatus::Failed, RunStatus::Cancelled ), true ) ) {
-				return new WP_Error( 'follow_up_not_finished', __( 'The source run has not finished yet.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'follow_up_not_finished', __( 'The source run has not finished yet.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 			if ( null === $source->pack ) {
-				return new WP_Error( 'follow_up_unsupported', __( 'The source run has no capability pack to follow up on.', 'senroflux' ), array( 'status' => 400 ) );
+				return new WP_Error( 'follow_up_unsupported', __( 'The source run has no capability pack to follow up on.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 			}
 
 			$source_pack_obj = $this->packRegistry()->get( $source->pack );
 			$run_capability  = null !== $source_pack_obj ? $source_pack_obj->runCapability() : '';
 			if ( '' === $run_capability || ! function_exists( 'current_user_can' ) || ! current_user_can( $run_capability ) ) {
-				return new WP_Error( 'follow_up_forbidden', __( 'You do not hold the source run\'s capability.', 'senroflux' ), array( 'status' => 403 ) );
+				return new WP_Error( 'follow_up_forbidden', __( 'You do not hold the source run\'s capability.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 			}
 
 			$pack = $source->pack; // Forced (S20), regardless of what the caller asked for.
@@ -474,15 +474,15 @@ final class Plugin {
 		// before any DB write, like every other start() refusal.
 		if ( ( null === $model_provider ) !== ( null === $model_id ) ) {
 			return new WP_Error(
-				'senroflux_bad_request',
-				__( 'Provide both a model provider and a model id, or leave both empty for automatic.', 'senroflux' ),
+				'specflux_site_agent_bad_request',
+				__( 'Provide both a model provider and a model id, or leave both empty for automatic.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
 		// Only an explicit choice is validated: an inherited pin whose model has
 		// since gone away is still just a preference, and falls back to automatic.
 		if ( $model_chosen && null !== $model_provider && null !== $model_id ) {
-			$model_valid = \Specflux\SenroFlux\Model\ModelChoice::validate( $model_provider, $model_id );
+			$model_valid = \Specflux\SiteAgent\Model\ModelChoice::validate( $model_provider, $model_id );
 			if ( is_wp_error( $model_valid ) ) {
 				return $model_valid;
 			}
@@ -514,7 +514,7 @@ final class Plugin {
 			if ( null === $pack_obj ) {
 				return new WP_Error(
 					'pack_unknown',
-					__( 'Unknown pack.', 'senroflux' ),
+					__( 'Unknown pack.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -550,8 +550,8 @@ final class Plugin {
 		// pack the allow is derived, so it is never empty here.
 		if ( '' === trim( $consumer ) || '' === trim( $goal ) || ( array() === $allow && null === $pack_obj ) ) {
 			return new WP_Error(
-				'senroflux_bad_request',
-				__( 'A run needs a consumer, a goal, and a non-empty allow-list.', 'senroflux' ),
+				'specflux_site_agent_bad_request',
+				__( 'A run needs a consumer, a goal, and a non-empty allow-list.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -646,11 +646,11 @@ final class Plugin {
 	}
 
 	/**
-	 * The request-scoped pack registry (S9). Boots from the `senroflux_packs`
+	 * The request-scoped pack registry (S9). Boots from the `specflux_site_agent_packs`
 	 * filter; the pages pack registers through it (stage 8).
 	 */
-	private function packRegistry(): \Specflux\SenroFlux\Packs\PackRegistry {
-		return \Specflux\SenroFlux\Packs\PackRegistry::fromFilters();
+	private function packRegistry(): \Specflux\SiteAgent\Packs\PackRegistry {
+		return \Specflux\SiteAgent\Packs\PackRegistry::fromFilters();
 	}
 
 	/**
@@ -683,48 +683,48 @@ final class Plugin {
 		// every tick — a run's consumer never changes after start(), but a
 		// consumer could still poll a run it never started (its own bug, but
 		// one that must not resolve a built-in park it cannot answer).
-		if ( null !== $run && GateMode::BuiltIn === $run->gateMode && \Specflux\SenroFlux\Admin\RunsScreen::CONSUMER !== $run->consumer ) {
+		if ( null !== $run && GateMode::BuiltIn === $run->gateMode && \Specflux\SiteAgent\Admin\RunsScreen::CONSUMER !== $run->consumer ) {
 			return $this->ungoverned_error();
 		}
 
-		\Specflux\SenroFlux\Packs\Pages\PublishSummary::useRunContext( null !== $run ? $run->goal : null );
+		\Specflux\SiteAgent\Packs\Pages\PublishSummary::useRunContext( null !== $run ? $run->goal : null );
 		// 0.3 S4: vocabulary-bearing content abilities resolve THIS run's pack
 		// for the scope of one tick — never a model-supplied `pack` argument.
-		\Specflux\SenroFlux\Packs\Content\Abilities::useRunPack( null !== $run ? $run->pack : null );
+		\Specflux\SiteAgent\Packs\Content\Abilities::useRunPack( null !== $run ? $run->pack : null );
 		// 0.3 S8: the shared content registrar's stale-write compare reads
 		// and updates THIS run's tracker — never a model-supplied run id.
 		// Same discipline as useRunPack() above; scoped for one tick only.
-		\Specflux\SenroFlux\Packs\Content\Abilities::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Content\Abilities::useRunContext( $run_id, $this->runner()->store() );
 		// 0.3 S5: the media registrar's images-budget spend count and
 		// attachment cap are both derived from THIS run's row/steps.
-		\Specflux\SenroFlux\Packs\Content\Media::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Content\Media::useRunContext( $run_id, $this->runner()->store() );
 		// 0.3 S7/S8: the site navigation registrar's stale-write compare reads
 		// and updates THIS run's tracker — same discipline as Content\Abilities.
-		\Specflux\SenroFlux\Packs\Site\Navigation::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Site\Navigation::useRunContext( $run_id, $this->runner()->store() );
 		// 0.3 S8: the front-page registrar's own stale-write compare, scoped
 		// the same way — its own OBJECT_ID, so it never collides with
 		// Navigation's marker on the same run.
-		\Specflux\SenroFlux\Packs\Site\FrontPage::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Site\FrontPage::useRunContext( $run_id, $this->runner()->store() );
 		// 0.3 quality feature 5: the style registrar's own stale-write
 		// compare, scoped the same way — its own OBJECT_ID.
-		\Specflux\SenroFlux\Packs\Site\Style::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Site\Style::useRunContext( $run_id, $this->runner()->store() );
 		// S19: the commerce polyfills' own stale-write compare (coupon-enable
 		// only — see the class docblock), scoped the same way.
-		\Specflux\SenroFlux\Packs\Commerce\Abilities::useRunContext( $run_id, $this->runner()->store() );
+		\Specflux\SiteAgent\Packs\Commerce\Abilities::useRunContext( $run_id, $this->runner()->store() );
 
 		try {
 			$result = $this->runner()->tick( $run_id, $expected_step_count, $resume );
 
 			return $result;
 		} finally {
-			\Specflux\SenroFlux\Packs\Pages\PublishSummary::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Content\Abilities::forgetRunPack();
-			\Specflux\SenroFlux\Packs\Content\Abilities::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Content\Media::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Site\Navigation::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Site\FrontPage::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Site\Style::forgetRunContext();
-			\Specflux\SenroFlux\Packs\Commerce\Abilities::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Pages\PublishSummary::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Content\Abilities::forgetRunPack();
+			\Specflux\SiteAgent\Packs\Content\Abilities::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Content\Media::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Site\Navigation::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Site\FrontPage::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Site\Style::forgetRunContext();
+			\Specflux\SiteAgent\Packs\Commerce\Abilities::forgetRunContext();
 		}
 	}
 
@@ -742,10 +742,10 @@ final class Plugin {
 		$store = $this->runner()->store();
 		$run   = $store->getRun( $run_id );
 		if ( null === $run ) {
-			return new WP_Error( 'senroflux_not_found', __( 'Run not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'specflux_site_agent_not_found', __( 'Run not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 		if ( ! $this->maySee( $run ) ) {
-			return new WP_Error( 'senroflux_forbidden', __( 'This run belongs to another user.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'specflux_site_agent_forbidden', __( 'This run belongs to another user.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 		if ( $run->status->isTerminal() ) {
 			return $this->get( $run_id ); // Already finished: state unchanged.
@@ -802,7 +802,7 @@ final class Plugin {
 			return $this->ungoverned_error();
 		}
 
-		return \Specflux\SenroFlux\Run\SuggestionResolver::resolve( $this->runner()->store(), $run_id, $seq, $action, $text );
+		return \Specflux\SiteAgent\Run\SuggestionResolver::resolve( $this->runner()->store(), $run_id, $seq, $action, $text );
 	}
 
 	/**
@@ -819,10 +819,10 @@ final class Plugin {
 		$store = $this->runner()->store();
 		$run   = $store->getRun( $run_id );
 		if ( null === $run ) {
-			return new WP_Error( 'senroflux_not_found', __( 'Run not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'specflux_site_agent_not_found', __( 'Run not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 		if ( ! $this->maySee( $run ) ) {
-			return new WP_Error( 'senroflux_forbidden', __( 'This run belongs to another user.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'specflux_site_agent_forbidden', __( 'This run belongs to another user.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 
 		$steps       = array();
@@ -940,15 +940,20 @@ final class Plugin {
 	 * 0.3 S10 (owner decision, 2026-09-20): scoped to {@see maySee()} OR the
 	 * delegation seam. Until 0.3 this returned every run on the site, which
 	 * was looser than {@see get()} on the same run: the list showed a goal
-	 * whose detail the same viewer was refused with `senroflux_forbidden`.
+	 * whose detail the same viewer was refused with `specflux_site_agent_forbidden`.
 	 * The screen capability is a PACK RUN capability (S10) — `edit_pages` is
 	 * enough to open it — so the old behaviour showed one author's run goals
 	 * to every other author. The drivable clause is kept because S13
 	 * deliberately lets a screen-capability holder resolve a parked run they
 	 * do not own; dropping it would break that.
 	 *
-	 * @param int $limit Max rows CONSIDERED, before scoping. A viewer may
-	 *                   therefore receive fewer than `$limit` rows.
+	 * Scoping happens in the query: a viewer without the screen-wide
+	 * capability gets their own runs from an owner-filtered SELECT, so other
+	 * users' newer runs cannot use up the LIMIT or reach this method at all.
+	 * Only when something hooks `specflux_site_agent_can_tick` are other
+	 * users' rows read, to honour that delegation.
+	 *
+	 * @param int $limit Max rows returned.
 	 * @return list<array<string,mixed>> Lightweight run summaries.
 	 */
 	public function listRecent( int $limit = 50 ): array {
@@ -957,17 +962,31 @@ final class Plugin {
 		}
 
 		$viewer_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+		$store     = $this->runner()->store();
 
-		$visible = array_filter(
-			$this->runner()->store()->listRecent( $limit ),
-			function ( \Specflux\SenroFlux\Run\Run $run ) use ( $viewer_id ): bool {
-				return $this->maySee( $run )
-					|| (bool) apply_filters( 'senroflux_can_tick', $viewer_id === $run->userId, $run );
+		if ( $this->holdsRunsCapability() ) {
+			$visible = $store->listRecent( $limit );
+		} else {
+			$visible = $viewer_id > 0 ? $store->listRecentForUser( $viewer_id, $limit ) : array();
+
+			if ( has_filter( 'specflux_site_agent_can_tick' ) ) {
+				$delegated = array_filter(
+					$store->listRecent( $limit ),
+					static fn ( \Specflux\SiteAgent\Run\Run $run ): bool => $run->userId !== $viewer_id
+						&& (bool) apply_filters( 'specflux_site_agent_can_tick', false, $run )
+				);
+
+				$visible = array_merge( $visible, $delegated );
+				usort(
+					$visible,
+					static fn ( \Specflux\SiteAgent\Run\Run $a, \Specflux\SiteAgent\Run\Run $b ): int => array( $b->updatedAtUtc ?? '', $b->id ) <=> array( $a->updatedAtUtc ?? '', $a->id )
+				);
+				$visible = array_slice( $visible, 0, max( 1, $limit ) );
 			}
-		);
+		}
 
 		return array_map(
-			function ( \Specflux\SenroFlux\Run\Run $run ) use ( $viewer_id ): array {
+			function ( \Specflux\SiteAgent\Run\Run $run ) use ( $viewer_id ): array {
 				return array(
 					'id'              => $run->id,
 					'user_id'         => $run->userId,
@@ -986,13 +1005,13 @@ final class Plugin {
 					// 0.3 S9: "Needs you" reuses the SAME delegation seam the
 					// Runner itself gates ticking on — never a re-derived rule
 					// that could drift from it.
-					'viewer_may_tick' => (bool) apply_filters( 'senroflux_can_tick', $viewer_id === $run->userId, $run ),
+					'viewer_may_tick' => (bool) apply_filters( 'specflux_site_agent_can_tick', $viewer_id === $run->userId, $run ),
 					// 0.3 S9: a `running` run with no live 30-second tick lock
 					// (the SAME transient Runner::tick() itself sets/releases)
 					// is stalled — its owner closed the tab mid-loop.
 					'stalled'         => RunStatus::Running === $run->status
 						&& function_exists( 'get_transient' )
-						&& false === get_transient( 'senroflux_lock_' . $run->id ),
+						&& false === get_transient( 'specflux_site_agent_lock_' . $run->id ),
 				);
 			},
 			array_values( $visible )
@@ -1007,7 +1026,7 @@ final class Plugin {
 	 * Is the plugin backed by a database handle and the Runner class loaded?
 	 *
 	 * 0.3 S3: this used to also require {@see available()} (Agent Safety
-	 * present) — SenroFlux's hard dependency on Agent Safety is retired.
+	 * present) — Specflux Site Agent's hard dependency on Agent Safety is retired.
 	 * Agent Safety's absence now only decides the gate mode a run starts in
 	 * ({@see GateMode::BuiltIn}), never whether the plugin may run at all.
 	 */
@@ -1022,13 +1041,18 @@ final class Plugin {
 	 * or a holder of the Runs-screen capability — the screen must render and
 	 * act on delegated runs without impersonating the owner.
 	 */
-	private function maySee( \Specflux\SenroFlux\Run\Run $run ): bool {
+	private function maySee( \Specflux\SiteAgent\Run\Run $run ): bool {
 		if ( (int) get_current_user_id() === $run->userId ) {
 			return true;
 		}
 
+		return $this->holdsRunsCapability();
+	}
+
+	/** Does the viewer hold the screen-wide capability that sees every run? */
+	private function holdsRunsCapability(): bool {
 		/** Filters the capability required to see a run. `@internal`. */
-		$capability = apply_filters( 'senroflux_runs_capability', 'manage_options' );
+		$capability = apply_filters( 'specflux_site_agent_runs_capability', 'manage_options' );
 
 		return function_exists( 'current_user_can' ) && current_user_can( (string) $capability );
 	}
@@ -1036,7 +1060,7 @@ final class Plugin {
 	/**
 	 * The pack's own notice for a run's withheld roles (S6), or null.
 	 */
-	private function withheldNoticeFor( \Specflux\SenroFlux\Run\Run $run ): ?string {
+	private function withheldNoticeFor( \Specflux\SiteAgent\Run\Run $run ): ?string {
 		if ( null === $run->pack || array() === $run->withheldRoles ) {
 			return null;
 		}
@@ -1047,17 +1071,17 @@ final class Plugin {
 	}
 
 	/**
-	 * The `senroflux_ungoverned` (409) error every entry point returns when
+	 * The `specflux_site_agent_ungoverned` (409) error every entry point returns when
 	 * this specific request cannot be governed at all — fail closed, never
 	 * half-run. 0.3 S3 narrows WHEN this fires to two cases: the plugin isn't
 	 * backed by a database/Runner ({@see ready()}), or a third-party consumer
 	 * tried to start or tick a built-in-mode run (its approval park can only
-	 * be resolved on SenroFlux's own Runs screen).
+	 * be resolved on Specflux Site Agent's own Runs screen).
 	 */
 	private function ungoverned_error(): WP_Error {
 		return new WP_Error(
-			'senroflux_ungoverned',
-			__( 'SenroFlux cannot govern this run: either it is not fully installed, or a built-in-mode run may only be driven from the SenroFlux Runs screen.', 'senroflux' ),
+			'specflux_site_agent_ungoverned',
+			__( 'Specflux Site Agent cannot govern this run: either it is not fully installed, or a built-in-mode run may only be driven from the Specflux Site Agent Runs screen.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
 	}
@@ -1074,7 +1098,7 @@ final class Plugin {
 		global $wpdb;
 
 		/** Filters the model gateway class. `@internal`. */
-		$gateway_class = apply_filters( 'senroflux_model_gateway', AiClientGateway::class );
+		$gateway_class = apply_filters( 'specflux_site_agent_model_gateway', AiClientGateway::class );
 		if ( ! is_string( $gateway_class ) || ! class_exists( $gateway_class ) ) {
 			$gateway_class = AiClientGateway::class;
 		}
@@ -1096,17 +1120,17 @@ final class Plugin {
 			// S9: a run started with a pack is fenced/annotated by the PACK's
 			// verb map; direct-allow runs keep the site-wide filter seam. The
 			// composition root is the one place that may reference Packs.
-			static function ( \Specflux\SenroFlux\Run\Run $run ): ?array {
+			static function ( \Specflux\SiteAgent\Run\Run $run ): ?array {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->verbMap() : null;
 			},
 			// S7/S10: the fence tiers a call by its PACK VERB, not by the
-			// ability that carries it — `senroflux/publish-post` is
+			// ability that carries it — `specflux/publish-post` is
 			// `pages/update-live` or `pages/publish` depending on the args,
 			// and only the pack can tell them apart. A direct-allow run has no
 			// pack, so its verb stays the ability id (S9).
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $ability, array $args ): string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $ability, array $args ): string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->verbFor( $ability, $args ) : $ability;
@@ -1114,20 +1138,20 @@ final class Plugin {
 			// S8: the pack whose skills ride every tick's instruction. The
 			// Runner passes it straight to SkillSet without knowing the type —
 			// the pack seam stays a composition-root concern.
-			static fn ( \Specflux\SenroFlux\Run\Run $run ): ?\Specflux\SenroFlux\Packs\Pack => self::pack_for_run( $run ),
+			static fn ( \Specflux\SiteAgent\Run\Run $run ): ?\Specflux\SiteAgent\Packs\Pack => self::pack_for_run( $run ),
 			// S12: which argument carries an object's id is the pack's
 			// knowledge; the harness only knows the id is opaque.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $verb ): string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $verb ): string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->objectIdKey( $verb ) : 'id';
 			},
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			// S14: a grant is issued against the verb AGENT SAFETY sees — the
 			// resolved ability id — never the pack verb a plan step names.
 			// Only the pack can map one to the other; a direct-allow run has
 			// no pack and its verbs already are ability ids.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $pack_verb ): ?string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $pack_verb ): ?string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->gateVerbFor( $pack_verb ) : $pack_verb;
@@ -1140,7 +1164,7 @@ final class Plugin {
 			// S6: withheld roles' RESOLVED abilities, for the execution-time
 			// defence in depth — only the pack can map a role name back to
 			// its ability id.
-			static function ( \Specflux\SenroFlux\Run\Run $run ): array {
+			static function ( \Specflux\SiteAgent\Run\Run $run ): array {
 				$pack = self::pack_for_run( $run );
 				if ( null === $pack || array() === $run->withheldRoles ) {
 					return array();
@@ -1160,7 +1184,7 @@ final class Plugin {
 			// knows which of its own verbs must ask every time rather than be
 			// pre-approved; a direct-allow run has no pack and nothing is
 			// ungrantable there.
-			static function ( \Specflux\SenroFlux\Run\Run $run ): array {
+			static function ( \Specflux\SiteAgent\Run\Run $run ): array {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->ungrantableVerbs() : array();
@@ -1169,7 +1193,7 @@ final class Plugin {
 			// — only the pack knows which of its verbs share an id space with
 			// another object kind; a direct-allow run has no pack and needs
 			// no prefix.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $verb ): string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $verb ): string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->objectIdPrefix( $verb ) : '';
@@ -1179,31 +1203,31 @@ final class Plugin {
 			// its own (the site pack's navigation/front-page singletons) —
 			// only the pack knows the verb writes a fixed object; a
 			// direct-allow run has no pack and no opinion.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $verb, array $args, array $output ): ?string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $verb, array $args, array $output ): ?string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->objectIdForWrite( $verb, $args, $output ) : null;
 			},
-			// 0.3 S14: the legacy-run watermark {@see \Specflux\SenroFlux\Schema::maybe_upgrade()}
+			// 0.3 S14: the legacy-run watermark {@see \Specflux\SiteAgent\Schema::maybe_upgrade()}
 			// recorded at the 0.2 -> 0.3 upgrade, or null when the option was
 			// never written (a fresh install, or a site with no live 0.2 run).
 			static function (): ?int {
-				$value = get_option( 'senroflux_legacy_run_watermark', false );
+				$value = get_option( 'specflux_site_agent_legacy_run_watermark', false );
 
 				return is_numeric( $value ) ? (int) $value : null;
 			},
 			// The read counterpart of the write-id resolver above: a
 			// singleton read takes no id argument, so only the pack can say
 			// which object it read.
-			static function ( \Specflux\SenroFlux\Run\Run $run, string $verb, array $args ): ?string {
+			static function ( \Specflux\SiteAgent\Run\Run $run, string $verb, array $args ): ?string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->objectIdForRead( $verb, $args ) : null;
 			},
 			null,
-			// S23 (SPEC-SENROFLUX-PRO.md §5 F4): only the pack knows its own
+			// S23 (SPEC-SITE-AGENT-PRO.md §5 F4): only the pack knows its own
 			// guidance-hash, if any; a direct-allow run has no pack.
-			static function ( \Specflux\SenroFlux\Run\Run $run ): ?string {
+			static function ( \Specflux\SiteAgent\Run\Run $run ): ?string {
 				$pack = self::pack_for_run( $run );
 
 				return null !== $pack ? $pack->guidesHash() : null;
@@ -1215,15 +1239,15 @@ final class Plugin {
 
 	/**
 	 * 0.3 S6: the role names a pack withholds from a starting user — those
-	 * whose declared {@see \Specflux\SenroFlux\Packs\Pack::roleCapabilities()}
+	 * whose declared {@see \Specflux\SiteAgent\Packs\Pack::roleCapabilities()}
 	 * capability `$user_id` lacks. A role the pack declares no capability for
 	 * is never withheld (the base's empty map means "nothing to check").
 	 *
-	 * @param \Specflux\SenroFlux\Packs\Pack $pack    The pack a run is starting with.
+	 * @param \Specflux\SiteAgent\Packs\Pack $pack    The pack a run is starting with.
 	 * @param int                            $user_id The starting user.
 	 * @return list<string>
 	 */
-	private static function withheldRolesFor( \Specflux\SenroFlux\Packs\Pack $pack, int $user_id ): array {
+	private static function withheldRolesFor( \Specflux\SiteAgent\Packs\Pack $pack, int $user_id ): array {
 		$withheld = array();
 		foreach ( $pack->roleCapabilities() as $role => $capability ) {
 			if ( '' === $capability ) {
@@ -1242,14 +1266,14 @@ final class Plugin {
 	 * a pack name no longer registered — fail closed to the ability-name verb
 	 * space, where nothing is mapped and the fence treats every call as tier 2).
 	 *
-	 * @param \Specflux\SenroFlux\Run\Run $run The run.
+	 * @param \Specflux\SiteAgent\Run\Run $run The run.
 	 */
-	private static function pack_for_run( \Specflux\SenroFlux\Run\Run $run ): ?\Specflux\SenroFlux\Packs\Pack {
+	private static function pack_for_run( \Specflux\SiteAgent\Run\Run $run ): ?\Specflux\SiteAgent\Packs\Pack {
 		if ( null === $run->pack || '' === $run->pack ) {
 			return null;
 		}
 
-		return \Specflux\SenroFlux\Packs\PackRegistry::fromFilters()->get( $run->pack );
+		return \Specflux\SiteAgent\Packs\PackRegistry::fromFilters()->get( $run->pack );
 	}
 
 	/**

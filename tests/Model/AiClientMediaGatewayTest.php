@@ -23,15 +23,15 @@
  * outright — "cURL error 28: Operation timed out after 30002 milliseconds".
  * These tests still assert the timeouts stay wired through the real fix.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Model;
+namespace Specflux\SiteAgent\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\AiClientMediaGateway;
+use Specflux\SiteAgent\Model\AiClientMediaGateway;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -44,18 +44,18 @@ final class AiClientMediaGatewayTest extends TestCase {
 	protected function setUp(): void {
 		require_once dirname( __DIR__ ) . '/stubs/media.php';
 
-		$GLOBALS['senroflux_test_prompt_builder_calls']  = array();
-		$GLOBALS['senroflux_test_prompt_builder_script'] = array();
-		$GLOBALS['senroflux_test_download_url_calls']    = array();
-		$GLOBALS['senroflux_test_download_url_response'] = null;
+		$GLOBALS['specflux_site_agent_test_prompt_builder_calls']  = array();
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'] = array();
+		$GLOBALS['specflux_site_agent_test_download_url_calls']    = array();
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = null;
 	}
 
 	protected function tearDown(): void {
 		unset(
-			$GLOBALS['senroflux_test_prompt_builder_calls'],
-			$GLOBALS['senroflux_test_prompt_builder_script'],
-			$GLOBALS['senroflux_test_download_url_calls'],
-			$GLOBALS['senroflux_test_download_url_response']
+			$GLOBALS['specflux_site_agent_test_prompt_builder_calls'],
+			$GLOBALS['specflux_site_agent_test_prompt_builder_script'],
+			$GLOBALS['specflux_site_agent_test_download_url_calls'],
+			$GLOBALS['specflux_site_agent_test_download_url_response']
 		);
 	}
 
@@ -75,7 +75,7 @@ final class AiClientMediaGatewayTest extends TestCase {
 
 		$this->assertTrue( $file->isInline(), 'sanity: the fixture must be a real inline File' );
 
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () use ( $file ) {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () use ( $file ) {
 			return new class( $file ) {
 				public function __construct( private File $file ) {}
 				public function toImageFile(): File {
@@ -95,7 +95,7 @@ final class AiClientMediaGatewayTest extends TestCase {
 			file_get_contents( $result['path'] ) // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a local test-uploads file, not a remote URL.
 		);
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertCount( 1, $calls );
 		$this->assertInstanceOf( RequestOptions::class, $calls[0]['request_options'] );
 		$this->assertSame( 120.0, $calls[0]['request_options']->getTimeout(), 'image generation routinely takes 30-90s; the default (~30s) is what failed live' );
@@ -112,9 +112,9 @@ final class AiClientMediaGatewayTest extends TestCase {
 		$this->assertTrue( $file->isRemote(), 'sanity: the fixture must be a real remote File' );
 
 		$binary = 'not-really-a-png-but-a-real-byte-stream';
-		$GLOBALS['senroflux_test_download_url_response'] = $binary;
+		$GLOBALS['specflux_site_agent_test_download_url_response'] = $binary;
 
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () use ( $file ) {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () use ( $file ) {
 			return new class( $file ) {
 				public function __construct( private File $file ) {}
 				public function toImageFile(): File {
@@ -129,13 +129,13 @@ final class AiClientMediaGatewayTest extends TestCase {
 		$this->assertIsArray( $result, 'expected a persisted {path, filename} array, got: ' . ( $result instanceof WP_Error ? $result->get_error_message() : 'n/a' ) );
 		$this->assertFileExists( $result['path'] );
 		$this->assertSame( $binary, file_get_contents( $result['path'] ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a local test-uploads file, not a remote URL.
-		$this->assertSame( array( 'https://provider.example/generated/abc123.png' ), $GLOBALS['senroflux_test_download_url_calls'] );
+		$this->assertSame( array( 'https://provider.example/generated/abc123.png' ), $GLOBALS['specflux_site_agent_test_download_url_calls'] );
 	}
 
 	public function test_generate_image_refuses_a_non_image_mime_type(): void {
 		$file = new File( 'https://provider.example/generated/report.pdf', 'application/pdf' );
 
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () use ( $file ) {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () use ( $file ) {
 			return new class( $file ) {
 				public function __construct( private File $file ) {}
 				public function toImageFile(): File {
@@ -166,13 +166,13 @@ final class AiClientMediaGatewayTest extends TestCase {
 	 * path — never a URL the provider has to fetch back.
 	 */
 	public function test_generate_alt_text_attaches_the_image_as_inline_data_not_a_url(): void {
-		$path = tempnam( sys_get_temp_dir(), 'senroflux-alt-' ) . '.png'; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- test fixture, not a WP runtime path.
+		$path = tempnam( sys_get_temp_dir(), 'specflux-site-agent-alt-' ) . '.png'; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- test fixture, not a WP runtime path.
 		file_put_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test fixture, not a WP runtime path.
 			$path,
 			base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true ) // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- a real 1x1 PNG fixture, not obfuscating code.
 		);
 
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new class() {
 				public function toMessage(): Message {
 					return new UserMessage( array( new MessagePart( 'A red bicycle.' ) ) );
@@ -186,7 +186,7 @@ final class AiClientMediaGatewayTest extends TestCase {
 
 		$this->assertSame( 'A red bicycle.', $result );
 
-		$calls = $GLOBALS['senroflux_test_prompt_builder_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_prompt_builder_calls'];
 		$this->assertCount( 1, $calls );
 
 		/** @var RequestOptions|null $options */
@@ -204,15 +204,15 @@ final class AiClientMediaGatewayTest extends TestCase {
 
 	public function test_generate_alt_text_refuses_clearly_when_the_file_is_missing(): void {
 		$gateway = new AiClientMediaGateway();
-		$result  = $gateway->generateAltText( sys_get_temp_dir() . '/senroflux-does-not-exist.png' );
+		$result  = $gateway->generateAltText( sys_get_temp_dir() . '/specflux-site-agent-does-not-exist.png' );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'attachment_file_missing', $result->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_prompt_builder_calls'], 'a missing file must never reach the model call at all' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_prompt_builder_calls'], 'a missing file must never reach the model call at all' );
 	}
 
 	public function test_generate_image_flags_the_no_model_failure_as_unavailable(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new WP_Error( 'prompt_invalid_argument', 'No models found that support image_generation for this prompt.' );
 		};
 
@@ -223,7 +223,7 @@ final class AiClientMediaGatewayTest extends TestCase {
 	}
 
 	public function test_generate_image_flags_a_thrown_no_model_exception_as_unavailable(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			throw new \WordPress\AiClient\Common\Exception\InvalidArgumentException( 'No models found for provider "openrouter" that support image_generation for this prompt.' );
 		};
 
@@ -233,13 +233,13 @@ final class AiClientMediaGatewayTest extends TestCase {
 	}
 
 	public function test_generate_image_does_not_flag_a_timeout_or_other_invalid_argument(): void {
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new WP_Error( 'prompt_network_error', 'cURL error 28: Operation timed out' );
 		};
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new WP_Error( 'prompt_invalid_argument', 'The prompt is too long.' );
 		};
-		$GLOBALS['senroflux_test_prompt_builder_script'][] = static function () {
+		$GLOBALS['specflux_site_agent_test_prompt_builder_script'][] = static function () {
 			return new WP_Error( 'prompt_upstream_server_error', 'No models found that support image_generation.' );
 		};
 

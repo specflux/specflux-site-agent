@@ -5,27 +5,27 @@
  * delegation seam), or every run if they hold the Runs-screen capability.
  *
  * Until 0.3 this method returned every run on the site, which was looser than
- * {@see \Specflux\SenroFlux\Plugin::get()} on the same run. The screen
+ * {@see \Specflux\SiteAgent\Plugin::get()} on the same run. The screen
  * capability is a pack RUN capability (S10) — `edit_pages` opens the screen —
  * so the old behaviour showed one author's goals to every other author.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
 use WP_Error;
 use wpdb;
 
@@ -39,9 +39,9 @@ final class PluginListScopeTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( false );
-		$GLOBALS['senroflux_test_current_user_id'] = self::VIEWER;
-		$GLOBALS['senroflux_test_user_caps']       = array();
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = self::VIEWER;
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array();
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 
 		$db              = new wpdb();
 		$db->queryReturn = 1;
@@ -66,10 +66,10 @@ final class PluginListScopeTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_can_tick' );
-		remove_all_filters( 'senroflux_runs_capability' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
 		Plugin::reset();
-		unset( $GLOBALS['wpdb'], $GLOBALS['senroflux_test_user_caps'] );
+		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_user_caps'] );
 	}
 
 	private function createRun( int $owner_id ): int {
@@ -97,7 +97,7 @@ final class PluginListScopeTest extends TestCase {
 		$mine   = $this->createRun( self::VIEWER );
 		$theirs = $this->createRun( self::OTHER );
 
-		$GLOBALS['senroflux_test_user_caps']['manage_options'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_options'] = true;
 
 		$ids = $this->ids( Plugin::instance()->listRecent() );
 		$this->assertContains( $mine, $ids );
@@ -112,7 +112,7 @@ final class PluginListScopeTest extends TestCase {
 	public function test_a_run_the_viewer_may_drive_stays_visible(): void {
 		$theirs = $this->createRun( self::OTHER );
 
-		add_filter( 'senroflux_can_tick', static fn (): bool => true );
+		add_filter( 'specflux_site_agent_can_tick', static fn (): bool => true );
 
 		$this->assertSame( array( $theirs ), $this->ids( Plugin::instance()->listRecent() ) );
 	}
@@ -125,9 +125,32 @@ final class PluginListScopeTest extends TestCase {
 	public function test_a_lowered_runs_capability_widens_the_list(): void {
 		$theirs = $this->createRun( self::OTHER );
 
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'edit_pages' );
-		$GLOBALS['senroflux_test_user_caps']['edit_pages'] = true;
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'edit_pages' );
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_pages'] = true;
 
 		$this->assertSame( array( $theirs ), $this->ids( Plugin::instance()->listRecent() ) );
+	}
+
+	/**
+	 * The scope is part of the query, so other users' newer runs cannot use up
+	 * the LIMIT and hide the viewer's own older run.
+	 */
+	public function test_own_old_run_is_not_crowded_out_by_newer_runs_of_others(): void {
+		$mine = $this->createRun( self::VIEWER );
+		$this->createRun( self::OTHER );
+		$this->createRun( self::OTHER );
+
+		$this->assertSame( array( $mine ), $this->ids( Plugin::instance()->listRecent( 2 ) ) );
+	}
+
+	public function test_the_scoped_query_filters_by_owner_in_sql(): void {
+		$this->createRun( self::VIEWER );
+		$db = $GLOBALS['wpdb'];
+
+		Plugin::instance()->listRecent();
+
+		$this->assertNotEmpty(
+			array_filter( $db->queries, static fn ( string $q ): bool => str_contains( $q, 'WHERE user_id = ' . self::VIEWER ) )
+		);
 	}
 }

@@ -3,29 +3,29 @@
  * PHPStan bootstrap: declares the few WordPress constants src/ relies on that
  * wordpress-stubs does not provide.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
 if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', '/tmp/senroflux-phpstan/' );
+	define( 'ABSPATH', '/tmp/specflux-site-agent-phpstan/' );
 }
 
 if ( ! defined( 'ARRAY_A' ) ) {
 	define( 'ARRAY_A', 'ARRAY_A' );
 }
 
-if ( ! defined( 'SENROFLUX_URL' ) ) {
-	define( 'SENROFLUX_URL', 'https://example.test/wp-content/plugins/senroflux/' );
+if ( ! defined( 'SPECFLUX_SITE_AGENT_URL' ) ) {
+	define( 'SPECFLUX_SITE_AGENT_URL', 'https://example.test/wp-content/plugins/specflux-site-agent/' );
 }
 
-if ( ! defined( 'SENROFLUX_PATH' ) ) {
+if ( ! defined( 'SPECFLUX_SITE_AGENT_PATH' ) ) {
 	// The REAL project root, not a fixture path: `RunsScreen::assets()`
 	// `require`s the committed `build/runs/index.asset.php` (S10/S17), and a
 	// literal path PHPStan can resolve on disk is what lets it check that
 	// `require` for real rather than needing an ignoreErrors entry.
-	define( 'SENROFLUX_PATH', __DIR__ . '/' );
+	define( 'SPECFLUX_SITE_AGENT_PATH', __DIR__ . '/' );
 }
 
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {

@@ -7,24 +7,24 @@
  * the REAL {@see PostsPack} seams and the REAL {@see Runner} — the same
  * class {@see AttachmentReportTest} uses for defect 1.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
@@ -49,14 +49,14 @@ final class AttachmentVerifyTest extends TestCase {
 		require_once __DIR__ . '/../stubs/blocks.php';
 		require_once __DIR__ . '/../stubs/media.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 1;
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array( 'edit_post' => true );
-		$GLOBALS['senroflux_test_current_user_id']    = 1;
-		$GLOBALS['senroflux_test_transients']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 1;
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array( 'edit_post' => true );
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 1;
+		$GLOBALS['specflux_site_agent_test_transients']         = array();
 
 		Media::reset();
 		Media::registerCategory();
@@ -89,7 +89,7 @@ final class AttachmentVerifyTest extends TestCase {
 			fn ( $run, string $ability, array $args ) => $this->pack->verbFor( $ability, $args ),
 			fn () => $this->pack,
 			fn ( $run, string $verb ) => $this->pack->objectIdKey( $verb ),
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			null,
 			null,
@@ -104,18 +104,18 @@ final class AttachmentVerifyTest extends TestCase {
 	}
 
 	private function seedAttachment( int $id ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = 'attachment';
-		$post->post_mime_type                   = 'image/jpeg';
-		$post->post_title                       = 'image-' . $id;
-		$post->guid                             = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
-		$post->post_status                      = 'inherit';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post                 = new \stdClass();
+		$post->ID             = $id;
+		$post->post_type      = 'attachment';
+		$post->post_mime_type = 'image/jpeg';
+		$post->post_title     = 'image-' . $id;
+		$post->guid           = 'https://example.test/wp-content/uploads/image-' . $id . '.jpg';
+		$post->post_status    = 'inherit';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	private function createRun(): int {
-		$run_id = $this->store->createRun( 1, 'test', 'Caption the hero image', array( 'senroflux/*' ), Budget::defaults() );
+		$run_id = $this->store->createRun( 1, 'test', 'Caption the hero image', array( 'specflux/*' ), Budget::defaults() );
 
 		$this->store->appendStep(
 			$run_id,
@@ -136,7 +136,7 @@ final class AttachmentVerifyTest extends TestCase {
 				),
 				'assumptions' => array(),
 			),
-			'senroflux/propose-plan',
+			'specflux/propose-plan',
 			null,
 			'parked'
 		);
@@ -170,14 +170,14 @@ final class AttachmentVerifyTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_alt',
-					'wpab__senroflux__update-alt',
+					'wpab__specflux__update-alt',
 					array(
 						'attachment_id' => 63,
 						'alt'           => 'a red bicycle',
 					)
 				)
 			),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-media', array( 'attachment_id' => 63 ) ) )
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-media', array( 'attachment_id' => 63 ) ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 
@@ -194,7 +194,7 @@ final class AttachmentVerifyTest extends TestCase {
 	/**
 	 * Smoke run (2026-09-26): a finished run's plan card read "~0 / 2". The
 	 * plan names pack verbs (`posts/update-alt`) but a tool_result only
-	 * carried the function name (`wpab__senroflux__update-alt`), so the
+	 * carried the function name (`wpab__specflux__update-alt`), so the
 	 * Runs screen could never match an executed call to its plan step.
 	 */
 	public function test_tool_results_record_the_plan_verb_they_ran_as(): void {
@@ -205,14 +205,14 @@ final class AttachmentVerifyTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_alt',
-					'wpab__senroflux__update-alt',
+					'wpab__specflux__update-alt',
 					array(
 						'attachment_id' => 63,
 						'alt'           => 'a red bicycle',
 					)
 				)
 			),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-media', array( 'attachment_id' => 63 ) ) )
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-media', array( 'attachment_id' => 63 ) ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 
@@ -256,14 +256,14 @@ final class AttachmentVerifyTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_alt',
-					'wpab__senroflux__update-alt',
+					'wpab__specflux__update-alt',
 					array(
 						'attachment_id' => 63,
 						'alt'           => 'a red bicycle',
 					)
 				)
 			),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-media', array( 'attachment_id' => 63 ) ) )
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-media', array( 'attachment_id' => 63 ) ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 

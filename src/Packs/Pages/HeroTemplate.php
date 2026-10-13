@@ -3,12 +3,12 @@
  * One-H1 fix (0.3 quality feature 2). TARGET REPO PATH:
  * src/Packs/Pages/HeroTemplate.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

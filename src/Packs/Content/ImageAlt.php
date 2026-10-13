@@ -10,12 +10,12 @@
  * the tree walk: every `core/image` needs non-empty, descriptive alt text,
  * wherever it appears in the block tree.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

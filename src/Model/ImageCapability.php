@@ -2,12 +2,12 @@
 /**
  * Whether this site's AI Client can produce an image at all.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -37,7 +37,7 @@ final class ImageCapability {
 	 * models, so every attempt fails with "No models found that support
 	 * image_generation". The value is {@see providerFingerprint()}.
 	 */
-	private const UNAVAILABLE_TRANSIENT = 'senroflux_image_generation_unavailable';
+	private const UNAVAILABLE_TRANSIENT = 'specflux_site_agent_image_generation_unavailable';
 
 	private const UNAVAILABLE_TTL = 12 * HOUR_IN_SECONDS;
 

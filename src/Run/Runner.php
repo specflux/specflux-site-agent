@@ -2,26 +2,26 @@
 /**
  * The run loop: one tick = at most one model turn plus its tool calls.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Tools\BuiltinGate;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolOutcome;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Tools\BuiltinGate;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolOutcome;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -154,7 +154,7 @@ final class Runner {
 		 */
 		private readonly mixed $transient_backoff_sleeper = null,
 		/**
-		 * @var callable(Run):(string|null)|null S23 (SPEC-SENROFLUX-PRO.md
+		 * @var callable(Run):(string|null)|null S23 (SPEC-SITE-AGENT-PRO.md
 		 * §5 F4): the run's pack's `guidesHash()`, or null for a
 		 * direct-allow run / a pack that reports no separately-hashed
 		 * guidance. Recorded next to the skills fingerprints on the seq-0
@@ -186,32 +186,32 @@ final class Runner {
 	 *                                         HTTP surfaces refuse the old
 	 *                                         field outright.
 	 * @return array<string,mixed>|WP_Error RunState or WP_Error codes:
-	 *   senroflux_not_found | senroflux_forbidden | senroflux_conflict |
-	 *   senroflux_ungoverned | resume_mismatch.
+	 *   specflux_site_agent_not_found | specflux_site_agent_forbidden | specflux_site_agent_conflict |
+	 *   specflux_site_agent_ungoverned | resume_mismatch.
 	 */
 	public function tick( int $run_id, int $expected_step_count, ?array $resume = null ): array|WP_Error {
 		$run = $this->store->getRun( $run_id );
 		if ( null === $run ) {
-			return new WP_Error( 'senroflux_not_found', __( 'Run not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'specflux_site_agent_not_found', __( 'Run not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		if ( ! $this->mayTick( $run ) ) {
-			return new WP_Error( 'senroflux_forbidden', __( 'This run belongs to another user.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'specflux_site_agent_forbidden', __( 'This run belongs to another user.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 
 		if ( ! function_exists( 'get_current_user_id' ) ) {
-			return new WP_Error( 'senroflux_ungoverned', __( 'SenroFlux requires a WordPress session.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'specflux_site_agent_ungoverned', __( 'Specflux Site Agent requires a WordPress session.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		// Optimistic lock BEFORE the transient: a stale echo must never queue
 		// behind someone else's in-flight tick.
 		if ( $run->stepCount !== $expected_step_count ) {
-			return new WP_Error( 'senroflux_conflict', __( 'The run advanced since your last request; refresh its state.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'specflux_site_agent_conflict', __( 'The run advanced since your last request; refresh its state.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
-		$lock_key = 'senroflux_lock_' . $run_id;
+		$lock_key = 'specflux_site_agent_lock_' . $run_id;
 		if ( false !== get_transient( $lock_key ) ) {
-			return new WP_Error( 'senroflux_conflict', __( 'A tick for this run is already in flight.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'specflux_site_agent_conflict', __( 'A tick for this run is already in flight.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 		set_transient( $lock_key, 1, self::LOCK_SECONDS );
 
@@ -314,7 +314,7 @@ final class Runner {
 			if ( null !== $resume && ! $run->status->isParked() ) {
 				return new WP_Error(
 					'resume_mismatch',
-					__( 'This run is not waiting on a human; it accepts no park resolution.', 'senroflux' ),
+					__( 'This run is not waiting on a human; it accepts no park resolution.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -529,7 +529,7 @@ final class Runner {
 					// and the existing park stands.
 					$notice = null;
 					if ( $outcome->approvalId !== $approval_id ) {
-						$notice      = __( 'The earlier approval request expired, so SenroGate asked again. Approve to continue.', 'senroflux' );
+						$notice      = __( 'The earlier approval request expired, so Belayline Agent Governance asked again. Approve to continue.', 'specflux-site-agent' );
 						$new_steps[] = $this->appendApprovalStep( $run->id, $outcome, $call, array_values( is_array( $parked['remaining'] ?? null ) ? $parked['remaining'] : array() ), $notice );
 					}
 
@@ -705,7 +705,7 @@ final class Runner {
 							$report = $this->failError(
 								$run,
 								'empty_model_turn',
-								__( 'The model returned an empty reply twice in a row, so the run was stopped before it changed anything further. Start the run again or try a different model.', 'senroflux' )
+								__( 'The model returned an empty reply twice in a row, so the run was stopped before it changed anything further. Start the run again or try a different model.', 'specflux-site-agent' )
 							);
 
 							return array(
@@ -807,7 +807,7 @@ final class Runner {
 					continue;
 				}
 
-				// A bare `senroflux__`-prefixed name that matches none of the
+				// A bare `specflux__`-prefixed name that matches none of the
 				// three harness tools above is never a valid ability call —
 				// abilities are always `wpab__`-prefixed ({@see
 				// ToolRegistry::functionName()}) — so it is a genuinely
@@ -816,7 +816,7 @@ final class Runner {
 				// of routing it into the ability resolver, where it would
 				// round-trip to a nonsense ability name and echo back as a
 				// cryptic `unknown_tool` error (S24 live evidence).
-				if ( str_starts_with( $call['name'], 'senroflux__' ) ) {
+				if ( str_starts_with( $call['name'], 'specflux__' ) ) {
 					$new_steps[] = $this->appendUnknownFunctionResult( $run->id, $call );
 					++$tool_calls_used;
 					$run = $this->refresh( $run );
@@ -1087,7 +1087,7 @@ final class Runner {
 				// Pending Actions page shows, so the Runs card reads alike.
 				'summary'      => $this->approvalSummary( $call ),
 				'review_url'   => ( ! $built_in && function_exists( 'admin_url' ) )
-					? admin_url( 'tools.php?page=agent-safety-pending' )
+					? admin_url( 'tools.php?page=belayline-pending' )
 					: '',
 			),
 		);
@@ -1100,7 +1100,7 @@ final class Runner {
 
 	/**
 	 * The human approval summary for a parked call, through the same
-	 * `agent_safety_approval_summary` filter Agent Safety applies. SenroFlux
+	 * `belayline_approval_summary` filter Agent Safety applies. Specflux Site Agent
 	 * registers its pack builders on it at boot, so this works with Agent
 	 * Safety absent (built-in gate mode). The result is HOST markup built by
 	 * the packs (escaped fragments plus `<a href>` preview/edit links), so it
@@ -1114,7 +1114,7 @@ final class Runner {
 
 		try {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Agent Safety's own filter, applied here so the Runs card matches its queue.
-			$summary = apply_filters( 'agent_safety_approval_summary', '', ToolRegistry::abilityName( (string) $call['name'] ), $args );
+			$summary = apply_filters( 'belayline_approval_summary', '', ToolRegistry::abilityName( (string) $call['name'] ), $args );
 		} catch ( \Throwable ) {
 			// A summary builder reads store state; its failure must never
 			// block the park the human is about to resolve.
@@ -1212,7 +1212,7 @@ final class Runner {
 	 * happened, mechanically, from data the Runner already keeps.
 	 *
 	 * Definition (2026-09-28, replacing the earlier per-verb-name-only
-	 * check after live evidence — `.scratch/senroflux-live/2026-09-28-fix1/
+	 * check after live evidence — `.scratch/site-agent-live/2026-09-28-fix1/
 	 * scenario-3-1` — showed it both under- and over-fires: it required
 	 * EVERY plan-named verb across the WHOLE plan to have an ok result, even
 	 * verbs the pack's guidance tells models to name speculatively and that
@@ -1387,7 +1387,7 @@ final class Runner {
 	 * Live run evidence: "cURL error 28: Operation timed out ... 0 bytes
 	 * received" and its kin are transport hiccups, not the model rejecting
 	 * the request — worth one retry rather than killing a run that may have
-	 * already published real changes. {@see \Specflux\SenroFlux\Model\AiClientGateway}'s catch block
+	 * already published real changes. {@see \Specflux\SiteAgent\Model\AiClientGateway}'s catch block
 	 * carries the AI Client HTTP exception's own status code as error data
 	 * (`ServerException`/`ClientException` code = the real HTTP status;
 	 * `NetworkException` code = 0), so a rate limit or a 5xx is read from
@@ -1561,7 +1561,7 @@ final class Runner {
 	 * granted for one run must not outlive it, TTL or no TTL. Idempotent and
 	 * safe when grants were never issued (or the feature is off).
 	 *
-	 * Public so {@see \Specflux\SenroFlux\Plugin::cancel()} — the one terminal
+	 * Public so {@see \Specflux\SiteAgent\Plugin::cancel()} — the one terminal
 	 * transition that never passes through the loop — can call it, exactly as
 	 * it calls {@see report()}.
 	 */
@@ -1579,25 +1579,25 @@ final class Runner {
 		/**
 		 * Filters who may advance a run (delegation seam for later). Not
 		 * `@api` — this stays under the existing Consumer rules (S23), same
-		 * as `senroflux_http_consumers`: a registered HTTP consumer's own
+		 * as `specflux_site_agent_http_consumers`: a registered HTTP consumer's own
 		 * code may use it, but it is not part of the declared pack-extension
 		 * surface a third-party PACK is written against.
 		 *
 		 * @param bool $allowed Default: owner-only.
 		 * @param Run  $run     The run.
 		 */
-		return (bool) apply_filters( 'senroflux_can_tick', $user_id === $run->userId, $run );
+		return (bool) apply_filters( 'specflux_site_agent_can_tick', $user_id === $run->userId, $run );
 	}
 
 	private function holdLock( int $run_id ): void {
 		if ( function_exists( 'set_transient' ) ) {
-			set_transient( 'senroflux_lock_' . $run_id, 1, self::LOCK_SECONDS );
+			set_transient( 'specflux_site_agent_lock_' . $run_id, 1, self::LOCK_SECONDS );
 		}
 	}
 
 	private function releaseLock( int $run_id ): void {
 		if ( function_exists( 'delete_transient' ) ) {
-			delete_transient( 'senroflux_lock_' . $run_id );
+			delete_transient( 'specflux_site_agent_lock_' . $run_id );
 		}
 	}
 
@@ -1726,9 +1726,9 @@ final class Runner {
 	 * `sections`).
 	 */
 	private const WRITE_ABILITY_NAMES = array(
-		'senroflux/create-post',
-		'senroflux/update-post',
-		'senroflux/publish-post',
+		'specflux/create-post',
+		'specflux/update-post',
+		'specflux/publish-post',
 	);
 
 	/**
@@ -1911,10 +1911,10 @@ final class Runner {
 		$text = InstructionRenderer::render( $skills, $this->tailFor( $run ), $run->gateMode, $withheld_notice, $brief );
 
 		/**
-		 * This filter is documented in SPEC-SENROFLUX.md S8; post-render only.
+		 * This filter is documented in SPEC-SITE-AGENT.md S8; post-render only.
 		 * `@internal` (S23).
 		 */
-		$text = (string) apply_filters( 'senroflux_system_instruction', $text );
+		$text = (string) apply_filters( 'specflux_site_agent_system_instruction', $text );
 
 		$this->auditInstruction( $run, $skills, $text, $new_steps, $brief );
 
@@ -2184,7 +2184,7 @@ final class Runner {
 			$function_call = $part->getFunctionCall();
 			if ( $function_call instanceof FunctionCall ) {
 				$name = self::normalizeFunctionName( (string) $function_call->getName() );
-				// A bare ability name (the model dropped `wpab__senroflux__`)
+				// A bare ability name (the model dropped `wpab__specflux__`)
 				// resolves here, where every call name enters the Runner, so
 				// the plan verb, gate, tier, budget and stored step all see
 				// the full name.
@@ -2200,13 +2200,13 @@ final class Runner {
 	}
 
 	/**
-	 * Collapse a doubled leading `senroflux__` namespace prefix (live
-	 * evidence 2026-09-28: space-bunny called `senroflux__senroflux__
+	 * Collapse a doubled leading `specflux__` namespace prefix (live
+	 * evidence 2026-09-28: space-bunny called `specflux__specflux__
 	 * propose-plan` twice per run) down to one, so it resolves to the same
-	 * harness tool as `senroflux__propose-plan`/`senroflux__ask-user`/
-	 * `senroflux__suggest-brief-addition` instead of falling through to the
+	 * harness tool as `specflux__propose-plan`/`specflux__ask-user`/
+	 * `specflux__suggest-brief-addition` instead of falling through to the
 	 * ability resolver, where it would round-trip to a nonsense ability name
-	 * (`senroflux/senroflux/propose-plan`) and echo back as a cryptic
+	 * (`specflux/specflux/propose-plan`) and echo back as a cryptic
 	 * `unknown_tool` error.
 	 *
 	 * Applied to EVERY extracted call, at the single point every call name
@@ -2215,9 +2215,9 @@ final class Runner {
 	 * `tool_name`) sees the canonical name.
 	 *
 	 * Handles the `wpab__` (ability) form too, defensively: a doubled
-	 * `senroflux__` inside `wpab__senroflux__senroflux__X` collapses the
-	 * same way, in case a real ability ever lives in the `senroflux/`
-	 * namespace (e.g. `senroflux/generate-image`) and gets doubled the same
+	 * `specflux__` inside `wpab__specflux__specflux__X` collapses the
+	 * same way, in case a real ability ever lives in the `specflux/`
+	 * namespace (e.g. `specflux/generate-image`) and gets doubled the same
 	 * way. Harness tools themselves are never `wpab__`-prefixed (see
 	 * {@see HarnessTools}'s docblock), so this is belt-and-braces only.
 	 */
@@ -2228,7 +2228,7 @@ final class Runner {
 			$name   = substr( $name, strlen( $prefix ) );
 		}
 
-		$collapsed = preg_replace( '/^(?:senroflux__)+/', 'senroflux__', $name );
+		$collapsed = preg_replace( '/^(?:specflux__)+/', 'specflux__', $name );
 
 		return $prefix . ( is_string( $collapsed ) ? $collapsed : $name );
 	}
@@ -2256,7 +2256,7 @@ final class Runner {
 		if ( in_array( $name, $this->withheldAbilities( $run ), true ) ) {
 			return ToolOutcome::denied(
 				'role_withheld',
-				__( 'This run cannot use that ability: your account is missing the capability it needs.', 'senroflux' )
+				__( 'This run cannot use that ability: your account is missing the capability it needs.', 'specflux-site-agent' )
 			);
 		}
 
@@ -2282,7 +2282,7 @@ final class Runner {
 
 	/**
 	 * S19 (stage 12): the run's pack's pre-execution call validator
-	 * ({@see \Specflux\SenroFlux\Packs\Pack::validateCall()}), for a rule a
+	 * ({@see \Specflux\SiteAgent\Packs\Pack::validateCall()}), for a rule a
 	 * pack must enforce on an ability ANOTHER plugin owns and registers —
 	 * WooCommerce's `product-update`/`product-create` accepting HTML the
 	 * commerce pack's description validator refuses — where the pack has no
@@ -2418,7 +2418,7 @@ final class Runner {
 	}
 
 	/**
-	 * Handle a `senroflux__ask-user` call. Returns array{ 'park': array{run,ui} }
+	 * Handle a `specflux__ask-user` call. Returns array{ 'park': array{run,ui} }
 	 * when it parked (ends the tick); otherwise it has appended an error
 	 * tool_result (invalid payload / questions exhausted) and returns array().
 	 *
@@ -2463,7 +2463,7 @@ final class Runner {
 	}
 
 	/**
-	 * Handle a `senroflux__suggest-brief-addition` call (0.3 S20). Parks
+	 * Handle a `specflux__suggest-brief-addition` call (0.3 S20). Parks
 	 * nothing: it always appends exactly one `suggestion` step (invalid input
 	 * still counts against nothing but the tool call — no step is recorded)
 	 * and answers with a tool_result in the SAME tick.
@@ -2683,7 +2683,7 @@ final class Runner {
 		if ( '' !== $choice && ! in_array( $choice, (array) ( $payload['choices'] ?? array() ), true ) ) {
 			return new WP_Error(
 				'choice_not_offered',
-				__( 'That answer is not one of the offered choices.', 'senroflux' ),
+				__( 'That answer is not one of the offered choices.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -2763,7 +2763,7 @@ final class Runner {
 	/**
 	 * Tool_result for the ask-user answer (or skip). The FunctionResponse
 	 * NAME is the harness function name, NOT `functionNameFor()` — that would
-	 * map `senroflux/ask-user` to `wpab__senroflux__ask-user` and desync from
+	 * map `specflux/ask-user` to `wpab__specflux__ask-user` and desync from
 	 * the call id the model used.
 	 *
 	 * @param string              $call_id  The originating ask-user id (for crash-resume).
@@ -2943,7 +2943,7 @@ final class Runner {
 			'rationale'   => (string) ( $payload['rationale'] ?? '' ),
 			'remaining'   => $remaining,
 			'review_url'  => function_exists( 'admin_url' )
-				? admin_url( 'tools.php?page=senroflux-runs&run=' . (int) $run_id )
+				? admin_url( 'tools.php?page=specflux-site-agent-runs&run=' . (int) $run_id )
 				: '',
 		);
 	}
@@ -3072,7 +3072,7 @@ final class Runner {
 	}
 
 	/**
-	 * Handle a `senroflux__propose-plan` call. Returns array{ 'park': array{run,ui} }
+	 * Handle a `specflux__propose-plan` call. Returns array{ 'park': array{run,ui} }
 	 * when it parked (ends the tick); otherwise it has appended an error
 	 * tool_result (invalid payload / plans exhausted) and returns array().
 	 *
@@ -3186,7 +3186,7 @@ final class Runner {
 			if ( ! $this->preapprovalEnabled() ) {
 				return new WP_Error(
 					'preapproval_disabled',
-					__( 'Pre-approval is not enabled for this site.', 'senroflux' ),
+					__( 'Pre-approval is not enabled for this site.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -3601,7 +3601,7 @@ final class Runner {
 	 * told the model WHAT went wrong but not WHAT TO DO about it — a run that
 	 * forgot a media verb re-planned twice (`max_plans`) before it worked out
 	 * which verb was missing, then ran out of `max_steps` anyway. `verb`
-	 * carries the exact verb spelling {@see \Specflux\SenroFlux\Run\VerbTier}
+	 * carries the exact verb spelling {@see \Specflux\SiteAgent\Run\VerbTier}
 	 * fenced this call as, so the very next turn can propose a plan step that
 	 * names it, in one round trip instead of a guess-and-check loop. `error`
 	 * itself is UNCHANGED — {@see toolResultErrorCode()} matches it verbatim.
@@ -3617,7 +3617,7 @@ final class Runner {
 			$response['verb']    = $verb;
 			$response['message'] = sprintf(
 				/* translators: %s: the verb the accepted plan is missing. */
-				__( 'Refused: not_in_plan. Add the verb "%s" to a plan step (propose a new plan if the accepted one cannot cover it) before retrying this call.', 'senroflux' ),
+				__( 'Refused: not_in_plan. Add the verb "%s" to a plan step (propose a new plan if the accepted one cannot cover it) before retrying this call.', 'specflux-site-agent' ),
 				$verb
 			);
 		}
@@ -3685,7 +3685,7 @@ final class Runner {
 		$verb = $this->verbFor( $run, $ability, $call['args'] ?? null );
 
 		// S9: a pack resolves the verb map for its own runs; direct-allow runs
-		// fall back to the site-wide senroflux_verb_map filter (stage 4 seam).
+		// fall back to the site-wide specflux_site_agent_verb_map filter (stage 4 seam).
 		$tier = VerbTier::tierFor( $verb, $this->packVerbMap( $run ), $run->id );
 
 		if ( $tier < VerbTier::TIER_1 ) {
@@ -3937,7 +3937,7 @@ final class Runner {
 			'remaining_plans'      => $remaining,
 			'preapprove_available' => $this->preapprovalEnabled(),
 			'review_url'           => function_exists( 'admin_url' )
-				? admin_url( 'tools.php?page=senroflux-runs&run=' . (int) $run_id )
+				? admin_url( 'tools.php?page=specflux-site-agent-runs&run=' . (int) $run_id )
 				: '',
 		);
 	}
@@ -4077,16 +4077,16 @@ final class Runner {
 	}
 
 	/**
-	 * Is pre-approval offerable? Only when the `senroflux_enable_preapproval`
+	 * Is pre-approval offerable? Only when the `specflux_site_agent_enable_preapproval`
 	 * filter is true AND Agent Safety's grants service is both present and
 	 * switched on (S14). The spec's condition is "the service exists"; asking
-	 * it whether `agent_safety_enable_grants` is on as well is the stricter
+	 * it whether `belayline_enable_grants` is on as well is the stricter
 	 * reading (§0.2) and the honest one — with the feature off every issue()
 	 * is a silent no-op, so offering the choice would tell a human they
 	 * pre-approved something when nothing was recorded. `@internal` (S23).
 	 */
 	private function preapprovalEnabled(): bool {
-		if ( ! (bool) apply_filters( 'senroflux_enable_preapproval', false ) ) {
+		if ( ! (bool) apply_filters( 'specflux_site_agent_enable_preapproval', false ) ) {
 			return false;
 		}
 
@@ -4394,7 +4394,7 @@ final class Runner {
 	 * mismatch fails the run (`gate_mode_changed`, partial report) and
 	 * returns that report; null means "carry on".
 	 *
-	 * Public so {@see \Specflux\SenroFlux\Plugin::cancel()} can run the same
+	 * Public so {@see \Specflux\SiteAgent\Plugin::cancel()} can run the same
 	 * check before a user-initiated cancel, which never passes through
 	 * {@see tick()}.
 	 *
@@ -4412,13 +4412,13 @@ final class Runner {
 		return $this->failError(
 			$run,
 			'gate_mode_changed',
-			__( 'The gate mode changed after this run started; it cannot continue safely.', 'senroflux' )
+			__( 'The gate mode changed after this run started; it cannot continue safely.', 'specflux-site-agent' )
 		);
 	}
 
 	/**
 	 * S14 ("Upgrade from 0.2"): a run whose id is at or below the legacy
-	 * watermark ({@see \Specflux\SenroFlux\Schema::maybe_upgrade()}) started
+	 * watermark ({@see \Specflux\SiteAgent\Schema::maybe_upgrade()}) started
 	 * under 0.2 and cannot continue — the `update-post` tier (among others)
 	 * changed under it, and nothing is ever silently re-tiered. A terminal
 	 * run is never checked — a completed 0.2 run's history and report must
@@ -4426,7 +4426,7 @@ final class Runner {
 	 * that never had a live 0.2 run) means nothing is ever refused here.
 	 *
 	 * Public for the same reason {@see gateModeMismatch()} is: {@see
-	 * \Specflux\SenroFlux\Plugin::cancel()} runs the same check before a
+	 * \Specflux\SiteAgent\Plugin::cancel()} runs the same check before a
 	 * plain cancel, which never passes through {@see tick()}.
 	 *
 	 * @return array<string,mixed>|null
@@ -4447,13 +4447,13 @@ final class Runner {
 		return $this->failError(
 			$run,
 			'started_under_0_2',
-			__( 'This run started under SenroFlux 0.2 and cannot continue; start a new run.', 'senroflux' )
+			__( 'This run started under Specflux Site Agent 0.2 and cannot continue; start a new run.', 'specflux-site-agent' )
 		);
 	}
 
 	/**
 	 * The run's pack verb map, or null when it has none (direct-allow: the
-	 * site-wide `senroflux_verb_map` filter answers instead).
+	 * site-wide `specflux_site_agent_verb_map` filter answers instead).
 	 *
 	 * @return array<string,int>|null
 	 */

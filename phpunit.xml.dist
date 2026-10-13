@@ -6,7 +6,7 @@
          failOnWarning="true"
          failOnRisky="true">
     <testsuites>
-        <testsuite name="senroflux">
+        <testsuite name="specflux-site-agent">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

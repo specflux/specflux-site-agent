@@ -97,21 +97,21 @@ describe( 'built-in mode counts only the verbs that are themselves Tier >= 1', (
 		expect( planApprovalCount( { steps }, 'built_in' ) ).toBe( 2 );
 	} );
 
-	it( 'SenroGate mode still returns null for the same plan', () => {
+	it( 'Belayline Agent Governance mode still returns null for the same plan', () => {
 		expect( planApprovalCount( { steps: liveJ4Steps() }, 'agent_safety' ) ).toBeNull();
 	} );
 } );
 
-describe( 'SenroGate mode shows no approval-count paragraph at all', () => {
+describe( 'Belayline Agent Governance mode shows no approval-count paragraph at all', () => {
 	it( 'planApprovalCount returns null in agent_safety mode', () => {
 		expect( planApprovalCount( { steps: livePlanSteps() }, 'agent_safety' ) ).toBeNull();
 	} );
 
-	it( 'the plan park card renders no .senroflux-plan-approval-count node', () => {
+	it( 'the plan park card renders no .specflux-site-agent-plan-approval-count node', () => {
 		const { container } = render(
 			<ParkCard kind="plan" gateMode="agent_safety" payload={ { steps: livePlanSteps(), assumptions: [] } } />
 		);
-		expect( container.querySelector( '.senroflux-plan-approval-count' ) ).toBeNull();
+		expect( container.querySelector( '.specflux-site-agent-plan-approval-count' ) ).toBeNull();
 	} );
 } );
 

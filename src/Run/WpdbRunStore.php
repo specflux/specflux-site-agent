@@ -2,14 +2,14 @@
 /**
  * wpdb-backed run store.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
-use Specflux\SenroFlux\Schema;
+use Specflux\SiteAgent\Schema;
 use wpdb;
 
 // Bail on direct access.
@@ -249,22 +249,50 @@ final class WpdbRunStore implements RunStore {
 	/** {@inheritDoc} */
 	public function listRecent( int $limit = 50 ): array {
 		$table = Schema::runsTable( $this->db );
-		$rows  = $this->db->get_results(
-			$this->db->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
-				"SELECT * FROM {$table} ORDER BY updated_at DESC, id DESC LIMIT %d",
-				max( 1, $limit )
-			),
-			ARRAY_A
-		);
 
+		return $this->runsFromRows(
+			$this->db->get_results(
+				$this->db->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
+					"SELECT * FROM {$table} ORDER BY updated_at DESC, id DESC LIMIT %d",
+					max( 1, $limit )
+				),
+				ARRAY_A
+			)
+		);
+	}
+
+	/** {@inheritDoc} */
+	public function listRecentForUser( int $user_id, int $limit = 50 ): array {
+		$table = Schema::runsTable( $this->db );
+
+		return $this->runsFromRows(
+			$this->db->get_results(
+				$this->db->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL -- trusted internal table name.
+					"SELECT * FROM {$table} WHERE user_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d",
+					$user_id,
+					max( 1, $limit )
+				),
+				ARRAY_A
+			)
+		);
+	}
+
+	/**
+	 * @param mixed $rows get_results() output.
+	 * @return list<Run>
+	 */
+	private function runsFromRows( mixed $rows ): array {
 		if ( ! is_array( $rows ) ) {
 			return array();
 		}
 
-		return array_map(
-			static fn ( array $row ): Run => Run::fromRow( $row ),
-			$rows
+		return array_values(
+			array_map(
+				static fn ( array $row ): Run => Run::fromRow( $row ),
+				$rows
+			)
 		);
 	}
 }

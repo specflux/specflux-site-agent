@@ -8,7 +8,7 @@
 const { request } = require( '@playwright/test' );
 const { wpCli } = require( './wp-cli' );
 
-const BASE_URL = process.env.SENROFLUX_E2E_BASE_URL || 'http://localhost:8895';
+const BASE_URL = process.env.SPECFLUX_SITE_AGENT_E2E_BASE_URL || 'http://localhost:8895';
 const USER_PASSWORD = 'password';
 
 /** Create the user if it does not already exist; return its numeric ID. */

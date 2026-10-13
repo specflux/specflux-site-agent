@@ -1,28 +1,28 @@
 <?php
 /**
  * S22 gate robustness suite: an unmapped ability (absent from
- * `senroflux_verb_map`) must fail CLOSED to a Tier-2 park, never a free
+ * `specflux_site_agent_verb_map`) must fail CLOSED to a Tier-2 park, never a free
  * pass — the built-in gate's own guarantee, exercised end to end here.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -59,19 +59,19 @@ final class UnmappedAbilityTest extends TestCase {
 			static fn (): GateMode => GateMode::BuiltIn
 		);
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
 		// Deliberately no verb-map filter: 'adversarial/unmapped' names an
 		// ability that exists (a model could still call it) but is absent
 		// from every pack's verb map.
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'adversarial/unmapped' => new SenroFlux_Test_Fake_Ability( 'adversarial/unmapped', execute_result: array( 'ok' => true ) ),
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'adversarial/unmapped' => new SpecfluxSiteAgent_Test_Fake_Ability( 'adversarial/unmapped', execute_result: array( 'ok' => true ) ),
 		);
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 	private function createRun(): int {

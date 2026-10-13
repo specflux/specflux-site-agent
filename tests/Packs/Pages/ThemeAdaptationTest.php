@@ -6,18 +6,18 @@
  * Validator recognises a pattern with those three changes and nothing else),
  * the Ollie profile's five layouts and a theme with no profile.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 final class ThemeAdaptationTest extends TestCase {
@@ -40,9 +40,9 @@ final class ThemeAdaptationTest extends TestCase {
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'], $GLOBALS['senroflux_test_stylesheet'], $GLOBALS['senroflux_test_template'], $GLOBALS['senroflux_test_global_settings'], $GLOBALS['senroflux_test_options'] );
-		remove_all_filters( 'senroflux_layout_profiles' );
-		remove_all_filters( 'senroflux_theme_patterns' );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'], $GLOBALS['specflux_site_agent_test_stylesheet'], $GLOBALS['specflux_site_agent_test_template'], $GLOBALS['specflux_site_agent_test_global_settings'], $GLOBALS['specflux_site_agent_test_options'] );
+		remove_all_filters( 'specflux_site_agent_layout_profiles' );
+		remove_all_filters( 'specflux_site_agent_theme_patterns' );
 	}
 
 	/**
@@ -73,11 +73,11 @@ final class ThemeAdaptationTest extends TestCase {
 			);
 		}
 
-		$GLOBALS['senroflux_test_theme_patterns']  = $patterns;
-		$GLOBALS['senroflux_test_stylesheet_dir']  = $dir;
-		$GLOBALS['senroflux_test_template_dir']    = $dir;
-		$GLOBALS['senroflux_test_stylesheet']      = $theme;
-		$GLOBALS['senroflux_test_global_settings'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns']  = $patterns;
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir']  = $dir;
+		$GLOBALS['specflux_site_agent_test_template_dir']    = $dir;
+		$GLOBALS['specflux_site_agent_test_stylesheet']      = $theme;
+		$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 			'color' => array(
 				'palette'   => array_map( static fn ( string $slug ): array => array( 'slug' => $slug ), $palette ),
 				'gradients' => array(),
@@ -168,7 +168,7 @@ final class ThemeAdaptationTest extends TestCase {
 		self::ollie();
 		$built = self::render( self::section( 4 ) );
 
-		$this->assertSame( 'senroflux/ollie/faq', self::patternName( $built ) );
+		$this->assertSame( 'specflux/ollie/faq', self::patternName( $built ) );
 		// The pattern's trailing "Still have questions?" bar (an image, two paragraphs and a button) is gone whole.
 		$this->assertStringNotContainsString( 'Still have questions', $built );
 		$this->assertStringNotContainsString( 'Contact Us', $built );
@@ -184,7 +184,7 @@ final class ThemeAdaptationTest extends TestCase {
 		self::ollie();
 		$built = self::render( self::section( 2, false ) );
 
-		$this->assertSame( 'senroflux/ollie/features-with-emojis', self::patternName( $built ) );
+		$this->assertSame( 'specflux/ollie/features-with-emojis', self::patternName( $built ) );
 		foreach ( array( '😍', '😎', '🤓', '🤣', 'Ollie Patterns', 'Ollie Templates' ) as $sample ) {
 			$this->assertStringNotContainsString( $sample, $built );
 		}
@@ -198,7 +198,7 @@ final class ThemeAdaptationTest extends TestCase {
 
 		$built = self::render( $section );
 
-		$this->assertSame( 'senroflux/ollie/hero-light', self::patternName( $built ) );
+		$this->assertSame( 'specflux/ollie/hero-light', self::patternName( $built ) );
 		$this->assertStringNotContainsString( 'WordPress Reimagined', $built );
 		$this->assertStringNotContainsString( 'Ollie Features', $built );
 		$this->assertSame( 1, substr_count( $built, 'wp-block-button__link' ) );
@@ -209,7 +209,7 @@ final class ThemeAdaptationTest extends TestCase {
 		self::spectra( array( 'hero-banner-2', 'call-to-action-4' ) );
 		$built = self::render( self::section( 5 ) );
 
-		$this->assertSame( 'senroflux/spectra-one/call-to-action-4', self::patternName( $built ) );
+		$this->assertSame( 'specflux/spectra-one/call-to-action-4', self::patternName( $built ) );
 		$this->assertStringNotContainsString( '<img', $built );
 		$this->assertStringNotContainsString( 'Everything you need', $built );
 		$this->assertClean( $built );
@@ -260,7 +260,7 @@ final class ThemeAdaptationTest extends TestCase {
 
 		$built = self::render( $section );
 
-		$this->assertSame( 'senroflux/spectra-one/faq-2', self::patternName( $built ) );
+		$this->assertSame( 'specflux/spectra-one/faq-2', self::patternName( $built ) );
 		$this->assertSame( 3, substr_count( $built, '<h5' ) );
 		$this->assertSame( 3, substr_count( $built, 'class="wp-block-column"' ) );
 		$this->assertClean( $built );
@@ -285,7 +285,7 @@ final class ThemeAdaptationTest extends TestCase {
 		$built = self::render( self::section( 2, false ) );
 
 		$top = parse_blocks( $built )[0];
-		$this->assertSame( 'senroflux/ollie/features-with-emojis', $top['attrs']['metadata']['name'] ?? '' );
+		$this->assertSame( 'specflux/ollie/features-with-emojis', $top['attrs']['metadata']['name'] ?? '' );
 		$first = $top['innerBlocks'][0];
 		$this->assertSame( 'core/heading', $first['blockName'] );
 		$this->assertStringContainsString( 'How we help', $first['innerHTML'] );
@@ -315,11 +315,11 @@ final class ThemeAdaptationTest extends TestCase {
 
 		$this->assertSame(
 			array(
-				'senroflux/ollie/hero-light',
-				'senroflux/ollie/image-and-numbered-features',
-				'senroflux/ollie/features-with-emojis',
-				'senroflux/ollie/faq',
-				'senroflux/ollie/text-call-to-action-buttons',
+				'specflux/ollie/hero-light',
+				'specflux/ollie/image-and-numbered-features',
+				'specflux/ollie/features-with-emojis',
+				'specflux/ollie/faq',
+				'specflux/ollie/text-call-to-action-buttons',
 			),
 			$names
 		);
@@ -362,19 +362,19 @@ final class ThemeAdaptationTest extends TestCase {
 		self::ollie();
 		// A profile pattern with no paragraph and no button for a hero to fill.
 		add_filter(
-			'senroflux_layout_profiles',
+			'specflux_site_agent_layout_profiles',
 			static fn ( array $profiles ): array => array_replace_recursive( $profiles, array( 'ollie' => array( 'hero' => array( 'pattern' => 'ollie/numbers-stacked' ) ) ) )
 		);
 
 		$built = self::render( self::section( 0 ) );
 
-		$this->assertSame( 'senroflux/cover-hero', self::patternName( $built ) );
+		$this->assertSame( 'specflux/cover-hero', self::patternName( $built ) );
 	}
 
 	// --- D2: the site switch and the filter -----------------------------
 
 	/** The curated pattern each of the six outline sections falls back to. */
-	private const CURATED = array( 'senroflux/cover-hero', 'senroflux/text-section', 'senroflux/feature-grid', 'senroflux/media-text', 'senroflux/faq', 'senroflux/cta' );
+	private const CURATED = array( 'specflux/cover-hero', 'specflux/text-section', 'specflux/feature-grid', 'specflux/media-text', 'specflux/faq', 'specflux/cta' );
 
 	/**
 	 * @return list<string> The pattern each outline section renders as.
@@ -448,13 +448,13 @@ final class ThemeAdaptationTest extends TestCase {
 		$this->assertContains( 'ollie/faq', $all );
 
 		add_filter(
-			'senroflux_theme_patterns',
+			'specflux_site_agent_theme_patterns',
 			static fn ( array $patterns ): array => array_values( array_filter( $patterns, static fn ( array $p ): bool => 'ollie/faq' !== $p['name'] ) )
 		);
 		ThemePatterns::resetCache();
 
 		$this->assertSame( array_values( array_diff( $all, array( 'ollie/faq' ) ) ), array_column( ThemePatterns::eligible(), 'name' ) );
-		$this->assertSame( 'senroflux/faq', self::patternName( self::render( self::section( 4 ) ) ), 'the profile names a removed pattern, so the layout takes its curated fallback' );
+		$this->assertSame( 'specflux/faq', self::patternName( self::render( self::section( 4 ) ) ), 'the profile names a removed pattern, so the layout takes its curated fallback' );
 	}
 
 	public function test_the_filter_cannot_add_a_pattern_or_change_one(): void {
@@ -462,7 +462,7 @@ final class ThemeAdaptationTest extends TestCase {
 		$before = ThemePatterns::eligible();
 
 		add_filter(
-			'senroflux_theme_patterns',
+			'specflux_site_agent_theme_patterns',
 			static function ( array $patterns ): array {
 				$patterns[]            = array_replace( $patterns[0], array( 'name' => 'plugin/injected' ) );
 				$patterns[1]['markup'] = '<!-- wp:paragraph --><p>tampered</p><!-- /wp:paragraph -->';
@@ -479,7 +479,7 @@ final class ThemeAdaptationTest extends TestCase {
 		self::ollie();
 		$before = ThemePatterns::eligible();
 
-		add_filter( 'senroflux_theme_patterns', static fn (): string => 'nothing' );
+		add_filter( 'specflux_site_agent_theme_patterns', static fn (): string => 'nothing' );
 		ThemePatterns::resetCache();
 
 		$this->assertSame( $before, ThemePatterns::eligible() );
@@ -489,7 +489,7 @@ final class ThemeAdaptationTest extends TestCase {
 	public function test_the_filter_does_not_bring_patterns_back_when_the_switch_is_off(): void {
 		self::ollie();
 		update_option( ThemePatterns::OPTION, false );
-		add_filter( 'senroflux_theme_patterns', static fn (): array => array( array( 'name' => 'ollie/faq' ) ) );
+		add_filter( 'specflux_site_agent_theme_patterns', static fn (): array => array( array( 'name' => 'ollie/faq' ) ) );
 		ThemePatterns::resetCache();
 
 		$this->assertSame( array(), ThemePatterns::eligible() );
@@ -500,7 +500,7 @@ final class ThemeAdaptationTest extends TestCase {
 		$skipped  = ThemePatterns::skippedCount();
 		$eligible = count( ThemePatterns::eligible() );
 
-		add_filter( 'senroflux_theme_patterns', static fn ( array $patterns ): array => array_slice( $patterns, 2 ) );
+		add_filter( 'specflux_site_agent_theme_patterns', static fn ( array $patterns ): array => array_slice( $patterns, 2 ) );
 		ThemePatterns::resetCache();
 
 		$this->assertSame( $eligible - 2, count( ThemePatterns::eligible() ) );
@@ -525,17 +525,17 @@ final class ThemeAdaptationTest extends TestCase {
 		self::spectra();
 		$vocabulary = new Vocabulary();
 
-		$this->assertSame( 'senroflux/spectra-one/hero-banner-2', self::patternName( self::render( self::section( 0 ), $vocabulary ) ) );
-		$this->assertSame( 'senroflux/spectra-one/split-image-right', self::patternName( self::render( self::section( 3 ), $vocabulary ) ) );
-		$this->assertSame( 'senroflux/spectra-one/faq-2', self::patternName( self::render( self::section( 4 ), $vocabulary ) ) );
-		$this->assertSame( 'senroflux/spectra-one/call-to-action-2', self::patternName( self::render( self::section( 5 ), $vocabulary ) ) );
-		$this->assertSame( 'senroflux/spectra-one/feature-6', self::patternName( self::render( self::section( 2, false ), $vocabulary ) ) );
+		$this->assertSame( 'specflux/spectra-one/hero-banner-2', self::patternName( self::render( self::section( 0 ), $vocabulary ) ) );
+		$this->assertSame( 'specflux/spectra-one/split-image-right', self::patternName( self::render( self::section( 3 ), $vocabulary ) ) );
+		$this->assertSame( 'specflux/spectra-one/faq-2', self::patternName( self::render( self::section( 4 ), $vocabulary ) ) );
+		$this->assertSame( 'specflux/spectra-one/call-to-action-2', self::patternName( self::render( self::section( 5 ), $vocabulary ) ) );
+		$this->assertSame( 'specflux/spectra-one/feature-6', self::patternName( self::render( self::section( 2, false ), $vocabulary ) ) );
 	}
 
 	public function test_services_with_photos_fall_back_when_no_matched_pattern_has_a_slot_for_them(): void {
 		self::spectra();
 
-		$this->assertSame( 'senroflux/feature-grid', self::patternName( self::render( self::section( 2 ) ) ) );
+		$this->assertSame( 'specflux/feature-grid', self::patternName( self::render( self::section( 2 ) ) ) );
 	}
 
 	public function test_a_page_of_every_layout_on_a_theme_with_no_profile_passes_the_validator(): void {
@@ -559,7 +559,7 @@ final class ThemeAdaptationTest extends TestCase {
 		}
 
 		$this->assertSame(
-			array( 'senroflux/cover-hero', 'senroflux/text-section', 'senroflux/feature-grid', 'senroflux/media-text', 'senroflux/faq', 'senroflux/cta' ),
+			array( 'specflux/cover-hero', 'specflux/text-section', 'specflux/feature-grid', 'specflux/media-text', 'specflux/faq', 'specflux/cta' ),
 			$names
 		);
 	}
@@ -568,14 +568,14 @@ final class ThemeAdaptationTest extends TestCase {
 		// `alternate-image-text` has seventeen slots; a text with image keeps three of them.
 		self::register( 'spectra-one', array( 'alternate-image-text' ), self::SPECTRA_PALETTE );
 
-		$this->assertSame( 'senroflux/media-text', self::patternName( self::render( self::section( 3 ) ) ) );
+		$this->assertSame( 'specflux/media-text', self::patternName( self::render( self::section( 3 ) ) ) );
 	}
 
 	public function test_a_profiles_text_only_services_pattern_leaves_the_cards_photos_out_while_a_matched_one_may_not(): void {
 		self::ollie();
 		$built = self::render( self::section( 2 ) );
 
-		$this->assertSame( 'senroflux/ollie/features-with-emojis', self::patternName( $built ) );
+		$this->assertSame( 'specflux/ollie/features-with-emojis', self::patternName( $built ) );
 		$this->assertStringNotContainsString( '<img', $built );
 		$this->assertStringContainsString( 'Sports injuries', $built );
 	}
@@ -621,7 +621,7 @@ final class ThemeAdaptationTest extends TestCase {
 	private static function adaptedHero(): string {
 		self::ollie();
 		$built = self::render( self::section( 0 ) );
-		self::assertSame( 'senroflux/ollie/hero-light', self::patternName( $built ) );
+		self::assertSame( 'specflux/ollie/hero-light', self::patternName( $built ) );
 
 		return $built;
 	}
@@ -633,7 +633,7 @@ final class ThemeAdaptationTest extends TestCase {
 	private static function adaptedServices(): string {
 		self::ollie();
 		$built = self::render( self::section( 2, false ) );
-		self::assertSame( 'senroflux/ollie/features-with-emojis', self::patternName( $built ) );
+		self::assertSame( 'specflux/ollie/features-with-emojis', self::patternName( $built ) );
 
 		return $built;
 	}

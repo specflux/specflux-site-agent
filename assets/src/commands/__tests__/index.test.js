@@ -9,14 +9,14 @@
 
 import { select } from '@wordpress/data';
 import { store as commandsStore } from '@wordpress/commands';
-import { useSenrofluxRunCommandLoader } from '../index';
+import { useSpecfluxSiteAgentRunCommandLoader } from '../index';
 
-describe( 'the SenroFlux run command loader', () => {
+describe( 'the Specflux Site Agent run command loader', () => {
 	const originalOpen = window.open;
 	const originalFetch = global.fetch;
 
 	beforeEach( () => {
-		window.senrofluxCommandsConfig = { runsUrl: 'http://example.test/wp-admin/admin.php?page=senroflux-runs' };
+		window.specfluxSiteAgentCommandsConfig = { runsUrl: 'http://example.test/wp-admin/admin.php?page=specflux-site-agent-runs' };
 		window.open = jest.fn();
 		global.fetch = jest.fn( () => {
 			throw new Error( 'the palette command must never make a network request' );
@@ -26,27 +26,27 @@ describe( 'the SenroFlux run command loader', () => {
 	afterEach( () => {
 		window.open = originalOpen;
 		global.fetch = originalFetch;
-		delete window.senrofluxCommandsConfig;
+		delete window.specfluxSiteAgentCommandsConfig;
 	} );
 
 	it( 'registers itself into the core/commands loader registry on import', () => {
 		const loaders = select( commandsStore ).getCommandLoaders();
-		expect( loaders.some( ( loader ) => 'senroflux/run-goal' === loader.name ) ).toBe( true );
+		expect( loaders.some( ( loader ) => 'specflux/run-goal' === loader.name ) ).toBe( true );
 	} );
 
 	it( 'offers nothing while the search box is empty', () => {
-		expect( useSenrofluxRunCommandLoader( { search: '' } ) ).toEqual( { commands: [], isLoading: false } );
-		expect( useSenrofluxRunCommandLoader( { search: '   ' } ) ).toEqual( { commands: [], isLoading: false } );
+		expect( useSpecfluxSiteAgentRunCommandLoader( { search: '' } ) ).toEqual( { commands: [], isLoading: false } );
+		expect( useSpecfluxSiteAgentRunCommandLoader( { search: '   ' } ) ).toEqual( { commands: [], isLoading: false } );
 	} );
 
 	it( 'builds a dynamic label from the typed search text', () => {
-		const { commands } = useSenrofluxRunCommandLoader( { search: 'publish the spring page' } );
+		const { commands } = useSpecfluxSiteAgentRunCommandLoader( { search: 'publish the spring page' } );
 		expect( commands ).toHaveLength( 1 );
-		expect( commands[ 0 ].label ).toBe( 'SenroFlux: run "publish the spring page"' );
+		expect( commands[ 0 ].label ).toBe( 'Specflux Site Agent: run "publish the spring page"' );
 	} );
 
 	it( 'only navigates with the goal pre-filled — it never starts a run', () => {
-		const { commands } = useSenrofluxRunCommandLoader( { search: 'draft an FAQ page' } );
+		const { commands } = useSpecfluxSiteAgentRunCommandLoader( { search: 'draft an FAQ page' } );
 		const close = jest.fn();
 
 		commands[ 0 ].callback( { close } );
@@ -56,7 +56,7 @@ describe( 'the SenroFlux run command loader', () => {
 		expect( window.open ).toHaveBeenCalledTimes( 1 );
 
 		const [ url ] = window.open.mock.calls[ 0 ];
-		expect( url ).toContain( 'page=senroflux-runs' );
+		expect( url ).toContain( 'page=specflux-site-agent-runs' );
 		expect( url ).toContain( 'goal=' );
 		expect( decodeURIComponent( url ) ).toContain( 'draft an FAQ page' );
 	} );

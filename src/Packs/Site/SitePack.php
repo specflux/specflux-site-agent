@@ -13,18 +13,18 @@
  * ISOLATION RULE (harness contract): this pack feeds the Runner through the
  * base's explicit seams only. It never touches the run loop.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 // Bail on direct access.
@@ -347,7 +347,7 @@ final class SitePack extends Pack {
 	 */
 	public function withheldRoleNotice( array $withheld ): ?string {
 		if ( in_array( 'upload', $withheld, true ) || in_array( 'generate', $withheld, true ) || in_array( 'stock-import', $withheld, true ) ) {
-			return __( 'Images are off for this run — your account can\'t upload files.', 'senroflux' );
+			return __( 'Images are off for this run — your account can\'t upload files.', 'specflux-site-agent' );
 		}
 
 		return null;
@@ -387,8 +387,8 @@ final class SitePack extends Pack {
 
 	/**
 	 * S7: the site pack's own flat-and-high budget, applied over the shipped
-	 * table BEFORE `senroflux_default_budget` runs (see
-	 * {@see \Specflux\SenroFlux\Run\Budget::defaults()}). Never derived from
+	 * table BEFORE `specflux_site_agent_default_budget` runs (see
+	 * {@see \Specflux\SiteAgent\Run\Budget::defaults()}). Never derived from
 	 * the plan — sized for a full skeleton run (clarify + several pages +
 	 * navigation + front page), not from measured runs the way the shipped
 	 * table is. Tokens went 1000000 -> 1200000 after space-bunny live runs
@@ -490,8 +490,8 @@ final class SitePack extends Pack {
 				'Tell a visitor, per service, who it is for, what happens and how to book, as far as the supplied facts say. In faq and what-to-expect sections, answer only from supplied facts; omit a question they cannot answer. Name every service the brief lists on Home and Services. Use services, text and faq layouts; most pages need 5–7 sections. Never put two text sections back to back; add faq, services or text-with-image between. A Contact page states every contact detail given.',
 				'If the brief gives a phone number or email, the cta button links to it (tel: or mailto:) and the text states it.',
 				'Markup patterns: at most one cta, page-links. A page is 2–8 sections, none twice except text-section. No colour except cover-hero\'s overlayColor. Spacing/typography: standard preset slugs only. Re-read every object after writing.',
-				'A pattern is NOT a block: it is a core/group (or core/cover, core/media-text) you write yourself out of core blocks. Never write a block whose name starts with senroflux/. Use only core/group, heading, paragraph, buttons, button, columns, column, list, details, quote, cover, media-text.',
-				'Write each block comment with compact JSON (no spaces after : or ,). Give every top-level group `{"metadata":{"name":"senroflux/<slug>"},"layout":{"type":"constrained"}}`. Write list items as plain <li> inside one core/list block; never core/list-item. Close everything you open; markup that fails a parse-and-reserialise round trip is refused as invalid_markup.',
+				'A pattern is NOT a block: it is a core/group (or core/cover, core/media-text) you write yourself out of core blocks. Never write a block whose name starts with specflux/. Use only core/group, heading, paragraph, buttons, button, columns, column, list, details, quote, cover, media-text.',
+				'Write each block comment with compact JSON (no spaces after : or ,). Give every top-level group `{"metadata":{"name":"specflux/<slug>"},"layout":{"type":"constrained"}}`. Write list items as plain <li> inside one core/list block; never core/list-item. Close everything you open; markup that fails a parse-and-reserialise round trip is refused as invalid_markup.',
 				'Give a block ONLY the attributes its shape names below; any other is refused as unknown_pattern. Only hero, cover-hero, cta and page-links give their buttons block `{"layout":{"type":"flex"}}`. For exact sample markup, call site/list-patterns.',
 				'Shapes (">" = child, "(n–m)" = how many of that child):',
 				'hero: group align=full > heading level 1, paragraph align=center, buttons layout=flex > button (1–2)',
@@ -558,7 +558,7 @@ final class SitePack extends Pack {
 			"\n",
 			array(
 				'At clarify, also read the navigation and front-page settings.',
-				'After clarify, your next call is `senroflux/propose-plan`. It lists every page you will create, every existing page and adopted object (title, id, status; say which you leave alone) and the publish and navigation steps. Match an existing page by slug or title and ADOPT it; never duplicate it.',
+				'After clarify, your next call is `specflux/propose-plan`. It lists every page you will create, every existing page and adopted object (title, id, status; say which you leave alone) and the publish and navigation steps. Match an existing page by slug or title and ADOPT it; never duplicate it.',
 				'Rewrite an adopted page only when the human asked for a rewrite. Publish an adopted draft only when the plan names it "publish existing draft".',
 				'If navigation kind is "page_list", call update-navigation to list the real pages when stock_sample_page is not null; otherwise page_list is fine.',
 				'Delete nothing. Name leftover default-install objects in `left_for_you` for the human to remove.',
@@ -574,11 +574,11 @@ final class SitePack extends Pack {
 	 * @return object|null null when the Agent Safety pack class is absent.
 	 */
 	public function agentSafetyPack(): ?object {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return null;
 		}
 
-		return new \Specflux\AgentSafety\Packs\Pack(
+		return new \Belayline\Packs\Pack(
 			name: 'site',
 			allow: $this->allowList(),
 			approvalByClass: array( 'tier2' => true ),
@@ -591,13 +591,13 @@ final class SitePack extends Pack {
 	 * @return WP_Error|null null when bound, else pack_unbound.
 	 */
 	protected function agentSafetyBindingError( int $user_id ): ?WP_Error {
-		if ( ! function_exists( 'agent_safety' ) || null === agent_safety() ) {
+		if ( ! function_exists( 'belayline' ) || null === belayline() ) {
 			return $this->packUnboundError();
 		}
 
-		if ( ! class_exists( \Specflux\AgentSafety\Plugin\Support\PackResolver::class )
-			|| ! class_exists( \Specflux\AgentSafety\Packs\Pack::class )
-			|| ! class_exists( \Specflux\AgentSafety\Policy\Tier::class )
+		if ( ! class_exists( \Belayline\Plugin\Support\PackResolver::class )
+			|| ! class_exists( \Belayline\Packs\Pack::class )
+			|| ! class_exists( \Belayline\Policy\Tier::class )
 		) {
 			return $this->packUnboundError();
 		}
@@ -613,7 +613,7 @@ final class SitePack extends Pack {
 			}
 		}
 
-		if ( ! $resolved->requiresApproval( \Specflux\AgentSafety\Policy\Tier::Irreversible ) ) {
+		if ( ! $resolved->requiresApproval( \Belayline\Policy\Tier::Irreversible ) ) {
 			return $this->packUnboundError();
 		}
 
@@ -621,10 +621,10 @@ final class SitePack extends Pack {
 	}
 
 	/**
-	 * @return \Specflux\AgentSafety\Packs\Pack|null
+	 * @return \Belayline\Packs\Pack|null
 	 */
-	private function resolveAsPackForUser( int $user_id ): ?\Specflux\AgentSafety\Packs\Pack {
-		$resolver = new \Specflux\AgentSafety\Plugin\Support\PackResolver();
+	private function resolveAsPackForUser( int $user_id ): ?\Belayline\Packs\Pack {
+		$resolver = new \Belayline\Plugin\Support\PackResolver();
 		$registry = $resolver->registry();
 		$bindings = $registry->bindings();
 
@@ -666,7 +666,7 @@ final class SitePack extends Pack {
 	private function packUnboundError(): WP_Error {
 		return new WP_Error(
 			'pack_unbound',
-			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the site pack.', 'senroflux' ),
+			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the site pack.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}

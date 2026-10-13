@@ -3,16 +3,16 @@
  * REST surface (S9): the same four operations as admin-ajax, for non-admin-ajax
  * consumers authenticated over REST (e.g. application passwords).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Http;
+namespace Specflux\SiteAgent\Http;
 
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -28,36 +28,36 @@ defined( 'ABSPATH' ) || exit;
  * Every route requires a logged-in user (`is_user_logged_in()` +
  * `current_user_can()` in its `permission_callback`) and returns a
  * `\WP_REST_Response` built by {@see respond()}: on success, the raw
- * RunState array `senroflux()`'s corresponding `Plugin` method returns
+ * RunState array `specflux_site_agent()`'s corresponding `Plugin` method returns
  * (status 200); on a `WP_Error`, `{code: string, message: string}` at the
  * error's own `status` data key (default 400).
  *
- * Routes under `senroflux/v1`:
+ * Routes under `specflux-site-agent/v1`:
  *
  * - `POST /runs` — {@see routeStart()}. Params: `consumer` (string,
- *   required — must be registered via `senroflux_http_consumers`, itself
+ *   required — must be registered via `specflux_site_agent_http_consumers`, itself
  *   NOT `@api`, see its own docblock), `goal` (string, required), `pack`
- *   (string, optional — a registered {@see \Specflux\SenroFlux\Packs\Pack}
+ *   (string, optional — a registered {@see \Specflux\SiteAgent\Packs\Pack}
  *   name), `budget` (object, optional — may only LOWER a consumer's
  *   registered ceiling), `follow_up_of` (int, optional — a prior run id),
  *   `model_provider`/`model_id` (string, optional — both omitted means
  *   automatic selection). Response: the new run's RunState
- *   (`{run, steps, ui}`, see {@see \Specflux\SenroFlux\Plugin::get()} for
+ *   (`{run, steps, ui}`, see {@see \Specflux\SiteAgent\Plugin::get()} for
  *   the `run`/step shape).
  * - `POST /runs/{run_id}/tick` — {@see routeTick()}. Params: `run_id`
  *   (int, from the URL), `step_count` (int, required — the caller's
- *   last-known `run.step_count`, else `senroflux_conflict`), `resume`
+ *   last-known `run.step_count`, else `specflux_site_agent_conflict`), `resume`
  *   (object, optional — a park resolution shaped for the run's current
  *   park kind; the removed 0.1 `approval_action` field is refused
- *   `senroflux_bad_request` rather than silently ignored). Response:
+ *   `specflux_site_agent_bad_request` rather than silently ignored). Response:
  *   RunState.
  * - `POST /runs/{run_id}/cancel` — {@see routeCancel()}. No params beyond
  *   `run_id`. Response: RunState.
  * - `GET /runs` — {@see routeList()} (0.3 S10). Params: `limit` (int,
- *   optional, default 50, clamped 1..100 — rows CONSIDERED before
- *   viewer-scoping, so a response may be shorter). Response:
+ *   optional, default 50, clamped 1..100 — a viewer without the
+ *   screen-wide capability is scoped to their own runs in the query). Response:
  *   `{runs: list<array<string,mixed>>}`, one lightweight summary per row
- *   (see {@see \Specflux\SenroFlux\Plugin::listRecent()}).
+ *   (see {@see \Specflux\SiteAgent\Plugin::listRecent()}).
  * - `GET /runs/{run_id}` — {@see routeGet()}. Response: RunState.
  * - `POST /runs/{run_id}/suggestions/{seq}` — {@see routeSuggestionDecision()}
  *   (0.3 S20; requires `manage_options`, re-checked in the handler). Params:
@@ -67,7 +67,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Rest {
 
-	private const NAMESPACE_V1 = 'senroflux/v1';
+	private const NAMESPACE_V1 = 'specflux-site-agent/v1';
 
 	/** Register on rest_api_init. */
 	public function register(): void {
@@ -77,7 +77,7 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeStart' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'consumer'       => array(
 						'type'     => 'string',
@@ -123,7 +123,7 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeTick' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'run_id'     => array(
 						'type'     => 'integer',
@@ -149,13 +149,13 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeCancel' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 			)
 		);
 
 		// 0.3 S10: the React screen's left-hand list. `read` here matches the
 		// other read routes; the ACTUAL scoping lives in
-		// {@see \Specflux\SenroFlux\Plugin::listRecent()}, which filters to
+		// {@see \Specflux\SiteAgent\Plugin::listRecent()}, which filters to
 		// the runs this viewer may see or drive — a logged-in Subscriber gets
 		// their own runs and nothing else, never an empty-capability leak of
 		// every goal on the site.
@@ -165,7 +165,7 @@ final class Rest {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'routeList' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'limit' => array(
 						'type'     => 'integer',
@@ -181,7 +181,7 @@ final class Rest {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'routeGet' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 			)
 		);
 
@@ -235,8 +235,8 @@ final class Rest {
 		if ( RunsScreen::CONSUMER === $consumer && '' === $pack ) {
 			return $this->respond(
 				new \WP_Error(
-					'senroflux_bad_request',
-					__( 'Choose what to work on before starting a run.', 'senroflux' ),
+					'specflux_site_agent_bad_request',
+					__( 'Choose what to work on before starting a run.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				)
 			);
@@ -258,7 +258,7 @@ final class Rest {
 		$model_id       = $request->get_param( 'model_id' );
 
 		return $this->respond(
-			senroflux()->start(
+			specflux_site_agent()->start(
 				$consumer,
 				(string) $request->get_param( 'goal' ),
 				$policy['allow'],
@@ -279,8 +279,8 @@ final class Rest {
 		if ( null !== $request->get_param( 'approval_action' ) ) {
 			return $this->respond(
 				new \WP_Error(
-					'senroflux_bad_request',
-					__( 'The approval_action field was removed; send a resume object instead (S5).', 'senroflux' ),
+					'specflux_site_agent_bad_request',
+					__( 'The approval_action field was removed; send a resume object instead (S5).', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				)
 			);
@@ -290,7 +290,7 @@ final class Rest {
 		$resume = $request->get_param( 'resume' );
 
 		return $this->respond(
-			senroflux()->tick(
+			specflux_site_agent()->tick(
 				(int) $request->get_param( 'run_id' ),
 				(int) $request->get_param( 'step_count' ),
 				$resume
@@ -300,28 +300,28 @@ final class Rest {
 
 	/** POST /runs/{id}/cancel. */
 	public function routeCancel( \WP_REST_Request $request ): \WP_REST_Response {
-		return $this->respond( senroflux()->cancel( (int) $request->get_param( 'run_id' ) ) );
+		return $this->respond( specflux_site_agent()->cancel( (int) $request->get_param( 'run_id' ) ) );
 	}
 
 	/** GET /runs/{id}. */
 	public function routeGet( \WP_REST_Request $request ): \WP_REST_Response {
-		return $this->respond( senroflux()->get( (int) $request->get_param( 'run_id' ) ) );
+		return $this->respond( specflux_site_agent()->get( (int) $request->get_param( 'run_id' ) ) );
 	}
 
 	/**
 	 * GET /runs (0.3 S10).
 	 *
-	 * `limit` is the number of rows CONSIDERED before scoping, so a response
-	 * may be shorter than the limit asked for. It is clamped to 1..100: an
-	 * unbounded limit would let any logged-in user walk the whole table one
-	 * request at a time, even though each row is already scoped.
+	 * `limit` caps the rows returned; a viewer without the screen-wide
+	 * capability is scoped to their own runs in the query, so older runs of
+	 * theirs are not crowded out by other users'. It is clamped to 1..100 so
+	 * a single request cannot ask for an unbounded page.
 	 */
 	public function routeList( \WP_REST_Request $request ): \WP_REST_Response {
 		$limit = $request->get_param( 'limit' );
 		$limit = null === $limit ? 50 : (int) $limit;
 		$limit = max( 1, min( 100, $limit ) );
 
-		return $this->respond( array( 'runs' => senroflux()->listRecent( $limit ) ) );
+		return $this->respond( array( 'runs' => specflux_site_agent()->listRecent( $limit ) ) );
 	}
 
 	/**
@@ -334,14 +334,14 @@ final class Rest {
 	public function routeSuggestionDecision( \WP_REST_Request $request ): \WP_REST_Response {
 		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
 			return $this->respond(
-				new \WP_Error( 'senroflux_forbidden', __( 'Insufficient permissions.', 'senroflux' ), array( 'status' => 403 ) )
+				new \WP_Error( 'specflux_site_agent_forbidden', __( 'Insufficient permissions.', 'specflux-site-agent' ), array( 'status' => 403 ) )
 			);
 		}
 
 		$text = $request->get_param( 'text' );
 
 		return $this->respond(
-			senroflux()->resolveSuggestion(
+			specflux_site_agent()->resolveSuggestion(
 				(int) $request->get_param( 'run_id' ),
 				(int) $request->get_param( 'seq' ),
 				(string) $request->get_param( 'action' ),

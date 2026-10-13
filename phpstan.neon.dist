@@ -2,7 +2,7 @@ parameters:
     level: 8
     paths:
         - src
-        - senroflux.php
+        - specflux-site-agent.php
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:
         - phpstan-bootstrap.php
@@ -28,7 +28,7 @@ parameters:
             # — never request/user input.
             message: '#^Parameter \#1 \$query of method wpdb::prepare\(\) expects literal\-string, non\-falsy\-string given\.$#'
             path: src/*
-            count: 5
+            count: 6
         -
             # Same family: prepare() returns string|void per the stub, which
             # collides with query()'s non-nullable string parameter.
@@ -89,60 +89,60 @@ parameters:
             # phpstan therefore cannot resolve these classes. Every code path
             # that touches them is already behind a `class_exists()` guard
             # (agentSafetyBindingError() / agentSafetyPack()).
-            message: '#^Method Specflux\\SenroFlux\\Packs\\Pages\\PagesPack::resolveAsPackForUser\(\) has invalid return type Specflux\\AgentSafety\\Packs\\Pack\.$#'
+            message: '#^Method Specflux\\SiteAgent\\Packs\\Pages\\PagesPack::resolveAsPackForUser\(\) has invalid return type Belayline\\Packs\\Pack\.$#'
             path: src/Packs/Pages/PagesPack.php
             count: 2
         -
             # Same external-class situation: PackResolver is only reached after
             # the class_exists() guard in agentSafetyBindingError().
-            message: '#^Instantiated class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver not found\.$#'
+            message: '#^Instantiated class Belayline\\Plugin\\Support\\PackResolver not found\.$#'
             path: src/Packs/Pages/PagesPack.php
             count: 1
         -
             # registry() is a method on the external PackResolver, reached only
             # behind the same class_exists() guard.
-            message: '#^Call to method registry\(\) on an unknown class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver\.$#'
+            message: '#^Call to method registry\(\) on an unknown class Belayline\\Plugin\\Support\\PackResolver\.$#'
             path: src/Packs/Pages/PagesPack.php
             count: 1
         -
             # Same external-class situation as PagesPack's binding check
             # (S5's posts pack duplicates the same S13 pattern).
-            message: '#^Method Specflux\\SenroFlux\\Packs\\Posts\\PostsPack::resolveAsPackForUser\(\) has invalid return type Specflux\\AgentSafety\\Packs\\Pack\.$#'
+            message: '#^Method Specflux\\SiteAgent\\Packs\\Posts\\PostsPack::resolveAsPackForUser\(\) has invalid return type Belayline\\Packs\\Pack\.$#'
             path: src/Packs/Posts/PostsPack.php
             count: 2
         -
-            message: '#^Instantiated class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver not found\.$#'
+            message: '#^Instantiated class Belayline\\Plugin\\Support\\PackResolver not found\.$#'
             path: src/Packs/Posts/PostsPack.php
             count: 1
         -
-            message: '#^Call to method registry\(\) on an unknown class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver\.$#'
+            message: '#^Call to method registry\(\) on an unknown class Belayline\\Plugin\\Support\\PackResolver\.$#'
             path: src/Packs/Posts/PostsPack.php
             count: 1
         -
             # Same external-class situation as PagesPack's/PostsPack's binding
             # check (S7's site pack duplicates the same S13 pattern).
-            message: '#^Method Specflux\\SenroFlux\\Packs\\Site\\SitePack::resolveAsPackForUser\(\) has invalid return type Specflux\\AgentSafety\\Packs\\Pack\.$#'
+            message: '#^Method Specflux\\SiteAgent\\Packs\\Site\\SitePack::resolveAsPackForUser\(\) has invalid return type Belayline\\Packs\\Pack\.$#'
             path: src/Packs/Site/SitePack.php
             count: 2
         -
-            message: '#^Instantiated class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver not found\.$#'
+            message: '#^Instantiated class Belayline\\Plugin\\Support\\PackResolver not found\.$#'
             path: src/Packs/Site/SitePack.php
             count: 1
         -
-            message: '#^Call to method registry\(\) on an unknown class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver\.$#'
+            message: '#^Call to method registry\(\) on an unknown class Belayline\\Plugin\\Support\\PackResolver\.$#'
             path: src/Packs/Site/SitePack.php
             count: 1
         -
             # Same external-class situation as the other packs' binding check
             # (S19's commerce pack duplicates the same S13 pattern).
-            message: '#^Method Specflux\\SenroFlux\\Packs\\Commerce\\CommercePack::resolveAsPackForUser\(\) has invalid return type Specflux\\AgentSafety\\Packs\\Pack\.$#'
+            message: '#^Method Specflux\\SiteAgent\\Packs\\Commerce\\CommercePack::resolveAsPackForUser\(\) has invalid return type Belayline\\Packs\\Pack\.$#'
             path: src/Packs/Commerce/CommercePack.php
             count: 2
         -
-            message: '#^Instantiated class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver not found\.$#'
+            message: '#^Instantiated class Belayline\\Plugin\\Support\\PackResolver not found\.$#'
             path: src/Packs/Commerce/CommercePack.php
             count: 1
         -
-            message: '#^Call to method registry\(\) on an unknown class Specflux\\AgentSafety\\Plugin\\Support\\PackResolver\.$#'
+            message: '#^Call to method registry\(\) on an unknown class Belayline\\Plugin\\Support\\PackResolver\.$#'
             path: src/Packs/Commerce/CommercePack.php
             count: 1

@@ -2,12 +2,12 @@
 /**
  * Run/step persistence contract.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -114,4 +114,14 @@ interface RunStore {
 	 * @return list<Run>
 	 */
 	public function listRecent( int $limit = 50 ): array;
+
+	/**
+	 * One user's runs, most recently updated first. The owner filter is part
+	 * of the query, so the LIMIT counts only that user's rows.
+	 *
+	 * @param int $user_id Owner.
+	 * @param int $limit   Max rows.
+	 * @return list<Run>
+	 */
+	public function listRecentForUser( int $user_id, int $limit = 50 ): array;
 }
