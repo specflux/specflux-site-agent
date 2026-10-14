@@ -366,7 +366,7 @@ New:
 
 Fixed:
 
-* Everything in 0.3.2.
+* Everything in 0.3.3.
 
 = 0.3.3 =
 
