@@ -1,0 +1,137 @@
+name: Beta
+
+# Rolling beta: every push to the `beta` branch re-runs the PHP gate, builds
+# the zip with bin/build-zip.sh (the same single allowlisted build
+# release.yml runs), and replaces the assets on one GitHub prerelease tagged
+# `beta-build` (not `beta`, so the tag never shadows the branch). A cron job
+# on the beta server polls the .sha256 and fetches the zip.
+# Not a release: release.yml stays tag-triggered and draft-only, and the
+# tag-vs-header version check is skipped here (there is no tag to match).
+#
+# Deliberately left out of the gate, to keep the beta loop fast: Playwright
+# e2e, Plugin Check, and the editor-parity/Stylelint/i18n job. They still run
+# in ci.yml / release.yml for main and for real tags.
+#
+# Asset names are a contract with the server script — do not rename them:
+#   specflux-site-agent-beta.zip, specflux-site-agent-beta.zip.sha256, beta-info.json
+
+on:
+  push:
+    branches: [beta]
+  workflow_dispatch:
+
+# Queue, don't cancel: a run cancelled mid-upload would leave a new zip
+# next to the old checksum.
+concurrency:
+  group: beta-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  SLUG: specflux-site-agent
+
+jobs:
+  # Same job as ci.yml's `check` (PHPCS, PHPStan level 8, PHPUnit on the PHP
+  # floor and the newest stable), except for the Belayline ref below.
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.4']
+    name: PHP ${{ matrix.php }}
+    steps:
+      # Sibling layout that tests/Tools/AgentSafetyContractTest.php resolves
+      # by relative path (same as ci.yml).
+      - uses: actions/checkout@v4
+        with:
+          path: specflux-site-agent
+
+      # refs/heads/beta, not main: 0.4 needs Belayline 0.5. The full ref is
+      # deliberate: it can never resolve to a tag.
+      - uses: actions/checkout@v4
+        with:
+          repository: stephen1204paul/belayline-agent-governance
+          ref: refs/heads/beta
+          path: agent-safety
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+          coverage: none
+
+      - name: Install dependencies
+        working-directory: specflux-site-agent
+        run: composer install --prefer-dist --no-interaction
+
+      - name: PHPCS (WordPress-Core + WordPress-Extra)
+        working-directory: specflux-site-agent
+        run: composer lint
+
+      - name: PHPStan level 8
+        working-directory: specflux-site-agent
+        run: composer phpstan
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 0
+
+      # Missing-fixture skip becomes a hard failure, as in ci.yml.
+      - name: PHPUnit
+        working-directory: specflux-site-agent
+        run: composer test
+        env:
+          SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE: '1'
+
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    name: Build and publish the beta zip
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the zip (bin/build-zip.sh, the single allowlisted build)
+        run: bin/build-zip.sh
+
+      # The build names the zip after the header version; the server wants a
+      # fixed name. Contents are untouched — the top-level folder inside the
+      # zip stays specflux-site-agent/. The checksum is computed from inside
+      # the output dir so the file lists the bare name, as sha256sum prints.
+      - name: Rename to the fixed beta names and write checksum + info
+        run: |
+          VERSION=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' "${SLUG}.php")
+          [ -n "$VERSION" ] || { echo "::error::could not read Version from plugin header"; exit 1; }
+          [ -f "${SLUG}-${VERSION}.zip" ] || { echo "::error::build did not produce ${SLUG}-${VERSION}.zip"; exit 1; }
+          mkdir -p beta-out
+          mv "${SLUG}-${VERSION}.zip" "beta-out/${SLUG}-beta.zip"
+          (cd beta-out && sha256sum "${SLUG}-beta.zip" > "${SLUG}-beta.zip.sha256")
+          jq -n --arg commit "$GITHUB_SHA" --arg version "$VERSION" \
+            --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{commit: $commit, version: $version, built_at: $built_at}' > beta-out/beta-info.json
+          cat beta-out/beta-info.json beta-out/"${SLUG}-beta.zip.sha256"
+
+      - name: Create the rolling prerelease if missing, keep it a prerelease
+        run: |
+          if gh release view beta-build >/dev/null 2>&1; then
+            # Move the tag to this commit so the release page matches the
+            # assets, and undo any manual promotion to draft/latest.
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/beta-build" \
+              -f sha="$GITHUB_SHA" -F force=true >/dev/null
+            gh release edit beta-build --prerelease --draft=false --latest=false
+          else
+            gh release create beta-build --prerelease --latest=false \
+              --title "Beta (rolling)" \
+              --notes "Rolling build of the \`beta\` branch, replaced on every push. For the beta server only — not for production." \
+              --target "$GITHUB_SHA"
+          fi
+
+      # Zip first, checksum last: the server polls the .sha256 and then
+      # fetches the zip, so it never sees a new checksum before its zip.
+      - name: Upload assets (zip, then checksum, then info)
+        run: |
+          gh release upload beta-build "beta-out/${SLUG}-beta.zip" --clobber
+          gh release upload beta-build "beta-out/${SLUG}-beta.zip.sha256" --clobber
+          gh release upload beta-build beta-out/beta-info.json --clobber
