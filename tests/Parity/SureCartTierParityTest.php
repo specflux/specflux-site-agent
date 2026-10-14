@@ -66,7 +66,7 @@ final class SureCartTierParityTest extends TestCase {
 	private function dir(): string {
 		$dir = getenv( self::ENV );
 		if ( false === $dir || '' === $dir || ! is_readable( $dir . '/SureCartVerbCatalog.php' ) ) {
-			$message = self::ENV . ' does not point at AgentGovernance\'s plugin/src/Integrations/SureCart directory.';
+			$message = self::ENV . ' does not point at Belayline Agent Governance\'s plugin/src/Integrations/SureCart directory.';
 			if ( 'true' === getenv( 'CI' ) ) {
 				$this->fail( 'CI=true but ' . $message );
 			}

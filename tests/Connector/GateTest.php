@@ -45,7 +45,7 @@ final class GateTest extends ConnectorTestCase {
 		$this->connectAs( Connection::SCOPE_READ );
 		$server = $this->server( array( 'specflux/read-thing', 'specflux/write-thing', 'shop/refund', 'specflux/hidden-thing', HarnessTools::TOOL_NAME ) );
 
-		$this->assertSame( array( 'specflux-site-agent-read-thing' ), $this->toolNames( Gate::filterTools( $this->allTools(), $server ) ) );
+		$this->assertSame( array( 'specflux-read-thing' ), $this->toolNames( Gate::filterTools( $this->allTools(), $server ) ) );
 	}
 
 	public function test_a_read_write_list_in_builtin_mode_drops_commerce_and_hidden_tools(): void {
@@ -53,7 +53,7 @@ final class GateTest extends ConnectorTestCase {
 		$server = $this->server( array( 'specflux/read-thing', 'specflux/write-thing', 'shop/refund', 'specflux/hidden-thing', HarnessTools::TOOL_NAME ) );
 
 		$this->assertSame(
-			array( 'specflux-site-agent-read-thing', 'specflux-site-agent-write-thing' ),
+			array( 'specflux-read-thing', 'specflux-write-thing' ),
 			$this->toolNames( Gate::filterTools( $this->allTools(), $server ) )
 		);
 	}

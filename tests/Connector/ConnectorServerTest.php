@@ -85,7 +85,7 @@ final class ConnectorServerTest extends ConnectorTestCase {
 
 		$this->assertCount( 1, $adapter->created );
 		$args = $adapter->created[0];
-		$this->assertSame( 'specflux-site-agent', $args[0] );
+		$this->assertSame( 'specflux', $args[0] );
 		$this->assertSame( 'specflux-site-agent', $args[1] );
 		$this->assertSame( 'mcp', $args[2] );
 		$this->assertSame( array( Connector::TRANSPORT_CLASS ), $args[6] );

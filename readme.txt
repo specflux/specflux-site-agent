@@ -329,7 +329,7 @@ enforces this.
 The JavaScript in `build/` is compiled from the sources in `assets/src/` in
 the public repository, https://github.com/specflux/specflux-site-agent. To rebuild it:
 
-1. `git clone https://github.com/specflux/specflux-site-agent.git && cd specflux-site-agent`
+1. `git clone https://github.com/specflux/specflux-site-agent && cd specflux-site-agent`
 2. `npm ci`
 3. `npm run build`
 
@@ -367,6 +367,12 @@ New:
 Fixed:
 
 * Everything in 0.3.2.
+
+= 0.3.3 =
+
+Changed:
+
+* New name: Specflux Site Agent. Same features; new slug, text domain and identifiers.
 
 = 0.3.2 =
 
@@ -465,6 +471,9 @@ New:
 
 = 0.4.0 =
 Adds an MCP connector for AI apps (off until you turn it on), result cards, undo with Belayline Agent Governance 0.5, and new tools for comments, users, settings and menus. Adds a database table.
+
+= 0.3.3 =
+New name, slug and text domain. No feature changes.
 
 = 0.3.2 =
 Tightens permission checks on media, store report and coupon abilities; fixes truncated questions and plan card badges.

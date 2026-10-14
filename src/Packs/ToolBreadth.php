@@ -226,7 +226,7 @@ final class ToolBreadth {
 		$parts = explode( '/', $ability, 2 );
 
 		return 2 === count( $parts )
-			&& in_array( $parts[0], array( 'specflux-site-agent', 'core' ), true )
+			&& in_array( $parts[0], array( 'specflux', 'core' ), true )
 			&& in_array( $parts[1], self::allTemplates(), true );
 	}
 

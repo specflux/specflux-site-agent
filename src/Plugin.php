@@ -1073,8 +1073,13 @@ final class Plugin {
 	 * deliberately lets a screen-capability holder resolve a parked run they
 	 * do not own; dropping it would break that.
 	 *
-	 * @param int $limit Max rows CONSIDERED, before scoping. A viewer may
-	 *                   therefore receive fewer than `$limit` rows.
+	 * Scoping happens in the query: a viewer without the screen-wide
+	 * capability gets their own runs from an owner-filtered SELECT, so other
+	 * users' newer runs cannot use up the LIMIT or reach this method at all.
+	 * Only when something hooks `specflux_site_agent_can_tick` are other
+	 * users' rows read, to honour that delegation.
+	 *
+	 * @param int $limit Max rows returned.
 	 * @return list<array<string,mixed>> Lightweight run summaries.
 	 */
 	public function listRecent( int $limit = 50 ): array {
@@ -1083,14 +1088,28 @@ final class Plugin {
 		}
 
 		$viewer_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+		$store     = $this->runner()->store();
 
-		$visible = array_filter(
-			$this->runner()->store()->listRecent( $limit ),
-			function ( \Specflux\SiteAgent\Run\Run $run ) use ( $viewer_id ): bool {
-				return $this->maySee( $run )
-					|| (bool) apply_filters( 'specflux_site_agent_can_tick', $viewer_id === $run->userId, $run );
+		if ( $this->holdsRunsCapability() ) {
+			$visible = $store->listRecent( $limit );
+		} else {
+			$visible = $viewer_id > 0 ? $store->listRecentForUser( $viewer_id, $limit ) : array();
+
+			if ( has_filter( 'specflux_site_agent_can_tick' ) ) {
+				$delegated = array_filter(
+					$store->listRecent( $limit ),
+					static fn ( \Specflux\SiteAgent\Run\Run $run ): bool => $run->userId !== $viewer_id
+						&& (bool) apply_filters( 'specflux_site_agent_can_tick', false, $run )
+				);
+
+				$visible = array_merge( $visible, $delegated );
+				usort(
+					$visible,
+					static fn ( \Specflux\SiteAgent\Run\Run $a, \Specflux\SiteAgent\Run\Run $b ): int => array( $b->updatedAtUtc ?? '', $b->id ) <=> array( $a->updatedAtUtc ?? '', $a->id )
+				);
+				$visible = array_slice( $visible, 0, max( 1, $limit ) );
 			}
-		);
+		}
 
 		return array_map(
 			function ( \Specflux\SiteAgent\Run\Run $run ) use ( $viewer_id ): array {
@@ -1165,6 +1184,11 @@ final class Plugin {
 			return true;
 		}
 
+		return $this->holdsRunsCapability();
+	}
+
+	/** Does the viewer hold the screen-wide capability that sees every run? */
+	private function holdsRunsCapability(): bool {
 		/** Filters the capability required to see a run. `@internal`. */
 		$capability = apply_filters( 'specflux_site_agent_runs_capability', 'manage_options' );
 

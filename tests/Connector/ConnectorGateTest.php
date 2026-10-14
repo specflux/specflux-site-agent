@@ -218,7 +218,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 	public function test_a_nested_setting_name_is_refused_whatever_its_case(): void {
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 
-		$result = $this->call( self::WRITE, array( 'meta' => array( array( 'key' => '  SpecfluxSiteAgent_Connections ' ) ) ) );
+		$result = $this->call( self::WRITE, array( 'meta' => array( array( 'key' => '  Specflux_Site_Agent_Connections ' ) ) ) );
 
 		$this->assertSame( 'specflux_site_agent_connector_settings', $result->get_error_code() );
 	}

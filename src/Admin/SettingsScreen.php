@@ -390,7 +390,7 @@ class SettingsScreen {
 				'<div data-specflux-site-agent-notice class="notice notice-error"><p>%s</p></div>',
 				esc_html(
 					sprintf(
-						/* translators: %d is the cap. */
+						/* translators: %d: the cap. */
 						__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'specflux-site-agent' ),
 						Passthrough::MAX_ENABLED
 					)
@@ -407,7 +407,7 @@ class SettingsScreen {
 
 		echo '<p>' . esc_html(
 			sprintf(
-				/* translators: %d is the cap. */
+				/* translators: %d: the cap. */
 				__( 'Other plugins register abilities Specflux Site Agent can use. All are off until you turn them on (at most %d). Descriptions come from the plugin that registered each ability and are untrusted text. Each ability\'s own permission check still runs as the person running the task.', 'specflux-site-agent' ),
 				Passthrough::MAX_ENABLED
 			)

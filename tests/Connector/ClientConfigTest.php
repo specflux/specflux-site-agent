@@ -47,7 +47,7 @@ final class ClientConfigTest extends TestCase {
 		$config = $this->json( ClientConfig::VS_CODE );
 
 		$this->assertSame( array( 'servers' ), array_keys( $config ) );
-		$server = $config['servers']['specflux-site-agent'];
+		$server = $config['servers']['specflux'];
 		$this->assertSame( array( 'type', 'url', 'headers' ), array_keys( $server ) );
 		$this->assertSame( 'http', $server['type'] );
 		$this->assertSame( array( 'Authorization' => self::AUTH ), $server['headers'] );

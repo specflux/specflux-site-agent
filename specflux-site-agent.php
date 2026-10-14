@@ -86,7 +86,7 @@ function specflux_site_agent_activate(): void {
 		wp_die( esc_html__( 'Specflux Site Agent does not support WordPress multisite. It was not activated.', 'specflux-site-agent' ) );
 	}
 
-	if ( ! class_exists( Schema::class ) || ! function_exists( 'dbDelta' ) ) {
+	if ( ! class_exists( Schema::class ) ) {
 		return;
 	}
 

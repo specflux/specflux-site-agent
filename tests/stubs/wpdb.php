@@ -168,9 +168,12 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			if (
 				$this->emulateRows
 				&& null !== $query
-				&& preg_match( '/SELECT \* FROM (\S+) ORDER BY updated_at DESC, id DESC LIMIT (\d+)/', $query, $m )
+				&& preg_match( '/SELECT \* FROM (\S+) (?:WHERE user_id = (\d+) )?ORDER BY updated_at DESC, id DESC LIMIT (\d+)/', $query, $m )
 			) {
 				$rows = $this->tables[ $m[1] ] ?? array();
+				if ( '' !== $m[2] ) {
+					$rows = array_values( array_filter( $rows, static fn ( array $row ): bool => (int) ( $row['user_id'] ?? 0 ) === (int) $m[2] ) );
+				}
 				usort(
 					$rows,
 					static fn ( array $a, array $b ): int => array(
@@ -182,7 +185,7 @@ if ( ! class_exists( 'wpdb', false ) ) {
 					)
 				);
 
-				return array_slice( $rows, 0, max( 1, (int) $m[2] ) );
+				return array_slice( $rows, 0, max( 1, (int) $m[3] ) );
 			}
 
 			// Connector activity (K4): newest first, optionally one connection.

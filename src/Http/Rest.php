@@ -55,8 +55,8 @@ defined( 'ABSPATH' ) || exit;
  * - `POST /runs/{run_id}/cancel` — {@see routeCancel()}. No params beyond
  *   `run_id`. Response: RunState.
  * - `GET /runs` — {@see routeList()} (0.3 S10). Params: `limit` (int,
- *   optional, default 50, clamped 1..100 — rows CONSIDERED before
- *   viewer-scoping, so a response may be shorter). Response:
+ *   optional, default 50, clamped 1..100 — a viewer without the
+ *   screen-wide capability is scoped to their own runs in the query). Response:
  *   `{runs: list<array<string,mixed>>}`, one lightweight summary per row
  *   (see {@see \Specflux\SiteAgent\Plugin::listRecent()}).
  * - `GET /runs/{run_id}` — {@see routeGet()}. Response: RunState.
@@ -83,7 +83,7 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeStart' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'consumer'       => array(
 						'type'     => 'string',
@@ -129,7 +129,7 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeTick' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'run_id'     => array(
 						'type'     => 'integer',
@@ -155,7 +155,7 @@ final class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'routeCancel' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 			)
 		);
 
@@ -171,7 +171,7 @@ final class Rest {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'routeList' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 				'args'                => array(
 					'limit' => array(
 						'type'     => 'integer',
@@ -187,7 +187,7 @@ final class Rest {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'routeGet' ),
-				'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+				'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 			)
 		);
 
@@ -204,7 +204,7 @@ final class Rest {
 				array(
 					'methods'             => 'POST',
 					'callback'            => 'undo' === $undo_action ? array( $this, 'routeUndo' ) : array( $this, 'routeUndoPreview' ),
-					'permission_callback' => static fn (): bool => is_user_logged_in() && current_user_can( 'read' ),
+					'permission_callback' => static fn (): bool => is_user_logged_in() && \Specflux\SiteAgent\Admin\ScreenCapability::held(),
 					'args'                => array(
 						'run_id'    => array(
 							'type'     => 'integer',
@@ -345,10 +345,10 @@ final class Rest {
 	/**
 	 * GET /runs (0.3 S10).
 	 *
-	 * `limit` is the number of rows CONSIDERED before scoping, so a response
-	 * may be shorter than the limit asked for. It is clamped to 1..100: an
-	 * unbounded limit would let any logged-in user walk the whole table one
-	 * request at a time, even though each row is already scoped.
+	 * `limit` caps the rows returned; a viewer without the screen-wide
+	 * capability is scoped to their own runs in the query, so older runs of
+	 * theirs are not crowded out by other users'. It is clamped to 1..100 so
+	 * a single request cannot ask for an unbounded page.
 	 */
 	public function routeList( \WP_REST_Request $request ): \WP_REST_Response {
 		$limit = $request->get_param( 'limit' );

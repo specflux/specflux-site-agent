@@ -50,7 +50,7 @@ final class FluentCartTierParityTest extends TestCase {
 		$path = $this->catalogPath();
 		if ( ! is_readable( $path ) ) {
 			if ( 'true' === getenv( 'CI' ) ) {
-				$this->fail( 'CI=true but AgentGovernance\'s FluentCart catalog is unavailable at ' . $path );
+				$this->fail( 'CI=true but Belayline Agent Governance\'s FluentCart catalog is unavailable at ' . $path );
 			}
 			$this->markTestSkipped( 'Belayline Agent Governance is not checked out alongside Specflux Site Agent (checked: ' . $path . ', override with SPECFLUX_SITE_AGENT_FLUENTCART_CATALOG).' );
 		}
@@ -205,7 +205,7 @@ final class FluentCartTierParityTest extends TestCase {
 					'dry_run'  => true,
 				)
 			),
-			'AgentGovernance\'s DryRunRelaxation is disabled; so is ours'
+			'Belayline Agent Governance\'s DryRunRelaxation is disabled; so is ours'
 		);
 		$this->assertSame(
 			2,
