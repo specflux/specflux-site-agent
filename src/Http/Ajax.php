@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  * bump.
  *
  * Four actions mirroring the PHP API: start, tick, cancel, get. Nonce
- * `specflux_site_agent_run`, capability `read`, plus per-run ownership enforced in the
+ * `specflux_site_agent_run`, the Runs-screen capability (ScreenCapability::held()), plus per-run ownership enforced in the
  * Runner itself (the tick protocol re-checks it). Start is additionally
  * gated by {@see ConsumerPolicy}: the server owns the allow-list.
  */
@@ -61,7 +61,7 @@ final class Ajax {
 	public function handleStart(): void {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! ScreenCapability::held() ) {
 			wp_send_json_error(
 				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
@@ -162,7 +162,7 @@ final class Ajax {
 	public function handleTick(): void {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! ScreenCapability::held() ) {
 			wp_send_json_error(
 				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
@@ -226,7 +226,7 @@ final class Ajax {
 	public function handleCancel(): void {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! ScreenCapability::held() ) {
 			wp_send_json_error(
 				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403
@@ -240,7 +240,7 @@ final class Ajax {
 	public function handleGet(): void {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! ScreenCapability::held() ) {
 			wp_send_json_error(
 				array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ),
 				403

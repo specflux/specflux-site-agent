@@ -3,7 +3,7 @@
  * Plugin Name:       Specflux Site Agent
  * Plugin URI:        https://github.com/specflux/specflux-site-agent
  * Description:       Resumable, browser-driven multi-step agent runs inside the logged-in WordPress session — Abilities as tools, governed by Belayline Agent Governance when active or a built-in approval gate otherwise.
- * Version:           0.3.3
+ * Version:           0.3.4
  * Author:            Stephen Paul Samynathan
  * Author URI:        https://www.specflux.com/author/stephen/
  * Requires at least: 7.0
