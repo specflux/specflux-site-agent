@@ -72,6 +72,8 @@ jobs:
       - name: PHPStan level 8
         working-directory: specflux-site-agent
         run: composer phpstan
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 0
 
       # SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE turns AgentSafetyContractTest's missing-
       # fixture skip into a hard failure: CI must never verify this contract

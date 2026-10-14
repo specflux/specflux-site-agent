@@ -45,10 +45,14 @@ final class ResumeContractTest extends TestCase {
 	protected function setUp(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
-		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(
+			'read'           => true,
+			'manage_options' => true,
+		);
 		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
 		$GLOBALS['specflux_site_agent_test_transients']      = array();
 		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 		unset( $_POST );
 	}
 

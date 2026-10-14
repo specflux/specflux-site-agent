@@ -367,6 +367,7 @@ New:
 Fixed:
 
 * Everything in 0.3.3.
+* Security: the admin-ajax run endpoints now require the same Runs-screen capability as the REST routes.
 
 = 0.3.3 =
 
