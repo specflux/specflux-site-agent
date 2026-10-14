@@ -23,10 +23,14 @@ final class AjaxModelPinTest extends TestCase {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
 		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
-		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'read' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(
+			'read'           => true,
+			'manage_options' => true,
+		);
 		$GLOBALS['specflux_site_agent_test_filters']         = array();
 		$GLOBALS['wpdb']                                     = new wpdb();
 		unset( $_POST );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 
 		add_filter(
 			'specflux_site_agent_http_consumers',
@@ -38,6 +42,7 @@ final class AjaxModelPinTest extends TestCase {
 
 	protected function tearDown(): void {
 		remove_all_filters( 'specflux_site_agent_http_consumers' );
+		remove_all_filters( 'specflux_site_agent_runs_capability' );
 		unset( $_POST, $GLOBALS['wpdb'] );
 		Plugin::reset();
 	}

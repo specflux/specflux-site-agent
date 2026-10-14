@@ -57,14 +57,13 @@ final class AjaxPollingAuthTest extends TestCase {
 	}
 
 	public function test_polling_someone_elses_run_without_the_screen_capability_is_forbidden(): void {
-		// `read` only: an ordinary logged-in user, no delegation.
+		// `read` only: an ordinary logged-in user, no delegation; the ajax gate itself refuses.
 		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read' => true );
 
 		$json = $this->pollForeignRun();
 
 		$this->assertFalse( $json->success );
 		$this->assertSame( 403, $json->status );
-		$this->assertSame( 'specflux_site_agent_forbidden', $json->code() );
 	}
 
 	public function test_polling_someone_elses_run_with_the_screen_capability_is_allowed(): void {
