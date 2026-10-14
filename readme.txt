@@ -4,7 +4,7 @@ Tags: ai, agents, automation, safety, approvals
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -235,6 +235,12 @@ the public repository, https://github.com/specflux/specflux-site-agent. To rebui
 
 == Changelog ==
 
+= 0.3.4 =
+
+Security:
+
+* The admin-ajax run endpoints now require the same Runs-screen capability as the REST routes.
+
 = 0.3.3 =
 
 Changed:
@@ -335,6 +341,9 @@ New:
 * Initial scaffold: hard-dependency gate against Agent Safety.
 
 == Upgrade Notice ==
+
+= 0.3.4 =
+Security: the admin-ajax run endpoints now require the same Runs-screen capability as the REST routes.
 
 = 0.3.3 =
 New name, slug and text domain. No feature changes.
