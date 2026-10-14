@@ -268,7 +268,7 @@ final class Passthrough {
 	 * @param array<string,mixed> $read    name => 'read' | 'changes' (unsanitised).
 	 * @return true|WP_Error
 	 */
-	public static function save( array $enabled, array $read ): true|WP_Error {
+	public static function save( array $enabled, array $read ): bool|WP_Error {
 		$candidates = self::candidates();
 		$names      = array();
 		foreach ( $enabled as $name ) {

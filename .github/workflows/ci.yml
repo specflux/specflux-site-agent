@@ -83,6 +83,7 @@ jobs:
         run: composer test
         env:
           SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE: '1'
+          SPECFLUX_SITE_AGENT_SURECART_AGENT_GOVERNANCE_DIR: ${{ github.workspace }}/agent-safety/plugin/src/Integrations/SureCart
 
   editor-parity:
     if: github.event_name != 'schedule'

@@ -534,8 +534,10 @@ final class FluentCartAbilities {
 	 * @param array<string,mixed>                              $input   Call input.
 	 * @param array<string,mixed>                              $product The loaded product (empty for a fresh create).
 	 * @param array{regular:?int,sale:?int,sale_given:bool}|null $prices Parsed prices, or null when none given.
+	 *
+	 * @return true|WP_Error
 	 */
-	private static function applyProductChanges( int $id, array $input, array $product, ?array $prices ): true|WP_Error {
+	private static function applyProductChanges( int $id, array $input, array $product, ?array $prices ): bool|WP_Error {
 		$post = array();
 		foreach ( array(
 			'name'              => 'post_title',
@@ -576,8 +578,10 @@ final class FluentCartAbilities {
 	 * @param int                                       $id      Product id.
 	 * @param array<string,mixed>                       $product Loaded product.
 	 * @param array{regular:?int,sale:?int,sale_given:bool} $prices  Parsed prices (cents).
+	 *
+	 * @return true|WP_Error
 	 */
-	private static function writePrice( int $id, array $product, array $prices ): true|WP_Error {
+	private static function writePrice( int $id, array $product, array $prices ): bool|WP_Error {
 		$variants = self::variantsOf( $product );
 		if ( 1 !== count( $variants ) ) {
 			return new WP_Error(
