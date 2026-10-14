@@ -4,10 +4,10 @@
  * which already covers a screen-capability holder viewing a delegated run).
  *
  * `startRun`/`tickRun`/`cancelRun` go over **admin-ajax**, not REST (17c):
- * {@see \Specflux\SenroFlux\Admin\ScreenCapability::tickAsScreen()} — the
+ * {@see \Specflux\SiteAgent\Admin\ScreenCapability::tickAsScreen()} — the
  * delegation allowance that lets a screen-capability holder resolve a run
  * they do not own — only wraps `Ajax::handleTick()`. REST's `/runs/{id}/tick`
- * calls `senroflux()->tick()` directly with no such wrapper, so it would
+ * calls `specflux_site_agent()->tick()` directly with no such wrapper, so it would
  * 403 a delegated (non-owner) tick that admin-ajax accepts. Using REST here
  * would silently narrow what the screen can do relative to the retired PHP
  * cards, so this stage uses admin-ajax for every WRITE action and keeps REST
@@ -17,27 +17,27 @@
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 
-const NAMESPACE = '/senroflux/v1';
+const NAMESPACE = '/specflux-site-agent/v1';
 
-/** GET /senroflux/v1/runs -> `{ runs: [...] }` (release/0.3, 0c1107e). */
+/** GET /specflux-site-agent/v1/runs -> `{ runs: [...] }` (release/0.3, 0c1107e). */
 export function listRuns() {
 	return apiFetch( { path: `${ NAMESPACE }/runs` } ).then( ( response ) => response.runs || [] );
 }
 
-/** GET /senroflux/v1/runs/{id} -> `{ run, steps, suggestions, ui }`. */
+/** GET /specflux-site-agent/v1/runs/{id} -> `{ run, steps, suggestions, ui }`. */
 export function getRun( runId ) {
 	return apiFetch( { path: `${ NAMESPACE }/runs/${ runId }` } );
 }
 
 /**
- * POST one admin-ajax action (`senroflux_start`/`_tick`/`_cancel`), fail
+ * POST one admin-ajax action (`specflux_site_agent_start`/`_tick`/`_cancel`), fail
  * closed on a non-2xx transport error or a `{ success: false }` envelope —
  * the caller always gets either the RunState `data` or a thrown Error whose
  * `.code`/`.message` mirror the server's `{ code, message }` shape.
  *
- * @param {string}                    action Ajax action name (without the `senroflux_` prefix already applied).
+ * @param {string}                    action Ajax action name (without the `specflux_site_agent_` prefix already applied).
  * @param {Object}                    fields Extra POST fields (nonce is added here).
- * @param {{ajaxUrl:string,nonce:string}} config Screen config (`window.senrofluxRunsConfig`).
+ * @param {{ajaxUrl:string,nonce:string}} config Screen config (`window.specfluxSiteAgentRunsConfig`).
  */
 function postAjax( action, fields, config ) {
 	const body = new URLSearchParams();
@@ -63,13 +63,13 @@ function postAjax( action, fields, config ) {
 			// check_ajax_referer() answers a stale nonce (a tab left open past
 			// its session) with a bare "-1" and HTTP 403: say what to do.
 			if ( 403 === status && -1 === json ) {
-				const expired = new Error( __( 'This page has expired. Reload it to continue.', 'senroflux' ) );
-				expired.code = 'senroflux_session_expired';
+				const expired = new Error( __( 'This page has expired. Reload it to continue.', 'specflux-site-agent' ) );
+				expired.code = 'specflux_site_agent_session_expired';
 				throw expired;
 			}
 			if ( ! json || true !== json.success ) {
 				const data = ( json && json.data ) || {};
-				const error = new Error( data.message || 'senroflux_request_failed' );
+				const error = new Error( data.message || 'specflux_site_agent_request_failed' );
 				error.code = data.code;
 				throw error;
 			}
@@ -78,7 +78,7 @@ function postAjax( action, fields, config ) {
 }
 
 /**
- * admin-ajax `senroflux_start`: {consumer, goal, pack?, model_provider?, model_id?}
+ * admin-ajax `specflux_site_agent_start`: {consumer, goal, pack?, model_provider?, model_id?}
  * -> RunState. `model` is `{ provider, id } | null` — null (the "Automatic"
  * choice) sends neither field, so the request is byte-identical to the
  * pre-model-picker shape and the server falls back to its own default.
@@ -99,41 +99,41 @@ export function startRun( goal, config, pack, model, followUpOf ) {
 		fields.model_provider = model.provider;
 		fields.model_id = model.id;
 	}
-	return postAjax( 'senroflux_start', fields, config );
+	return postAjax( 'specflux_site_agent_start', fields, config );
 }
 
 /**
- * admin-ajax `senroflux_setup_panel` (0.3 S11, "refresh on window focus"):
+ * admin-ajax `specflux_site_agent_setup_panel` (0.3 S11, "refresh on window focus"):
  * the setup panel's markup plus the whole start state — `{ html,
  * start_enabled, packs, unavailable_packs, steps }`. Same nonce/capability as every
  * other write, but read-only: it changes nothing on the server.
  */
 export function fetchSetupState( config ) {
-	return postAjax( 'senroflux_setup_panel', {}, config );
+	return postAjax( 'specflux_site_agent_setup_panel', {}, config );
 }
 
 /**
- * admin-ajax `senroflux_setup_brief` (guided setup, step "site brief"): save
+ * admin-ajax `specflux_site_agent_setup_brief` (guided setup, step "site brief"): save
  * the site brief (`action` 'save', with `brief`) or skip the step ('skip').
  * Administrators only; a too-long brief is refused, never truncated. Returns
  * `{ steps }`, the refreshed setup steps.
  */
 export function saveSetupBrief( action, brief, config ) {
-	return postAjax( 'senroflux_setup_brief', { brief_action: action, brief }, config );
+	return postAjax( 'specflux_site_agent_setup_brief', { brief_action: action, brief }, config );
 }
 
-/** admin-ajax `senroflux_tick`: {run_id, step_count, resume?} -> RunState. */
+/** admin-ajax `specflux_site_agent_tick`: {run_id, step_count, resume?} -> RunState. */
 export function tickRun( runId, stepCount, resume, config ) {
-	return postAjax( 'senroflux_tick', { run_id: runId, step_count: stepCount, resume: resume || undefined }, config );
+	return postAjax( 'specflux_site_agent_tick', { run_id: runId, step_count: stepCount, resume: resume || undefined }, config );
 }
 
-/** admin-ajax `senroflux_cancel`: {run_id} -> RunState. */
+/** admin-ajax `specflux_site_agent_cancel`: {run_id} -> RunState. */
 export function cancelRun( runId, config ) {
-	return postAjax( 'senroflux_cancel', { run_id: runId }, config );
+	return postAjax( 'specflux_site_agent_cancel', { run_id: runId }, config );
 }
 
 /**
- * POST /senroflux/v1/runs/{id}/suggestions/{seq}: {action, text?} ->
+ * POST /specflux-site-agent/v1/runs/{id}/suggestions/{seq}: {action, text?} ->
  * `{run_id, seq, action, text}` (0.3 S20). This goes over REST, not
  * admin-ajax — the route already requires `manage_options` and a REST nonce
  * (`apiFetch`'s own nonce middleware, the same one `listRuns`/`getRun`
@@ -155,7 +155,7 @@ export function resolveSuggestion( runId, seq, action, text ) {
 }
 
 /**
- * POST /senroflux/v1/runs/{id}/changes/preview (0.4 S3.2): what undoing the
+ * POST /specflux-site-agent/v1/runs/{id}/changes/preview (0.4 S3.2): what undoing the
  * run, or one of its changes, would do now. Writes nothing. Human click only;
  * the nonce is the run's own, from its `changes_section`.
  *
@@ -171,7 +171,7 @@ export function previewUndo( runId, nonce, changeId ) {
 	return apiFetch( { path: `${ NAMESPACE }/runs/${ runId }/changes/preview`, method: 'POST', data } );
 }
 
-/** POST /senroflux/v1/runs/{id}/changes/undo (0.4 S3.2): the same shape, and it restores. */
+/** POST /specflux-site-agent/v1/runs/{id}/changes/undo (0.4 S3.2): the same shape, and it restores. */
 export function undoChanges( runId, nonce, changeId ) {
 	const data = { nonce };
 	if ( changeId ) {

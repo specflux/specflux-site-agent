@@ -3,20 +3,20 @@
  * The FluentCart polyfill abilities (C4-F), run against a fake REST
  * dispatcher and fake FluentCart classes: no network, no real FluentCart.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartAbilities;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartPlatform;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartRest;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart\FluentCartAbilities;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart\FluentCartPlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart\FluentCartRest;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use WP_Error;
 use wpdb;
 
@@ -35,15 +35,15 @@ final class FluentCartAbilitiesTest extends TestCase {
 		require_once __DIR__ . '/FakeFluentCartCoupons.php';
 		require_once dirname( __DIR__, 3 ) . '/stubs/fluentcart-coupon-tools.php';
 
-		remove_all_filters( 'senroflux_store_platforms' );
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_posts']     = array();
-		$GLOBALS['senroflux_test_postmeta']  = array();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_options']   = array();
-		$GLOBALS['wpdb']                     = new wpdb();
-		FakeFluentCartCoupons::$calls        = array();
-		FakeFluentCartCoupons::$result       = null;
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']     = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']  = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['wpdb']                               = new wpdb();
+		FakeFluentCartCoupons::$calls                  = array();
+		FakeFluentCartCoupons::$result                 = null;
 		FluentCartPlatform::boot();
 
 		$this->calls     = array();
@@ -68,16 +68,16 @@ final class FluentCartAbilitiesTest extends TestCase {
 	protected function tearDown(): void {
 		FluentCartRest::useDispatcher( null );
 		Abilities::forgetRunContext();
-		remove_all_filters( 'senroflux_store_platforms' );
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		unset( $GLOBALS['wpdb'] );
 	}
 
 	/** @param array<string,mixed> $input Input. */
 	private function call( string $name, array $input ): mixed {
-		$ability = wp_get_ability( 'senroflux/' . $name );
-		$this->assertNotNull( $ability, "senroflux/$name was not registered" );
+		$ability = wp_get_ability( 'specflux/' . $name );
+		$this->assertNotNull( $ability, "specflux/$name was not registered" );
 
 		return $ability->execute( $input );
 	}
@@ -124,9 +124,9 @@ final class FluentCartAbilitiesTest extends TestCase {
 
 	public function test_registration_adds_every_fluentcart_polyfill_without_touching_woos(): void {
 		foreach ( FluentCartAbilities::templates() as $template ) {
-			$this->assertNotNull( wp_get_ability( 'senroflux/' . $template ), $template );
+			$this->assertNotNull( wp_get_ability( 'specflux/' . $template ), $template );
 		}
-		$this->assertNotNull( wp_get_ability( 'senroflux/orders-refund' ), 'Woo\'s polyfills still register' );
+		$this->assertNotNull( wp_get_ability( 'specflux/orders-refund' ), 'Woo\'s polyfills still register' );
 		$this->assertSame( array(), array_intersect( FluentCartAbilities::templates(), array( 'orders-refund', 'coupon-create', 'coupon-enable', 'set-product-image', 'shipping-zone-save', 'tax-rate-save', 'store-report', 'save-store-report', 'products-catalogue' ) ), 'no template collides with a Woo one' );
 	}
 
@@ -135,44 +135,44 @@ final class FluentCartAbilitiesTest extends TestCase {
 
 		$this->assertEqualsCanonicalizing( FluentCartAbilities::templates(), array_values( $own ) );
 		FluentCartAbilities::register( 'not-a-template' );
-		$this->assertNull( wp_get_ability( 'senroflux/not-a-template' ) );
+		$this->assertNull( wp_get_ability( 'specflux/not-a-template' ) );
 	}
 
 	public function test_permissions_follow_fluentcarts_gate_with_manage_options_as_the_floor(): void {
-		$ability = wp_get_ability( 'senroflux/fluentcart-orders-refund' );
+		$ability = wp_get_ability( 'specflux/fluentcart-orders-refund' );
 		$this->assertTrue( $ability?->check_permissions( array() ) );
 
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		$this->assertFalse( $ability?->check_permissions( array() ) );
 		$this->assertFalse( FluentCartAbilities::can( 'coupons/manage' ) );
 	}
 
 	public function test_set_product_image_permission_is_checked_per_product_and_attachment(): void {
-		$ability = wp_get_ability( 'senroflux/fluentcart-set-product-image' );
+		$ability = wp_get_ability( 'specflux/fluentcart-set-product-image' );
 		$input   = array(
 			'product_id'    => 50,
 			'attachment_id' => 60,
 		);
 
 		// FluentCart's own gate alone is not enough.
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 		$this->assertFalse( $ability?->check_permissions( $input ), 'no edit on the product' );
 
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'manage_options' => true,
 			'edit_post'      => true,
 			'read_post'      => true,
 		);
 		$this->assertTrue( $ability?->check_permissions( $input ) );
 
-		$GLOBALS['senroflux_test_user_caps']['edit_post:50'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:50'] = false;
 		$this->assertFalse( $ability?->check_permissions( $input ), 'no edit on THIS product' );
 
-		$GLOBALS['senroflux_test_user_caps']['edit_post:50'] = true;
-		$GLOBALS['senroflux_test_user_caps']['read_post:60'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:50'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:60'] = false;
 		$this->assertFalse( $ability?->check_permissions( $input ), 'cannot read THIS attachment' );
 
-		$GLOBALS['senroflux_test_user_caps']['read_post:60'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:60'] = true;
 		$this->assertFalse( $ability?->check_permissions( array() ), 'naming no object' );
 	}
 
@@ -398,18 +398,18 @@ final class FluentCartAbilitiesTest extends TestCase {
 	}
 
 	public function test_set_product_image_checks_product_attachment_and_alt_text(): void {
-		$GLOBALS['senroflux_test_posts'][50] = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][50] = (object) array(
 			'ID'         => 50,
 			'post_type'  => 'fluent-products',
 			'post_title' => 'Mug',
 		);
-		$GLOBALS['senroflux_test_posts'][60] = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][60] = (object) array(
 			'ID'             => 60,
 			'post_type'      => 'attachment',
 			'post_title'     => 'Photo',
 			'post_mime_type' => 'image/jpeg',
 		);
-		$GLOBALS['senroflux_test_posts'][61] = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][61] = (object) array(
 			'ID'         => 61,
 			'post_type'  => 'post',
 			'post_title' => 'Not media',
@@ -446,7 +446,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 			)->get_error_code()
 		);
 
-		$GLOBALS['senroflux_test_postmeta'][60]['_wp_attachment_image_alt'] = 'A mug';
+		$GLOBALS['specflux_site_agent_test_postmeta'][60]['_wp_attachment_image_alt'] = 'A mug';
 		$this->assertSame(
 			'forbidden',
 			$this->call(
@@ -459,7 +459,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 			'edit_post on THIS product is required'
 		);
 
-		$GLOBALS['senroflux_test_user_caps']['edit_post:50'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:50'] = true;
 		$out = $this->call(
 			'fluentcart-set-product-image',
 			array(
@@ -474,7 +474,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 			),
 			$out
 		);
-		$this->assertSame( 60, $GLOBALS['senroflux_test_postmeta'][50]['_thumbnail_id'] );
+		$this->assertSame( 60, $GLOBALS['specflux_site_agent_test_postmeta'][50]['_thumbnail_id'] );
 
 		$this->call(
 			'fluentcart-set-product-image',
@@ -492,7 +492,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 				'gallery'       => true,
 			)
 		);
-		$gallery = $GLOBALS['senroflux_test_postmeta'][50]['fluent-products-gallery-image'];
+		$gallery = $GLOBALS['specflux_site_agent_test_postmeta'][50]['fluent-products-gallery-image'];
 		$this->assertCount( 1, $gallery, 'idempotent' );
 		$this->assertSame( 60, $gallery[0]['id'] );
 	}
@@ -570,7 +570,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 	}
 
 	public function test_a_coupon_write_without_the_permission_never_reaches_fluentcart(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		$out = FluentCartAbilities::executeCouponEnable( array( 'coupon_id' => 3 ) );
 
@@ -733,7 +733,7 @@ final class FluentCartAbilitiesTest extends TestCase {
 				)
 			)
 		);
-		$store->appendStep( $run_id, \Specflux\SenroFlux\Run\StepKind::ToolResult, array( 'ok' => true ), 'wpab__senroflux__fluentcart-orders-refund', null, 'ok' );
+		$store->appendStep( $run_id, \Specflux\SiteAgent\Run\StepKind::ToolResult, array( 'ok' => true ), 'wpab__specflux__fluentcart-orders-refund', null, 'ok' );
 
 		$second = $this->call(
 			'fluentcart-orders-refund',

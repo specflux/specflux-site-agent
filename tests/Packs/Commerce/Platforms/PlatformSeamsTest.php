@@ -4,25 +4,25 @@
  * namespaces from registered platforms, the restore capability, approval-card
  * and report-lookup hooks, and the pin at Plugin::start.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\ChangesBridge;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Commerce\ReportLookup;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Approval\ChangesBridge;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Commerce\ReportLookup;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use wpdb;
 
 final class PlatformSeamsTest extends TestCase {
@@ -31,22 +31,22 @@ final class PlatformSeamsTest extends TestCase {
 
 	protected function setUp(): void {
 		require_once __DIR__ . '/FakePlatform.php';
-		remove_all_filters( 'senroflux_store_platforms' );
-		remove_all_filters( 'senroflux_packs' );
-		$GLOBALS['senroflux_test_options']   = array();
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		Plugin::reset();
 
 		$this->fake = new FakePlatform( 'fake-a' );
 		$fake       = $this->fake;
-		add_filter( 'senroflux_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $fake ) ), 10, 1 );
+		add_filter( 'specflux_site_agent_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $fake ) ), 10, 1 );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
-		remove_all_filters( 'senroflux_packs' );
-		$GLOBALS['senroflux_test_abilities'] = array();
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
 		unset( $GLOBALS['wpdb'] );
 		Plugin::set_dependency_probe( null );
 		Plugin::reset();
@@ -63,7 +63,7 @@ final class PlatformSeamsTest extends TestCase {
 	}
 
 	private function registerNative(): void {
-		$GLOBALS['senroflux_test_abilities']['fake/manage-fake'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['fake/manage-fake'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'fake/manage-fake',
 			input_schema: array(
 				'type'       => 'object',
@@ -94,13 +94,13 @@ final class PlatformSeamsTest extends TestCase {
 
 		$this->assertSame( array( 'read' => 'fake-read' ), $pack->roles(), 'roles() keeps the polyfill template' );
 		$this->assertSame( array( 'read' => 'fake/manage-fake' ), $pack->resolveAbilities() );
-		$this->assertArrayHasKey( 'senroflux/fake-read', $pack->agentSafetyVerbMap(), 'the verb map is keyed by the polyfill id' );
+		$this->assertArrayHasKey( 'specflux/fake-read', $pack->agentSafetyVerbMap(), 'the verb map is keyed by the polyfill id' );
 	}
 
 	public function test_a_role_falls_back_to_the_polyfill_name_when_the_native_is_absent(): void {
 		$this->nativeRole( null );
 
-		$this->assertSame( array( 'read' => 'senroflux/fake-read' ), ( new CommercePack() )->resolveAbilities() );
+		$this->assertSame( array( 'read' => 'specflux/fake-read' ), ( new CommercePack() )->resolveAbilities() );
 	}
 
 	public function test_shape_applies_to_the_native_ability_only(): void {
@@ -109,20 +109,20 @@ final class PlatformSeamsTest extends TestCase {
 		$pack = new CommercePack();
 
 		$this->assertSame( array( 'wrapped' => array( 'a' => 1 ) ), $pack->shapeInput( 'fake/manage-fake', array( 'a' => 1 ) ) );
-		$this->assertSame( array( 'a' => 1 ), $pack->shapeInput( 'senroflux/fake-read', array( 'a' => 1 ) ), 'the polyfill takes the pack input as is' );
+		$this->assertSame( array( 'a' => 1 ), $pack->shapeInput( 'specflux/fake-read', array( 'a' => 1 ) ), 'the polyfill takes the pack input as is' );
 		$this->assertSame( array( 'a' => 1 ), $pack->shapeInput( 'fake/unrelated', array( 'a' => 1 ) ) );
 	}
 
 	public function test_the_executor_hands_the_ability_the_shaped_input(): void {
 		$seen = null;
-		$GLOBALS['senroflux_test_abilities']['fake/manage-fake']             = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['fake/manage-fake']             = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'fake/manage-fake',
 			input_schema: array(
 				'type'       => 'object',
 				'properties' => array(),
 			)
 		);
-		$GLOBALS['senroflux_test_abilities']['fake/manage-fake']->on_execute = static function ( $input ) use ( &$seen ): void {
+		$GLOBALS['specflux_site_agent_test_abilities']['fake/manage-fake']->on_execute = static function ( $input ) use ( &$seen ): void {
 			$seen = $input;
 		};
 
@@ -170,16 +170,16 @@ final class PlatformSeamsTest extends TestCase {
 	public function test_a_registered_platforms_namespace_is_eligible_and_an_unregistered_one_is_refused(): void {
 		$this->assertContains( 'fake/', StorePlatforms::governedNamespaces() );
 		$this->assertContains( 'woocommerce/', StorePlatforms::governedNamespaces() );
-		$this->assertNotContains( 'senroflux/', StorePlatforms::governedNamespaces() );
+		$this->assertNotContains( 'specflux/', StorePlatforms::governedNamespaces() );
 
-		$GLOBALS['senroflux_test_doing_it_wrong'] = array();
-		$registry                                 = new PackRegistry();
-		$registry->register( $this->packWith( 'ok', array( 'fake/', 'senroflux/' ) ) );
-		$registry->register( $this->packWith( 'nope', array( 'surecart/', 'senroflux/' ) ) );
+		$GLOBALS['specflux_site_agent_test_doing_it_wrong'] = array();
+		$registry = new PackRegistry();
+		$registry->register( $this->packWith( 'ok', array( 'fake/', 'specflux/' ) ) );
+		$registry->register( $this->packWith( 'nope', array( 'surecart/', 'specflux/' ) ) );
 
 		$this->assertNotNull( $registry->get( 'ok' ) );
 		$this->assertNull( $registry->get( 'nope' ), 'surecart/ is not eligible until a platform registers it' );
-		$this->assertNotNull( ( new PackRegistry() )->register( $this->packWith( 'woo', array( 'woocommerce/', 'senroflux/' ) ) )->get( 'woo' ), 'woocommerce/ stays eligible via WooPlatform' );
+		$this->assertNotNull( ( new PackRegistry() )->register( $this->packWith( 'woo', array( 'woocommerce/', 'specflux/' ) ) )->get( 'woo' ), 'woocommerce/ stays eligible via WooPlatform' );
 	}
 
 	// ------------------------------------------------------------------
@@ -201,7 +201,7 @@ final class PlatformSeamsTest extends TestCase {
 	public function test_a_platform_can_supply_the_approval_card_and_report_lookup(): void {
 		// The only usable platform is the fake one (Woo is not active in the unit suite).
 		// `orders-refund` is Tier 2 under the commerce verb table; the platform's card wins.
-		$this->assertSame( 'fake card for commerce/refund', CommerceSummary::filter( 'plain', 'senroflux/orders-refund', array() ) );
+		$this->assertSame( 'fake card for commerce/refund', CommerceSummary::filter( 'plain', 'specflux/orders-refund', array() ) );
 
 		$lookup = ReportLookup::resolve( 'order:7' );
 		$this->assertSame( 'Fake order:7', $lookup['title'] ?? null );
@@ -213,14 +213,14 @@ final class PlatformSeamsTest extends TestCase {
 
 	public function test_the_real_commerce_pack_pins_the_selected_platform(): void {
 		$this->assertSame( 'fake-a', ( new CommercePack() )->pinForRun() );
-		$this->assertNull( $this->packWith( 'plain', array( 'core/', 'senroflux/' ) )->pinForRun(), 'other packs pin nothing' );
+		$this->assertNull( $this->packWith( 'plain', array( 'core/', 'specflux/' ) )->pinForRun(), 'other packs pin nothing' );
 	}
 
 	public function test_start_pins_what_the_pack_asks_it_to_and_clears_the_scope(): void {
-		$GLOBALS['wpdb']                                   = new wpdb();
-		$GLOBALS['senroflux_test_current_user_id']         = 1;
-		$GLOBALS['senroflux_test_user_caps']['edit_posts'] = true;
-		$GLOBALS['senroflux_test_user_caps_by_id'][1]['edit_posts'] = true;
+		$GLOBALS['wpdb']                                     = new wpdb();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_posts']          = true;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][1]['edit_posts'] = true;
 		Plugin::set_dependency_probe( true );
 
 		$pack = new class() extends Pack {
@@ -235,7 +235,7 @@ final class PlatformSeamsTest extends TestCase {
 			}
 
 			public function verbMap(): array {
-				return array( 'senroflux/read-content' => 0 );
+				return array( 'specflux/read-content' => 0 );
 			}
 
 			public function runCapability(): string {
@@ -256,7 +256,7 @@ final class PlatformSeamsTest extends TestCase {
 				return null;
 			}
 		};
-		add_filter( 'senroflux_packs', static fn ( array $packs ): array => $packs + array( 'pinning' => $pack ), 10, 1 );
+		add_filter( 'specflux_site_agent_packs', static fn ( array $packs ): array => $packs + array( 'pinning' => $pack ), 10, 1 );
 
 		$result = Plugin::instance()->start( 'specflux-mac', 'Do it', array(), array(), 'pinning' );
 

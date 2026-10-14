@@ -1,6 +1,6 @@
 <?php
 /**
- * S19 commerce tier parity: SenroFlux's own `verbFor()` + verb map against
+ * S19 commerce tier parity: Specflux Site Agent's own `verbFor()` + verb map against
  * the shared fixture, and a byte-identical check against Agent Safety's copy
  * when the sibling repo is checked out.
  *
@@ -16,16 +16,16 @@
  * direct-allow fallback) and neither base name appears in any `roleVerbs()`
  * entry, rather than being skipped as out of scope.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Parity;
+namespace Specflux\SiteAgent\Tests\Parity;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Tools\VerbTier;
 
 final class CommerceTierParityTest extends TestCase {
 
@@ -57,11 +57,11 @@ final class CommerceTierParityTest extends TestCase {
 	}
 
 	/**
-	 * SenroFlux's own `verbFor()` + `verbMap()` classify every fixture row for
+	 * Specflux Site Agent's own `verbFor()` + `verbMap()` classify every fixture row for
 	 * an ability this pack registers a role for at the same tier the fixture
 	 * (and, on the Agent Safety side, `TierClassifier`) expects.
 	 */
-	public function test_senroflux_classifies_every_pack_ability_fixture_row_at_the_fixture_tier(): void {
+	public function test_specflux_site_agent_classifies_every_pack_ability_fixture_row_at_the_fixture_tier(): void {
 		$pack      = new CommercePack();
 		$verbMap   = $pack->verbMap();
 		$exercised = 0;
@@ -140,7 +140,7 @@ final class CommerceTierParityTest extends TestCase {
 					),
 				)
 			);
-			$this->assertSame( 2, \Specflux\SenroFlux\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ), $key );
+			$this->assertSame( 2, \Specflux\SiteAgent\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ), $key );
 		}
 		$verb = $pack->verbFor(
 			'woocommerce/product-update',
@@ -154,7 +154,7 @@ final class CommerceTierParityTest extends TestCase {
 				),
 			)
 		);
-		$this->assertSame( 1, \Specflux\SenroFlux\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ) );
+		$this->assertSame( 1, \Specflux\SiteAgent\Tools\VerbTier::tierFor( $verb, $pack->verbMap() ) );
 	}
 
 	/**
@@ -162,14 +162,14 @@ final class CommerceTierParityTest extends TestCase {
 	 * — the shared-file mechanism S19 documents in place of a composer
 	 * package. Skips with a clear message when the sibling repo is not
 	 * checked out next to this one (a normal, non-failing state for a
-	 * SenroFlux-only checkout), but fails under CI=true, where the sibling
+	 * Specflux Site Agent-only checkout), but fails under CI=true, where the sibling
 	 * checkout is part of the job and its absence means the check ran on
 	 * nothing.
 	 */
 	public function test_byte_identical_to_agent_safetys_copy_when_the_sibling_repo_is_present(): void {
-		// SENROFLUX_PARITY_SIBLING points at the producer's fixture when the
-		// checkout is not laid out as ../agent-safety (e.g. a SenroGate worktree).
-		$override = getenv( 'SENROFLUX_PARITY_SIBLING' );
+		// SPECFLUX_SITE_AGENT_PARITY_SIBLING points at the producer's fixture when the
+		// checkout is not laid out as ../agent-safety (e.g. a Belayline Agent Governance worktree).
+		$override = getenv( 'SPECFLUX_SITE_AGENT_PARITY_SIBLING' );
 		$sibling  = ( false !== $override && '' !== $override )
 			? $override
 			: dirname( __DIR__, 3 ) . '/agent-safety/plugin/tests/Fixtures/commerce-tier-parity.json';
@@ -178,13 +178,13 @@ final class CommerceTierParityTest extends TestCase {
 			if ( 'true' === getenv( 'CI' ) ) {
 				$this->fail( 'CI=true but Agent Safety\'s parity fixture is unavailable at ' . $sibling );
 			}
-			$this->markTestSkipped( 'Agent Safety is not checked out alongside SenroFlux (checked: ' . $sibling . ') — nothing to diff against.' );
+			$this->markTestSkipped( 'Agent Safety is not checked out alongside Specflux Site Agent (checked: ' . $sibling . ') — nothing to diff against.' );
 		}
 
 		$this->assertSame(
 			file_get_contents( $sibling ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local sibling-repo fixture, not a remote URL.
 			file_get_contents( $this->fixturePath() ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test fixture, not a remote URL.
-			'SenroFlux\'s and Agent Safety\'s copies of the parity fixture have drifted apart'
+			'Specflux Site Agent\'s and Agent Safety\'s copies of the parity fixture have drifted apart'
 		);
 	}
 }

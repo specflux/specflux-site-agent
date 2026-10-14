@@ -1,23 +1,23 @@
 <?php
 /**
  * D3b (S6): section tone. A layout item's `tone` becomes a `backgroundColor` +
- * `textColor` preset pair that SenroFlux writes on a curated section's
+ * `textColor` preset pair that Specflux Site Agent writes on a curated section's
  * top-level group, resolved from the active palette by luminance (never by
  * slug), dropped when no pair reaches WCAG AA, and bounded per page.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Tone;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Tone;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
 use WP_Error;
 
 final class ToneTest extends TestCase {
@@ -54,14 +54,14 @@ final class ToneTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/theme-patterns.php';
 
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
 		self::palette( self::TT25_PALETTE );
 		ThemePatterns::resetCache();
 	}
 
 	protected function tearDown(): void {
 		ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'], $GLOBALS['senroflux_test_stylesheet_dir'], $GLOBALS['senroflux_test_template_dir'], $GLOBALS['senroflux_test_stylesheet'], $GLOBALS['senroflux_test_template'], $GLOBALS['senroflux_test_global_settings'], $GLOBALS['senroflux_test_declared_patterns'] );
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'], $GLOBALS['specflux_site_agent_test_stylesheet_dir'], $GLOBALS['specflux_site_agent_test_template_dir'], $GLOBALS['specflux_site_agent_test_stylesheet'], $GLOBALS['specflux_site_agent_test_template'], $GLOBALS['specflux_site_agent_test_global_settings'], $GLOBALS['specflux_site_agent_test_declared_patterns'] );
 	}
 
 	/**
@@ -79,7 +79,7 @@ final class ToneTest extends TestCase {
 			);
 		}
 
-		$GLOBALS['senroflux_test_global_settings'] = array(
+		$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 			'color' => array(
 				'defaultPalette' => false,
 				'palette'        => array(
@@ -287,7 +287,7 @@ final class ToneTest extends TestCase {
 
 		$this->assertSame( 'contrast', $attrs['backgroundColor'] );
 		$this->assertSame( 'base', $attrs['textColor'] );
-		$this->assertSame( 'senroflux/text-section', $attrs['metadata']['name'] );
+		$this->assertSame( 'specflux/text-section', $attrs['metadata']['name'] );
 		$this->assertMatchesRegularExpression( '/<div class="wp-block-group [^"]*\bhas-base-color\b[^"]*"/', $built );
 		foreach ( array( 'has-base-color', 'has-contrast-background-color', 'has-text-color', 'has-background' ) as $class ) {
 			$this->assertMatchesRegularExpression( '/<div class="[^"]*\b' . $class . '\b[^"]*"/', $built, $class );
@@ -354,20 +354,20 @@ final class ToneTest extends TestCase {
 
 		$built = self::render( $section );
 
-		$this->assertSame( 'senroflux/cover-hero', self::topAttrs( $built )['metadata']['name'] );
+		$this->assertSame( 'specflux/cover-hero', self::topAttrs( $built )['metadata']['name'] );
 		$this->assertArrayNotHasKey( 'backgroundColor', self::topAttrs( $built ) );
 		$this->assertArrayNotHasKey( 'textColor', self::topAttrs( $built ) );
 	}
 
 	public function test_a_theme_pattern_section_keeps_its_shipped_colours_and_ignores_tone(): void {
 		self::palette( self::OLLIE_PALETTE );
-		$GLOBALS['senroflux_test_stylesheet'] = 'ollie';
+		$GLOBALS['specflux_site_agent_test_stylesheet'] = 'ollie';
 		self::registerOllie( array( 'hero-light' ) );
 
 		$plain = self::render( self::ollieHero() );
 		$toned = self::render( self::ollieHero() + array( 'tone' => 'accent' ) );
 
-		$this->assertSame( 'senroflux/ollie/hero-light', self::topAttrs( $toned )['metadata']['name'] );
+		$this->assertSame( 'specflux/ollie/hero-light', self::topAttrs( $toned )['metadata']['name'] );
 		$this->assertSame( $plain, $toned );
 	}
 
@@ -376,7 +376,7 @@ final class ToneTest extends TestCase {
 	public function test_an_image_less_hero_gets_contrast(): void {
 		$attrs = self::topAttrs( self::render( self::plainHero() ) );
 
-		$this->assertSame( 'senroflux/hero', $attrs['metadata']['name'] );
+		$this->assertSame( 'specflux/hero', $attrs['metadata']['name'] );
 		$this->assertSame( 'contrast', $attrs['backgroundColor'] );
 		$this->assertSame( 'base', $attrs['textColor'] );
 	}
@@ -584,9 +584,9 @@ final class ToneTest extends TestCase {
 			);
 		}
 
-		$GLOBALS['senroflux_test_theme_patterns'] = $patterns;
-		$GLOBALS['senroflux_test_stylesheet_dir'] = $dir;
-		$GLOBALS['senroflux_test_template_dir']   = $dir;
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = $patterns;
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = $dir;
+		$GLOBALS['specflux_site_agent_test_template_dir']   = $dir;
 		ThemePatterns::resetCache();
 	}
 

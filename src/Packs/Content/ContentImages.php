@@ -10,12 +10,12 @@
  * with no WP_Error and no message copy — each caller builds its own refusal
  * in its own pack's words.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -62,7 +62,7 @@ final class ContentImages {
 	 * (a `core/cover` built by the `hero` layout, `cover-hero`, or a
 	 * theme-derived hero pattern; any other cover further down the page is
 	 * not "the" hero). Both `url` and `id` are returned (whichever the
-	 * markup carries — {@see \Specflux\SenroFlux\Packs\Pages\Layouts::finish()}
+	 * markup carries — {@see \Specflux\SiteAgent\Packs\Pages\Layouts::finish()}
 	 * strips `id` from a layout-built cover, so `url` is the only signal
 	 * there; hand-authored markup may carry a real attachment `id` instead).
 	 *

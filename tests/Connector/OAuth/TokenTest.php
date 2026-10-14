@@ -2,19 +2,19 @@
 /**
  * The token endpoint: code exchange, PKCE, rotation and reuse detection.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Connector\OAuth\Bearer;
-use Specflux\SenroFlux\Connector\OAuth\OAuth;
-use Specflux\SenroFlux\Connector\OAuth\Store;
-use Specflux\SenroFlux\Connector\OAuth\Token;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Connector\OAuth\Bearer;
+use Specflux\SiteAgent\Connector\OAuth\OAuth;
+use Specflux\SiteAgent\Connector\OAuth\Store;
+use Specflux\SiteAgent\Connector\OAuth\Token;
+use Specflux\SiteAgent\Run\Clock;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -41,12 +41,12 @@ final class TokenTest extends OAuthTestCase {
 		$this->assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', $r['body']['access_token'] );
 		$this->assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', $r['body']['refresh_token'] );
 		$this->assertNotSame( $r['body']['access_token'], $r['body']['refresh_token'] );
-		$this->assertSame( 'senroflux:read', $r['body']['scope'] );
+		$this->assertSame( 'specflux:read', $r['body']['scope'] );
 	}
 
 	public function test_only_hashes_are_stored(): void {
 		$r    = $this->tokens();
-		$dump = wp_json_encode( array( $GLOBALS['senroflux_test_options'], $GLOBALS['senroflux_test_transients'] ) );
+		$dump = wp_json_encode( array( $GLOBALS['specflux_site_agent_test_options'], $GLOBALS['specflux_site_agent_test_transients'] ) );
 
 		$this->assertStringNotContainsString( $r['body']['access_token'], (string) $dump );
 		$this->assertStringNotContainsString( $r['body']['refresh_token'], (string) $dump );
@@ -120,8 +120,8 @@ final class TokenTest extends OAuthTestCase {
 	}
 
 	public function test_user_who_lost_the_capability_gets_nothing(): void {
-		$flow                                = $this->obtainCode();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$flow = $this->obtainCode();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$this->assertError( 'invalid_grant', $this->exchange( $flow ) );
 	}
@@ -217,13 +217,13 @@ final class TokenTest extends OAuthTestCase {
 
 	public function test_refresh_may_narrow_scope_but_never_widen_it(): void {
 		$first = $this->tokens( 'write' );
-		$this->assertSame( 'senroflux:read senroflux:write', $first['body']['scope'] );
+		$this->assertSame( 'specflux:read specflux:write', $first['body']['scope'] );
 
-		$narrow = $this->refreshWith( $first['body']['refresh_token'], $first['client'], array( 'scope' => 'senroflux:read' ) );
-		$this->assertSame( 'senroflux:read', $narrow['body']['scope'] );
+		$narrow = $this->refreshWith( $first['body']['refresh_token'], $first['client'], array( 'scope' => 'specflux:read' ) );
+		$this->assertSame( 'specflux:read', $narrow['body']['scope'] );
 
 		$read = $this->tokens( 'read' );
-		$wide = $this->refreshWith( $read['body']['refresh_token'], $read['client'], array( 'scope' => 'senroflux:read senroflux:write' ) );
+		$wide = $this->refreshWith( $read['body']['refresh_token'], $read['client'], array( 'scope' => 'specflux:read specflux:write' ) );
 		$this->assertError( 'invalid_scope', $wide );
 		$this->assertSame( 200, $this->refreshWith( $read['body']['refresh_token'], $read['client'] )['status'], 'A bad scope request does not burn the token.' );
 	}
@@ -233,8 +233,8 @@ final class TokenTest extends OAuthTestCase {
 	}
 
 	public function test_refresh_revalidates_the_user(): void {
-		$first                               = $this->tokens();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$first = $this->tokens();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$this->assertError( 'invalid_grant', $this->refreshWith( $first['body']['refresh_token'], $first['client'] ) );
 	}

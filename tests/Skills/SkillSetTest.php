@@ -2,25 +2,25 @@
 /**
  * SkillSet::harnessSkills(), ::collect() and ::ceilingError() tests.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Skills;
+namespace Specflux\SiteAgent\Tests\Skills;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 final class SkillSetTest extends TestCase {
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_run_skills' );
-		remove_all_filters( 'senroflux_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
 	}
 
 	/**
@@ -112,12 +112,12 @@ final class SkillSetTest extends TestCase {
 		}
 
 		$this->assertStringContainsString( 'read what the site already says', $workflow );
-		$this->assertStringContainsString( 'in one `senroflux/ask-user` call', $workflow );
+		$this->assertStringContainsString( 'in one `specflux/ask-user` call', $workflow );
 		foreach ( array( 'who each is for', 'address', 'hours', 'tone', 'proof point' ) as $fact ) {
 			$this->assertStringContainsString( $fact, $workflow );
 		}
 		$this->assertStringContainsString( 'Never invent a policy, process step, duration', $workflow );
-		$this->assertStringContainsString( 'senroflux/suggest-brief-addition', $workflow );
+		$this->assertStringContainsString( 'specflux/suggest-brief-addition', $workflow );
 	}
 
 	public function test_collect_builds_harness_then_pack_then_consumer(): void {
@@ -129,7 +129,7 @@ final class SkillSetTest extends TestCase {
 		);
 
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static fn ( array $skills ): array => array_merge(
 				$skills,
 				array( new Skill( 'consumer/brand', 'Brand', 'Consumer body.', false, SkillSource::Consumer ) )
@@ -175,7 +175,7 @@ final class SkillSetTest extends TestCase {
 
 	public function test_collect_re_adds_a_harness_skill_removed_by_the_filter(): void {
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static fn ( array $skills ): array => array_values(
 				array_filter(
 					$skills,
@@ -230,7 +230,7 @@ final class SkillSetTest extends TestCase {
 		// and swaps the BODY, so "the id is still in the list" is satisfied
 		// while the model reads instructions the harness never wrote.
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static fn ( array $skills ): array => array_map(
 				static fn ( Skill $skill ): Skill => 'harness/injection-rule' === $skill->id
 					? new Skill(
@@ -265,7 +265,7 @@ final class SkillSetTest extends TestCase {
 
 		$seen = array();
 		add_filter(
-			'senroflux_run_skills',
+			'specflux_site_agent_run_skills',
 			static function ( array $skills, $filter_pack, string $consumer, string $goal ) use ( &$seen ): array {
 				$seen = array(
 					'pack'     => $filter_pack,
@@ -288,7 +288,7 @@ final class SkillSetTest extends TestCase {
 
 	public function test_ceiling_counts_characters_not_bytes(): void {
 		add_filter(
-			'senroflux_skills_max_tokens',
+			'specflux_site_agent_skills_max_tokens',
 			static fn (): int => 1,
 			10,
 			0
@@ -347,7 +347,7 @@ final class SkillSetTest extends TestCase {
 
 	public function test_ceiling_error_returns_wp_error_when_over_and_never_truncates(): void {
 		add_filter(
-			'senroflux_skills_max_tokens',
+			'specflux_site_agent_skills_max_tokens',
 			static fn ( int $max ): int => min( $max, 2 )
 		);
 

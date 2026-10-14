@@ -3,17 +3,17 @@
  * WooCommerce as a store platform (C4-0): everything the commerce pack used to
  * hard-code for Woo, moved here unchanged.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\Woo;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\Woo;
 
-use Specflux\SenroFlux\Packs\Commerce\DescriptionValidator;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
+use Specflux\SiteAgent\Packs\Commerce\DescriptionValidator;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
 use WP_Error;
 
 // Bail on direct access.
@@ -61,14 +61,14 @@ final class WooPlatform implements StorePlatform {
 		return self::MIN_VERSION;
 	}
 
-	/** Woo's own session abilities are governed by SenroGate's Woo module, which exists only in SenroGate mode. */
+	/** Woo's own session abilities are governed by Belayline Agent Governance's Woo module, which exists only in Belayline Agent Governance mode. */
 	public function isGoverned(): bool {
 		return GateMode::AgentSafety === Plugin::currentGateMode();
 	}
 
 	/** @return list<string> */
 	public function abilityNamespaces(): array {
-		return array( 'woocommerce/', 'senroflux/' );
+		return array( 'woocommerce/', 'specflux/' );
 	}
 
 	public function runCapability(): string {
@@ -98,7 +98,7 @@ final class WooPlatform implements StorePlatform {
 			'report-save'     => 'save-store-report',
 			// C4-W. `order-status` and `product-trash` resolve to Woo's own
 			// abilities (`order-update-status`, `product-delete`); the other three
-			// have no Woo ability, so they are `senroflux/` polyfills over WC CRUD.
+			// have no Woo ability, so they are `specflux/` polyfills over WC CRUD.
 			'order-status'    => 'order-update-status',
 			'product-trash'   => 'product-delete',
 			'stock'           => 'stock-adjust',
@@ -165,14 +165,14 @@ final class WooPlatform implements StorePlatform {
 			'commerce/tax-write'            => 2,
 			'commerce/store-report'         => 0,
 			'commerce/report-save'          => 2,
-			// C4-W. Order status mirrors SenroGate (order-update-status: Tier 1,
+			// C4-W. Order status mirrors Belayline Agent Governance (order-update-status: Tier 1,
 			// Tier 2 for a status that emails or moves stock). A force delete is
-			// Tier 2 in SenroGate's catalog; here it is also refused outright.
+			// Tier 2 in Belayline Agent Governance's catalog; here it is also refused outright.
 			'commerce/order-status'         => 1,
 			'commerce/order-status-notify'  => 2,
 			'commerce/product-trash'        => 1,
 			'commerce/product-delete-force' => 2,
-			// No SenroGate entry for these (`senroflux/` polyfills): SenroFlux's own
+			// No Belayline Agent Governance entry for these (`specflux/` polyfills): Specflux Site Agent's own
 			// VerbTier governs them. Stock changes what can be sold, so Tier 2.
 			'commerce/stock-adjust'         => 2,
 		);
@@ -378,7 +378,7 @@ final class WooPlatform implements StorePlatform {
 			}
 		}
 
-		// Mirrors SenroGate's guarded meta keys: a price or stock write via
+		// Mirrors Belayline Agent Governance's guarded meta keys: a price or stock write via
 		// `meta_data` is the same money-shaping edit as the named fields.
 		$meta = $input['meta_data'] ?? null;
 		if ( is_array( $meta ) ) {

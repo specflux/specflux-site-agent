@@ -2,15 +2,15 @@
 /**
  * Site\Settings tests: read-settings / update-settings.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Settings;
+use Specflux\SiteAgent\Packs\Site\Settings;
 use WP_Error;
 
 final class SettingsTest extends TestCase {
@@ -18,11 +18,11 @@ final class SettingsTest extends TestCase {
 	protected function setUp(): void {
 		require_once dirname( __DIR__, 2 ) . '/stubs/site-tools.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_options']            = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_options']            = array(
 			'blogname'       => 'Old name',
 			'posts_per_page' => '10',
 			'siteurl'        => 'https://example.test',
@@ -31,7 +31,7 @@ final class SettingsTest extends TestCase {
 			'default_role'   => 'subscriber',
 			'blog_public'    => '1',
 		);
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array(
 			'manage_options' => true,
 			'edit_post'      => true,
 		);
@@ -41,11 +41,11 @@ final class SettingsTest extends TestCase {
 	}
 
 	private function read(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/read-settings'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/read-settings'];
 	}
 
 	private function update(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/update-settings'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/update-settings'];
 	}
 
 	private function page( string $status = 'publish', string $type = 'page' ): int {
@@ -59,7 +59,7 @@ final class SettingsTest extends TestCase {
 	}
 
 	public function test_both_abilities_refuse_without_manage_options(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		$this->assertFalse( $this->read()->check_permissions( array() ) );
 		$this->assertFalse( $this->update()->check_permissions( array( 'settings' => array( 'blogname' => 'x' ) ) ) );
@@ -139,7 +139,7 @@ final class SettingsTest extends TestCase {
 
 	/** @dataProvider forbiddenKeys */
 	public function test_forbidden_keys_are_refused_and_nothing_is_written( string $key ): void {
-		$before = $GLOBALS['senroflux_test_options'];
+		$before = $GLOBALS['specflux_site_agent_test_options'];
 
 		// The valid entry comes first: atomicity means it must not land.
 		$result = $this->update()->execute(
@@ -154,7 +154,7 @@ final class SettingsTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'setting_not_allowed', $result->get_error_code() );
 		$this->assertStringContainsString( $key, $result->get_error_message() );
-		$this->assertSame( $before, $GLOBALS['senroflux_test_options'] );
+		$this->assertSame( $before, $GLOBALS['specflux_site_agent_test_options'] );
 	}
 
 	/** @return array<string,array{0:string,1:mixed}> */
@@ -180,7 +180,7 @@ final class SettingsTest extends TestCase {
 
 	/** @dataProvider invalidValues */
 	public function test_invalid_values_are_refused_and_nothing_is_written( string $key, mixed $value ): void {
-		$before = $GLOBALS['senroflux_test_options'];
+		$before = $GLOBALS['specflux_site_agent_test_options'];
 
 		$result = $this->update()->execute(
 			array(
@@ -194,7 +194,7 @@ final class SettingsTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'invalid_setting_value', $result->get_error_code() );
 		$this->assertStringContainsString( $key, $result->get_error_message() );
-		$this->assertSame( $before, $GLOBALS['senroflux_test_options'] );
+		$this->assertSame( $before, $GLOBALS['specflux_site_agent_test_options'] );
 	}
 
 	public function test_empty_settings_is_an_error(): void {
@@ -218,7 +218,7 @@ final class SettingsTest extends TestCase {
 			$this->assertInstanceOf( WP_Error::class, $result );
 			$this->assertSame( 'invalid_setting_value', $result->get_error_code() );
 		}
-		$this->assertNull( $GLOBALS['senroflux_test_options']['page_on_front'] ?? null );
+		$this->assertNull( $GLOBALS['specflux_site_agent_test_options']['page_on_front'] ?? null );
 
 		$result = $this->update()->execute(
 			array(
@@ -234,14 +234,14 @@ final class SettingsTest extends TestCase {
 
 	public function test_page_the_caller_cannot_edit_is_refused_by_permission_and_execute(): void {
 		$good = $this->page();
-		$GLOBALS['senroflux_test_user_caps'][ 'edit_post:' . $good ] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps'][ 'edit_post:' . $good ] = false;
 
 		$input = array( 'settings' => array( 'page_for_posts' => $good ) );
 
 		$this->assertFalse( $this->update()->check_permissions( $input ) );
 		$result = $this->update()->execute( $input );
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertNull( $GLOBALS['senroflux_test_options']['page_for_posts'] ?? null );
+		$this->assertNull( $GLOBALS['specflux_site_agent_test_options']['page_for_posts'] ?? null );
 	}
 
 	public function test_front_and_posts_page_must_differ(): void {
@@ -256,7 +256,7 @@ final class SettingsTest extends TestCase {
 			)
 		);
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertNull( $GLOBALS['senroflux_test_options']['page_on_front'] ?? null );
+		$this->assertNull( $GLOBALS['specflux_site_agent_test_options']['page_on_front'] ?? null );
 
 		// Against the stored value too.
 		$this->update()->execute( array( 'settings' => array( 'page_on_front' => $good ) ) );
@@ -265,8 +265,8 @@ final class SettingsTest extends TestCase {
 	}
 
 	public function test_schemas_have_no_max_length(): void {
-		foreach ( array( 'senroflux/read-settings', 'senroflux/update-settings' ) as $name ) {
-			$ability = $GLOBALS['senroflux_test_abilities'][ $name ];
+		foreach ( array( 'specflux/read-settings', 'specflux/update-settings' ) as $name ) {
+			$ability = $GLOBALS['specflux_site_agent_test_abilities'][ $name ];
 			$json    = (string) wp_json_encode( array( $ability->get_input_schema(), $ability->get_output_schema() ) );
 			$this->assertStringNotContainsString( 'maxLength', $json );
 			$this->assertStringNotContainsString( 'minLength', $json );

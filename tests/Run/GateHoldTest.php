@@ -1,27 +1,27 @@
 <?php
 /**
- * 0.4 S5: SenroGate's pause and rate-limit denials park the run; they never
+ * 0.4 S5: Belayline Agent Governance's pause and rate-limit denials park the run; they never
  * fail it, and the held call is retried (and counted) exactly once.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolOutcome;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolOutcome;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -36,7 +36,7 @@ final class GateHoldTest extends TestCase {
 
 	private Runner $runner;
 
-	/** @var string|null The SenroGate reason the fake ability denies with; null = allow. */
+	/** @var string|null The Belayline Agent Governance reason the fake ability denies with; null = allow. */
 	private ?string $denyReason = null;
 
 	private int $executions = 0;
@@ -48,20 +48,20 @@ final class GateHoldTest extends TestCase {
 		$this->gateway   = new FakeGateway();
 		$this->runner    = new Runner( $this->store, new ToolExecutor(), $this->gateway, new RecordingBridge() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
 
 		$this->denyReason = null;
 		$this->executions = 0;
 
-		$ability             = new SenroFlux_Test_Fake_Ability(
+		$ability             = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/blocked',
 			permission_result: fn () => null === $this->denyReason
 				? true
 				: new WP_Error(
-					'agent_safety_denied',
-					'Blocked by SenroGate (Smoke): ' . $this->denyReason,
+					'belayline_denied',
+					'Blocked by Belayline Agent Governance (Smoke): ' . $this->denyReason,
 					array(
 						'status' => 403,
 						'verb'   => 'agsafe-smoke/blocked',
@@ -73,15 +73,15 @@ final class GateHoldTest extends TestCase {
 			++$this->executions;
 		};
 
-		$GLOBALS['senroflux_test_abilities'] = array( 'agsafe-smoke/blocked' => $ability );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array( 'agsafe-smoke/blocked' => $ability );
 
-		add_filter( 'senroflux_verb_map', static fn (): array => array( 'agsafe-smoke/blocked' => 0 ), 10, 0 );
+		add_filter( 'specflux_site_agent_verb_map', static fn (): array => array( 'agsafe-smoke/blocked' => 0 ), 10, 0 );
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		Clock::reset();
-		$GLOBALS['senroflux_test_agent_safety'] = null;
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = null;
 	}
 
 	private function createRun( GateMode $mode = GateMode::AgentSafety ): int {
@@ -115,7 +115,7 @@ final class GateHoldTest extends TestCase {
 	}
 
 	private function pauseApi( int $since, string $reason ): void {
-		$GLOBALS['senroflux_test_agent_safety'] = new class( $since, $reason ) {
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new class( $since, $reason ) {
 			public function __construct( private int $since, private string $reason ) {
 			}
 
@@ -272,7 +272,7 @@ final class GateHoldTest extends TestCase {
 		$this->scriptCall();
 		$this->tick( $run_id );
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] = new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/blocked',
 			permission_result: new WP_Error(
 				'approval_required',
@@ -302,7 +302,7 @@ final class GateHoldTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			static fn (): GateMode => GateMode::BuiltIn
 		);
@@ -318,7 +318,7 @@ final class GateHoldTest extends TestCase {
 		$this->assertSame( 1, $this->toolResults( $run_id ), 'the denial flowed back to the model as a tool error' );
 	}
 
-	public function test_other_senrogate_denials_still_flow_back_to_the_model_as_errors(): void {
+	public function test_other_agent_governance_denials_still_flow_back_to_the_model_as_errors(): void {
 		foreach ( array( 'denied_by_class', 'denial_lockout', 'repeat_call', 'argument_cap_max_per_call' ) as $reason ) {
 			$this->setUp();
 			$run_id           = $this->createRun();
@@ -335,12 +335,12 @@ final class GateHoldTest extends TestCase {
 		}
 	}
 
-	public function test_transient_reason_parses_only_senrogate_pause_and_rate_limit_denials(): void {
-		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Site (core)): site_paused' ) );
-		$this->assertSame( 'rate_limited_calls_per_minute', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): rate_limited_calls_per_minute' ) );
-		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): denied_by_class' ) );
-		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'site_paused is mentioned in passing: denied_by_class' ) );
-		$this->assertNull( ToolOutcome::transientReason( 'other_code', 'Blocked by SenroGate (Posts): site_paused' ) );
+	public function test_transient_reason_parses_only_agent_governance_pause_and_rate_limit_denials(): void {
+		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Site (core)): site_paused' ) );
+		$this->assertSame( 'rate_limited_calls_per_minute', ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Posts): rate_limited_calls_per_minute' ) );
+		$this->assertNull( ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Posts): denied_by_class' ) );
+		$this->assertNull( ToolOutcome::transientReason( 'belayline_denied', 'site_paused is mentioned in passing: denied_by_class' ) );
+		$this->assertNull( ToolOutcome::transientReason( 'other_code', 'Blocked by Belayline Agent Governance (Posts): site_paused' ) );
 	}
 
 	public function test_transient_reason_prefers_the_error_data_reason_over_the_message(): void {
@@ -350,10 +350,10 @@ final class GateHoldTest extends TestCase {
 			'tier'   => 1,
 			'reason' => 'site_paused',
 		);
-		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): denied_by_class', $data ) );
-		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'agent_safety_denied', 'a reworded message', $data ) );
-		$this->assertNull( ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): site_paused', array( 'reason' => 'denied_by_class' ) ), 'a non-transient data reason wins over the message' );
-		$this->assertSame( 'rate_limited_calls_per_hour', ToolOutcome::transientReason( 'agent_safety_denied', 'Blocked by SenroGate (Posts): rate_limited_calls_per_hour', array( 'status' => 403 ) ), 'no data reason falls back to the message' );
+		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Posts): denied_by_class', $data ) );
+		$this->assertSame( 'site_paused', ToolOutcome::transientReason( 'belayline_denied', 'a reworded message', $data ) );
+		$this->assertNull( ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Posts): site_paused', array( 'reason' => 'denied_by_class' ) ), 'a non-transient data reason wins over the message' );
+		$this->assertSame( 'rate_limited_calls_per_hour', ToolOutcome::transientReason( 'belayline_denied', 'Blocked by Belayline Agent Governance (Posts): rate_limited_calls_per_hour', array( 'status' => 403 ) ), 'no data reason falls back to the message' );
 		$this->assertNull( ToolOutcome::transientReason( 'other_code', 'm', $data ) );
 	}
 }

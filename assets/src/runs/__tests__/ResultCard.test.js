@@ -66,11 +66,11 @@ describe( 'ResultCard', () => {
 		expect( screen.queryByText( /more not shown/ ) ).not.toBeInTheDocument();
 	} );
 
-	it( 'keeps chrome strings outside data-senroflux-content so they stay translatable', () => {
+	it( 'keeps chrome strings outside data-specflux-site-agent-content so they stay translatable', () => {
 		render( <ResultCard raw="{}" display={ { type: 'error', title: 'T', message: 'Nope' } } /> );
-		expect( screen.getByText( 'Error' ).closest( '[data-senroflux-content]' ) ).toBeNull();
-		expect( screen.getByRole( 'button', { name: 'Show raw' } ).closest( '[data-senroflux-content]' ) ).toBeNull();
-		expect( screen.getByText( 'Nope' ).closest( '[data-senroflux-content]' ) ).not.toBeNull();
+		expect( screen.getByText( 'Error' ).closest( '[data-specflux-site-agent-content]' ) ).toBeNull();
+		expect( screen.getByRole( 'button', { name: 'Show raw' } ).closest( '[data-specflux-site-agent-content]' ) ).toBeNull();
+		expect( screen.getByText( 'Nope' ).closest( '[data-specflux-site-agent-content]' ) ).not.toBeNull();
 	} );
 
 	it( 'renders an error as readable text with a non-color cue', () => {
@@ -127,7 +127,7 @@ describe( 'LedgerGroup with cards', () => {
 		const step = {
 			kind: 'tool_result',
 			status: 'ok',
-			tool_name: 'senroflux/create-post',
+			tool_name: 'specflux/create-post',
 			display: { type: 'post', title: 'Hello', status: 'draft', links },
 			message: { parts: [ { functionResponse: { response: { id: 5 } } } ] },
 		};

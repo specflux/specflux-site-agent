@@ -4,20 +4,20 @@
  * for automatic) is passed to the gateway on every model call, unchanged
  * across ticks.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use wpdb;
@@ -42,8 +42,8 @@ final class ModelPinRunnerTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 	}
 
 	private static function textTurn( string $text ): ModelTurn {
@@ -74,7 +74,7 @@ final class ModelPinRunnerTest extends TestCase {
 		// A plain text turn with no tool calls finishes the run; force it back
 		// to running so a second tick still reaches the gateway (mirrors
 		// RunnerTest::test_goal_is_not_re_seeded_when_a_user_step_exists()).
-		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SenroFlux\Run\RunStatus::Running->value ) );
+		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SiteAgent\Run\RunStatus::Running->value ) );
 		$this->gateway->script[] = self::textTurn( 'Second turn.' );
 		$this->gateway->script[] = self::textTurn( 'Second turn.' );
 		$run                     = $this->store->getRun( $run_id );

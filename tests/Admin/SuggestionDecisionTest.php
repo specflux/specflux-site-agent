@@ -5,23 +5,23 @@
  * caller — and a held capability carries the decision through to
  * SuggestionResolver (stage-16 failable check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Admin;
+namespace Specflux\SiteAgent\Tests\Admin;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
 use WP_Error;
 use wpdb;
 
@@ -29,9 +29,9 @@ final class SuggestionDecisionTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_user_caps']       = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_options']         = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_options']         = array();
 		unset( $_POST );
 	}
 
@@ -49,8 +49,8 @@ final class SuggestionDecisionTest extends TestCase {
 		$runner = new Runner(
 			$store,
 			new ToolExecutor(),
-			new class() implements \Specflux\SenroFlux\Model\ModelGatewayInterface {
-				public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): \Specflux\SenroFlux\Model\ModelTurn|WP_Error {
+			new class() implements \Specflux\SiteAgent\Model\ModelGatewayInterface {
+				public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): \Specflux\SiteAgent\Model\ModelTurn|WP_Error {
 					return new WP_Error( 'unused', 'no model calls in this test' );
 				}
 			},
@@ -66,7 +66,7 @@ final class SuggestionDecisionTest extends TestCase {
 			$run_id,
 			StepKind::Suggestion,
 			array( 'text' => 'Mention free shipping.' ),
-			'senroflux/suggest-brief-addition',
+			'specflux/suggest-brief-addition',
 			null,
 			'ok'
 		);
@@ -87,14 +87,14 @@ final class SuggestionDecisionTest extends TestCase {
 	}
 
 	public function test_without_manage_options_the_handler_dies(): void {
-		$run_id                              = $this->seedRunnerGraphWithSuggestion();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$run_id                                        = $this->seedRunnerGraphWithSuggestion();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$screen = $this->recordingScreen();
 		$_POST  = array(
-			'run_id'                      => (string) $run_id,
-			'seq'                         => '1',
-			'senroflux_suggestion_action' => 'save',
+			'run_id'                                => (string) $run_id,
+			'seq'                                   => '1',
+			'specflux_site_agent_suggestion_action' => 'save',
 		);
 
 		$this->expectException( \RuntimeException::class );
@@ -111,9 +111,9 @@ final class SuggestionDecisionTest extends TestCase {
 
 		$screen = $this->recordingScreen();
 		$_POST  = array(
-			'run_id'                      => (string) $run_id,
-			'seq'                         => (string) $suggestion->seq,
-			'senroflux_suggestion_action' => 'save',
+			'run_id'                                => (string) $run_id,
+			'seq'                                   => (string) $suggestion->seq,
+			'specflux_site_agent_suggestion_action' => 'save',
 		);
 
 		$screen->handleSuggestionDecision();
@@ -134,9 +134,9 @@ final class SuggestionDecisionTest extends TestCase {
 
 		$screen = $this->recordingScreen();
 		$_POST  = array(
-			'run_id'                      => (string) $run_id,
-			'seq'                         => (string) $suggestion->seq,
-			'senroflux_suggestion_action' => 'dismiss',
+			'run_id'                                => (string) $run_id,
+			'seq'                                   => (string) $suggestion->seq,
+			'specflux_site_agent_suggestion_action' => 'dismiss',
 		);
 
 		$screen->handleSuggestionDecision();

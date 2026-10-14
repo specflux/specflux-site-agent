@@ -2,22 +2,22 @@
 /**
  * Classification of the loopback "Test connection" results.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Connector\ConnectionTester;
+use Specflux\SiteAgent\Connector\ConnectionTester;
 use WP_Error;
 
 final class ConnectionTesterTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_remote_post_responses'] = array();
-		$GLOBALS['senroflux_test_remote_post_calls']     = array();
+		$GLOBALS['specflux_site_agent_test_remote_post_responses'] = array();
+		$GLOBALS['specflux_site_agent_test_remote_post_calls']     = array();
 	}
 
 	/** @param array<string,mixed> $headers */
@@ -30,7 +30,7 @@ final class ConnectionTesterTest extends TestCase {
 	}
 
 	private function queue( array ...$responses ): void {
-		$GLOBALS['senroflux_test_remote_post_responses'] = $responses;
+		$GLOBALS['specflux_site_agent_test_remote_post_responses'] = $responses;
 	}
 
 	public function test_a_working_server_reports_its_tool_count_and_threads_the_session(): void {
@@ -43,7 +43,7 @@ final class ConnectionTesterTest extends TestCase {
 
 		$this->assertTrue( $result['ok'] );
 		$this->assertSame( 3, $result['tools'] );
-		$calls = $GLOBALS['senroflux_test_remote_post_calls'];
+		$calls = $GLOBALS['specflux_site_agent_test_remote_post_calls'];
 		$this->assertCount( 2, $calls );
 		$this->assertSame( 'initialize', json_decode( $calls[0]['args']['body'], true )['method'] );
 		$this->assertSame( 'tools/list', json_decode( $calls[1]['args']['body'], true )['method'] );
@@ -70,11 +70,11 @@ final class ConnectionTesterTest extends TestCase {
 
 		$this->assertFalse( $result['ok'] );
 		$this->assertSame( $category, $result['category'] );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_remote_post_calls'], 'Stops at the first failure.' );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_remote_post_calls'], 'Stops at the first failure.' );
 	}
 
 	public function test_a_transport_error_is_a_connection_failure(): void {
-		$GLOBALS['senroflux_test_remote_post_responses'] = array( new WP_Error( 'http_request_failed', 'cURL error 7' ) );
+		$GLOBALS['specflux_site_agent_test_remote_post_responses'] = array( new WP_Error( 'http_request_failed', 'cURL error 7' ) );
 
 		$result = ConnectionTester::run( 'https://x.test/mcp', 'Basic abc' );
 

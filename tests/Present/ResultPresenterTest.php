@@ -3,22 +3,22 @@
  * 0.4 S1: ResultPresenter and the built-in presenters, fed the return shapes
  * of the real abilities (Content, Media, Commerce, Site packs).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Present;
+namespace Specflux\SiteAgent\Tests\Present;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
-use Specflux\SenroFlux\Present\ResultPresenter;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
+use Specflux\SiteAgent\Present\ResultPresenter;
 
 final class ResultPresenterTest extends TestCase {
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_result_presenters' );
+		remove_all_filters( 'specflux_site_agent_result_presenters' );
 	}
 
 	private function present( string $tool, array $response, string $status = 'ok' ): array {
@@ -31,7 +31,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_created_draft_post_has_edit_and_preview_links(): void {
 		$card = $this->present(
-			'wpab__senroflux__create-post',
+			'wpab__specflux__create-post',
 			array(
 				'id'     => 42,
 				'status' => 'draft',
@@ -52,7 +52,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_published_page_read_uses_title_and_permalink(): void {
 		$card = $this->present(
-			'senroflux/read-content',
+			'specflux/read-content',
 			array(
 				'id'        => 7,
 				'post_type' => 'page',
@@ -70,7 +70,7 @@ final class ResultPresenterTest extends TestCase {
 	}
 
 	public function test_preview_url_becomes_a_link_card(): void {
-		$card = $this->present( 'wpab__senroflux__get-preview-url', array( 'preview_url' => 'https://example.test/?p=9&preview=true' ) );
+		$card = $this->present( 'wpab__specflux__get-preview-url', array( 'preview_url' => 'https://example.test/?p=9&preview=true' ) );
 
 		$this->assertSame( 'link', $card['type'] );
 		$this->assertSame( 'https://example.test/?p=9&preview=true', $card['links'][0]['url'] );
@@ -78,7 +78,7 @@ final class ResultPresenterTest extends TestCase {
 	}
 
 	public function test_non_http_preview_url_is_dropped(): void {
-		$card = $this->present( 'senroflux/get-preview-url', array( 'preview_url' => 'javascript:alert(1)' ) );
+		$card = $this->present( 'specflux/get-preview-url', array( 'preview_url' => 'javascript:alert(1)' ) );
 
 		$this->assertSame( 'table', $card['type'] );
 		$this->assertArrayNotHasKey( 'links', $card );
@@ -86,7 +86,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_media_read_shows_thumbnail_and_alt(): void {
 		$card = $this->present(
-			'senroflux/read-media',
+			'specflux/read-media',
 			array(
 				'attachment_id' => 15,
 				'alt'           => 'A red bicycle',
@@ -105,7 +105,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_generated_image_without_alt_still_gets_a_card(): void {
 		$card = $this->present(
-			'senroflux/generate-image',
+			'specflux/generate-image',
 			array(
 				'attachment_id' => 3,
 				'url'           => 'https://example.test/u/a.png',
@@ -209,7 +209,7 @@ final class ResultPresenterTest extends TestCase {
 	}
 
 	public function test_coupon_create_result_is_a_disabled_coupon_card(): void {
-		$card = $this->present( 'senroflux/coupon-create', array( 'coupon_id' => 61 ) );
+		$card = $this->present( 'specflux/coupon-create', array( 'coupon_id' => 61 ) );
 
 		$this->assertSame( 'coupon', $card['type'] );
 		$this->assertSame( 'Coupon #61', $card['title'] );
@@ -223,7 +223,7 @@ final class ResultPresenterTest extends TestCase {
 	}
 
 	public function test_coupon_enable_and_full_coupon_shapes(): void {
-		$enabled = $this->present( 'senroflux/coupon-enable', array( 'coupon_id' => 61 ) );
+		$enabled = $this->present( 'specflux/coupon-enable', array( 'coupon_id' => 61 ) );
 		$this->assertSame( 'Yes', $enabled['fields'][0]['value'] );
 
 		$full = $this->present(
@@ -254,7 +254,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_navigation_lists_items(): void {
 		$card = $this->present(
-			'senroflux/read-navigation',
+			'specflux/read-navigation',
 			array(
 				'kind'                        => 'items',
 				'items'                       => array(
@@ -293,7 +293,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_store_report_is_a_table(): void {
 		$card = $this->present(
-			'senroflux/store-report',
+			'specflux/store-report',
 			array(
 				'from'               => '2026-09-01',
 				'to'                 => '2026-09-30',
@@ -325,7 +325,7 @@ final class ResultPresenterTest extends TestCase {
 			);
 		}
 		$card = $this->present(
-			'senroflux/read-content',
+			'specflux/read-content',
 			array(
 				'posts'       => $posts,
 				'total'       => 20,
@@ -348,7 +348,7 @@ final class ResultPresenterTest extends TestCase {
 
 	public function test_media_search_list_carries_thumbnails_and_empty_list_reads_zero(): void {
 		$card = $this->present(
-			'senroflux/media-search',
+			'specflux/media-search',
 			array(
 				'results' => array(
 					array(
@@ -363,7 +363,7 @@ final class ResultPresenterTest extends TestCase {
 		);
 		$this->assertSame( 'https://example.test/a.jpg', $card['items'][0]['thumbnail_url'] );
 
-		$empty = $this->present( 'senroflux/list-terms', array( 'terms' => array() ) );
+		$empty = $this->present( 'specflux/list-terms', array( 'terms' => array() ) );
 		$this->assertSame( 'list', $empty['type'] );
 		$this->assertSame( 0, $empty['count'] );
 	}
@@ -402,18 +402,18 @@ final class ResultPresenterTest extends TestCase {
 	}
 
 	public function test_errors_present_as_readable_text(): void {
-		$card = $this->present( 'wpab__senroflux__update-post', array( 'error' => 'Post not found.' ), 'error' );
+		$card = $this->present( 'wpab__specflux__update-post', array( 'error' => 'Post not found.' ), 'error' );
 		$this->assertSame( 'error', $card['type'] );
 		$this->assertSame( 'Post not found.', $card['message'] );
 
-		$blank = $this->present( 'senroflux/update-post', array(), 'error' );
+		$blank = $this->present( 'specflux/update-post', array(), 'error' );
 		$this->assertSame( 'error', $blank['type'] );
 		$this->assertNotSame( '', $blank['message'] );
 	}
 
 	public function test_filter_adds_a_presenter_and_can_override_builtins(): void {
 		add_filter(
-			'senroflux_result_presenters',
+			'specflux_site_agent_result_presenters',
 			static function ( array $presenters ): array {
 				$presenters[] = new class() implements Presenter {
 					public function supports( string $ability, array $response ): bool {
@@ -444,7 +444,7 @@ final class ResultPresenterTest extends TestCase {
 		$this->assertSame(
 			'post',
 			$this->present(
-				'senroflux/create-post',
+				'specflux/create-post',
 				array(
 					'id'     => 1,
 					'status' => 'draft',
@@ -472,7 +472,7 @@ final class ResultPresenterTest extends TestCase {
 	public function test_page_id_gets_a_page_preview_link_from_the_helper(): void {
 		$links = new FakeLinks();
 		$card  = ( new ResultPresenter( null, $links ) )->present(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'        => 11,
 				'status'    => 'draft',
@@ -488,7 +488,7 @@ final class ResultPresenterTest extends TestCase {
 		$links          = new FakeLinks();
 		$links->missing = array( 42 );
 		$card           = ( new ResultPresenter( null, $links ) )->present(
-			'senroflux/create-post',
+			'specflux/create-post',
 			array(
 				'id'     => 42,
 				'status' => 'draft',
@@ -510,7 +510,7 @@ final class ResultPresenterTest extends TestCase {
 		$this->assertSame(
 			'Spring sale',
 			$presenter->present(
-				'senroflux/create-post',
+				'specflux/create-post',
 				array(
 					'id'     => 42,
 					'status' => 'draft',
@@ -520,18 +520,18 @@ final class ResultPresenterTest extends TestCase {
 		$this->assertSame(
 			'hero.jpg',
 			$presenter->present(
-				'senroflux/generate-image',
+				'specflux/generate-image',
 				array(
 					'attachment_id' => 3,
 					'url'           => 'https://example.test/u/a.png',
 				)
 			)['title']
 		);
-		$this->assertSame( 'SPRING10', $presenter->present( 'senroflux/coupon-create', array( 'coupon_id' => 61 ) )['title'] );
+		$this->assertSame( 'SPRING10', $presenter->present( 'specflux/coupon-create', array( 'coupon_id' => 61 ) )['title'] );
 		$this->assertSame(
 			'Post #9',
 			$presenter->present(
-				'senroflux/create-post',
+				'specflux/create-post',
 				array(
 					'id'     => 9,
 					'status' => 'draft',

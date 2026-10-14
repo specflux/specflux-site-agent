@@ -2,16 +2,16 @@
 /**
  * The authorization endpoint and consent screen.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\OAuth\Authorize;
-use Specflux\SenroFlux\Connector\OAuth\OAuth;
-use Specflux\SenroFlux\Connector\OAuth\Store;
+use Specflux\SiteAgent\Connector\OAuth\Authorize;
+use Specflux\SiteAgent\Connector\OAuth\OAuth;
+use Specflux\SiteAgent\Connector\OAuth\Store;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -26,11 +26,11 @@ final class AuthorizeTest extends OAuthTestCase {
 		list( , $this->challenge ) = $this->pkce();
 	}
 
-	private function get( array $override = array() ): \Specflux\SenroFlux\Connector\OAuth\Page {
+	private function get( array $override = array() ): \Specflux\SiteAgent\Connector\OAuth\Page {
 		return Authorize::run( 'GET', $this->authParams( $this->client, $this->challenge, $override ) );
 	}
 
-	private function assertRejectedWithoutRedirect( \Specflux\SenroFlux\Connector\OAuth\Page $page, int $status = 400 ): void {
+	private function assertRejectedWithoutRedirect( \Specflux\SiteAgent\Connector\OAuth\Page $page, int $status = 400 ): void {
 		$this->assertNull( $page->location, 'Must not redirect.' );
 		$this->assertSame( $status, $page->status );
 		$this->assertStringNotContainsString( 'name="decision"', $page->body, 'No consent form.' );
@@ -69,7 +69,7 @@ final class AuthorizeTest extends OAuthTestCase {
 
 	public function test_metadata_document_client_shows_who_verified_it(): void {
 		$url = 'https://app.example/oauth/client.json';
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
@@ -89,7 +89,7 @@ final class AuthorizeTest extends OAuthTestCase {
 
 	public function test_a_read_only_request_still_offers_write_with_read_checked(): void {
 		// Claude.ai asks for read only whatever the server advertises; the site owner decides.
-		$page = $this->get( array( 'scope' => 'senroflux:read' ) );
+		$page = $this->get( array( 'scope' => 'specflux:read' ) );
 
 		$this->assertStringContainsString( 'value="write"', $page->body );
 		$this->assertStringContainsString( 'value="read" checked', $page->body );
@@ -120,23 +120,23 @@ final class AuthorizeTest extends OAuthTestCase {
 	}
 
 	public function test_logged_out_visitor_goes_to_wp_login_and_back_never_to_the_client(): void {
-		$GLOBALS['senroflux_test_logged_in'] = false;
-		$page                                = $this->get();
+		$GLOBALS['specflux_site_agent_test_logged_in'] = false;
+		$page = $this->get();
 
 		$this->assertSame( 302, $page->status );
 		$this->assertStringStartsWith( 'http://example.test/wp-login.php?redirect_to=', (string) $page->location );
 		$this->assertStringNotContainsString( 'claude.ai', explode( 'redirect_to=', (string) $page->location )[0] );
-		$this->assertStringContainsString( rawurlencode( 'action=senroflux_oauth_authorize' ), (string) $page->location );
+		$this->assertStringContainsString( rawurlencode( 'action=specflux_site_agent_oauth_authorize' ), (string) $page->location );
 	}
 
 	public function test_logged_out_post_is_refused(): void {
-		$GLOBALS['senroflux_test_logged_in'] = false;
+		$GLOBALS['specflux_site_agent_test_logged_in'] = false;
 
 		$this->assertRejectedWithoutRedirect( $this->decide( $this->authParams( $this->client, $this->challenge ) ), 403 );
 	}
 
 	public function test_user_without_the_connector_capability_is_refused(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$this->assertRejectedWithoutRedirect( $this->get(), 403 );
 		$post = $this->decide( $this->authParams( $this->client, $this->challenge ) );
@@ -186,7 +186,7 @@ final class AuthorizeTest extends OAuthTestCase {
 	}
 
 	public function test_mismatched_resource_is_rejected(): void {
-		foreach ( array( 'http://example.test/wp-json/senroflux/mcp/', 'https://other.example/mcp', 'http://example.test/wp-json/wp/v2' ) as $resource ) {
+		foreach ( array( 'http://example.test/wp-json/specflux-site-agent/mcp/', 'https://other.example/mcp', 'http://example.test/wp-json/wp/v2' ) as $resource ) {
 			$q = $this->query( $this->get( array( 'resource' => $resource ) )->location );
 
 			$this->assertSame( 'invalid_target', $q['error'], $resource );
@@ -221,7 +221,7 @@ final class AuthorizeTest extends OAuthTestCase {
 
 			$this->assertRejectedWithoutRedirect( $page, 403 );
 		}
-		$bound = wp_create_nonce( 'senroflux_oauth_consent_' . substr( OAuth::hash( 'other|' . $this->challenge ), 0, 24 ) );
+		$bound = wp_create_nonce( 'specflux_site_agent_oauth_consent_' . substr( OAuth::hash( 'other|' . $this->challenge ), 0, 24 ) );
 		$this->assertRejectedWithoutRedirect( $this->decide( $params, 'approve', 'read', $bound ), 403, 'A nonce for another request does not work.' );
 	}
 
@@ -244,13 +244,13 @@ final class AuthorizeTest extends OAuthTestCase {
 
 	public function test_write_is_granted_only_when_chosen(): void {
 		$read = $this->exchange( $this->obtainCode( 'read' ) );
-		$this->assertSame( 'senroflux:read', $read['body']['scope'] );
+		$this->assertSame( 'specflux:read', $read['body']['scope'] );
 
 		$write = $this->exchange( $this->obtainCode( 'write' ) );
-		$this->assertSame( 'senroflux:read senroflux:write', $write['body']['scope'] );
+		$this->assertSame( 'specflux:read specflux:write', $write['body']['scope'] );
 
 		list( $verifier, $challenge ) = $this->pkce();
-		$params                       = $this->authParams( $this->client, $challenge, array( 'scope' => 'senroflux:read' ) );
+		$params                       = $this->authParams( $this->client, $challenge, array( 'scope' => 'specflux:read' ) );
 		$code                         = $this->query( $this->decide( $params, 'approve', 'write' )->location )['code'];
 		$exchange                     = $this->exchange(
 			array(
@@ -259,7 +259,7 @@ final class AuthorizeTest extends OAuthTestCase {
 				'client'   => $this->client,
 			)
 		);
-		$this->assertSame( 'senroflux:read senroflux:write', $exchange['body']['scope'], 'The person approving may grant write even when the app asked for read.' );
+		$this->assertSame( 'specflux:read specflux:write', $exchange['body']['scope'], 'The person approving may grant write even when the app asked for read.' );
 	}
 
 	public function test_state_is_returned_url_encoded(): void {

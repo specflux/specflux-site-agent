@@ -2,19 +2,19 @@
 /**
  * The per-app config text: shapes match each vendor's documented keys.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Connector\ClientConfig;
+use Specflux\SiteAgent\Connector\ClientConfig;
 
 final class ClientConfigTest extends TestCase {
 
-	private const URL      = 'https://example.test/wp-json/senroflux/mcp';
+	private const URL      = 'https://example.test/wp-json/specflux-site-agent/mcp';
 	private const PASSWORD = 'abcd efgh ijkl mnop qrst uvwx';
 	private const AUTH     = 'Basic YWRtaW46YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4'; // admin:abcdefghijklmnopqrstuvwx
 
@@ -37,7 +37,7 @@ final class ClientConfigTest extends TestCase {
 		$config = $this->json( ClientConfig::CURSOR );
 
 		$this->assertSame( array( 'mcpServers' ), array_keys( $config ) );
-		$server = $config['mcpServers']['senroflux'];
+		$server = $config['mcpServers']['specflux'];
 		$this->assertSame( array( 'url', 'headers' ), array_keys( $server ) );
 		$this->assertSame( self::URL, $server['url'] );
 		$this->assertSame( array( 'Authorization' => self::AUTH ), $server['headers'] );
@@ -47,14 +47,14 @@ final class ClientConfigTest extends TestCase {
 		$config = $this->json( ClientConfig::VS_CODE );
 
 		$this->assertSame( array( 'servers' ), array_keys( $config ) );
-		$server = $config['servers']['senroflux'];
+		$server = $config['servers']['specflux-site-agent'];
 		$this->assertSame( array( 'type', 'url', 'headers' ), array_keys( $server ) );
 		$this->assertSame( 'http', $server['type'] );
 		$this->assertSame( array( 'Authorization' => self::AUTH ), $server['headers'] );
 	}
 
 	public function test_claude_desktop_runs_the_automattic_proxy_with_app_password_env(): void {
-		$server = $this->json( ClientConfig::CLAUDE_DESKTOP )['mcpServers']['senroflux'];
+		$server = $this->json( ClientConfig::CLAUDE_DESKTOP )['mcpServers']['specflux'];
 
 		$this->assertSame( array( 'command', 'args', 'env' ), array_keys( $server ) );
 		$this->assertSame( 'npx', $server['command'] );
@@ -75,7 +75,7 @@ final class ClientConfigTest extends TestCase {
 
 		$this->assertSame( 'shell', $config['format'] );
 		$this->assertSame(
-			"claude mcp add --transport http senroflux 'https://example.test/wp-json/senroflux/mcp' --header 'Authorization: " . self::AUTH . "'",
+			"claude mcp add --transport http specflux 'https://example.test/wp-json/specflux-site-agent/mcp' --header 'Authorization: " . self::AUTH . "'",
 			$config['text']
 		);
 	}

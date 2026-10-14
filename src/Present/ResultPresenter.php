@@ -2,24 +2,24 @@
 /**
  * Turns a tool result into the `display` payload the Runs screen renders.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present;
+namespace Specflux\SiteAgent\Present;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Presenters\CouponPresenter;
-use Specflux\SenroFlux\Present\Presenters\ListPresenter;
-use Specflux\SenroFlux\Present\Presenters\MediaPresenter;
-use Specflux\SenroFlux\Present\Presenters\NavigationPresenter;
-use Specflux\SenroFlux\Present\Presenters\PostPresenter;
-use Specflux\SenroFlux\Present\Presenters\PreviewLinkPresenter;
-use Specflux\SenroFlux\Present\Presenters\ProductPresenter;
-use Specflux\SenroFlux\Present\Presenters\ReportPresenter;
+use Specflux\SiteAgent\Present\Presenters\CouponPresenter;
+use Specflux\SiteAgent\Present\Presenters\ListPresenter;
+use Specflux\SiteAgent\Present\Presenters\MediaPresenter;
+use Specflux\SiteAgent\Present\Presenters\NavigationPresenter;
+use Specflux\SiteAgent\Present\Presenters\PostPresenter;
+use Specflux\SiteAgent\Present\Presenters\PreviewLinkPresenter;
+use Specflux\SiteAgent\Present\Presenters\ProductPresenter;
+use Specflux\SiteAgent\Present\Presenters\ReportPresenter;
 use Throwable;
 
 /**
@@ -52,7 +52,7 @@ final class ResultPresenter {
 	}
 
 	/**
-	 * The built-in presenters, passed through `senroflux_result_presenters`.
+	 * The built-in presenters, passed through `specflux_site_agent_result_presenters`.
 	 *
 	 * @return list<Presenter>
 	 */
@@ -76,7 +76,7 @@ final class ResultPresenter {
 		 *
 		 * @param list<Presenter> $presenters The built-in presenters.
 		 */
-		$filtered = apply_filters( 'senroflux_result_presenters', $builtins );
+		$filtered = apply_filters( 'specflux_site_agent_result_presenters', $builtins );
 
 		return is_array( $filtered )
 			? array_values( array_filter( $filtered, static fn ( $p ): bool => $p instanceof Presenter ) )
@@ -96,7 +96,7 @@ final class ResultPresenter {
 		if ( null !== $error ) {
 			return array(
 				'type'    => 'error',
-				'title'   => __( 'That did not work', 'senroflux' ),
+				'title'   => __( 'That did not work', 'specflux-site-agent' ),
 				'message' => $error,
 			);
 		}
@@ -135,7 +135,7 @@ final class ResultPresenter {
 
 		$message = Fmt::text( $response['error'] ?? $response['message'] ?? '' );
 
-		return '' !== $message ? $message : __( 'The tool returned an error with no message.', 'senroflux' );
+		return '' !== $message ? $message : __( 'The tool returned an error with no message.', 'specflux-site-agent' );
 	}
 
 	/**
@@ -164,8 +164,8 @@ final class ResultPresenter {
 
 		return array(
 			'type'    => 'table',
-			'title'   => '' !== $ability ? $ability : __( 'Result', 'senroflux' ),
-			'columns' => array( __( 'Field', 'senroflux' ), __( 'Value', 'senroflux' ) ),
+			'title'   => '' !== $ability ? $ability : __( 'Result', 'specflux-site-agent' ),
+			'columns' => array( __( 'Field', 'specflux-site-agent' ), __( 'Value', 'specflux-site-agent' ) ),
 			'rows'    => array_slice( $rows, 0, self::FALLBACK_MAX_ROWS ),
 			'more'    => $more,
 		);
@@ -193,10 +193,10 @@ final class ResultPresenter {
 			$shown = array_map( array( Fmt::class, 'text' ), array_slice( $value, 0, self::LIST_JOIN_CAP ) );
 			$extra = count( $value ) - count( $shown );
 
-			return implode( ', ', $shown ) . ( $extra > 0 ? sprintf( /* translators: %d: number of further items. */ __( ' (+%d more)', 'senroflux' ), $extra ) : '' );
+			return implode( ', ', $shown ) . ( $extra > 0 ? sprintf( /* translators: %d: number of further items. */ __( ' (+%d more)', 'specflux-site-agent' ), $extra ) : '' );
 		}
 
-		return sprintf( /* translators: %d: number of items. */ _n( '%d item', '%d items', count( $value ), 'senroflux' ), count( $value ) );
+		return sprintf( /* translators: %d: number of items. */ _n( '%d item', '%d items', count( $value ), 'specflux-site-agent' ), count( $value ) );
 	}
 
 	/**

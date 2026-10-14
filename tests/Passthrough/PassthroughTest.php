@@ -2,36 +2,36 @@
 /**
  * 0.4 S6: abilities from other plugins (governed passthrough).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Passthrough;
+namespace Specflux\SiteAgent\Tests\Passthrough;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use Specflux\SenroFlux\Admin\SettingsScreen;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Run\InstructionRenderer;
-use Specflux\SenroFlux\Tests\Api\Fixtures\FixturePack;
-use Specflux\SenroFlux\Tests\Run\FakeGateway;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use Specflux\SenroFlux\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use Specflux\SiteAgent\Admin\SettingsScreen;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Passthrough\AbilityReviewProbe;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Run\InstructionRenderer;
+use Specflux\SiteAgent\Tests\Api\Fixtures\FixturePack;
+use Specflux\SiteAgent\Tests\Run\FakeGateway;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -44,34 +44,34 @@ final class PassthroughTest extends TestCase {
 	}
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_options']         = array();
-		$GLOBALS['senroflux_test_user_caps']       = array( 'manage_options' => true );
-		$GLOBALS['senroflux_test_agent_safety']    = null;
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$_POST                                     = array();
-		remove_all_filters( 'senroflux_verb_map' );
-		remove_all_filters( 'senroflux_packs' );
+		$GLOBALS['specflux_site_agent_test_options']         = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_agent_safety']    = null;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$_POST = array();
+		remove_all_filters( 'specflux_site_agent_verb_map' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		// A registered pack resolving `core/` (the default namespace list).
-		add_filter( 'senroflux_packs', static fn ( array $packs ): array => $packs + array( 'fixture' => new FixturePack() ) );
-		$GLOBALS['senroflux_test_abilities'] = array(
+		add_filter( 'specflux_site_agent_packs', static fn ( array $packs ): array => $packs + array( 'fixture' => new FixturePack() ) );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
 			'acme/list-things'   => $this->ability( 'acme/list-things' ),
 			'acme/delete-things' => $this->ability( 'acme/delete-things' ),
 			'core/x'             => $this->ability( 'core/x' ),
-			'senroflux/y'        => $this->ability( 'senroflux/y' ),
+			'specflux/y'         => $this->ability( 'specflux/y' ),
 		);
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
-		remove_all_filters( 'senroflux_packs' );
-		unset( $GLOBALS['senroflux_test_abilities'], $GLOBALS['senroflux_test_options'], $GLOBALS['senroflux_test_user_caps'] );
-		$GLOBALS['senroflux_test_agent_safety'] = null;
-		$_POST                                  = array();
+		remove_all_filters( 'specflux_site_agent_verb_map' );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		unset( $GLOBALS['specflux_site_agent_test_abilities'], $GLOBALS['specflux_site_agent_test_options'], $GLOBALS['specflux_site_agent_test_user_caps'] );
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = null;
+		$_POST = array();
 	}
 
-	private function ability( string $name, array $meta = array(), ?array $schema = null ): SenroFlux_Test_Fake_Ability {
-		return new SenroFlux_Test_Fake_Ability( $name, true, array( 'ok' => true ), 'desc of ' . $name, $schema, $meta );
+	private function ability( string $name, array $meta = array(), ?array $schema = null ): SpecfluxSiteAgent_Test_Fake_Ability {
+		return new SpecfluxSiteAgent_Test_Fake_Ability( $name, true, array( 'ok' => true ), 'desc of ' . $name, $schema, $meta );
 	}
 
 	private function runIn( GateMode $mode, array $allow = array() ): Run {
@@ -93,7 +93,7 @@ final class PassthroughTest extends TestCase {
 	}
 
 	private function reviews( array $statuses ): void {
-		$GLOBALS['senroflux_test_agent_safety'] = new class( $statuses ) {
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new class( $statuses ) {
 			public function __construct( private array $statuses ) {
 			}
 
@@ -121,7 +121,7 @@ final class PassthroughTest extends TestCase {
 		for ( $i = 1; $i <= 41; $i++ ) {
 			$name    = 'bulk/a' . $i;
 			$names[] = $name;
-			$GLOBALS['senroflux_test_abilities'][ $name ] = $this->ability( $name );
+			$GLOBALS['specflux_site_agent_test_abilities'][ $name ] = $this->ability( $name );
 		}
 
 		$refused = Passthrough::save( $names, array() );
@@ -148,7 +148,7 @@ final class PassthroughTest extends TestCase {
 				'core/x' => array(
 					'enabled' => true,
 					'read'    => true,
-					'hash'    => Passthrough::schemaHash( $GLOBALS['senroflux_test_abilities']['core/x'] ),
+					'hash'    => Passthrough::schemaHash( $GLOBALS['specflux_site_agent_test_abilities']['core/x'] ),
 				),
 			)
 		);
@@ -165,7 +165,7 @@ final class PassthroughTest extends TestCase {
 	}
 
 	public function test_destructive_annotation_forces_tier_2_even_when_marked_read(): void {
-		$GLOBALS['senroflux_test_abilities']['acme/list-things'] = $this->ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['acme/list-things'] = $this->ability(
 			'acme/list-things',
 			array(
 				'annotations' => array(
@@ -180,7 +180,7 @@ final class PassthroughTest extends TestCase {
 	}
 
 	public function test_readonly_false_marked_read_is_still_the_admins_call(): void {
-		$GLOBALS['senroflux_test_abilities']['acme/list-things'] = $this->ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['acme/list-things'] = $this->ability(
 			'acme/list-things',
 			array(
 				'annotations' => array(
@@ -194,14 +194,14 @@ final class PassthroughTest extends TestCase {
 		$this->assertSame( VerbTier::TIER_0, Passthrough::tierMap( GateMode::BuiltIn )['acme/list-things'] );
 	}
 
-	public function test_senrogate_mode_without_the_probe_exposes_nothing(): void {
+	public function test_agent_governance_mode_without_the_probe_exposes_nothing(): void {
 		$this->enable( array( 'acme/list-things' ), array( 'acme/list-things' => 'read' ) );
 
 		$this->assertFalse( AbilityReviewProbe::available() );
 		$this->assertSame( array(), ToolRegistry::forRun( $this->runIn( GateMode::AgentSafety ) )->names() );
 	}
 
-	public function test_senrogate_mode_exposes_only_reviewed_and_never_tiers_zero(): void {
+	public function test_agent_governance_mode_exposes_only_reviewed_and_never_tiers_zero(): void {
 		$this->enable( array( 'acme/list-things', 'acme/delete-things' ), array( 'acme/list-things' => 'read' ) );
 		$this->reviews(
 			array(
@@ -216,7 +216,7 @@ final class PassthroughTest extends TestCase {
 	}
 
 	public function test_a_probe_that_throws_or_answers_oddly_fails_closed(): void {
-		$GLOBALS['senroflux_test_agent_safety'] = new class() {
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new class() {
 			public function abilityReviews(): object {
 				return new class() {
 					public function status( string $name ): string {
@@ -228,7 +228,7 @@ final class PassthroughTest extends TestCase {
 
 		$this->assertSame( 'unreviewed', AbilityReviewProbe::status( 'acme/list-things' ) );
 
-		$GLOBALS['senroflux_test_agent_safety'] = new class() {};
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new class() {};
 		$this->assertFalse( AbilityReviewProbe::available() );
 	}
 
@@ -236,7 +236,7 @@ final class PassthroughTest extends TestCase {
 		$this->enable( array( 'acme/list-things' ) );
 		$this->assertSame( array( 'acme/list-things' ), Passthrough::exposedNames( GateMode::BuiltIn ) );
 
-		$GLOBALS['senroflux_test_abilities']['acme/list-things'] = $this->ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['acme/list-things'] = $this->ability(
 			'acme/list-things',
 			array(),
 			array(
@@ -269,24 +269,24 @@ final class PassthroughTest extends TestCase {
 			$this->assertNotNull( $check );
 			$this->assertFalse( $check->passed() );
 			$this->assertStringContainsString( '1 enabled ability', $check->fixMessage() );
-			$this->assertStringContainsString( 'SenroGate', $check->fixMessage() );
+			$this->assertStringContainsString( 'Belayline Agent Governance', $check->fixMessage() );
 		} finally {
 			Plugin::reset();
 		}
 		$this->assertSame( array( 'acme/delete-things' ), Passthrough::awaitingReview() );
 	}
 
-	public function test_the_setup_check_links_senrogates_registered_review_page(): void {
+	public function test_the_setup_check_links_governances_registered_review_page(): void {
 		$this->enable( array( 'acme/list-things' ) );
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
 		try {
 			$this->assertSame( 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities', Checks::passthroughAwaitingReview()?->fixUrl(), 'unregistered menu falls back to Tools' );
 
-			$GLOBALS['senroflux_test_menu_urls'] = array( 'agent-safety-abilities' => 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities&x=1' );
+			$GLOBALS['specflux_site_agent_test_menu_urls'] = array( 'agent-safety-abilities' => 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities&x=1' );
 			$this->assertSame( 'https://example.test/wp-admin/tools.php?page=agent-safety-abilities&x=1', Checks::passthroughAwaitingReview()?->fixUrl(), 'the registered menu URL is preferred' );
 		} finally {
-			unset( $GLOBALS['senroflux_test_menu_urls'] );
+			unset( $GLOBALS['specflux_site_agent_test_menu_urls'] );
 			Plugin::reset();
 		}
 	}
@@ -301,8 +301,8 @@ final class PassthroughTest extends TestCase {
 		};
 
 		$_POST = array(
-			'senroflux_pt_enabled' => array( 'acme/list-things', 'nope/not-registered', '../etc' ),
-			'senroflux_pt_mode'    => array( 'acme/list-things' => 'read' ),
+			'specflux_site_agent_pt_enabled' => array( 'acme/list-things', 'nope/not-registered', '../etc' ),
+			'specflux_site_agent_pt_mode'    => array( 'acme/list-things' => 'read' ),
 		);
 		$screen->handleSavePassthrough();
 		$this->assertNull( $screen->to );
@@ -311,7 +311,7 @@ final class PassthroughTest extends TestCase {
 	}
 
 	public function test_the_instruction_carries_the_passthrough_line_only_when_exposed(): void {
-		$tail = new \Specflux\SenroFlux\Run\Tail( 1, 1, 1, 1, 1 );
+		$tail = new \Specflux\SiteAgent\Run\Tail( 1, 1, 1, 1, 1 );
 		$with = InstructionRenderer::render( array(), $tail, GateMode::BuiltIn, null, null, true );
 		$none = InstructionRenderer::render( array(), $tail, GateMode::BuiltIn );
 
@@ -408,7 +408,7 @@ final class PassthroughTest extends TestCase {
 		for ( $i = 1; $i <= 40; $i++ ) {
 			$name    = 'meas/ability-' . $i;
 			$names[] = $name;
-			$GLOBALS['senroflux_test_abilities'][ $name ] = new SenroFlux_Test_Fake_Ability(
+			$GLOBALS['specflux_site_agent_test_abilities'][ $name ] = new SpecfluxSiteAgent_Test_Fake_Ability(
 				$name,
 				true,
 				array(),

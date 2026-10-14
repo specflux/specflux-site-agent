@@ -1,17 +1,17 @@
 <?php
 /**
- * Test-only stand-ins for SenroGate 0.5's change-history API (read from
+ * Test-only stand-ins for Belayline Agent Governance 0.5's change-history API (read from
  * `plugin/src/Api/Changes.php` and core `src/Changes/Undo*.php`). Only the
- * shapes SenroFlux consumes; no SenroGate logic is reproduced.
+ * shapes Specflux Site Agent consumes; no Belayline Agent Governance logic is reproduced.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-if ( ! class_exists( 'SenroFlux_Test_Change', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Change', false ) ) {
 	/** One RecordedChange. */
-	final class SenroFlux_Test_Change {
+	final class SpecfluxSiteAgent_Test_Change {
 		public function __construct(
 			private int $id,
 			private string $type = 'post',
@@ -40,7 +40,7 @@ if ( ! class_exists( 'SenroFlux_Test_Change', false ) ) {
 	}
 
 	/** RecordedChanges. */
-	final class SenroFlux_Test_Recorded {
+	final class SpecfluxSiteAgent_Test_Recorded {
 		public function __construct( private array $changes, private object $scope ) {}
 
 		public function all(): array {
@@ -49,17 +49,17 @@ if ( ! class_exists( 'SenroFlux_Test_Change', false ) ) {
 			return $this->scope; }
 	}
 
-	/** `agent_safety()->changes()`: records every call. */
-	final class SenroFlux_Test_Changes {
-		/** @var array<string,list<SenroFlux_Test_Change>> */
+	/** `belayline()->changes()`: records every call. */
+	final class SpecfluxSiteAgent_Test_Changes {
+		/** @var array<string,list<SpecfluxSiteAgent_Test_Change>> */
 		public array $by_correlation = array();
 		public array $undo_calls     = array();
 		public array $preview_calls  = array();
 		public ?object $undo_result  = null;
 		public array $preview_items  = array();
 
-		public function forCorrelation( string $id ): SenroFlux_Test_Recorded {
-			return new SenroFlux_Test_Recorded( $this->by_correlation[ $id ] ?? array(), \Specflux\AgentSafety\Changes\UndoScope::correlation( $id ) );
+		public function forCorrelation( string $id ): SpecfluxSiteAgent_Test_Recorded {
+			return new SpecfluxSiteAgent_Test_Recorded( $this->by_correlation[ $id ] ?? array(), \Belayline\Changes\UndoScope::correlation( $id ) );
 		}
 
 		public function preview( object $scope ): array {
@@ -69,12 +69,12 @@ if ( ! class_exists( 'SenroFlux_Test_Change', false ) ) {
 
 		public function undo( object $scope, int $user_id ): object {
 			$this->undo_calls[] = array( $scope, $user_id );
-			return $this->undo_result ?? new \Specflux\AgentSafety\Changes\UndoResult( 'complete' );
+			return $this->undo_result ?? new \Belayline\Changes\UndoResult( 'complete' );
 		}
 	}
 
 	/** A container exposing changes(). */
-	final class SenroFlux_Test_Container {
+	final class SpecfluxSiteAgent_Test_Container {
 		public function __construct( public ?object $changes ) {}
 
 		public function changes(): ?object {

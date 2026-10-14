@@ -2,17 +2,17 @@
 /**
  * The ONE setup-check evaluator (0.3 S11).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Setup;
+namespace Specflux\SiteAgent\Setup;
 
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * pack's contributed checks (`Pack::setupChecks()`).
  *
  * THE SAME evaluator backs BOTH the setup panel and `Pack::preflight()`
- * (called from {@see \Specflux\SenroFlux\Packs\Pack::preflight()}) — there is
+ * (called from {@see \Specflux\SiteAgent\Packs\Pack::preflight()}) — there is
  * exactly one rule set. The user-meta dismissal for the advisory Agent Safety
  * check is decided here too, so the panel and any other caller agree on it.
  */
@@ -82,7 +82,7 @@ final class Checks {
 	}
 
 	/**
-	 * `senroflux/provider` (blocking, harness): passes when the AI Client
+	 * `specflux/provider` (blocking, harness): passes when the AI Client
 	 * reports a configured provider.
 	 *
 	 * Below WordPress 7.0 the AI Client classes are absent entirely, so the
@@ -91,26 +91,26 @@ final class Checks {
 	public static function providerCheck(): SetupCheck {
 		if ( ! self::wordPressSupportsAi() ) {
 			return new SetupCheck(
-				'senroflux/provider',
+				'specflux/provider',
 				SetupCheck::BLOCKING,
 				false,
-				__( 'SenroFlux needs WordPress 7.0 or newer.', 'senroflux' ),
+				__( 'Specflux Site Agent needs WordPress 7.0 or newer.', 'specflux-site-agent' ),
 				function_exists( 'admin_url' ) ? admin_url( 'update-core.php' ) : null,
 				'update_core',
-				__( 'Ask an administrator to update WordPress to 7.0 or newer.', 'senroflux' ),
-				'senroflux_wordpress_outdated'
+				__( 'Ask an administrator to update WordPress to 7.0 or newer.', 'specflux-site-agent' ),
+				'specflux_site_agent_wordpress_outdated'
 			);
 		}
 
 		return new SetupCheck(
-			'senroflux/provider',
+			'specflux/provider',
 			SetupCheck::BLOCKING,
 			self::providerConfigured(),
-			__( 'Configure a model provider in Settings → Connectors.', 'senroflux' ),
+			__( 'Configure a model provider in Settings → Connectors.', 'specflux-site-agent' ),
 			function_exists( 'admin_url' ) ? admin_url( 'options-connectors.php' ) : null,
 			'manage_options',
-			__( 'Ask an administrator to configure a model provider in Settings → Connectors.', 'senroflux' ),
-			'senroflux_provider_unconfigured'
+			__( 'Ask an administrator to configure a model provider in Settings → Connectors.', 'specflux-site-agent' ),
+			'specflux_site_agent_provider_unconfigured'
 		);
 	}
 
@@ -155,9 +155,9 @@ final class Checks {
 	}
 
 	/**
-	 * `senroflux/passthrough-review` (advisory, harness): null unless the site
-	 * runs in SenroGate mode and N enabled abilities from other plugins are
-	 * hidden from runs until SenroGate reviews them (0.4 S6).
+	 * `specflux/passthrough-review` (advisory, harness): null unless the site
+	 * runs in Belayline Agent Governance mode and N enabled abilities from other plugins are
+	 * hidden from runs until Belayline Agent Governance reviews them (0.4 S6).
 	 */
 	public static function passthroughAwaitingReview(): ?SetupCheck {
 		if ( GateMode::AgentSafety !== Plugin::currentGateMode() ) {
@@ -170,28 +170,28 @@ final class Checks {
 		}
 
 		return new SetupCheck(
-			'senroflux/passthrough-review',
+			'specflux/passthrough-review',
 			SetupCheck::ADVISORY,
 			false,
 			sprintf(
 				/* translators: %d: number of abilities. */
 				_n(
-					'%d enabled ability from another plugin is hidden from runs until it is reviewed in SenroGate → Abilities.',
-					'%d enabled abilities from other plugins are hidden from runs until they are reviewed in SenroGate → Abilities.',
+					'%d enabled ability from another plugin is hidden from runs until it is reviewed in Belayline Agent Governance → Abilities.',
+					'%d enabled abilities from other plugins are hidden from runs until they are reviewed in Belayline Agent Governance → Abilities.',
 					$count,
-					'senroflux'
+					'specflux-site-agent'
 				),
 				$count
 			),
 			self::abilityReviewUrl(),
 			'manage_options',
-			__( 'Ask an administrator to review these abilities in SenroGate → Abilities.', 'senroflux' ),
-			'senroflux_passthrough_unreviewed'
+			__( 'Ask an administrator to review these abilities in Belayline Agent Governance → Abilities.', 'specflux-site-agent' ),
+			'specflux_site_agent_passthrough_unreviewed'
 		);
 	}
 
 	/**
-	 * Where SenroGate's ability review lives. It registers under Tools, so
+	 * Where Belayline Agent Governance's ability review lives. It registers under Tools, so
 	 * prefer WordPress's own answer for the registered menu page and fall
 	 * back to the Tools URL when the menu is not registered in this request.
 	 */

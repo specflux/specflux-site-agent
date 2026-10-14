@@ -3,27 +3,27 @@
  * S7/S14 (AS-12): the correlation scope, pre-approval grants, their object
  * binding, and revocation on every terminal path (stage-11 check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_Fake_Ability;
-use SenroFlux_Test_Grants;
-use Specflux\AgentSafety\Plugin\Support\RequestContext;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GrantEligibility;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
+use SpecfluxSiteAgent_Test_Grants;
+use Belayline\Plugin\Support\RequestContext;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GrantEligibility;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -39,7 +39,7 @@ final class GrantsTest extends TestCase {
 
 	private Runner $runner;
 
-	private SenroFlux_Test_Grants $grants;
+	private SpecfluxSiteAgent_Test_Grants $grants;
 
 	protected function setUp(): void {
 		$this->db              = new wpdb();
@@ -49,22 +49,22 @@ final class GrantsTest extends TestCase {
 		$this->gateway         = new FakeGateway();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, new RecordingBridge() );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_filters']         = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/read'    => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/read', true, array( 'ok' => true ) ),
-			'agsafe-smoke/write'   => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/write', true, array( 'id' => 42 ) ),
-			'agsafe-smoke/publish' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/publish', true, array( 'id' => 42 ) ),
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_filters']         = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/read'    => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/read', true, array( 'ok' => true ) ),
+			'agsafe-smoke/write'   => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/write', true, array( 'id' => 42 ) ),
+			'agsafe-smoke/publish' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/publish', true, array( 'id' => 42 ) ),
 		);
 
 		RequestContext::reset();
-		// Agent Safety present with AS-12 switched on, and SenroFlux's own
+		// Agent Safety present with AS-12 switched on, and Specflux Site Agent's own
 		// pre-approval filter on: the state stage 11 is about.
-		$this->grants = senroflux_test_grants( true );
-		add_filter( 'senroflux_enable_preapproval', static fn (): bool => true, 10, 1 );
+		$this->grants = specflux_site_agent_test_grants( true );
+		add_filter( 'specflux_site_agent_enable_preapproval', static fn (): bool => true, 10, 1 );
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'agsafe-smoke/read'    => VerbTier::TIER_0,
 				'agsafe-smoke/write'   => VerbTier::TIER_1,
@@ -79,7 +79,7 @@ final class GrantsTest extends TestCase {
 		remove_all_filters();
 		RequestContext::reset();
 		GrantEligibility::forgetRun();
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 		Plugin::reset();
 		Plugin::set_dependency_probe( null );
 	}
@@ -164,7 +164,7 @@ final class GrantsTest extends TestCase {
 	}
 
 	private static function correlationFor( int $run_id ): string {
-		return 'senroflux:run:' . $run_id;
+		return 'specflux:run:' . $run_id;
 	}
 
 	/**
@@ -177,7 +177,7 @@ final class GrantsTest extends TestCase {
 	 */
 	private static function grantEligible( ?object $grant, string $verb, array $args, bool $incoming = false ): mixed {
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Agent Safety's hook, not this plugin's.
-		return apply_filters( 'agent_safety_grant_eligible', $incoming, $grant, $verb, $args );
+		return apply_filters( 'belayline_grant_eligible', $incoming, $grant, $verb, $args );
 	}
 
 	// ------------------------------------------------------------------
@@ -188,7 +188,7 @@ final class GrantsTest extends TestCase {
 		$run_id = $this->createRun();
 		$seen   = array();
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute =
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute =
 			static function () use ( &$seen ): void {
 				$seen[] = RequestContext::correlation();
 			};
@@ -265,7 +265,7 @@ final class GrantsTest extends TestCase {
 	public function test_a_throw_from_inside_the_tick_body_is_not_swallowed_as_a_conflict(): void {
 		$run_id = $this->createRun();
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute =
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute =
 			static function (): void {
 				throw new \RuntimeException( 'boom' );
 			};
@@ -399,9 +399,9 @@ final class GrantsTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			static fn ( $run, string $pack_verb ): ?string => str_starts_with( $pack_verb, 'pages/' )
-				? 'senroflux/update-post'
+				? 'specflux/update-post'
 				: null
 		);
 
@@ -418,7 +418,7 @@ final class GrantsTest extends TestCase {
 		$runner->tick( $run_id, $before, array( 'plan' => array( 'action' => 'accept_preapprove' ) ) );
 
 		$this->assertCount( 1, $this->grants->issued );
-		$this->assertSame( 'senroflux/update-post', $this->grants->issued[0]['verb'] );
+		$this->assertSame( 'specflux/update-post', $this->grants->issued[0]['verb'] );
 		$this->assertSame( 2, $this->grants->issued[0]['count'] );
 	}
 
@@ -443,8 +443,8 @@ final class GrantsTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
-			static fn ( $run, string $pack_verb ): ?string => 'senroflux/' . str_replace( 'commerce/', '', $pack_verb ),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
+			static fn ( $run, string $pack_verb ): ?string => 'specflux/' . str_replace( 'commerce/', '', $pack_verb ),
 			null,
 			null,
 			// S19: the ungrantable-verbs resolver — the new, LAST constructor
@@ -466,14 +466,14 @@ final class GrantsTest extends TestCase {
 		// Only the grantable verb (order-note-customer) is granted; refund,
 		// though Tier-2 and named in the same step, is skipped entirely.
 		$this->assertCount( 1, $this->grants->issued );
-		$this->assertSame( 'senroflux/order-note-customer', $this->grants->issued[0]['verb'] );
+		$this->assertSame( 'specflux/order-note-customer', $this->grants->issued[0]['verb'] );
 		$this->assertSame( 1, $this->grants->issued[0]['count'] );
 	}
 
 	/**
 	 * S19 guard (stage 12, item 0): a GRANTABLE Tier-2 verb and an
 	 * UNGRANTABLE Tier-2 verb of the SAME pack that resolve to the SAME gate
-	 * ability (`senroflux/product-update`, modelling a Woo-owned ability an
+	 * ability (`specflux/product-update`, modelling a Woo-owned ability an
 	 * argument can raise to Irreversible) must get NO grant for that ability
 	 * at all — unlike {@see test_an_ungrantable_tier_2_verb_gets_no_grant_while_a_grantable_one_in_the_same_plan_does()}'s
 	 * fixture, where the two verbs resolve to DIFFERENT abilities and the
@@ -496,12 +496,12 @@ final class GrantsTest extends TestCase {
 			null,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			// Both pack verbs resolve to the SAME ability — the shape a Woo-owned
 			// `product-update` ability has, where either a price field or a
 			// publish/future status can raise the same ability's call to Tier 2.
 			// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- fixture: every pack verb resolves to the one shared ability, regardless of run or verb.
-			static fn ( $run, string $pack_verb ): ?string => 'senroflux/product-update',
+			static fn ( $run, string $pack_verb ): ?string => 'specflux/product-update',
 			null,
 			null,
 			// `commerce/product-publish` is ungrantable; `commerce/price-change`
@@ -629,7 +629,7 @@ final class GrantsTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// (d) object binding: agent_safety_grant_eligible
+	// (d) object binding: belayline_grant_eligible
 	// ------------------------------------------------------------------
 
 	public function test_eligibility_is_false_outside_a_tick(): void {
@@ -651,7 +651,7 @@ final class GrantsTest extends TestCase {
 		$this->store->updateRun( $run_id, array( 'objects_json' => array( '42' => array( 'written_at' => 1 ) ) ) );
 
 		$answers = array();
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute =
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute =
 			static function () use ( &$answers, $run_id ): void {
 				$mine  = self::grant( self::correlationFor( $run_id ), 'agsafe-smoke/publish' );
 				$other = self::grant( self::correlationFor( $run_id + 1000 ), 'agsafe-smoke/publish' );
@@ -704,14 +704,14 @@ final class GrantsTest extends TestCase {
 				'commerce/term-change'  => VerbTier::TIER_2,
 				'pages/create-draft'    => VerbTier::TIER_1,
 			),
-			static fn ( $run, string $ability ): string => 'senroflux/term-update' === $ability ? 'commerce/term-change' : $ability,
+			static fn ( $run, string $ability ): string => 'specflux/term-update' === $ability ? 'commerce/term-change' : $ability,
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			static fn ( $run, string $pack_verb ): ?string => array(
 				'commerce/price-change' => 'woocommerce/product-update',
 				'commerce/stock-change' => 'woocommerce/stock-update',
-				'commerce/term-change'  => 'senroflux/term-update',
+				'commerce/term-change'  => 'specflux/term-update',
 			)[ $pack_verb ] ?? null,
 			null,
 			null,
@@ -768,7 +768,7 @@ final class GrantsTest extends TestCase {
 			$verb,
 			$args
 		);
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute = static function () use ( $questions, $ask ): void {
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute = static function () use ( $questions, $ask ): void {
 			$questions( $ask );
 		};
 
@@ -840,8 +840,8 @@ final class GrantsTest extends TestCase {
 		$this->acceptAndAsk(
 			array( array( array( 'commerce/term-change' ), array( 'term:7' ) ) ),
 			static function ( callable $ask ) use ( &$answers ): void {
-				$answers['term']  = $ask( 'senroflux/term-update', 'senroflux/term-update', array( 'id' => 7 ) );
-				$answers['other'] = $ask( 'senroflux/term-update', 'senroflux/term-update', array( 'id' => 8 ) );
+				$answers['term']  = $ask( 'specflux/term-update', 'specflux/term-update', array( 'id' => 7 ) );
+				$answers['other'] = $ask( 'specflux/term-update', 'specflux/term-update', array( 'id' => 8 ) );
 			}
 		);
 
@@ -882,7 +882,7 @@ final class GrantsTest extends TestCase {
 		$this->assertSame( 'awaiting_plan', $replan['run']['status'] );
 
 		$answers = array();
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute = static function () use ( &$answers, $run_id, $verb ): void {
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute = static function () use ( &$answers, $run_id, $verb ): void {
 			foreach ( array( 11, 12 ) as $id ) {
 				$answers[ $id ] = self::grantEligible( self::grant( self::correlationFor( $run_id ), $verb ), $verb, array( 'id' => $id ) );
 			}
@@ -977,7 +977,7 @@ final class GrantsTest extends TestCase {
 		);
 
 		$answers = array();
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/read']->on_execute =
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/read']->on_execute =
 			static function () use ( &$answers, $run_id ): void {
 				$answers['after_write'] = self::grantEligible(
 					self::grant( self::correlationFor( $run_id ), 'agsafe-smoke/publish' ),
@@ -1034,7 +1034,7 @@ final class GrantsTest extends TestCase {
 		$run_id = $this->createRun( array( 'max_steps' => 1 ) );
 		$this->store->appendStep(
 			$run_id,
-			\Specflux\SenroFlux\Run\StepKind::User,
+			\Specflux\SiteAgent\Run\StepKind::User,
 			array(
 				'role'  => 'user',
 				'parts' => array(),
@@ -1124,7 +1124,7 @@ final class GrantsTest extends TestCase {
 	}
 
 	public function test_an_agent_safety_without_grants_is_not_an_error(): void {
-		senroflux_test_no_agent_safety();
+		specflux_site_agent_test_no_agent_safety();
 
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::textTurn( 'Done.' );

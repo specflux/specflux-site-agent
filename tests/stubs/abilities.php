@@ -4,18 +4,18 @@
  * whose permission/execute behaviour is injected per-test, plus the global
  * wp_get_ability()/wp_get_abilities() shims backed by a fixture map.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-if ( ! class_exists( 'SenroFlux_Test_Fake_Ability' ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Fake_Ability' ) ) {
 	/**
 	 * Duck-typed ability: exercises the exact accessor shape ToolRegistry and
 	 * ToolExecutor call (get_name/get_description/get_input_schema/get_meta/
 	 * check_permissions/execute) without WordPress.
 	 */
-	class SenroFlux_Test_Fake_Ability {
+	class SpecfluxSiteAgent_Test_Fake_Ability {
 
 		/** @var callable|null */
 		public $on_execute = null;
@@ -68,7 +68,7 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Ability' ) ) {
 			// Real WP_Ability::execute() validates the result against the
 			// output schema and turns a mismatch into an error the model sees.
 			if ( null !== $this->output_schema && ! $result instanceof \WP_Error ) {
-				$reason = senroflux_test_schema_violation( $result, $this->output_schema );
+				$reason = specflux_site_agent_test_schema_violation( $result, $this->output_schema );
 				if ( null !== $reason ) {
 					return new \WP_Error( 'ability_invalid_output', sprintf( 'Ability "%s" has invalid output. Reason: %s', $this->name, $reason ) );
 				}
@@ -79,17 +79,17 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Ability' ) ) {
 	}
 }
 
-if ( ! function_exists( 'senroflux_test_schema_violation' ) ) {
+if ( ! function_exists( 'specflux_site_agent_test_schema_violation' ) ) {
 	/**
 	 * The subset of JSON Schema that WordPress's rest_validate_value_from_schema()
-	 * enforces and SenroFlux's schemas use: type, properties, required,
+	 * enforces and Specflux Site Agent's schemas use: type, properties, required,
 	 * additionalProperties:false, items, enum. Null when the value conforms.
 	 *
 	 * @param mixed               $value  Value to check.
 	 * @param array<string,mixed> $schema Schema.
 	 * @param string              $path   Path for the message.
 	 */
-	function senroflux_test_schema_violation( mixed $value, array $schema, string $path = 'output' ): ?string {
+	function specflux_site_agent_test_schema_violation( mixed $value, array $schema, string $path = 'output' ): ?string {
 		$types = isset( $schema['type'] ) ? (array) $schema['type'] : array();
 		if ( array() !== $types ) {
 			$matches = false;
@@ -121,7 +121,7 @@ if ( ! function_exists( 'senroflux_test_schema_violation' ) ) {
 			}
 			foreach ( $value as $key => $item ) {
 				if ( isset( $properties[ $key ] ) && is_array( $properties[ $key ] ) ) {
-					$reason = senroflux_test_schema_violation( $item, $properties[ $key ], $path . '[' . $key . ']' );
+					$reason = specflux_site_agent_test_schema_violation( $item, $properties[ $key ], $path . '[' . $key . ']' );
 					if ( null !== $reason ) {
 						return $reason;
 					}
@@ -132,7 +132,7 @@ if ( ! function_exists( 'senroflux_test_schema_violation' ) ) {
 		}
 		if ( is_array( $value ) && array_is_list( $value ) && is_array( $schema['items'] ?? null ) ) {
 			foreach ( $value as $index => $item ) {
-				$reason = senroflux_test_schema_violation( $item, $schema['items'], $path . '[' . $index . ']' );
+				$reason = specflux_site_agent_test_schema_violation( $item, $schema['items'], $path . '[' . $index . ']' );
 				if ( null !== $reason ) {
 					return $reason;
 				}
@@ -151,7 +151,7 @@ if ( ! function_exists( 'wp_get_ability' ) ) {
 	 * @param string $name Ability name.
 	 */
 	function wp_get_ability( string $name ): ?object {
-		return $GLOBALS['senroflux_test_abilities'][ $name ] ?? null;
+		return $GLOBALS['specflux_site_agent_test_abilities'][ $name ] ?? null;
 	}
 }
 
@@ -163,7 +163,7 @@ if ( ! function_exists( 'wp_has_ability' ) ) {
 	 * @param string $name Ability name.
 	 */
 	function wp_has_ability( string $name ): bool {
-		return isset( $GLOBALS['senroflux_test_abilities'][ $name ] );
+		return isset( $GLOBALS['specflux_site_agent_test_abilities'][ $name ] );
 	}
 }
 
@@ -174,7 +174,7 @@ if ( ! function_exists( 'wp_get_abilities' ) ) {
 	 * @return array<string, object>
 	 */
 	function wp_get_abilities(): array {
-		return $GLOBALS['senroflux_test_abilities'] ?? array();
+		return $GLOBALS['specflux_site_agent_test_abilities'] ?? array();
 	}
 }
 
@@ -201,7 +201,7 @@ if ( ! function_exists( '_doing_it_wrong' ) ) {
 	 * @param string $version       The version the notice was added in.
 	 */
 	function _doing_it_wrong( string $function_name, string $message, string $version ): void {
-		$GLOBALS['senroflux_test_doing_it_wrong'][] = array(
+		$GLOBALS['specflux_site_agent_test_doing_it_wrong'][] = array(
 			'function' => $function_name,
 			'message'  => $message,
 			'version'  => $version,

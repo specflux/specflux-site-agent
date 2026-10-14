@@ -1,41 +1,41 @@
 <?php
 /**
- * Bridge to SenroGate's change-history and undo API (0.4 S3.2).
+ * Bridge to Belayline Agent Governance's change-history and undo API (0.4 S3.2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval;
+namespace Specflux\SiteAgent\Approval;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\WpLinks;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Run;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\WpLinks;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Run;
 use WP_Error;
 
 /**
- * The one place SenroFlux talks to `agent_safety()->changes()`.
+ * The one place Specflux Site Agent talks to `belayline()->changes()`.
  *
- * Feature-detected end to end: an absent or older SenroGate (no `changes()`,
+ * Feature-detected end to end: an absent or older Belayline Agent Governance (no `changes()`,
  * no `UndoScope`) means no undo, and the report falls back to WordPress's own
- * revisions links plus one "Undo needs SenroGate" line.
+ * revisions links plus one "Undo needs Belayline Agent Governance" line.
  *
  * Nothing here is reachable by the model: it feeds the Runs screen's read
  * path and one human-click REST route, and is never named in a prompt or
- * registered as a tool. The undo itself re-checks the actor inside SenroGate
+ * registered as a tool. The undo itself re-checks the actor inside Belayline Agent Governance
  * (current logged-in user, capability, not an agent credential).
  *
- * The SenroGate symbols are referenced by name, as in {@see GrantBridge}: that
+ * The Belayline Agent Governance symbols are referenced by name, as in {@see GrantBridge}: that
  * plugin is not a composer dependency of this one.
  */
 class ChangesBridge {
 
-	private const UNDO_SCOPE = 'Specflux\\AgentSafety\\Changes\\UndoScope';
+	private const UNDO_SCOPE = 'Belayline\\Changes\\UndoScope';
 
 	/** Longest before/after value shown, in characters. */
 	private const VALUE_LIMIT = 300;
@@ -58,12 +58,12 @@ class ChangesBridge {
 	 */
 	public function capabilityFor( Run $run ): string {
 		return 'commerce' === $run->pack
-			? \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::resolve( $run->storePlatform )->restoreCapability()
+			? \Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms::resolve( $run->storePlatform )->restoreCapability()
 			: 'manage_options';
 	}
 
 	/**
-	 * Is the undo API reachable (SenroGate 0.5 or later)?
+	 * Is the undo API reachable (Belayline Agent Governance 0.5 or later)?
 	 */
 	public function isAvailable(): bool {
 		return null !== $this->api();
@@ -75,7 +75,7 @@ class ChangesBridge {
 	 * Terminal runs only. With the API: the recorded changes (shown only to a
 	 * holder of the run's capability, since they can include customer fields).
 	 * Without it: Revisions links for changed posts and pages, and the one
-	 * "Undo needs SenroGate" note.
+	 * "Undo needs Belayline Agent Governance" note.
 	 *
 	 * @param Run $run The run.
 	 * @return array<string,mixed>|null
@@ -143,7 +143,7 @@ class ChangesBridge {
 	 * Undo one change or the whole run, as the current human.
 	 *
 	 * Capability and the "is this a human" question are enforced again inside
-	 * SenroGate; the checks here are the harness's own, for a clear error and
+	 * Belayline Agent Governance; the checks here are the harness's own, for a clear error and
 	 * so a change from another run can never be named.
 	 *
 	 * @param Run      $run       The run.
@@ -178,52 +178,52 @@ class ChangesBridge {
 	 * @param int $run_id The run.
 	 */
 	public static function nonceAction( int $run_id ): string {
-		return 'senroflux_undo_' . $run_id;
+		return 'specflux_site_agent_undo_' . $run_id;
 	}
 
 	/**
-	 * A short human sentence for a SenroGate reason code.
+	 * A short human sentence for a Belayline Agent Governance reason code.
 	 *
 	 * @param string $reason Machine code (a change refusal, an item reason or a forbidden reason).
 	 */
 	public static function reasonLabel( string $reason ): string {
 		switch ( $reason ) {
 			case 'irreversible':
-				return __( "This kind of change can't be undone.", 'senroflux' );
+				return __( "This kind of change can't be undone.", 'specflux-site-agent' );
 			case 'truncated':
-				return __( 'Too large to restore. Only part of it was recorded.', 'senroflux' );
+				return __( 'Too large to restore. Only part of it was recorded.', 'specflux-site-agent' );
 			case 'already_restored':
-				return __( 'Already restored.', 'senroflux' );
+				return __( 'Already restored.', 'specflux-site-agent' );
 			case 'drift':
-				return __( 'Changed since the run. Restoring would overwrite newer work.', 'senroflux' );
+				return __( 'Changed since the run. Restoring would overwrite newer work.', 'specflux-site-agent' );
 			case 'object_missing':
-				return __( 'The item no longer exists.', 'senroflux' );
+				return __( 'The item no longer exists.', 'specflux-site-agent' );
 			case 'restore_failed':
-				return __( 'WordPress refused to restore it.', 'senroflux' );
+				return __( 'WordPress refused to restore it.', 'specflux-site-agent' );
 			case 'no_adapter':
-				return __( "SenroGate can't restore this kind of item.", 'senroflux' );
+				return __( "Belayline Agent Governance can't restore this kind of item.", 'specflux-site-agent' );
 			case 'capability':
-				return __( 'You do not have permission to undo this.', 'senroflux' );
+				return __( 'You do not have permission to undo this.', 'specflux-site-agent' );
 			case 'user_mismatch':
-				return __( 'The undo must come from the signed-in user.', 'senroflux' );
+				return __( 'The undo must come from the signed-in user.', 'specflux-site-agent' );
 			case 'agent_context':
-				return __( 'An undo must come from a person, not an agent.', 'senroflux' );
+				return __( 'An undo must come from a person, not an agent.', 'specflux-site-agent' );
 			case 'inside_governed_call':
-				return __( 'An undo cannot run inside an agent call.', 'senroflux' );
+				return __( 'An undo cannot run inside an agent call.', 'specflux-site-agent' );
 			default:
-				return __( "This change can't be undone.", 'senroflux' );
+				return __( "This change can't be undone.", 'specflux-site-agent' );
 		}
 	}
 
 	/**
-	 * The API object when SenroGate 0.5 or later is reachable.
+	 * The API object when Belayline Agent Governance 0.5 or later is reachable.
 	 */
 	private function api(): ?object {
-		if ( ! function_exists( 'agent_safety' ) || ! class_exists( self::UNDO_SCOPE ) ) {
+		if ( ! function_exists( 'belayline' ) || ! class_exists( self::UNDO_SCOPE ) ) {
 			return null;
 		}
 
-		$container = agent_safety();
+		$container = belayline();
 		if ( ! is_object( $container ) || ! method_exists( $container, 'changes' ) ) {
 			return null;
 		}
@@ -250,13 +250,13 @@ class ChangesBridge {
 	private function ready( Run $run ): mixed {
 		$api = $this->api();
 		if ( null === $api || GateMode::AgentSafety !== $run->gateMode ) {
-			return new WP_Error( 'senroflux_undo_unavailable', __( 'Undo needs SenroGate.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'specflux_site_agent_undo_unavailable', __( 'Undo needs Belayline Agent Governance.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 		if ( ! $run->status->isTerminal() ) {
-			return new WP_Error( 'senroflux_undo_run_active', __( 'Wait for the run to finish before undoing it.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'specflux_site_agent_undo_run_active', __( 'Wait for the run to finish before undoing it.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 		if ( ! current_user_can( $this->capabilityFor( $run ) ) ) {
-			return new WP_Error( 'senroflux_forbidden', __( 'Insufficient permissions.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'specflux_site_agent_forbidden', __( 'Insufficient permissions.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 
 		return $api;
@@ -280,11 +280,11 @@ class ChangesBridge {
 			}
 		}
 
-		return new WP_Error( 'senroflux_change_not_found', __( 'That change does not belong to this run.', 'senroflux' ), array( 'status' => 404 ) );
+		return new WP_Error( 'specflux_site_agent_change_not_found', __( 'That change does not belong to this run.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 	}
 
 	/**
-	 * The run's SenroGate correlation id.
+	 * The run's Belayline Agent Governance correlation id.
 	 *
 	 * @param Run $run The run.
 	 */
@@ -293,7 +293,7 @@ class ChangesBridge {
 	}
 
 	/**
-	 * Built-in mode or SenroGate below 0.5: Revisions links and one line.
+	 * Built-in mode or Belayline Agent Governance below 0.5: Revisions links and one line.
 	 *
 	 * @param Run $run The run.
 	 * @return array<string,mixed>
@@ -318,7 +318,7 @@ class ChangesBridge {
 		return array(
 			'mode'      => 'revisions',
 			'revisions' => (object) $links,
-			'note'      => __( 'Undo needs SenroGate', 'senroflux' ),
+			'note'      => __( 'Undo needs Belayline Agent Governance', 'specflux-site-agent' ),
 		);
 	}
 
@@ -365,7 +365,7 @@ class ChangesBridge {
 	/**
 	 * Field diff rows with display strings (never raw structures).
 	 *
-	 * @param array<int,mixed> $diff SenroGate's `fieldDiff()`.
+	 * @param array<int,mixed> $diff Belayline Agent Governance's `fieldDiff()`.
 	 * @return list<array{field:string,before:string,after:string}>
 	 */
 	private function diffRows( array $diff ): array {
@@ -387,7 +387,7 @@ class ChangesBridge {
 	/**
 	 * Undo items as plain rows.
 	 *
-	 * @param array<int,mixed> $items `UndoItem` objects (SenroGate's, not installed here).
+	 * @param array<int,mixed> $items `UndoItem` objects (Belayline Agent Governance's, not installed here).
 	 * @return list<array<string,mixed>>
 	 */
 	private function itemRows( array $items ): array {

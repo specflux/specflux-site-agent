@@ -4,7 +4,7 @@
  *
  * SureCart 4.9.3 registers 54 abilities under `surecart/` (only when the store
  * is connected and its own abilities toggle is on), so most roles are NATIVE.
- * SenroGate's SureCart module owns the tiers; this class mirrors them in pack
+ * Belayline Agent Governance's SureCart module owns the tiers; this class mirrors them in pack
  * verbs and a parity test keeps the two honest.
  *
  * Role -> ability:
@@ -12,25 +12,25 @@
  * - coupon: TWO native roles. `coupon-create` -> `create-coupon` (a shape
  *   accepts the pack's code/discount vocabulary and emits SureCart's), then
  *   `coupon-code` -> `create-promotion` (the customer-facing code). Native, not
- *   a polyfill, so SenroGate's discount rule sees the real `surecart/create-coupon`.
- * - status: a polyfill only (`senroflux/surecart-product-status`).
+ *   a polyfill, so Belayline Agent Governance's discount rule sees the real `surecart/create-coupon`.
+ * - status: a polyfill only (`specflux/surecart-product-status`).
  * - image, search, image-generate, order-note, shipping, tax, report-save: none.
  *   SureCart has no ability for them, and its PHP models cannot take a WordPress
  *   attachment (a product image needs a `Media` object uploaded to SureCart's
  *   servers by its JS admin; `Models/Media.php` and `ProductMedia.php` have no
  *   create path from PHP).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart;
 
-use Specflux\SenroFlux\Packs\Commerce\DescriptionValidator;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
+use Specflux\SiteAgent\Packs\Commerce\DescriptionValidator;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
 use Throwable;
 use WP_Error;
 
@@ -46,18 +46,18 @@ final class SureCartPlatform implements StorePlatform {
 
 	public const ID = 'surecart';
 
-	/** The version whose abilities were read (4.9.3, source, 2026-10-07). SenroGate's floor is the same. */
+	/** The version whose abilities were read (4.9.3, source, 2026-10-07). Belayline Agent Governance's floor is the same. */
 	public const MIN_VERSION = '4.9.3';
 
-	/** SenroGate's SureCart module; present and available only when it governs `surecart/`. */
-	public const GATE_INTEGRATION = 'Specflux\\AgentSafety\\Plugin\\Integrations\\SureCart\\SureCartIntegration';
+	/** Belayline Agent Governance's SureCart module; present and available only when it governs `surecart/`. */
+	public const GATE_INTEGRATION = 'Belayline\\Plugin\\Integrations\\SureCart\\SureCartIntegration';
 
-	/** Mirrors SenroGate's `DiscountElevationRule`. */
+	/** Mirrors Belayline Agent Governance's `DiscountElevationRule`. */
 	public const PERCENT_THRESHOLD = 50.0;
 
 	public const DEFAULT_AMOUNT_THRESHOLD = 10000;
 
-	public const AMOUNT_THRESHOLD_FILTER = 'agent_safety_surecart_discount_amount_threshold';
+	public const AMOUNT_THRESHOLD_FILTER = 'belayline_surecart_discount_amount_threshold';
 
 	/** Currencies with no minor unit, so an amount is already whole. */
 	private const ZERO_DECIMAL = array( 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF' );
@@ -114,15 +114,15 @@ final class SureCartPlatform implements StorePlatform {
 	/** What to tell a human who cannot start a SureCart run, per {@see inactiveReason()}. */
 	public function inactiveMessage(): ?string {
 		return match ( $this->inactiveReason() ) {
-			'not_installed' => __( 'SureCart is not installed.', 'senroflux' ),
+			'not_installed' => __( 'SureCart is not installed.', 'specflux-site-agent' ),
 			'below_min_version' => sprintf(
 				/* translators: %s: minimum SureCart version. */
-				__( 'SenroFlux needs SureCart %s or newer.', 'senroflux' ),
+				__( 'Specflux Site Agent needs SureCart %s or newer.', 'specflux-site-agent' ),
 				self::MIN_VERSION
 			),
-			'abilities_api_missing' => __( 'SureCart abilities need WordPress 6.9 or newer.', 'senroflux' ),
-			'store_not_connected' => __( 'Connect your SureCart store first: SureCart registers no abilities until the store is connected.', 'senroflux' ),
-			'abilities_disabled' => __( 'Enable abilities in SureCart > Settings > MCP: SureCart registers none while that switch is off.', 'senroflux' ),
+			'abilities_api_missing' => __( 'SureCart abilities need WordPress 6.9 or newer.', 'specflux-site-agent' ),
+			'store_not_connected' => __( 'Connect your SureCart store first: SureCart registers no abilities until the store is connected.', 'specflux-site-agent' ),
+			'abilities_disabled' => __( 'Enable abilities in SureCart > Settings > MCP: SureCart registers none while that switch is off.', 'specflux-site-agent' ),
 			default => null,
 		};
 	}
@@ -132,7 +132,7 @@ final class SureCartPlatform implements StorePlatform {
 	}
 
 	/**
-	 * Governed only while SenroGate's SureCart module is loaded and available:
+	 * Governed only while Belayline Agent Governance's SureCart module is loaded and available:
 	 * without it `surecart/` abilities are not classified by anyone.
 	 */
 	public function isGoverned(): bool {
@@ -148,7 +148,7 @@ final class SureCartPlatform implements StorePlatform {
 
 	/** @return list<string> */
 	public function abilityNamespaces(): array {
-		return array( 'surecart/', 'senroflux/' );
+		return array( 'surecart/', 'specflux/' );
 	}
 
 	/**
@@ -178,7 +178,7 @@ final class SureCartPlatform implements StorePlatform {
 	}
 
 	/**
-	 * A native-only role. The `senroflux/` fallback name is never registered:
+	 * A native-only role. The `specflux/` fallback name is never registered:
 	 * SureCart abilities absent means {@see inactiveReason()} already says why.
 	 *
 	 * @return array{polyfill:string,native:string,shape:callable|null}
@@ -243,7 +243,7 @@ final class SureCartPlatform implements StorePlatform {
 			return array(
 				'object_type' => 'surecart_' . $prefix,
 				/* translators: 1: object kind such as product, 2: SureCart object id. */
-				'title'       => sprintf( __( 'SureCart %1$s %2$s (couldn\'t load it from SureCart)', 'senroflux' ), $prefix, $id ),
+				'title'       => sprintf( __( 'SureCart %1$s %2$s (couldn\'t load it from SureCart)', 'specflux-site-agent' ), $prefix, $id ),
 				'status'      => 'unknown',
 				'edit_url'    => null,
 				'preview_url' => null,
@@ -267,7 +267,7 @@ final class SureCartPlatform implements StorePlatform {
 	}
 
 	/**
-	 * Only the `senroflux/` product-status polyfill is ours to register.
+	 * Only the `specflux/` product-status polyfill is ours to register.
 	 *
 	 * @return list<string>
 	 */
@@ -314,7 +314,7 @@ final class SureCartPlatform implements StorePlatform {
 	}
 
 	/**
-	 * The pack verb, mirroring SenroGate's tier for the ability and its input
+	 * The pack verb, mirroring Belayline Agent Governance's tier for the ability and its input
 	 * rules (PriceElevationRule, DiscountElevationRule).
 	 *
 	 * @param string              $base_name Ability name segment.
@@ -382,7 +382,7 @@ final class SureCartPlatform implements StorePlatform {
 	}
 
 	// ------------------------------------------------------------------
-	// Verb predicates, mirrored from SenroGate
+	// Verb predicates, mirrored from Belayline Agent Governance
 	// ------------------------------------------------------------------
 
 	/**
@@ -399,7 +399,7 @@ final class SureCartPlatform implements StorePlatform {
 		return 'commerce/product-update';
 	}
 
-	/** SenroGate's SureCartTruthy::flagOn(): scalars by truthiness, any non-scalar counts as on. */
+	/** Belayline Agent Governance's SureCartTruthy::flagOn(): scalars by truthiness, any non-scalar counts as on. */
 	private function flagOn( mixed $value ): bool {
 		if ( null === $value ) {
 			return false;
@@ -433,7 +433,7 @@ final class SureCartPlatform implements StorePlatform {
 
 	private function amountThreshold(): int {
 		$value = function_exists( 'apply_filters' )
-			? apply_filters( self::AMOUNT_THRESHOLD_FILTER, self::DEFAULT_AMOUNT_THRESHOLD ) // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- SenroGate's own hook, read so both sides agree.
+			? apply_filters( self::AMOUNT_THRESHOLD_FILTER, self::DEFAULT_AMOUNT_THRESHOLD ) // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Belayline Agent Governance's own hook, read so both sides agree.
 			: self::DEFAULT_AMOUNT_THRESHOLD;
 
 		// A broken filter must not disable the rule.
@@ -524,14 +524,14 @@ final class SureCartPlatform implements StorePlatform {
 			$new = $this->money( (int) $input['amount'], $currency );
 			if ( is_array( $current ) && isset( $current['amount'] ) && is_numeric( $current['amount'] ) ) {
 				/* translators: 1: current price, 2: new price. */
-				$parts[] = sprintf( __( 'change the price from %1$s to %2$s', 'senroflux' ), $this->money( (int) $current['amount'], $currency ), $new );
+				$parts[] = sprintf( __( 'change the price from %1$s to %2$s', 'specflux-site-agent' ), $this->money( (int) $current['amount'], $currency ), $new );
 			} else {
 				/* translators: %s: new price. */
-				$parts[] = sprintf( __( 'set the price to %s', 'senroflux' ), $new );
+				$parts[] = sprintf( __( 'set the price to %s', 'specflux-site-agent' ), $new );
 			}
 		}
 		if ( $this->flagOn( $input['archived'] ?? null ) ) {
-			$parts[] = __( 'archive it, so customers can no longer buy at it', 'senroflux' );
+			$parts[] = __( 'archive it, so customers can no longer buy at it', 'specflux-site-agent' );
 		}
 		if ( array() === $parts ) {
 			return null;
@@ -540,7 +540,7 @@ final class SureCartPlatform implements StorePlatform {
 		$name = is_array( $current ) ? $this->stringAt( $current, 'name' ) : null;
 
 		/* translators: 1: price name or id, 2: what will happen. */
-		return sprintf( __( 'SureCart price %1$s: %2$s. This takes effect for customers straight away.', 'senroflux' ), $name ?? $id, implode( __( ', and ', 'senroflux' ), $parts ) );
+		return sprintf( __( 'SureCart price %1$s: %2$s. This takes effect for customers straight away.', 'specflux-site-agent' ), $name ?? $id, implode( __( ', and ', 'specflux-site-agent' ), $parts ) );
 	}
 
 	/** @param array<string,mixed> $input Call input. */
@@ -552,11 +552,11 @@ final class SureCartPlatform implements StorePlatform {
 
 		$found    = SureCartRemote::find( 'Charge', $charge );
 		$currency = is_string( $found['currency'] ?? null ) ? $found['currency'] : '';
-		$reason   = is_string( $input['reason'] ?? null ) ? str_replace( '_', ' ', $input['reason'] ) : __( 'no reason given', 'senroflux' );
+		$reason   = is_string( $input['reason'] ?? null ) ? str_replace( '_', ' ', $input['reason'] ) : __( 'no reason given', 'specflux-site-agent' );
 
 		return sprintf(
 			/* translators: 1: refund amount, 2: SureCart charge id, 3: reason. */
-			__( 'Refund %1$s on SureCart charge %2$s (reason: %3$s). The money goes back to the customer\'s payment method and cannot be undone.', 'senroflux' ),
+			__( 'Refund %1$s on SureCart charge %2$s (reason: %3$s). The money goes back to the customer\'s payment method and cannot be undone.', 'specflux-site-agent' ),
 			$this->money( (int) $input['amount'], $currency ),
 			$charge,
 			$reason
@@ -574,27 +574,27 @@ final class SureCartPlatform implements StorePlatform {
 		$name    = is_array( $product ) ? $this->stringAt( $product, 'name' ) : null;
 
 		/* translators: %s: product name or id. */
-		return sprintf( __( 'Publish SureCart product %s. It becomes visible to customers and can be bought.', 'senroflux' ), $name ?? $id );
+		return sprintf( __( 'Publish SureCart product %s. It becomes visible to customers and can be bought.', 'specflux-site-agent' ), $name ?? $id );
 	}
 
 	/** @param array<string,mixed> $input Call input. */
 	private function discountCard( array $input ): string {
 		$coupon = $this->nativeCoupon( $input );
-		$name   = is_string( $coupon['name'] ?? null ) ? $coupon['name'] : __( '(unnamed)', 'senroflux' );
+		$name   = is_string( $coupon['name'] ?? null ) ? $coupon['name'] : __( '(unnamed)', 'specflux-site-agent' );
 
 		if ( isset( $coupon['percent_off'] ) && is_scalar( $coupon['percent_off'] ) ) {
 			/* translators: 1: coupon name, 2: percentage. */
-			return sprintf( __( 'Create SureCart coupon %1$s for %2$s%% off. Discounts of 50%% or more need your approval.', 'senroflux' ), $name, (string) $coupon['percent_off'] );
+			return sprintf( __( 'Create SureCart coupon %1$s for %2$s%% off. Discounts of 50%% or more need your approval.', 'specflux-site-agent' ), $name, (string) $coupon['percent_off'] );
 		}
 		if ( isset( $coupon['amount_off'] ) && is_scalar( $coupon['amount_off'] ) ) {
 			$currency = is_string( $coupon['currency'] ?? null ) ? $coupon['currency'] : '';
 
 			/* translators: 1: coupon name, 2: discount amount. */
-			return sprintf( __( 'Create SureCart coupon %1$s for %2$s off. A large fixed discount needs your approval.', 'senroflux' ), $name, $this->money( (int) $coupon['amount_off'], $currency ) );
+			return sprintf( __( 'Create SureCart coupon %1$s for %2$s off. A large fixed discount needs your approval.', 'specflux-site-agent' ), $name, $this->money( (int) $coupon['amount_off'], $currency ) );
 		}
 
 		/* translators: %s: coupon name. */
-		return sprintf( __( 'Create SureCart coupon %s with a discount that needs your approval.', 'senroflux' ), $name );
+		return sprintf( __( 'Create SureCart coupon %s with a discount that needs your approval.', 'specflux-site-agent' ), $name );
 	}
 
 	/** An amount in the currency's smallest unit as a plain string. */
@@ -726,7 +726,7 @@ final class SureCartPlatform implements StorePlatform {
 		$number = $this->stringAt( $data, 'number' );
 
 		/* translators: %s: SureCart order number. */
-		return null === $number ? null : sprintf( __( 'Order %s', 'senroflux' ), $number );
+		return null === $number ? null : sprintf( __( 'Order %s', 'specflux-site-agent' ), $number );
 	}
 
 	/**

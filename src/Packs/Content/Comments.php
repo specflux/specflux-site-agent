@@ -1,20 +1,20 @@
 <?php
 /**
- * The comment-moderation registrar: `senroflux/list-comments` (read),
- * `senroflux/moderate-comment` (hide / restore, never approve or delete),
- * `senroflux/approve-comment` (makes a comment public — its own, higher tier)
- * and `senroflux/reply-to-comment`.
+ * The comment-moderation registrar: `specflux/list-comments` (read),
+ * `specflux/moderate-comment` (hide / restore, never approve or delete),
+ * `specflux/approve-comment` (makes a comment public — its own, higher tier)
+ * and `specflux/reply-to-comment`.
  *
  * Every permission_callback checks a REAL capability AND the per-object cap for
  * the comment/post named in the input; every execute re-checks object access
  * (defence in depth — a permission_callback can be bypassed by a direct call).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 use WP_Error;
 
@@ -66,13 +66,13 @@ final class Comments {
 		self::registerReply();
 	}
 
-	/** senroflux/list-comments. */
+	/** specflux/list-comments. */
 	private static function registerList(): void {
 		wp_register_ability(
-			'senroflux/list-comments',
+			'specflux/list-comments',
 			array(
-				'label'               => __( 'List comments', 'senroflux' ),
-				'description'         => __( 'List comments you are allowed to edit, newest first. Filter by post_id, status (approved, hold, spam, trash, or all = approved and held; default hold), search text and parent comment id. per_page is at most 100 (default 20). The author email is included only if you may moderate comments; IP addresses and user agents are never returned. Comments you cannot edit are left out of the list and the total.', 'senroflux' ),
+				'label'               => __( 'List comments', 'specflux-site-agent' ),
+				'description'         => __( 'List comments you are allowed to edit, newest first. Filter by post_id, status (approved, hold, spam, trash, or all = approved and held; default hold), search text and parent comment id. per_page is at most 100 (default 20). The author email is included only if you may moderate comments; IP addresses and user agents are never returned. Comments you cannot edit are left out of the list and the total.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -127,13 +127,13 @@ final class Comments {
 		);
 	}
 
-	/** senroflux/moderate-comment. */
+	/** specflux/moderate-comment. */
 	private static function registerModerate(): void {
 		wp_register_ability(
-			'senroflux/moderate-comment',
+			'specflux/moderate-comment',
 			array(
-				'label'               => __( 'Moderate a comment', 'senroflux' ),
-				'description'         => __( 'Hide or restore one comment: unapprove (back to held), spam, trash, or restore (from spam or trash to its previous status). Never approves and never permanently deletes. Use approve-comment to publish a held comment.', 'senroflux' ),
+				'label'               => __( 'Moderate a comment', 'specflux-site-agent' ),
+				'description'         => __( 'Hide or restore one comment: unapprove (back to held), spam, trash, or restore (from spam or trash to its previous status). Never approves and never permanently deletes. Use approve-comment to publish a held comment.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -156,7 +156,7 @@ final class Comments {
 				},
 				// Reversible: spam/trash keep the previous status in comment
 				// meta and `restore` brings it back. destructive=false matters:
-				// SenroGate parks destructive=true calls as irreversible.
+				// Belayline Agent Governance parks destructive=true calls as irreversible.
 				'meta'                => self::meta(
 					array(
 						'readonly'    => false,
@@ -168,13 +168,13 @@ final class Comments {
 		);
 	}
 
-	/** senroflux/approve-comment. */
+	/** specflux/approve-comment. */
 	private static function registerApprove(): void {
 		wp_register_ability(
-			'senroflux/approve-comment',
+			'specflux/approve-comment',
 			array(
-				'label'               => __( 'Approve a comment', 'senroflux' ),
-				'description'         => __( 'Approve one held comment, which makes it public on the site. Only a comment that is currently held can be approved; restore a spam or trashed comment first.', 'senroflux' ),
+				'label'               => __( 'Approve a comment', 'specflux-site-agent' ),
+				'description'         => __( 'Approve one held comment, which makes it public on the site. Only a comment that is currently held can be approved; restore a spam or trashed comment first.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -202,13 +202,13 @@ final class Comments {
 		);
 	}
 
-	/** senroflux/reply-to-comment. */
+	/** specflux/reply-to-comment. */
 	private static function registerReply(): void {
 		wp_register_ability(
-			'senroflux/reply-to-comment',
+			'specflux/reply-to-comment',
 			array(
-				'label'               => __( 'Reply to a comment', 'senroflux' ),
-				'description'         => __( 'Post a reply, as you, to an approved comment on a published post. The reply is up to 2000 characters of text and passes through WordPress comment filters, so HTML you are not allowed to post is stripped. The reply\'s status is reported back and follows the site\'s moderation rules.', 'senroflux' ),
+				'label'               => __( 'Reply to a comment', 'specflux-site-agent' ),
+				'description'         => __( 'Post a reply, as you, to an approved comment on a published post. The reply is up to 2000 characters of text and passes through WordPress comment filters, so HTML you are not allowed to post is stripped. The reply\'s status is reported back and follows the site\'s moderation rules.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -294,7 +294,7 @@ final class Comments {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -302,7 +302,7 @@ final class Comments {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -384,7 +384,7 @@ final class Comments {
 		if ( ! isset( $map[ $status ] ) ) {
 			return new WP_Error(
 				'bad_request',
-				__( 'status must be approved, hold, spam, trash or all.', 'senroflux' ),
+				__( 'status must be approved, hold, spam, trash or all.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -485,7 +485,7 @@ final class Comments {
 
 		$comment = get_comment( $id );
 		if ( ! is_object( $comment ) ) {
-			return new WP_Error( 'not_found', __( 'Comment not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'not_found', __( 'Comment not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		return $comment;
@@ -506,14 +506,14 @@ final class Comments {
 		if ( ! in_array( $action, array( 'unapprove', 'spam', 'trash', 'restore' ), true ) ) {
 			return new WP_Error(
 				'bad_request',
-				__( 'action must be unapprove, spam, trash or restore.', 'senroflux' ),
+				__( 'action must be unapprove, spam, trash or restore.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		$previous = self::statusOf( $comment );
 		if ( null === $previous ) {
-			return self::badTransition( __( 'This comment is in a status that cannot be changed here.', 'senroflux' ) );
+			return self::badTransition( __( 'This comment is in a status that cannot be changed here.', 'specflux-site-agent' ) );
 		}
 
 		// Already in the target state: succeed without touching anything.
@@ -530,7 +530,7 @@ final class Comments {
 		switch ( $action ) {
 			case 'unapprove':
 				if ( 'approved' !== $previous ) {
-					return self::badTransition( __( 'Only an approved comment can be unapproved. Restore a spam or trashed comment first.', 'senroflux' ) );
+					return self::badTransition( __( 'Only an approved comment can be unapproved. Restore a spam or trashed comment first.', 'specflux-site-agent' ) );
 				}
 				$ok = wp_set_comment_status( $id, 'hold', true );
 				break;
@@ -544,7 +544,7 @@ final class Comments {
 				// With EMPTY_TRASH_DAYS = 0 core's wp_trash_comment() deletes
 				// permanently; this ability never does.
 				if ( ! defined( 'EMPTY_TRASH_DAYS' ) || ! (int) constant( 'EMPTY_TRASH_DAYS' ) ) {
-					return self::badTransition( __( 'The comment trash is disabled on this site, so trashing would delete permanently. Refused.', 'senroflux' ) );
+					return self::badTransition( __( 'The comment trash is disabled on this site, so trashing would delete permanently. Refused.', 'specflux-site-agent' ) );
 				}
 				$ok = wp_trash_comment( $id );
 				break;
@@ -555,7 +555,7 @@ final class Comments {
 				} elseif ( 'spam' === $previous ) {
 					$ok = wp_unspam_comment( $id );
 				} else {
-					return self::badTransition( __( 'Only a spam or trashed comment can be restored.', 'senroflux' ) );
+					return self::badTransition( __( 'Only a spam or trashed comment can be restored.', 'specflux-site-agent' ) );
 				}
 		}
 
@@ -575,10 +575,10 @@ final class Comments {
 
 		$previous = self::statusOf( $comment );
 		if ( 'approved' === $previous ) {
-			return new WP_Error( 'already_approved', __( 'This comment is already approved.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'already_approved', __( 'This comment is already approved.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 		if ( 'hold' !== $previous ) {
-			return self::badTransition( __( 'Only a held comment can be approved. Restore a spam or trashed comment first.', 'senroflux' ) );
+			return self::badTransition( __( 'Only a held comment can be approved. Restore a spam or trashed comment first.', 'specflux-site-agent' ) );
 		}
 
 		return self::finish( $id, 'hold', wp_set_comment_status( $id, 'approve', true ) );
@@ -597,7 +597,7 @@ final class Comments {
 			return $ok;
 		}
 		if ( ! $ok ) {
-			return new WP_Error( 'update_failed', __( 'The comment could not be updated.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'update_failed', __( 'The comment could not be updated.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		$fresh = get_comment( $id );
@@ -639,7 +639,7 @@ final class Comments {
 
 		$parent = get_comment( $parent_id );
 		if ( ! is_object( $parent ) ) {
-			return new WP_Error( 'not_found', __( 'Comment not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'not_found', __( 'Comment not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		$post_id = (int) $parent->comment_post_ID;
@@ -648,29 +648,29 @@ final class Comments {
 		}
 
 		if ( 'approved' !== self::statusOf( $parent ) ) {
-			return new WP_Error( 'parent_not_approved', __( 'You can only reply to an approved comment.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'parent_not_approved', __( 'You can only reply to an approved comment.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! is_object( $post ) ) {
-			return new WP_Error( 'not_found', __( 'Post not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'not_found', __( 'Post not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 		$post_status = (string) $post->post_status;
 		$readable    = 'publish' === $post_status
 			|| ( 'private' === $post_status && current_user_can( 'read_post', $post_id ) );
 		if ( ! $readable ) {
-			return new WP_Error( 'post_not_published', __( 'Replies can only be posted on published posts.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'post_not_published', __( 'Replies can only be posted on published posts.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 		if ( 'open' !== (string) $post->comment_status ) {
-			return new WP_Error( 'comments_closed', __( 'Comments are closed on this post.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'comments_closed', __( 'Comments are closed on this post.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
 		$content = trim( (string) ( $input['content'] ?? '' ) );
 		if ( '' === $content ) {
-			return new WP_Error( 'empty_content', __( 'The reply is empty.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'empty_content', __( 'The reply is empty.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( mb_strlen( $content ) > self::MAX_REPLY_LENGTH ) {
-			return new WP_Error( 'content_too_long', __( 'The reply is longer than 2000 characters.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'content_too_long', __( 'The reply is longer than 2000 characters.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$user = wp_get_current_user();
@@ -695,7 +695,7 @@ final class Comments {
 		}
 
 		if ( ! is_int( $new_id ) || $new_id <= 0 ) {
-			return new WP_Error( 'reply_failed', __( 'The reply could not be saved.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'reply_failed', __( 'The reply could not be saved.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		$created = get_comment( $new_id );

@@ -7,7 +7,7 @@ import ParkCard from '../components/ParkCard';
  *   - hidden by default;
  *   - offered once `preapprove_available` is true (grants on);
  *   - hidden again while it is false (grants off, even with the
- *     `senroflux_enable_preapproval` filter on — this component never
+ *     `specflux_site_agent_enable_preapproval` filter on — this component never
  *     re-derives that from anything of its own, it only reads the flag
  *     `Runner::planUi()` already computed server-side, S14).
  */
@@ -38,7 +38,7 @@ describe( 'the plan card pre-approve radio', () => {
 		expect( screen.getByText( /without asking again/i ) ).toBeInTheDocument();
 	} );
 
-	it( 'is hidden while SenroGate grants are off (preapprove_available: false)', () => {
+	it( 'is hidden while Belayline Agent Governance grants are off (preapprove_available: false)', () => {
 		render(
 			<ParkCard
 				kind="plan"
@@ -86,7 +86,7 @@ describe( 'park resolutions call onResolve with the S5 resume shape', () => {
 			<ParkCard
 				kind="approval"
 				gateMode="agent_safety"
-				payload={ { verb: 'senroflux/publish-page', tier: 2, args: {} } }
+				payload={ { verb: 'specflux/publish-page', tier: 2, args: {} } }
 				onResolve={ onResolve }
 			/>
 		);
@@ -102,7 +102,7 @@ describe( 'park resolutions call onResolve with the S5 resume shape', () => {
 			<ParkCard
 				kind="approval"
 				gateMode="agent_safety"
-				payload={ { verb: 'senroflux/publish-page', tier: 2, args: {} } }
+				payload={ { verb: 'specflux/publish-page', tier: 2, args: {} } }
 				onResolve={ onResolve }
 			/>
 		);
@@ -173,10 +173,10 @@ describe( 'the plan card names the existing objects a step will change', () => {
 		const { container } = render( <ParkCard kind="plan" gateMode="agent_safety" payload={ plan } /> );
 
 		const mug = screen.getByText( 'Ceramic Mug (#12)' );
-		expect( mug ).toHaveAttribute( 'data-senroflux-content' );
+		expect( mug ).toHaveAttribute( 'data-specflux-site-agent-content' );
 		expect( screen.getByText( 'Accessories (term:7)' ) ).toBeInTheDocument();
 		expect( screen.getByText( '#99' ) ).toBeInTheDocument();
-		expect( container.querySelectorAll( '.senroflux-plan-objects' ) ).toHaveLength( 1 );
+		expect( container.querySelectorAll( '.specflux-site-agent-plan-objects' ) ).toHaveLength( 1 );
 	} );
 
 	it( 'never interprets a hostile title as markup', () => {
@@ -213,7 +213,7 @@ describe( 'the plan card lists the existing pages it keeps and leaves alone', ()
 
 		const kept = screen.getByRole( 'heading', { name: 'Existing pages kept' } ).nextElementSibling;
 		expect( kept.tagName ).toBe( 'UL' );
-		expect( within( kept ).getByText( 'About · #10 · published' ) ).toHaveAttribute( 'data-senroflux-content' );
+		expect( within( kept ).getByText( 'About · #10 · published' ) ).toHaveAttribute( 'data-specflux-site-agent-content' );
 
 		const left = screen.getByRole( 'heading', { name: 'Left as they are' } ).nextElementSibling;
 		expect( left.tagName ).toBe( 'UL' );
@@ -261,7 +261,7 @@ describe( 'a site plan card lists the pages already on the site', () => {
 } );
 
 /**
- * 0.4 S5: a SenroGate pause or rate-limit wait is a hold card: it explains
+ * 0.4 S5: a Belayline Agent Governance pause or rate-limit wait is a hold card: it explains
  * the wait, offers no approve/reject, retries by itself and on demand.
  */
 describe( 'the hold card', () => {
@@ -345,7 +345,7 @@ describe( 'a plan step shows one plain-language tier badge and names its actions
 				verbs: [ 'pages/create-post', 'pages/update-post', 'pages/media-search', 'pages/update-post' ],
 				tier: 1,
 			},
-			{ text: 'Check what is there', verbs: [ 'senroflux/read-content' ], tier: 0 },
+			{ text: 'Check what is there', verbs: [ 'specflux/read-content' ], tier: 0 },
 		],
 	};
 

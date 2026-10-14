@@ -10,17 +10,17 @@
  * read and the write, when the slug is unknown, and when the active theme is
  * not a block theme.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Style;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Site\Style;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use wpdb;
 
 final class StyleTest extends TestCase {
@@ -58,16 +58,16 @@ final class StyleTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']             = array();
-		$GLOBALS['senroflux_test_ability_categories']    = array();
-		$GLOBALS['senroflux_test_posts']                 = array();
-		$GLOBALS['senroflux_test_next_post_id']          = 100;
-		$GLOBALS['senroflux_test_postmeta']              = array();
-		$GLOBALS['senroflux_test_options']               = array();
-		$GLOBALS['senroflux_test_user_caps']             = array( 'edit_theme_options' => true );
-		$GLOBALS['senroflux_test_is_block_theme']        = true;
-		$GLOBALS['senroflux_test_style_variations']      = $this->sampleVariations();
-		$GLOBALS['senroflux_test_global_styles_post_id'] = 0;
+		$GLOBALS['specflux_site_agent_test_abilities']             = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories']    = array();
+		$GLOBALS['specflux_site_agent_test_posts']                 = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']          = 100;
+		$GLOBALS['specflux_site_agent_test_postmeta']              = array();
+		$GLOBALS['specflux_site_agent_test_options']               = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']             = array( 'edit_theme_options' => true );
+		$GLOBALS['specflux_site_agent_test_is_block_theme']        = true;
+		$GLOBALS['specflux_site_agent_test_style_variations']      = $this->sampleVariations();
+		$GLOBALS['specflux_site_agent_test_global_styles_post_id'] = 0;
 
 		Style::reset();
 		Style::register();
@@ -82,11 +82,11 @@ final class StyleTest extends TestCase {
 	}
 
 	private function readAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/read-style'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/read-style'];
 	}
 
 	private function setAbility(): object {
-		return $GLOBALS['senroflux_test_abilities']['senroflux/set-style'];
+		return $GLOBALS['specflux_site_agent_test_abilities']['specflux/set-style'];
 	}
 
 	public function test_read_reports_the_default_variation_and_the_full_list(): void {
@@ -145,7 +145,7 @@ final class StyleTest extends TestCase {
 	}
 
 	public function test_set_style_refuses_on_a_non_block_theme(): void {
-		$GLOBALS['senroflux_test_is_block_theme'] = false;
+		$GLOBALS['specflux_site_agent_test_is_block_theme'] = false;
 
 		$this->readAbility()->execute();
 

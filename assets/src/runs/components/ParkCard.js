@@ -6,10 +6,10 @@ import ApprovalDiff from './ApprovalDiff';
 import { humanizeVerb, planApprovalCount } from '../utils';
 
 const HEADINGS = {
-	question: __( 'Question for you', 'senroflux' ),
-	plan: __( 'Plan: needs your OK', 'senroflux' ),
-	approval: __( 'Approve this change?', 'senroflux' ),
-	hold: __( 'Waiting to continue', 'senroflux' ),
+	question: __( 'Question for you', 'specflux-site-agent' ),
+	plan: __( 'Plan: needs your OK', 'specflux-site-agent' ),
+	approval: __( 'Approve this change?', 'specflux-site-agent' ),
+	hold: __( 'Waiting to continue', 'specflux-site-agent' ),
 };
 
 /** Longest wait between automatic retries of a held call, in seconds. */
@@ -22,13 +22,13 @@ const HOLD_DEFAULT_POLL_SECONDS = 15;
  * An inline park card (S10): a yellow top rule, a heading naming the kind,
  * focus moved to the heading. 17c wires Approve/Reject/Answer/Skip/Accept/
  * Veto to the tick call via `onResolve( resume )`, where `resume` is one of
- * the S5 shapes ({@see \Specflux\SenroFlux\Run\Resume}) — this component
+ * the S5 shapes ({@see \Specflux\SiteAgent\Run\Resume}) — this component
  * never invents a shape the Runner doesn't already validate.
  *
  * The focus ring is scoped to the HEADING only (a named live-review finding:
  * "the park-heading focus ring must hug the heading, not span the whole
- * card") — the ring lives on `.senroflux-park-heading:focus-visible`, not on
- * `.senroflux-park-card`, and this component moves focus there itself so a
+ * card") — the ring lives on `.specflux-site-agent-park-heading:focus-visible`, not on
+ * `.specflux-site-agent-park-card`, and this component moves focus there itself so a
  * skeptic can observe `document.activeElement` after a park appears.
  *
  * @param {Object}   props
@@ -56,10 +56,10 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 	}, [ kind, 'hold' === kind ? null : payload ] );
 
 	return (
-		<section className="senroflux-park-card" aria-labelledby="senroflux-park-heading">
+		<section className="specflux-site-agent-park-card" aria-labelledby="specflux-site-agent-park-heading">
 			<h3
-				id="senroflux-park-heading"
-				className="senroflux-park-heading"
+				id="specflux-site-agent-park-heading"
+				className="specflux-site-agent-park-heading"
 				tabIndex={ -1 }
 				ref={ headingRef }
 			>
@@ -102,58 +102,58 @@ function QuestionBody( { payload, onResolve, busy } ) {
 	};
 
 	return (
-		<div className="senroflux-park-body">
+		<div className="specflux-site-agent-park-body">
 			{ /* S22 pseudo-locale: model/user-authored data with no other markup
-			 * hook to exclude it by — `data-senroflux-content` marks it as
+			 * hook to exclude it by — `data-specflux-site-agent-content` marks it as
 			 * NOT translatable chrome. */ }
-			<p data-senroflux-content dir="auto">{ payload.text }</p>
-			{ payload.rationale && <p className="senroflux-rationale">{ payload.rationale }</p> }
+			<p data-specflux-site-agent-content dir="auto">{ payload.text }</p>
+			{ payload.rationale && <p className="specflux-site-agent-rationale">{ payload.rationale }</p> }
 			{ hasChoices ? (
-				<div className="senroflux-answer-choices" role="radiogroup" aria-label={ __( 'Answer', 'senroflux' ) }>
+				<div className="specflux-site-agent-answer-choices" role="radiogroup" aria-label={ __( 'Answer', 'specflux-site-agent' ) }>
 					{ choices.map( ( option ) => (
 						<label key={ option }>
 							<input
 								type="radio"
-								name="senroflux-answer-choice"
+								name="specflux-site-agent-answer-choice"
 								value={ option }
 								checked={ choice === option }
 								onChange={ () => setChoice( option ) }
 								disabled={ busy }
 							/>
-							<span data-senroflux-content>{ option }</span>
+							<span data-specflux-site-agent-content>{ option }</span>
 						</label>
 					) ) }
 					<label>
 						<input
 							type="radio"
-							name="senroflux-answer-choice"
+							name="specflux-site-agent-answer-choice"
 							value="__other__"
 							checked={ '__other__' === choice }
 							onChange={ () => setChoice( '__other__' ) }
 							disabled={ busy }
 						/>
-						{ __( 'Other', 'senroflux' ) }
+						{ __( 'Other', 'specflux-site-agent' ) }
 					</label>
 					{ '__other__' === choice && (
 						<textarea
-							className="senroflux-answer-other"
+							className="specflux-site-agent-answer-other"
 							value={ text }
 							onChange={ ( e ) => setText( e.target.value ) }
 							disabled={ busy }
-							aria-label={ __( 'Your answer', 'senroflux' ) }
+							aria-label={ __( 'Your answer', 'specflux-site-agent' ) }
 						/>
 					) }
 				</div>
 			) : (
 				<textarea
-					className="senroflux-answer-text"
+					className="specflux-site-agent-answer-text"
 					value={ text }
 					onChange={ ( e ) => setText( e.target.value ) }
 					disabled={ busy }
-					aria-label={ __( 'Your answer', 'senroflux' ) }
+					aria-label={ __( 'Your answer', 'specflux-site-agent' ) }
 				/>
 			) }
-			<div className="senroflux-park-actions">
+			<div className="specflux-site-agent-park-actions">
 				<button
 					type="button"
 					className="button button-primary"
@@ -166,7 +166,7 @@ function QuestionBody( { payload, onResolve, busy } ) {
 						submit( { answer: { text: text.trim() } } );
 					} }
 				>
-					{ __( 'Answer', 'senroflux' ) }
+					{ __( 'Answer', 'specflux-site-agent' ) }
 				</button>
 				<button
 					type="button"
@@ -174,7 +174,7 @@ function QuestionBody( { payload, onResolve, busy } ) {
 					disabled={ ! onResolve || busy }
 					onClick={ () => submit( { skip: true } ) }
 				>
-					{ __( 'Skip', 'senroflux' ) }
+					{ __( 'Skip', 'specflux-site-agent' ) }
 				</button>
 			</div>
 		</div>
@@ -193,12 +193,12 @@ function planObjectLabel( object ) {
 }
 
 const PLAN_STATUS_LABELS = () => ( {
-	publish: __( 'published', 'senroflux' ),
-	draft: __( 'draft', 'senroflux' ),
-	pending: __( 'pending review', 'senroflux' ),
-	private: __( 'private', 'senroflux' ),
-	future: __( 'scheduled', 'senroflux' ),
-	trash: __( 'in the trash', 'senroflux' ),
+	publish: __( 'published', 'specflux-site-agent' ),
+	draft: __( 'draft', 'specflux-site-agent' ),
+	pending: __( 'pending review', 'specflux-site-agent' ),
+	private: __( 'private', 'specflux-site-agent' ),
+	future: __( 'scheduled', 'specflux-site-agent' ),
+	trash: __( 'in the trash', 'specflux-site-agent' ),
 } );
 
 /**
@@ -218,7 +218,7 @@ function PlanExistingList( { heading, rows } ) {
 				{ rows.map( ( row, index ) => {
 					const status = 'string' === typeof row?.status && '' !== row.status ? row.status : '';
 					return (
-						<li key={ `${ row?.id }-${ index }` } data-senroflux-content dir="auto">
+						<li key={ `${ row?.id }-${ index }` } data-specflux-site-agent-content dir="auto">
 							{ [ row?.title, `#${ row?.id }`, labels[ status ] ?? status ]
 								.filter( ( part ) => 'string' === typeof part && '' !== part )
 								.join( ' · ' ) }
@@ -234,7 +234,7 @@ function PlanExistingList( { heading, rows } ) {
  * S5 plan shape: `{ "plan": { "action": "accept" | "accept_preapprove" |
  * "veto", "note"? } }`. The pre-approve radio's visibility is decided
  * ENTIRELY by `payload.preapprove_available` (`Runner::planUi()` — true only
- * when the `senroflux_enable_preapproval` filter AND Agent Safety's grants
+ * when the `specflux_site_agent_enable_preapproval` filter AND Agent Safety's grants
  * service are both on, S14) — this component never re-derives that decision
  * from `gateMode` or anything else, faithfully porting the three retired
  * `RunsScreenParkCardsTest` rules (hidden by default; offered once grants are
@@ -268,26 +268,26 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 	};
 
 	return (
-		<div className="senroflux-park-body">
-			<ol className="senroflux-plan-steps">
+		<div className="specflux-site-agent-park-body">
+			<ol className="specflux-site-agent-plan-steps">
 				{ steps.map( ( step, index ) => (
 					<li key={ index }>
-						<span data-senroflux-content dir="auto">{ step.text }</span>
+						<span data-specflux-site-agent-content dir="auto">{ step.text }</span>
 						{ /* One badge per step: step.tier is the highest tier among its verbs. */ }
 						<TierBadge gateMode={ gateMode } tier={ step.tier } />
 						{ Array.isArray( step.verbs ) && step.verbs.length > 0 && (
-							<span className="senroflux-plan-actions" data-testid="plan-step-actions">
+							<span className="specflux-site-agent-plan-actions" data-testid="plan-step-actions">
 								{ sprintf(
 									/* translators: %s: comma-separated list of the actions a plan step will use, e.g. "Create post, Update post". */
-									__( 'Uses: %s', 'senroflux' ),
+									__( 'Uses: %s', 'specflux-site-agent' ),
 									[ ...new Set( step.verbs.map( humanizeVerb ) ) ].join( ', ' )
 								) }
 							</span>
 						) }
 						{ Array.isArray( step.objects ) && step.objects.length > 0 && (
-							<ul className="senroflux-plan-objects">
+							<ul className="specflux-site-agent-plan-objects">
 								{ step.objects.map( ( object ) => (
-									<li key={ object.id } data-senroflux-content dir="auto">
+									<li key={ object.id } data-specflux-site-agent-content dir="auto">
 										{ planObjectLabel( object ) }
 									</li>
 								) ) }
@@ -304,87 +304,87 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 			 * defect this exact count was the fix for.
 			 */ }
 			{ null !== approvalCount && (
-				<p className="senroflux-plan-approval-count">
+				<p className="specflux-site-agent-plan-approval-count">
 					{ sprintf(
 						/* translators: %d: number of approvals this plan will ask for. */
 						_n(
 							'This plan will ask you to approve %d change.',
 							'This plan will ask you to approve %d changes.',
 							approvalCount,
-							'senroflux'
+							'specflux-site-agent'
 						),
 						approvalCount
 					) }
 				</p>
 			) }
-			<PlanExistingList heading={ __( 'Pages on the site now', 'senroflux' ) } rows={ payload.site_pages } />
-			<PlanExistingList heading={ __( 'Existing pages kept', 'senroflux' ) } rows={ payload.adopted } />
-			<PlanExistingList heading={ __( 'Left as they are', 'senroflux' ) } rows={ payload.left_for_you } />
+			<PlanExistingList heading={ __( 'Pages on the site now', 'specflux-site-agent' ) } rows={ payload.site_pages } />
+			<PlanExistingList heading={ __( 'Existing pages kept', 'specflux-site-agent' ) } rows={ payload.adopted } />
+			<PlanExistingList heading={ __( 'Left as they are', 'specflux-site-agent' ) } rows={ payload.left_for_you } />
 			{ assumptions.length > 0 && (
 				<>
-					<h4>{ __( 'Assumptions', 'senroflux' ) }</h4>
+					<h4>{ __( 'Assumptions', 'specflux-site-agent' ) }</h4>
 					<ul>
 						{ assumptions.map( ( a, index ) => (
-							<li key={ index } data-senroflux-content>{ a }</li>
+							<li key={ index } data-specflux-site-agent-content>{ a }</li>
 						) ) }
 					</ul>
 				</>
 			) }
-			<div className="senroflux-plan-decision" role="radiogroup" aria-label={ __( 'Decision', 'senroflux' ) }>
+			<div className="specflux-site-agent-plan-decision" role="radiogroup" aria-label={ __( 'Decision', 'specflux-site-agent' ) }>
 				<label>
 					<input
 						type="radio"
-						name="senroflux-plan-action"
+						name="specflux-site-agent-plan-action"
 						value="accept"
 						checked={ 'accept' === action }
 						onChange={ () => setAction( 'accept' ) }
 						disabled={ busy }
 					/>
-					{ __( 'Accept', 'senroflux' ) }
+					{ __( 'Accept', 'specflux-site-agent' ) }
 				</label>
 				{ preapproveAvailable && (
 					<label>
 						<input
 							type="radio"
-							name="senroflux-plan-action"
+							name="specflux-site-agent-plan-action"
 							value="accept_preapprove"
 							checked={ 'accept_preapprove' === action }
 							onChange={ () => setAction( 'accept_preapprove' ) }
 							disabled={ busy }
 						/>
-						{ __( 'Accept and pre-approve this plan\'s calls, without asking again (good for 24 hours)', 'senroflux' ) }
+						{ __( 'Accept and pre-approve this plan\'s calls, without asking again (good for 24 hours)', 'specflux-site-agent' ) }
 					</label>
 				) }
 				<label>
 					<input
 						type="radio"
-						name="senroflux-plan-action"
+						name="specflux-site-agent-plan-action"
 						value="veto"
 						checked={ 'veto' === action }
 						onChange={ () => setAction( 'veto' ) }
 						disabled={ busy }
 					/>
-					{ __( 'Veto', 'senroflux' ) }
+					{ __( 'Veto', 'specflux-site-agent' ) }
 				</label>
 			</div>
 			{ 'veto' === action && (
 				<textarea
-					className="senroflux-plan-veto-note"
+					className="specflux-site-agent-plan-veto-note"
 					value={ note }
 					onChange={ ( e ) => setNote( e.target.value ) }
-					placeholder={ __( 'Say why (required)', 'senroflux' ) }
+					placeholder={ __( 'Say why (required)', 'specflux-site-agent' ) }
 					disabled={ busy }
-					aria-label={ __( 'Veto note', 'senroflux' ) }
+					aria-label={ __( 'Veto note', 'specflux-site-agent' ) }
 				/>
 			) }
-			<div className="senroflux-park-actions">
+			<div className="specflux-site-agent-park-actions">
 				<button
 					type="button"
-					className={ 'veto' === action ? 'button senroflux-button-danger' : 'button button-primary' }
+					className={ 'veto' === action ? 'button specflux-site-agent-button-danger' : 'button button-primary' }
 					disabled={ ! onResolve || busy || ! canSubmit }
 					onClick={ submit }
 				>
-					{ 'veto' === action ? __( 'Veto', 'senroflux' ) : __( 'Accept plan', 'senroflux' ) }
+					{ 'veto' === action ? __( 'Veto', 'specflux-site-agent' ) : __( 'Accept plan', 'specflux-site-agent' ) }
 				</button>
 			</div>
 		</div>
@@ -398,20 +398,20 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 	const hasSummary = 'string' === typeof payload.summary && '' !== payload.summary;
 
 	return (
-		<div className="senroflux-park-body">
+		<div className="specflux-site-agent-park-body">
 			<p>
-				<strong>{ __( 'Requested action', 'senroflux' ) }:</strong> <code>{ payload.verb }</code>
+				<strong>{ __( 'Requested action', 'specflux-site-agent' ) }:</strong> <code>{ payload.verb }</code>
 			</p>
 			<TierBadge gateMode={ gateMode } tier={ payload.tier } />
 			{ 'string' === typeof payload.notice && '' !== payload.notice && (
-				<p className="senroflux-approval-notice" role="status">
+				<p className="specflux-site-agent-approval-notice" role="status">
 					{ payload.notice }
 				</p>
 			) }
 			{ hasSummary && (
-				<div className="senroflux-approval-summary-block">
+				<div className="specflux-site-agent-approval-summary-block">
 					<p>
-						<strong>{ __( 'What will change', 'senroflux' ) }:</strong>
+						<strong>{ __( 'What will change', 'specflux-site-agent' ) }:</strong>
 					</p>
 					{ /*
 					 * The pack's own summary is model-influenced DATA (titles,
@@ -419,7 +419,7 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 					 * marker; the labels around it stay translatable chrome.
 					 * Plain text, so it reads without colour.
 					 */ }
-					<p className="senroflux-approval-summary" data-senroflux-content>
+					<p className="specflux-site-agent-approval-summary" data-specflux-site-agent-content>
 						<ApprovalSummary html={ payload.summary } />
 					</p>
 				</div>
@@ -427,8 +427,8 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 			{ /* Explanation only: never read back by the buttons below. */ }
 			<ApprovalDiff diff={ payload.diff } />
 			{ hasArgs && (
-				<details className="senroflux-approval-args" open={ ! hasSummary }>
-					<summary>{ __( 'Arguments', 'senroflux' ) }</summary>
+				<details className="specflux-site-agent-approval-args" open={ ! hasSummary }>
+					<summary>{ __( 'Arguments', 'specflux-site-agent' ) }</summary>
 					{ /*
 					 * Live-review finding: approval-card arguments must wrap and
 					 * show in full. No `overflow: hidden`, no `text-overflow:
@@ -436,27 +436,27 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 					 * pre-wrap` and `overflow-wrap: anywhere`, verified by a
 					 * rendered-DOM test (see components/__tests__).
 					 */ }
-					<pre className="senroflux-args" tabIndex={ 0 }>
+					<pre className="specflux-site-agent-args" tabIndex={ 0 }>
 						{ JSON.stringify( args, null, 2 ) }
 					</pre>
 				</details>
 			) }
-			<div className="senroflux-park-actions">
+			<div className="specflux-site-agent-park-actions">
 				<button
 					type="button"
 					className="button button-primary"
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( { action: 'approve' } ) }
 				>
-					{ __( 'Approve', 'senroflux' ) }
+					{ __( 'Approve', 'specflux-site-agent' ) }
 				</button>
 				<button
 					type="button"
-					className="button senroflux-button-danger"
+					className="button specflux-site-agent-button-danger"
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( { action: 'reject' } ) }
 				>
-					{ __( 'Reject', 'senroflux' ) }
+					{ __( 'Reject', 'specflux-site-agent' ) }
 				</button>
 			</div>
 		</div>
@@ -464,7 +464,7 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 }
 
 /**
- * 0.4 S5: SenroGate paused the site, or a rate-limit window is full. Nothing
+ * 0.4 S5: Belayline Agent Governance paused the site, or a rate-limit window is full. Nothing
  * failed and nothing needs a decision: the call waits and is retried, here
  * automatically (the client's ticks are the only thing that advances a run)
  * and on demand with "Check again". A hold resumes with no resolution payload.
@@ -485,19 +485,19 @@ function HoldBody( { payload, onResolve, busy } ) {
 	}, [ onResolve, busy, retryAfter ] );
 
 	return (
-		<div className="senroflux-park-body">
-			<p className="senroflux-hold-message" role="status" dir="auto">
+		<div className="specflux-site-agent-park-body">
+			<p className="specflux-site-agent-hold-message" role="status" dir="auto">
 				{ holdMessage( hold ) }
 			</p>
-			<p>{ __( 'This run is not failing. It continues on its own as soon as the wait is over.', 'senroflux' ) }</p>
-			<div className="senroflux-park-actions">
+			<p>{ __( 'This run is not failing. It continues on its own as soon as the wait is over.', 'specflux-site-agent' ) }</p>
+			<div className="specflux-site-agent-park-actions">
 				<button
 					type="button"
 					className="button"
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( null ) }
 				>
-					{ __( 'Check again', 'senroflux' ) }
+					{ __( 'Check again', 'specflux-site-agent' ) }
 				</button>
 			</div>
 		</div>
@@ -508,16 +508,16 @@ function HoldBody( { payload, onResolve, busy } ) {
 function holdMessage( hold ) {
 	if ( 'rate_limited' === hold.kind ) {
 		if ( 'number' !== typeof hold.retry_after ) {
-			return __( 'Waiting for the rate limit to reset.', 'senroflux' );
+			return __( 'Waiting for the rate limit to reset.', 'specflux-site-agent' );
 		}
 		const minutes = Math.max( 1, Math.ceil( hold.retry_after / 60 ) );
 		return sprintf(
-			/* translators: %d: whole minutes until SenroGate's rate-limit window resets. */
+			/* translators: %d: whole minutes until Belayline Agent Governance's rate-limit window resets. */
 			_n(
 				'Waiting for the rate limit (resets in about %d minute).',
 				'Waiting for the rate limit (resets in about %d minutes).',
 				minutes,
-				'senroflux'
+				'specflux-site-agent'
 			),
 			minutes
 		);
@@ -530,7 +530,7 @@ function holdMessage( hold ) {
 	if ( '' !== when && '' !== why ) {
 		return sprintf(
 			/* translators: 1: date and time the pause started, 2: the administrator's stated reason. */
-			__( 'An administrator paused agent access on this site %1$s, reason: %2$s', 'senroflux' ),
+			__( 'An administrator paused agent access on this site %1$s, reason: %2$s', 'specflux-site-agent' ),
 			when,
 			why
 		);
@@ -538,9 +538,9 @@ function holdMessage( hold ) {
 	if ( '' !== when ) {
 		return sprintf(
 			/* translators: %s: date and time the pause started. */
-			__( 'An administrator paused agent access on this site %s.', 'senroflux' ),
+			__( 'An administrator paused agent access on this site %s.', 'specflux-site-agent' ),
 			when
 		);
 	}
-	return __( 'An administrator paused agent access on this site.', 'senroflux' );
+	return __( 'An administrator paused agent access on this site.', 'specflux-site-agent' );
 }

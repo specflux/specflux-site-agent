@@ -2,12 +2,12 @@
 /**
  * Read-only lookups into FluentCart's own tables (C4-F).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

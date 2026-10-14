@@ -1,16 +1,16 @@
 <?php
 /**
- * The OAuth 2.1 authorization server for the SenroFlux connector: wiring and shared helpers.
+ * The OAuth 2.1 authorization server for the Specflux Site Agent connector: wiring and shared helpers.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Lets Claude.ai, ChatGPT and other OAuth-only MCP clients sign in to the
  * connector. It is an authorization server for exactly one resource: the
- * SenroFlux MCP route. Tokens never authenticate any other route
+ * Specflux Site Agent MCP route. Tokens never authenticate any other route
  * ({@see Bearer}); everything fails closed.
  *
  * Specs followed (cited at the rule they produce): MCP authorization
@@ -28,21 +28,21 @@ defined( 'ABSPATH' ) || exit;
  */
 final class OAuth {
 
-	public const SCOPE_READ  = 'senroflux:read';
-	public const SCOPE_WRITE = 'senroflux:write';
+	public const SCOPE_READ  = 'specflux:read';
+	public const SCOPE_WRITE = 'specflux:write';
 
 	/** REST namespace of the registration/token/metadata endpoints. */
-	public const REST_NAMESPACE = 'senroflux/oauth';
+	public const REST_NAMESPACE = 'specflux-site-agent/oauth';
 
 	/** admin-post action of the authorize + consent page. */
-	public const AUTHORIZE_ACTION = 'senroflux_oauth_authorize';
+	public const AUTHORIZE_ACTION = 'specflux_site_agent_oauth_authorize';
 
 	public const CODE_TTL    = 60;
 	public const ACCESS_TTL  = HOUR_IN_SECONDS;
 	public const REFRESH_TTL = 30 * DAY_IN_SECONDS;
 
 	/** Cron hook that prunes grants whose refresh token has expired. */
-	public const GC_HOOK = 'senroflux_oauth_gc';
+	public const GC_HOOK = 'specflux_site_agent_oauth_gc';
 
 	/** Hook everything. Cheap: no storage is touched until a matching request arrives. */
 	public static function register(): void {
@@ -128,11 +128,11 @@ final class OAuth {
 		return in_array( self::SCOPE_WRITE, self::knownScopes( $scope ), true );
 	}
 
-	/** The client address as PHP saw it. Proxies: override with the `senroflux_oauth_client_ip` filter. */
+	/** The client address as PHP saw it. Proxies: override with the `specflux_site_agent_oauth_client_ip` filter. */
 	public static function clientIp(): string {
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		/** Filters the address DCR rate limits use (only filter this behind a trusted reverse proxy). `@internal`. */
-		$ip = apply_filters( 'senroflux_oauth_client_ip', $ip );
+		$ip = apply_filters( 'specflux_site_agent_oauth_client_ip', $ip );
 
 		return is_string( $ip ) ? $ip : '';
 	}

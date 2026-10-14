@@ -10,17 +10,17 @@
  * server), the `set-front-page` current-vs-replacement card, and the
  * passthrough/registration contract.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\ContentSummary;
-use Specflux\SenroFlux\Packs\Site\FrontPage;
-use Specflux\SenroFlux\Packs\Site\Navigation;
+use Specflux\SiteAgent\Packs\Site\ContentSummary;
+use Specflux\SiteAgent\Packs\Site\FrontPage;
+use Specflux\SiteAgent\Packs\Site\Navigation;
 
 final class ContentSummaryTest extends TestCase {
 
@@ -31,29 +31,29 @@ final class ContentSummaryTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_posts']                   = array();
-		$GLOBALS['senroflux_test_options']                 = array();
-		$GLOBALS['senroflux_test_nav_menu_items']          = array();
-		$GLOBALS['senroflux_test_registered_nav_menus']    = array();
-		$GLOBALS['senroflux_test_nav_menu_locations']      = array();
-		$GLOBALS['senroflux_test_is_block_theme']          = true;
-		$GLOBALS['senroflux_test_header_template_content'] = null;
-		$GLOBALS['senroflux_test_nav_fallback']            = null;
+		$GLOBALS['specflux_site_agent_test_posts']                   = array();
+		$GLOBALS['specflux_site_agent_test_options']                 = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_items']          = array();
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus']    = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']      = array();
+		$GLOBALS['specflux_site_agent_test_is_block_theme']          = true;
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = null;
+		$GLOBALS['specflux_site_agent_test_nav_fallback']            = null;
 		Navigation::reset();
 		FrontPage::reset();
 	}
 
 	private function seedPost( int $id, string $title, string $post_type = 'post' ): void {
-		$post                                   = new \stdClass();
-		$post->ID                               = $id;
-		$post->post_type                        = $post_type;
-		$post->post_title                       = $title;
-		$post->post_status                      = 'draft';
-		$post->post_name                        = '';
-		$post->post_parent                      = 0;
-		$post->post_excerpt                     = '';
-		$post->post_content                     = '';
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$post               = new \stdClass();
+		$post->ID           = $id;
+		$post->post_type    = $post_type;
+		$post->post_title   = $title;
+		$post->post_status  = 'draft';
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$post->post_content = '';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 	}
 
 	// ------------------------------------------------------------------
@@ -65,7 +65,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'id'     => 300,
 				'status' => 'publish',
@@ -83,7 +83,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'id'     => 300,
 				'status' => 'future',
@@ -99,7 +99,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'id'         => 300,
 				'status'     => 'publish',
@@ -115,7 +115,7 @@ final class ContentSummaryTest extends TestCase {
 	public function test_create_post_card_shows_the_terms_and_passes_through_without_them(): void {
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/create-post',
+			'specflux/create-post',
 			array(
 				'post_type'  => 'post',
 				'title'      => 'Launch <b>',
@@ -129,7 +129,7 @@ final class ContentSummaryTest extends TestCase {
 			'plain',
 			ContentSummary::filter(
 				'plain',
-				'senroflux/create-post',
+				'specflux/create-post',
 				array(
 					'post_type' => 'post',
 					'title'     => 'T',
@@ -143,7 +143,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'   => 300,
 				'tags' => array( 'php' ),
@@ -160,7 +160,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'already built by PublishSummary',
-			'senroflux/publish-post',
+			'specflux/publish-post',
 			array(
 				'id'     => 301,
 				'status' => 'publish',
@@ -171,7 +171,7 @@ final class ContentSummaryTest extends TestCase {
 	}
 
 	public function test_publish_post_card_is_inert_with_no_matching_object(): void {
-		$sum = ContentSummary::filter( 'fallback', 'senroflux/publish-post', array( 'id' => 999 ) );
+		$sum = ContentSummary::filter( 'fallback', 'specflux/publish-post', array( 'id' => 999 ) );
 
 		$this->assertSame( 'fallback', $sum );
 	}
@@ -186,7 +186,7 @@ final class ContentSummaryTest extends TestCase {
 		// item list), never from the call's own args.
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
 				'items' => array(
 					array(
@@ -205,7 +205,7 @@ final class ContentSummaryTest extends TestCase {
 	public function test_navigation_card_escapes_item_labels(): void {
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
 				'items' => array(
 					array(
@@ -221,10 +221,10 @@ final class ContentSummaryTest extends TestCase {
 	}
 
 	public function test_navigation_card_shows_nesting_and_the_removed_pages(): void {
-		$GLOBALS['senroflux_test_is_block_theme']       = false;
-		$GLOBALS['senroflux_test_registered_nav_menus'] = array( 'primary' => 'Primary' );
-		$GLOBALS['senroflux_test_nav_menu_locations']   = array( 'primary' => 5 );
-		$menu_item                                      = static fn ( int $id, string $title, int $page ): object => (object) array(
+		$GLOBALS['specflux_site_agent_test_is_block_theme']       = false;
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus'] = array( 'primary' => 'Primary' );
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']   = array( 'primary' => 5 );
+		$menu_item = static fn ( int $id, string $title, int $page ): object => (object) array(
 			'ID'               => $id,
 			'title'            => $title,
 			'url'              => 'https://example.test/?page_id=' . $page,
@@ -233,7 +233,7 @@ final class ContentSummaryTest extends TestCase {
 			'menu_order'       => $id,
 			'menu_item_parent' => '0',
 		);
-		$GLOBALS['senroflux_test_nav_menu_items'][5]    = array(
+		$GLOBALS['specflux_site_agent_test_nav_menu_items'][5] = array(
 			1 => $menu_item( 1, 'Home', 10 ),
 			2 => $menu_item( 2, 'Web Design', 11 ),
 			3 => $menu_item( 3, 'Contact', 12 ),
@@ -241,7 +241,7 @@ final class ContentSummaryTest extends TestCase {
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
 				'items' => array(
 					array(
@@ -279,7 +279,7 @@ final class ContentSummaryTest extends TestCase {
 	public function test_navigation_card_says_nothing_about_removal_when_nothing_is_dropped(): void {
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
 				'items' => array(
 					array(
@@ -301,12 +301,12 @@ final class ContentSummaryTest extends TestCase {
 	public function test_front_page_card_shows_current_page_beside_replacement(): void {
 		$this->seedPost( 400, 'Old Home', 'page' );
 		$this->seedPost( 401, 'New Home', 'page' );
-		$GLOBALS['senroflux_test_options']['show_on_front'] = 'page';
-		$GLOBALS['senroflux_test_options']['page_on_front'] = 400;
+		$GLOBALS['specflux_site_agent_test_options']['show_on_front'] = 'page';
+		$GLOBALS['specflux_site_agent_test_options']['page_on_front'] = 400;
 
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/set-front-page',
+			'specflux/set-front-page',
 			array(
 				'show_on_front' => 'page',
 				'page_id'       => 401,
@@ -320,7 +320,7 @@ final class ContentSummaryTest extends TestCase {
 	public function test_front_page_card_labels_latest_posts(): void {
 		$sum = ContentSummary::filter(
 			'plain',
-			'senroflux/set-front-page',
+			'specflux/set-front-page',
 			array( 'show_on_front' => 'posts' )
 		);
 
@@ -333,7 +333,7 @@ final class ContentSummaryTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_passthrough_for_an_unrelated_verb(): void {
-		$sum = ContentSummary::filter( 'plain', 'senroflux/read-content', array( 'id' => 1 ) );
+		$sum = ContentSummary::filter( 'plain', 'specflux/read-content', array( 'id' => 1 ) );
 
 		$this->assertSame( 'plain', $sum );
 	}

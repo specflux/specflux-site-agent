@@ -2,14 +2,14 @@
 /**
  * The "From AI apps" tab: parked connector calls waiting for an admin (K2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Admin\RunsScreen;
+use Specflux\SiteAgent\Admin\RunsScreen;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -26,12 +26,12 @@ final class ApprovalsScreen {
 	public const TAB = 'ai-apps';
 
 	/** Nonce action prefix; the call's hash is appended. */
-	public const NONCE_PREFIX = 'senroflux_connector_decision_';
+	public const NONCE_PREFIX = 'specflux_site_agent_connector_decision_';
 
 	/** Hook the two admin-post handlers. */
 	public static function register(): void {
-		add_action( 'admin_post_senroflux_connector_approve', array( self::class, 'handleApprove' ) );
-		add_action( 'admin_post_senroflux_connector_deny', array( self::class, 'handleDeny' ) );
+		add_action( 'admin_post_specflux_site_agent_connector_approve', array( self::class, 'handleApprove' ) );
+		add_action( 'admin_post_specflux_site_agent_connector_deny', array( self::class, 'handleDeny' ) );
 	}
 
 	/** Where the agent is told to send the site owner. */
@@ -64,7 +64,7 @@ final class ApprovalsScreen {
 		check_admin_referer( self::NONCE_PREFIX . $hash );
 
 		if ( ! current_user_can( Connector::capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		if ( 1 === preg_match( '/^[a-f0-9]{64}$/', $hash ) ) {
@@ -86,31 +86,31 @@ final class ApprovalsScreen {
 			'<a href="%s" class="nav-tab%s">%s</a>',
 			esc_url( admin_url( 'admin.php?page=' . RunsScreen::SLUG ) ),
 			self::requested() ? '' : ' nav-tab-active',
-			esc_html__( 'Runs', 'senroflux' )
+			esc_html__( 'Runs', 'specflux-site-agent' )
 		);
 		printf(
 			'<a href="%s" class="nav-tab%s">%s</a>',
 			esc_url( self::url() ),
 			self::requested() ? ' nav-tab-active' : '',
-			esc_html( $count > 0 ? sprintf( /* translators: %d: calls waiting. */ __( 'From AI apps (%d)', 'senroflux' ), $count ) : __( 'From AI apps', 'senroflux' ) )
+			esc_html( $count > 0 ? sprintf( /* translators: %d: calls waiting. */ __( 'From AI apps (%d)', 'specflux-site-agent' ), $count ) : __( 'From AI apps', 'specflux-site-agent' ) )
 		);
 		echo '</nav>';
 	}
 
 	/** Render the tab body (the caller prints the page chrome). */
 	public static function render(): void {
-		echo '<h2>' . esc_html__( 'From AI apps', 'senroflux' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'Changes that AI apps asked for and are waiting on you. Approve one and the app can repeat the same request within 15 minutes; it runs once.', 'senroflux' ) . '</p>';
+		echo '<h2>' . esc_html__( 'From AI apps', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'Changes that AI apps asked for and are waiting on you. Approve one and the app can repeat the same request within 15 minutes; it runs once.', 'specflux-site-agent' ) . '</p>';
 
 		$pending = Approvals::pending();
 		if ( array() === $pending ) {
-			echo '<p>' . esc_html__( 'Nothing is waiting.', 'senroflux' ) . '</p>';
+			echo '<p>' . esc_html__( 'Nothing is waiting.', 'specflux-site-agent' ) . '</p>';
 
 			return;
 		}
 
 		echo '<table class="widefat striped"><thead><tr>';
-		foreach ( array( __( 'Asked', 'senroflux' ), __( 'User', 'senroflux' ), __( 'Connection', 'senroflux' ), __( 'Tool', 'senroflux' ), __( 'Arguments', 'senroflux' ), '' ) as $heading ) {
+		foreach ( array( __( 'Asked', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Arguments', 'specflux-site-agent' ), '' ) as $heading ) {
 			echo '<th>' . esc_html( $heading ) . '</th>';
 		}
 		echo '</tr></thead><tbody>';
@@ -138,8 +138,8 @@ final class ApprovalsScreen {
 		echo '<td><code>' . esc_html( $entry['ability'] ) . '</code></td>';
 		echo '<td><pre style="margin:0;white-space:pre-wrap">' . esc_html( $args ) . '</pre></td>';
 		echo '<td>';
-		self::renderButton( 'senroflux_connector_approve', __( 'Approve', 'senroflux' ), $hash, true );
-		self::renderButton( 'senroflux_connector_deny', __( 'Deny', 'senroflux' ), $hash, false );
+		self::renderButton( 'specflux_site_agent_connector_approve', __( 'Approve', 'specflux-site-agent' ), $hash, true );
+		self::renderButton( 'specflux_site_agent_connector_deny', __( 'Deny', 'specflux-site-agent' ), $hash, false );
 		echo '</td></tr>';
 	}
 

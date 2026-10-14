@@ -1,20 +1,20 @@
 <?php
 /**
- * `senroflux/products-catalogue` tests: the Tier-0 read polyfill that shows
+ * `specflux/products-catalogue` tests: the Tier-0 read polyfill that shows
  * the model product categories and which products lack a description (live
  * journeys J10/J11: WooCommerce's `products-query` has no category filter and
  * returns neither categories nor description text).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
 use WP_Error;
 
 final class ProductsCatalogueTest extends TestCase {
@@ -24,12 +24,12 @@ final class ProductsCatalogueTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/media.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/commerce.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_user_caps']          = array( 'manage_woocommerce' => true );
-		$GLOBALS['senroflux_test_products']           = array();
-		$GLOBALS['senroflux_test_product_rows']       = array();
-		$GLOBALS['senroflux_test_product_cats']       = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array( 'manage_woocommerce' => true );
+		$GLOBALS['specflux_site_agent_test_products']           = array();
+		$GLOBALS['specflux_site_agent_test_product_rows']       = array();
+		$GLOBALS['specflux_site_agent_test_product_cats']       = array(
 			7 => array(
 				'name'  => 'Accessories',
 				'slug'  => 'accessories',
@@ -54,18 +54,18 @@ final class ProductsCatalogueTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		$GLOBALS['senroflux_test_user_caps']    = array();
-		$GLOBALS['senroflux_test_products']     = array();
-		$GLOBALS['senroflux_test_product_rows'] = array();
-		$GLOBALS['senroflux_test_product_cats'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']    = array();
+		$GLOBALS['specflux_site_agent_test_products']     = array();
+		$GLOBALS['specflux_site_agent_test_product_rows'] = array();
+		$GLOBALS['specflux_site_agent_test_product_cats'] = array();
 	}
 
 	/**
 	 * @param list<int> $category_ids Term ids.
 	 */
 	private function product( int $id, string $name, array $category_ids, string $description, string $short = '' ): void {
-		$GLOBALS['senroflux_test_products'][ $id ]     = 5;
-		$GLOBALS['senroflux_test_product_rows'][ $id ] = (object) array(
+		$GLOBALS['specflux_site_agent_test_products'][ $id ]     = 5;
+		$GLOBALS['specflux_site_agent_test_product_rows'][ $id ] = (object) array(
 			'name'              => $name,
 			'sku'               => 'SKU-' . $id,
 			'status'            => 'publish',
@@ -84,8 +84,8 @@ final class ProductsCatalogueTest extends TestCase {
 	 * @param array<string,mixed> $input Call input.
 	 */
 	private function call( array $input = array() ): mixed {
-		$ability = wp_get_ability( 'senroflux/products-catalogue' );
-		$this->assertNotNull( $ability, 'senroflux/products-catalogue was not registered' );
+		$ability = wp_get_ability( 'specflux/products-catalogue' );
+		$this->assertNotNull( $ability, 'specflux/products-catalogue was not registered' );
 
 		return $ability->execute( $input );
 	}
@@ -99,7 +99,7 @@ final class ProductsCatalogueTest extends TestCase {
 	}
 
 	public function test_it_is_registered_read_only(): void {
-		$meta = wp_get_ability( 'senroflux/products-catalogue' )->get_meta();
+		$meta = wp_get_ability( 'specflux/products-catalogue' )->get_meta();
 
 		$this->assertTrue( $meta['annotations']['readonly'] );
 		$this->assertFalse( $meta['annotations']['destructive'] );
@@ -149,7 +149,7 @@ final class ProductsCatalogueTest extends TestCase {
 	}
 
 	public function test_each_product_carries_its_categories_and_description_facts(): void {
-		$GLOBALS['senroflux_test_product_rows'][4]->short_description = 'Warm.';
+		$GLOBALS['specflux_site_agent_test_product_rows'][4]->short_description = 'Warm.';
 		$result = $this->call( array( 'search' => 'tote' ) );
 
 		$this->assertSame( array( 3 ), $this->ids( $result ) );
@@ -238,29 +238,29 @@ final class ProductsCatalogueTest extends TestCase {
 	}
 
 	public function test_a_caller_without_manage_woocommerce_is_refused(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
-		$this->assertFalse( wp_get_ability( 'senroflux/products-catalogue' )->check_permissions( array() ) );
+		$this->assertFalse( wp_get_ability( 'specflux/products-catalogue' )->check_permissions( array() ) );
 
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_woocommerce' => true );
-		$this->assertTrue( wp_get_ability( 'senroflux/products-catalogue' )->check_permissions( array() ) );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_woocommerce' => true );
+		$this->assertTrue( wp_get_ability( 'specflux/products-catalogue' )->check_permissions( array() ) );
 	}
 
 	public function test_it_never_writes(): void {
-		$products = $GLOBALS['senroflux_test_products'];
-		$rows     = $GLOBALS['senroflux_test_product_rows'];
+		$products = $GLOBALS['specflux_site_agent_test_products'];
+		$rows     = $GLOBALS['specflux_site_agent_test_product_rows'];
 
 		$this->call( array( 'missing_description' => true ) );
 
-		$this->assertEquals( $products, $GLOBALS['senroflux_test_products'] );
-		$this->assertEquals( $rows, $GLOBALS['senroflux_test_product_rows'] );
+		$this->assertEquals( $products, $GLOBALS['specflux_site_agent_test_products'] );
+		$this->assertEquals( $rows, $GLOBALS['specflux_site_agent_test_product_rows'] );
 	}
 
 	public function test_pack_registers_it_as_tier_zero_in_the_verb_map_and_roles(): void {
 		$pack = new CommercePack();
 
 		$this->assertSame( 0, $pack->verbMap()['commerce/catalogue-read'] );
-		$this->assertSame( 'commerce/catalogue-read', $pack->verbFor( 'senroflux/products-catalogue', array( 'category' => 'x' ) ) );
+		$this->assertSame( 'commerce/catalogue-read', $pack->verbFor( 'specflux/products-catalogue', array( 'category' => 'x' ) ) );
 		$this->assertSame( array( 'commerce/catalogue-read' ), $pack->roleVerbs()['catalogue'] );
 		$this->assertSame( 'products-catalogue', $pack->roles()['catalogue'] );
 	}
@@ -268,9 +268,9 @@ final class ProductsCatalogueTest extends TestCase {
 	public function test_it_is_in_the_commerce_run_tool_set_and_governed_as_tier_zero(): void {
 		$pack = new CommercePack();
 
-		$this->assertContains( 'senroflux/products-catalogue', $pack->allowList() );
-		$this->assertSame( 0, $pack->agentSafetyVerbMap()['senroflux/products-catalogue'] );
-		$this->assertSame( 'senroflux/products-catalogue', $pack->gateVerbFor( 'commerce/catalogue-read' ) );
+		$this->assertContains( 'specflux/products-catalogue', $pack->allowList() );
+		$this->assertSame( 0, $pack->agentSafetyVerbMap()['specflux/products-catalogue'] );
+		$this->assertSame( 'specflux/products-catalogue', $pack->gateVerbFor( 'commerce/catalogue-read' ) );
 		$this->assertNull( $pack->objectIdForWrite( 'commerce/catalogue-read', array(), array( 'id' => 5 ) ) );
 	}
 }

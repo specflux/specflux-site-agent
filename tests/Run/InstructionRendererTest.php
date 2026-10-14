@@ -2,20 +2,20 @@
 /**
  * InstructionRenderer grouping + tail rendering tests.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\InstructionRenderer;
-use Specflux\SenroFlux\Run\Tail;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\InstructionRenderer;
+use Specflux\SiteAgent\Run\Tail;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Skills\SkillSource;
 
 final class InstructionRendererTest extends TestCase {
 

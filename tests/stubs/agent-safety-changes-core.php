@@ -1,15 +1,15 @@
 <?php
 /**
- * Test-only stand-ins for SenroGate 0.5's change-history API (read from
+ * Test-only stand-ins for Belayline Agent Governance 0.5's change-history API (read from
  * `plugin/src/Api/Changes.php` and core `src/Changes/Undo*.php`). Only the
- * shapes SenroFlux consumes; no SenroGate logic is reproduced.
+ * shapes Specflux Site Agent consumes; no Belayline Agent Governance logic is reproduced.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\AgentSafety\Changes;
+namespace Belayline\Changes;
 
 final class UndoScope {
 	public const CHANGE      = 'change';

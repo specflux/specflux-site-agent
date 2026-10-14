@@ -1,40 +1,40 @@
 <?php
 /**
  * 0.4 S3.2: the report's Changes section and undo, built from a fake
- * SenroGate 0.5 `changes()` API; and the fallback without it.
+ * Belayline Agent Governance 0.5 `changes()` API; and the fallback without it.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Approval;
+namespace Specflux\SiteAgent\Tests\Approval;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\AgentSafety\Changes\UndoItem;
-use Specflux\AgentSafety\Changes\UndoResult;
-use Specflux\SenroFlux\Approval\ChangesBridge;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use SenroFlux_Test_Change;
-use SenroFlux_Test_Changes;
-use SenroFlux_Test_Container;
+use Belayline\Changes\UndoItem;
+use Belayline\Changes\UndoResult;
+use Specflux\SiteAgent\Approval\ChangesBridge;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use SpecfluxSiteAgent_Test_Change;
+use SpecfluxSiteAgent_Test_Changes;
+use SpecfluxSiteAgent_Test_Container;
 
 final class ChangesBridgeTest extends TestCase {
 
-	private SenroFlux_Test_Changes $api;
+	private SpecfluxSiteAgent_Test_Changes $api;
 
 	protected function setUp(): void {
-		$this->api                                    = new SenroFlux_Test_Changes();
-		$GLOBALS['senroflux_test_agent_safety']       = new SenroFlux_Test_Container( $this->api );
-		$GLOBALS['senroflux_test_current_user_id']    = 7;
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$this->api                                        = new SpecfluxSiteAgent_Test_Changes();
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new SpecfluxSiteAgent_Test_Container( $this->api );
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 7;
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(
 			'read'           => true,
 			'manage_options' => true,
 		);
-		$this->api->by_correlation['senroflux:run:5'] = array(
-			new SenroFlux_Test_Change(
+		$this->api->by_correlation['specflux:run:5']         = array(
+			new SpecfluxSiteAgent_Test_Change(
 				11,
 				'post',
 				'12',
@@ -51,12 +51,12 @@ final class ChangesBridgeTest extends TestCase {
 					),
 				)
 			),
-			new SenroFlux_Test_Change( 12, 'option', 'blogname', array(), 'irreversible' ),
+			new SpecfluxSiteAgent_Test_Change( 12, 'option', 'blogname', array(), 'irreversible' ),
 		);
 	}
 
 	protected function tearDown(): void {
-		$GLOBALS['senroflux_test_agent_safety'] = null;
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = null;
 	}
 
 	private function makeRun( GateMode $mode = GateMode::AgentSafety, RunStatus $status = RunStatus::Completed, ?string $pack = null, ?array $result = null ): Run {
@@ -77,13 +77,13 @@ final class ChangesBridgeTest extends TestCase {
 		$second = $section['changes'][1];
 		$this->assertFalse( $second['restorable'] );
 		$this->assertSame( "This kind of change can't be undone.", $second['reason_label'] );
-		$this->assertSame( wp_create_nonce( 'senroflux_undo_5' ), $section['nonce'] );
+		$this->assertSame( wp_create_nonce( 'specflux_site_agent_undo_5' ), $section['nonce'] );
 	}
 
 	public function test_no_section_for_a_live_run_or_a_viewer_without_the_capability(): void {
 		$this->assertNull( ( new ChangesBridge() )->section( $this->makeRun( status: RunStatus::Running ) ) );
 
-		$GLOBALS['senroflux_test_user_caps']['manage_options'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_options'] = false;
 		$this->assertNull( ( new ChangesBridge() )->section( $this->makeRun() ) );
 	}
 
@@ -91,14 +91,14 @@ final class ChangesBridgeTest extends TestCase {
 		$bridge = new ChangesBridge();
 		$this->assertNull( $bridge->section( $this->makeRun( pack: 'commerce' ) ), 'manage_options alone is not enough for a commerce run' );
 
-		$GLOBALS['senroflux_test_user_caps']['manage_woocommerce'] = true;
-		$GLOBALS['senroflux_test_user_caps']['manage_options']     = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_woocommerce'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_options']     = false;
 		$this->assertSame( 'undo', $bridge->section( $this->makeRun( pack: 'commerce' ) )['mode'] );
 	}
 
 	public function test_fallback_in_built_in_mode_has_revisions_and_the_note(): void {
-		$GLOBALS['senroflux_test_user_caps']['edit_post:12'] = true;
-		$GLOBALS['senroflux_test_revisions']                 = array( 12 => array( (object) array( 'ID' => 99 ) ) );
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:12'] = true;
+		$GLOBALS['specflux_site_agent_test_revisions']                 = array( 12 => array( (object) array( 'ID' => 99 ) ) );
 		$result = array(
 			'changes' => array(
 				array(
@@ -119,7 +119,7 @@ final class ChangesBridgeTest extends TestCase {
 		$section = ( new ChangesBridge() )->section( $this->makeRun( GateMode::BuiltIn, result: $result ) );
 
 		$this->assertSame( 'revisions', $section['mode'] );
-		$this->assertSame( 'Undo needs SenroGate', $section['note'] );
+		$this->assertSame( 'Undo needs Belayline Agent Governance', $section['note'] );
 		$this->assertSame(
 			array( '12' => 'https://example.test/wp-admin/revision.php?revision=99' ),
 			(array) $section['revisions'],
@@ -128,13 +128,13 @@ final class ChangesBridgeTest extends TestCase {
 		$this->assertSame( array(), $this->api->undo_calls );
 	}
 
-	public function test_fallback_when_senrogate_is_older_than_0_5(): void {
-		$GLOBALS['senroflux_test_agent_safety'] = new \stdClass();
+	public function test_fallback_when_agent_governance_is_older_than_0_5(): void {
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new \stdClass();
 
 		$section = ( new ChangesBridge() )->section( $this->makeRun() );
 
 		$this->assertSame( 'revisions', $section['mode'] );
-		$this->assertSame( 'Undo needs SenroGate', $section['note'] );
+		$this->assertSame( 'Undo needs Belayline Agent Governance', $section['note'] );
 		$this->assertFalse( ( new ChangesBridge() )->isAvailable() );
 	}
 
@@ -172,7 +172,7 @@ final class ChangesBridgeTest extends TestCase {
 		$this->assertSame( 'partial', $out['status'] );
 		$this->assertSame( 7, $this->api->undo_calls[0][1] );
 		$this->assertSame( 'correlation', $this->api->undo_calls[0][0]->kind );
-		$this->assertSame( 'senroflux:run:5', $this->api->undo_calls[0][0]->id );
+		$this->assertSame( 'specflux:run:5', $this->api->undo_calls[0][0]->id );
 		$this->assertSame( 'drift', $out['items'][1]['reason'] );
 		$this->assertSame( 'Edited since', $out['items'][1]['drift'][0]['current'] );
 		$this->assertSame( 'undo', $out['section']['mode'] );
@@ -187,23 +187,23 @@ final class ChangesBridgeTest extends TestCase {
 
 		$foreign = $bridge->undo( $this->makeRun(), 999, 7 );
 		$this->assertInstanceOf( \WP_Error::class, $foreign );
-		$this->assertSame( 'senroflux_change_not_found', $foreign->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_change_not_found', $foreign->get_error_code() );
 		$this->assertCount( 1, $this->api->undo_calls, 'a change from another run never reaches undo()' );
 	}
 
 	public function test_undo_refused_without_the_capability_or_on_a_live_run_or_without_the_api(): void {
 		$bridge = new ChangesBridge();
 
-		$GLOBALS['senroflux_test_user_caps']['manage_options'] = false;
-		$this->assertSame( 'senroflux_forbidden', $bridge->undo( $this->makeRun(), null, 7 )->get_error_code() );
-		$GLOBALS['senroflux_test_user_caps']['manage_options'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_options'] = false;
+		$this->assertSame( 'specflux_site_agent_forbidden', $bridge->undo( $this->makeRun(), null, 7 )->get_error_code() );
+		$GLOBALS['specflux_site_agent_test_user_caps']['manage_options'] = true;
 
-		$this->assertSame( 'senroflux_undo_run_active', $bridge->undo( $this->makeRun( status: RunStatus::Running ), null, 7 )->get_error_code() );
-		$this->assertSame( 'senroflux_undo_unavailable', $bridge->undo( $this->makeRun( GateMode::BuiltIn ), null, 7 )->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_undo_run_active', $bridge->undo( $this->makeRun( status: RunStatus::Running ), null, 7 )->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_undo_unavailable', $bridge->undo( $this->makeRun( GateMode::BuiltIn ), null, 7 )->get_error_code() );
 		$this->assertSame( array(), $this->api->undo_calls );
 	}
 
-	public function test_an_agent_context_refusal_from_senrogate_is_reported_not_swallowed(): void {
+	public function test_an_agent_context_refusal_from_agent_governance_is_reported_not_swallowed(): void {
 		$this->api->undo_result = new UndoResult( 'forbidden', array(), null, 'agent_context' );
 
 		$out = ( new ChangesBridge() )->undo( $this->makeRun(), null, 7 );

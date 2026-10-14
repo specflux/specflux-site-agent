@@ -1,7 +1,7 @@
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-/** S20: a suggestion's own per-line cap — {@see \Specflux\SenroFlux\Tools\SuggestBriefTool::MAX_TEXT_CHARS}. */
+/** S20: a suggestion's own per-line cap — {@see \Specflux\SiteAgent\Tools\SuggestBriefTool::MAX_TEXT_CHARS}. */
 const MAX_TEXT_CHARS = 200;
 
 /**
@@ -9,8 +9,8 @@ const MAX_TEXT_CHARS = 200;
  * `src/Admin/RunsScreen.php` (stage 16) into the React chat stream.
  *
  * The model never writes the site brief — only a human click on Save does,
- * through `POST /senroflux/v1/runs/{id}/suggestions/{seq}`
- * ({@see \Specflux\SenroFlux\Run\SuggestionResolver::resolve()}), which is
+ * through `POST /specflux-site-agent/v1/runs/{id}/suggestions/{seq}`
+ * ({@see \Specflux\SiteAgent\Run\SuggestionResolver::resolve()}), which is
  * itself gated by `manage_options` server-side. This component mirrors that
  * split rather than re-deciding it: an administrator gets Save/Dismiss with
  * editable text; anyone else gets the text as read-only, copyable content
@@ -42,7 +42,7 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 		setError( '' );
 		onResolve( suggestion.seq, action, text.trim() )
 			.catch( ( err ) => {
-				setError( ( err && err.message ) || __( 'Could not save this suggestion.', 'senroflux' ) );
+				setError( ( err && err.message ) || __( 'Could not save this suggestion.', 'specflux-site-agent' ) );
 			} )
 			.finally( () => {
 				setBusy( false );
@@ -50,14 +50,14 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 	};
 
 	return (
-		<div className="senroflux-suggestion-card">
-			<h4 className="senroflux-suggestion-heading">{ __( 'Suggested addition to the site brief', 'senroflux' ) }</h4>
+		<div className="specflux-site-agent-suggestion-card">
+			<h4 className="specflux-site-agent-suggestion-heading">{ __( 'Suggested addition to the site brief', 'specflux-site-agent' ) }</h4>
 
 			{ ! pending && (
-				<p className="senroflux-suggestion-status">
+				<p className="specflux-site-agent-suggestion-status">
 					{ 'saved' === suggestion.status
-						? __( 'Saved to the site brief.', 'senroflux' )
-						: __( 'Dismissed.', 'senroflux' ) }
+						? __( 'Saved to the site brief.', 'specflux-site-agent' )
+						: __( 'Dismissed.', 'specflux-site-agent' ) }
 				</p>
 			) }
 
@@ -65,22 +65,22 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 				pending ? (
 					<>
 						<textarea
-							className="senroflux-suggestion-text"
+							className="specflux-site-agent-suggestion-text"
 							value={ text }
 							onChange={ ( e ) => setText( e.target.value ) }
 							maxLength={ MAX_TEXT_CHARS }
 							disabled={ busy }
-							aria-label={ __( 'Suggested brief text', 'senroflux' ) }
+							aria-label={ __( 'Suggested brief text', 'specflux-site-agent' ) }
 						/>
-						{ error && <p className="senroflux-suggestion-error">{ error }</p> }
-						<div className="senroflux-suggestion-actions">
+						{ error && <p className="specflux-site-agent-suggestion-error">{ error }</p> }
+						<div className="specflux-site-agent-suggestion-actions">
 							<button
 								type="button"
 								className="button button-primary"
 								disabled={ busy || '' === text.trim() }
 								onClick={ () => submit( 'save' ) }
 							>
-								{ __( 'Save', 'senroflux' ) }
+								{ __( 'Save', 'specflux-site-agent' ) }
 							</button>
 							<button
 								type="button"
@@ -88,21 +88,21 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 								disabled={ busy }
 								onClick={ () => submit( 'dismiss' ) }
 							>
-								{ __( 'Dismiss', 'senroflux' ) }
+								{ __( 'Dismiss', 'specflux-site-agent' ) }
 							</button>
 						</div>
 					</>
 				) : (
-					<pre className="senroflux-suggestion-text-final" dir="auto">{ suggestion.text }</pre>
+					<pre className="specflux-site-agent-suggestion-text-final" dir="auto">{ suggestion.text }</pre>
 				)
 			) : (
 				<>
-					<pre className="senroflux-suggestion-text-final" dir="auto" tabIndex={ 0 }>
+					<pre className="specflux-site-agent-suggestion-text-final" dir="auto" tabIndex={ 0 }>
 						{ suggestion.text }
 					</pre>
 					{ pending && (
-						<p className="senroflux-suggestion-admin-only">
-							{ __( 'An administrator can add this to the site brief.', 'senroflux' ) }
+						<p className="specflux-site-agent-suggestion-admin-only">
+							{ __( 'An administrator can add this to the site brief.', 'specflux-site-agent' ) }
 						</p>
 					) }
 				</>

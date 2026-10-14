@@ -1,45 +1,45 @@
 <?php
 /**
  * Tool breadth is CONNECTOR-ONLY: the K5 abilities stay in the pack verb maps
- * (so SenroGate classifies connector calls unchanged) and stay exposed through
+ * (so Belayline Agent Governance classifies connector calls unchanged) and stay exposed through
  * the connector, but an in-admin run never has them in its allow-list or tool
  * surface, and a model naming one is refused as an unknown tool.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\ExposureSet;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\ToolBreadth;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Tests\Connector\ConnectorTestCase;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\ExposureSet;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\ToolBreadth;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Tests\Connector\ConnectorTestCase;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 
 final class ToolBreadthRunExclusionTest extends ConnectorTestCase {
 
-	/** @return list<string> Every breadth ability id, senroflux/ namespace. */
+	/** @return list<string> Every breadth ability id, specflux/ namespace. */
 	private function breadth(): array {
-		return array_map( static fn ( string $t ): string => 'senroflux/' . $t, ToolBreadth::allTemplates() );
+		return array_map( static fn ( string $t ): string => 'specflux/' . $t, ToolBreadth::allTemplates() );
 	}
 
 	private function registerContentPacks(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
-				$packs['pages'] = new \Specflux\SenroFlux\Packs\Pages\PagesPack();
-				$packs['posts'] = new \Specflux\SenroFlux\Packs\Posts\PostsPack();
-				$packs['site']  = new \Specflux\SenroFlux\Packs\Site\SitePack();
+				$packs['pages'] = new \Specflux\SiteAgent\Packs\Pages\PagesPack();
+				$packs['posts'] = new \Specflux\SiteAgent\Packs\Posts\PostsPack();
+				$packs['site']  = new \Specflux\SiteAgent\Packs\Site\SitePack();
 
 				return $packs;
 			}
@@ -48,14 +48,14 @@ final class ToolBreadthRunExclusionTest extends ConnectorTestCase {
 
 	private function registerBreadthAbilities(): void {
 		foreach ( $this->breadth() as $name ) {
-			$GLOBALS['senroflux_test_abilities'][ $name ] = new SenroFlux_Test_Fake_Ability( $name );
+			$GLOBALS['specflux_site_agent_test_abilities'][ $name ] = new SpecfluxSiteAgent_Test_Fake_Ability( $name );
 		}
-		$GLOBALS['senroflux_test_abilities']['senroflux/read-content'] = new SenroFlux_Test_Fake_Ability( 'senroflux/read-content' );
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/read-content'] = new SpecfluxSiteAgent_Test_Fake_Ability( 'specflux/read-content' );
 	}
 
 	public function test_a_started_run_never_carries_a_breadth_ability(): void {
 		$this->registerContentPacks(); // Built-in mode, driven from the Runs screen consumer.
-		$GLOBALS['senroflux_test_user_caps_by_id'][ self::USER ] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][ self::USER ] = array(
 			'edit_posts'         => true,
 			'manage_options'     => true,
 			'edit_pages'         => true,
@@ -84,13 +84,13 @@ final class ToolBreadthRunExclusionTest extends ConnectorTestCase {
 			consumer: 'c',
 			goal: 'g',
 			status: RunStatus::Pending,
-			allow: array( 'senroflux/*' ),
+			allow: array( 'specflux/*' ),
 			budget: Budget::defaults()
 		);
 
 		$registry = ToolRegistry::forRun( $run );
 
-		$this->assertTrue( $registry->admits( 'senroflux/read-content' ) );
+		$this->assertTrue( $registry->admits( 'specflux/read-content' ) );
 		foreach ( $this->breadth() as $name ) {
 			$this->assertFalse( $registry->admits( $name ), "$name admitted to a run" );
 			$this->assertArrayNotHasKey( $name, $registry->declarations(), "$name declared to the model" );
@@ -108,15 +108,15 @@ final class ToolBreadthRunExclusionTest extends ConnectorTestCase {
 		}
 
 		$read_only = new Connection( 1, 'u', Connection::SCOPE_READ );
-		$this->assertTrue( ExposureSet::visibleTo( 'senroflux/list-posts', $read_only, GateMode::AgentSafety ) );
-		$this->assertFalse( ExposureSet::visibleTo( 'senroflux/trash-post', $read_only, GateMode::AgentSafety ) );
-		$this->assertTrue( ExposureSet::visibleTo( 'senroflux/trash-post', new Connection( 1, 'u', Connection::SCOPE_READ_WRITE ), GateMode::AgentSafety ) );
+		$this->assertTrue( ExposureSet::visibleTo( 'specflux/list-posts', $read_only, GateMode::AgentSafety ) );
+		$this->assertFalse( ExposureSet::visibleTo( 'specflux/trash-post', $read_only, GateMode::AgentSafety ) );
+		$this->assertTrue( ExposureSet::visibleTo( 'specflux/trash-post', new Connection( 1, 'u', Connection::SCOPE_READ_WRITE ), GateMode::AgentSafety ) );
 	}
 
 	public function test_pack_verb_maps_still_classify_every_breadth_ability(): void {
-		$pack = new \Specflux\SenroFlux\Packs\Site\SitePack();
+		$pack = new \Specflux\SiteAgent\Packs\Site\SitePack();
 		foreach ( ToolBreadth::allTemplates() as $template ) {
-			$this->assertArrayHasKey( 'senroflux/' . $template, $pack->agentSafetyVerbMap(), $template );
+			$this->assertArrayHasKey( 'specflux/' . $template, $pack->agentSafetyVerbMap(), $template );
 		}
 	}
 }

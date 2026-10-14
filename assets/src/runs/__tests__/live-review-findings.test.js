@@ -55,10 +55,10 @@ describe( 'long goal titles wrap, they do not run off the viewport', () => {
 
 describe( 'approval-card arguments wrap and show in full', () => {
 	it( 'the arguments box has no overflow:hidden / ellipsis, and DOES wrap', () => {
-		// Textual proof against the actual CSS source: the `.senroflux-args`
+		// Textual proof against the actual CSS source: the `.specflux-site-agent-args`
 		// rule block itself never sets `overflow: hidden` or `text-overflow:
 		// ellipsis` anywhere in the stylesheet.
-		const argsBlockMatch = CSS_SOURCE.match( /\.senroflux-args\s*{[^}]*}/g ) || [];
+		const argsBlockMatch = CSS_SOURCE.match( /\.specflux-site-agent-args\s*{[^}]*}/g ) || [];
 		argsBlockMatch.forEach( ( block ) => {
 			expect( block ).not.toMatch( /overflow:\s*hidden/ );
 			expect( block ).not.toMatch( /text-overflow:\s*ellipsis/ );
@@ -72,7 +72,7 @@ describe( 'approval-card arguments wrap and show in full', () => {
 				<ParkCard
 					kind="approval"
 					gateMode="agent_safety"
-					payload={ { verb: 'senroflux/publish-page', tier: 2, args: { prompt: longArg } } }
+					payload={ { verb: 'specflux/publish-page', tier: 2, args: { prompt: longArg } } }
 				/>
 			);
 
@@ -90,9 +90,9 @@ describe( 'approval-card arguments wrap and show in full', () => {
 } );
 
 describe( 'the park-heading focus ring hugs the heading, not the whole card', () => {
-	it( 'only .senroflux-park-heading (never .senroflux-park-card) carries a :focus-visible rule', () => {
-		const cardFocusRules = CSS_SOURCE.match( /\.senroflux-park-card[^,{]*:focus-visible/g );
-		const headingFocusRules = CSS_SOURCE.match( /\.senroflux-park-heading:focus-visible/g );
+	it( 'only .specflux-site-agent-park-heading (never .specflux-site-agent-park-card) carries a :focus-visible rule', () => {
+		const cardFocusRules = CSS_SOURCE.match( /\.specflux-site-agent-park-card[^,{]*:focus-visible/g );
+		const headingFocusRules = CSS_SOURCE.match( /\.specflux-site-agent-park-heading:focus-visible/g );
 
 		expect( cardFocusRules ).toBeNull();
 		expect( headingFocusRules ).not.toBeNull();
@@ -110,7 +110,7 @@ describe( 'the park-heading focus ring hugs the heading, not the whole card', ()
 
 describe( 'Approve and Reject need spacing between them', () => {
 	it( 'the park-actions container has a non-zero gap between its buttons', () => {
-		const actionsBlockMatch = CSS_SOURCE.match( /\.senroflux-park-actions\s*{[^}]*}/ );
+		const actionsBlockMatch = CSS_SOURCE.match( /\.specflux-site-agent-park-actions\s*{[^}]*}/ );
 		expect( actionsBlockMatch ).not.toBeNull();
 		expect( actionsBlockMatch[ 0 ] ).toMatch( /gap:\s*(?!0(?:px)?\s*;)\S/ );
 
@@ -120,7 +120,7 @@ describe( 'Approve and Reject need spacing between them', () => {
 				<ParkCard
 					kind="approval"
 					gateMode="built_in"
-					payload={ { verb: 'senroflux/publish-page', tier: 2, args: {} } }
+					payload={ { verb: 'specflux/publish-page', tier: 2, args: {} } }
 				/>
 			);
 			const approve = screen.getByRole( 'button', { name: 'Approve' } );

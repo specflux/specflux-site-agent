@@ -3,36 +3,36 @@
  * Store-platform selection (C4-0): 0/1/2 platforms, the admin setting, the
  * pinned platform on a pack, and the setup check.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\PlatformSelection;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Plugin;
 use WP_Error;
 
 final class StorePlatformsTest extends TestCase {
 
 	protected function setUp(): void {
 		require_once __DIR__ . '/FakePlatform.php';
-		remove_all_filters( 'senroflux_store_platforms' );
-		$GLOBALS['senroflux_test_options']   = array();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 		Plugin::reset();
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_options']   = array();
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		Plugin::set_dependency_probe( null );
 		Plugin::reset();
 	}
@@ -42,7 +42,7 @@ final class StorePlatformsTest extends TestCase {
 	 */
 	private function register( array $platforms ): void {
 		add_filter(
-			'senroflux_store_platforms',
+			'specflux_site_agent_store_platforms',
 			static fn ( array $existing ): array => array_merge( $existing, $platforms ),
 			10,
 			1
@@ -116,14 +116,14 @@ final class StorePlatformsTest extends TestCase {
 
 	public function test_saving_needs_manage_options_and_empty_clears(): void {
 		$this->register( array( new FakePlatform( 'fake-a' ) ) );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$denied = StorePlatforms::save( 'fake-a' );
 		$this->assertInstanceOf( WP_Error::class, $denied );
 		$this->assertSame( 'store_platform_forbidden', $denied->get_error_code() );
 		$this->assertSame( '', StorePlatforms::chosenId() );
 
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 		StorePlatforms::save( 'fake-a' );
 		$this->assertSame( 'fake-a', StorePlatforms::chosenId() );
 		$this->assertTrue( StorePlatforms::save( '' ) );
@@ -140,7 +140,7 @@ final class StorePlatformsTest extends TestCase {
 			)
 		);
 		add_filter(
-			'senroflux_store_platforms',
+			'specflux_site_agent_store_platforms',
 			static fn ( array $existing ): array => array_merge( $existing, array( 'not a platform' ) ),
 			10,
 			1
@@ -171,13 +171,13 @@ final class StorePlatformsTest extends TestCase {
 
 		$this->assertSame( 'woo', $pack->platform()->id() );
 		$this->assertSame( 'manage_woocommerce', $pack->runCapability() );
-		$this->assertSame( array( 'woocommerce/', 'senroflux/' ), $pack->abilityNamespaces() );
+		$this->assertSame( array( 'woocommerce/', 'specflux/' ), $pack->abilityNamespaces() );
 	}
 
 	public function test_the_pack_follows_the_only_usable_platform(): void {
 		$this->register( array( new FakePlatform( 'fake-a', capability: 'manage_fake' ) ) );
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'fake/fake-read' => new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'fake/fake-read' => new \SpecfluxSiteAgent_Test_Fake_Ability(
 				'fake/fake-read',
 				input_schema: array(
 					'type'       => 'object',
@@ -185,10 +185,10 @@ final class StorePlatformsTest extends TestCase {
 				)
 			),
 		);
-		$pack                                = new CommercePack();
+		$pack = new CommercePack();
 
 		$this->assertSame( 'manage_fake', $pack->runCapability() );
-		$this->assertSame( array( 'fake/', 'senroflux/' ), $pack->abilityNamespaces() );
+		$this->assertSame( array( 'fake/', 'specflux/' ), $pack->abilityNamespaces() );
 		$this->assertSame( array( 'read' => 'fake-read' ), $pack->roles() );
 		$this->assertSame( array( 'read' => 'fake/fake-read' ), $pack->resolveAbilities() );
 	}
@@ -196,8 +196,8 @@ final class StorePlatformsTest extends TestCase {
 	public function test_a_pinned_platform_beats_the_setting_and_clears_the_resolution_cache(): void {
 		$this->register( array( new FakePlatform( 'fake-a', capability: 'cap_a' ), new FakePlatform( 'fake-b', capability: 'cap_b' ) ) );
 		StorePlatforms::save( 'fake-a' );
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'fake/fake-read' => new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'fake/fake-read' => new \SpecfluxSiteAgent_Test_Fake_Ability(
 				'fake/fake-read',
 				input_schema: array(
 					'type'       => 'object',
@@ -205,7 +205,7 @@ final class StorePlatformsTest extends TestCase {
 				)
 			),
 		);
-		$pack                                = new CommercePack();
+		$pack = new CommercePack();
 
 		$this->assertSame( 'cap_a', $pack->runCapability() );
 		$pack->resolveAbilities();

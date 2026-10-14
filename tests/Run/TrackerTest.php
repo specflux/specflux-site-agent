@@ -4,15 +4,15 @@
  * modified-marker extension (recordRead/staleWrite, and recordWrite's
  * marker-preserving merge).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\Tracker;
 
 final class TrackerTest extends TestCase {
 

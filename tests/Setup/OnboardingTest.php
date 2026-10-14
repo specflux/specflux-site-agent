@@ -2,19 +2,19 @@
 /**
  * Guided setup (onboarding O4): the six step computations.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Setup;
+namespace Specflux\SiteAgent\Tests\Setup;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Setup\Onboarding;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Setup\Onboarding;
 use WP_Error;
 
 final class OnboardingTest extends TestCase {
@@ -33,13 +33,13 @@ final class OnboardingTest extends TestCase {
 				'active'    => array(),
 			)
 		);
-		remove_all_filters( 'senroflux_packs' );
-		$GLOBALS['senroflux_test_options']         = array();
-		$GLOBALS['senroflux_test_users']           = array(
+		remove_all_filters( 'specflux_site_agent_packs' );
+		$GLOBALS['specflux_site_agent_test_options']         = array();
+		$GLOBALS['specflux_site_agent_test_users']           = array(
 			self::ADMIN  => (object) array( 'roles' => array( 'administrator' ) ),
 			self::EDITOR => (object) array( 'roles' => array( 'editor' ) ),
 		);
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array(
 			self::ADMIN  => array(
 				'manage_options'   => true,
 				'activate_plugins' => true,
@@ -49,15 +49,15 @@ final class OnboardingTest extends TestCase {
 				'activate_plugins' => false,
 			),
 		);
-		$GLOBALS['senroflux_test_user_caps']       = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array();
 	}
 
 	protected function tearDown(): void {
 		Plugin::reset();
 		Checks::setProviderProbe( true );
 		Onboarding::setPluginProbe( null );
-		remove_all_filters( 'senroflux_packs' );
-		unset( $GLOBALS['senroflux_test_users'], $GLOBALS['senroflux_test_user_caps_by_id'] );
+		remove_all_filters( 'specflux_site_agent_packs' );
+		unset( $GLOBALS['specflux_site_agent_test_users'], $GLOBALS['specflux_site_agent_test_user_caps_by_id'] );
 	}
 
 	/** @return array<string,mixed> */
@@ -86,7 +86,7 @@ final class OnboardingTest extends TestCase {
 
 			/** @return list<string> */
 			public function allowList(): array {
-				return array( 'senroflux/read-content' );
+				return array( 'specflux/read-content' );
 			}
 
 			/** @return array<string,int> */
@@ -110,10 +110,10 @@ final class OnboardingTest extends TestCase {
 
 		$pack->runnable = $runnable;
 		$pack->packName = $name;
-		add_filter( 'senroflux_packs', static fn ( array $packs ): array => $packs + array( $name => $pack ) );
+		add_filter( 'specflux_site_agent_packs', static fn ( array $packs ): array => $packs + array( $name => $pack ) );
 	}
 
-	private function senrogateMode(): void {
+	private function governanceMode(): void {
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
 	}
@@ -159,19 +159,19 @@ final class OnboardingTest extends TestCase {
 		}
 	}
 
-	public function test_approval_offers_an_install_link_when_senrogate_is_missing(): void {
+	public function test_approval_offers_an_install_link_when_agent_governance_is_missing(): void {
 		$step = $this->step( self::ADMIN, 'approval' );
 
 		$this->assertSame( 'built_in', $step['mode'] );
 		$this->assertSame( 'missing', $step['options'][1]['state'] );
 		$this->assertStringContainsString( 'plugin-install.php', $step['options'][1]['action']['url'] );
-		$this->assertStringContainsString( 'plugin=senrogate', $step['options'][1]['action']['url'] );
+		$this->assertStringContainsString( 'plugin=belayline-agent-governance', $step['options'][1]['action']['url'] );
 	}
 
-	public function test_approval_offers_activation_when_senrogate_is_installed_but_off(): void {
+	public function test_approval_offers_activation_when_agent_governance_is_installed_but_off(): void {
 		Onboarding::setPluginProbe(
 			array(
-				'installed' => array( 'senrogate/senrogate.php' ),
+				'installed' => array( 'belayline-agent-governance/belayline-agent-governance.php' ),
 				'active'    => array(),
 			)
 		);
@@ -179,14 +179,14 @@ final class OnboardingTest extends TestCase {
 
 		$this->assertSame( 'installed', $step['options'][1]['state'] );
 		$this->assertStringContainsString( 'action=activate', $step['options'][1]['action']['url'] );
-		$this->assertStringContainsString( 'senrogate%2Fsenrogate.php', $step['options'][1]['action']['url'] );
+		$this->assertStringContainsString( 'belayline-agent-governance%2Fbelayline-agent-governance.php', $step['options'][1]['action']['url'] );
 	}
 
-	public function test_approval_shows_senrogate_active_without_an_action(): void {
-		$this->senrogateMode();
+	public function test_approval_shows_agent_governance_active_without_an_action(): void {
+		$this->governanceMode();
 		$step = $this->step( self::ADMIN, 'approval' );
 
-		$this->assertSame( 'senrogate', $step['mode'] );
+		$this->assertSame( 'belayline-agent-governance', $step['mode'] );
 		$this->assertSame( 'active', $step['options'][1]['state'] );
 		$this->assertNull( $step['options'][1]['action'] );
 	}
@@ -195,9 +195,9 @@ final class OnboardingTest extends TestCase {
 
 	public function test_the_old_plugin_step_is_hidden_unless_both_plugins_are_installed(): void {
 		$cases = array(
-			'neither'        => array(),
-			'only old'       => array( 'agent-safety/agent-safety.php' ),
-			'only senrogate' => array( 'senrogate/senrogate.php' ),
+			'neither'                         => array(),
+			'only old'                        => array( 'agent-safety/agent-safety.php' ),
+			'only belayline-agent-governance' => array( 'belayline-agent-governance/belayline-agent-governance.php' ),
 		);
 		foreach ( $cases as $label => $installed ) {
 			Onboarding::setPluginProbe(
@@ -209,7 +209,7 @@ final class OnboardingTest extends TestCase {
 			$this->assertNotContains( 'old-plugin', $this->ids( self::ADMIN ), $label );
 		}
 
-		$both = array( 'agent-safety/agent-safety.php', 'senrogate/senrogate.php' );
+		$both = array( 'agent-safety/agent-safety.php', 'belayline-agent-governance/belayline-agent-governance.php' );
 		Onboarding::setPluginProbe(
 			array(
 				'installed' => $both,
@@ -220,11 +220,11 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_the_old_plugin_step_passes_when_it_is_installed_but_not_active(): void {
-		$both = array( 'agent-safety/agent-safety.php', 'senrogate/senrogate.php' );
+		$both = array( 'agent-safety/agent-safety.php', 'belayline-agent-governance/belayline-agent-governance.php' );
 		Onboarding::setPluginProbe(
 			array(
 				'installed' => $both,
-				'active'    => array( 'senrogate/senrogate.php' ),
+				'active'    => array( 'belayline-agent-governance/belayline-agent-governance.php' ),
 			)
 		);
 
@@ -235,7 +235,7 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_the_old_plugin_step_fails_with_a_deactivate_link_when_both_are_active(): void {
-		$both = array( 'agent-safety/agent-safety.php', 'senrogate/senrogate.php' );
+		$both = array( 'agent-safety/agent-safety.php', 'belayline-agent-governance/belayline-agent-governance.php' );
 		Onboarding::setPluginProbe(
 			array(
 				'installed' => $both,
@@ -262,7 +262,7 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_the_role_step_passes_when_a_content_pack_is_runnable(): void {
-		$this->senrogateMode();
+		$this->governanceMode();
 		$this->registerPack( 'posts', true );
 
 		$step = $this->step( self::ADMIN, 'role-binding' );
@@ -272,7 +272,7 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_a_runnable_commerce_pack_alone_does_not_pass_the_role_step(): void {
-		$this->senrogateMode();
+		$this->governanceMode();
 		$this->registerPack( 'commerce', true );
 		$this->registerPack( 'pages', false );
 
@@ -280,40 +280,40 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_the_role_step_gives_an_admin_the_deep_link_for_their_role(): void {
-		$this->senrogateMode();
+		$this->governanceMode();
 		$this->registerPack( 'pages', false );
 
 		$step = $this->step( self::ADMIN, 'role-binding' );
 
 		$this->assertSame( 'fail', $step['status'] );
 		$this->assertTrue( $step['blocking'] );
-		$this->assertSame( 'Turn on in SenroGate', $step['action']['label'] );
+		$this->assertSame( 'Turn on in Belayline Agent Governance', $step['action']['label'] );
 		$this->assertSame(
-			'https://example.test/wp-admin/tools.php?page=agent-safety-packs&senrogate_bind_token=role%3Aadministrator&senrogate_bind_pack=senroflux-content',
+			'https://example.test/wp-admin/tools.php?page=belayline-packs&agent_governance_bind_token=role%3Aadministrator&agent_governance_bind_pack=specflux-content',
 			$step['action']['url']
 		);
 		$this->assertNull( $step['ask'] );
 	}
 
 	public function test_the_role_step_names_the_role_and_pack_for_a_non_admin(): void {
-		$this->senrogateMode();
+		$this->governanceMode();
 		$this->registerPack( 'pages', false );
 
 		$step = $this->step( self::EDITOR, 'role-binding' );
 
 		$this->assertSame( 'fail', $step['status'] );
 		$this->assertNull( $step['action'] );
-		$this->assertSame( 'Ask an administrator to bind Editor to SenroFlux content in SenroGate.', $step['ask'] );
+		$this->assertSame( 'Ask an administrator to bind Editor to Specflux Site Agent content in Belayline Agent Governance.', $step['ask'] );
 	}
 
 	public function test_the_bind_link_uses_the_viewers_own_role_token(): void {
 		$this->assertSame( 'role:editor', Onboarding::bindToken( self::EDITOR ) );
-		$this->assertStringContainsString( 'senrogate_bind_token=role%3Aeditor&', Onboarding::bindUrl( self::EDITOR ) );
+		$this->assertStringContainsString( 'agent_governance_bind_token=role%3Aeditor&', Onboarding::bindUrl( self::EDITOR ) );
 
-		$GLOBALS['senroflux_test_users'][9] = (object) array( 'roles' => array( 'shop_manager', 'administrator' ) );
+		$GLOBALS['specflux_site_agent_test_users'][9] = (object) array( 'roles' => array( 'shop_manager', 'administrator' ) );
 		$this->assertSame( 'role:administrator', Onboarding::bindToken( 9 ), 'administrator wins among several roles' );
 
-		$GLOBALS['senroflux_test_users'][8] = (object) array( 'roles' => array() );
+		$GLOBALS['specflux_site_agent_test_users'][8] = (object) array( 'roles' => array() );
 		$this->assertSame( 'user:8', Onboarding::bindToken( 8 ), 'a user with no role binds by user id' );
 	}
 
@@ -378,14 +378,14 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_the_full_list_has_six_steps_in_the_spec_order(): void {
-		$both = array( 'agent-safety/agent-safety.php', 'senrogate/senrogate.php' );
+		$both = array( 'agent-safety/agent-safety.php', 'belayline-agent-governance/belayline-agent-governance.php' );
 		Onboarding::setPluginProbe(
 			array(
 				'installed' => $both,
 				'active'    => array(),
 			)
 		);
-		$this->senrogateMode();
+		$this->governanceMode();
 
 		$this->assertSame(
 			array( 'provider', 'approval', 'old-plugin', 'role-binding', 'site-brief', 'first-run' ),
@@ -395,7 +395,7 @@ final class OnboardingTest extends TestCase {
 
 	public function test_first_blocking_returns_the_first_failing_blocking_step_only(): void {
 		Checks::setProviderProbe( false );
-		$this->senrogateMode();
+		$this->governanceMode();
 		$this->registerPack( 'pages', false );
 
 		$this->assertSame( 'provider', Onboarding::firstBlocking( Onboarding::steps( self::ADMIN ) )['id'] );
@@ -409,8 +409,8 @@ final class OnboardingTest extends TestCase {
 
 	// ---- Pack-unavailable messages name the fix ---------------------------
 
-	private function bindingCheckFor( int $user_id ): \Specflux\SenroFlux\Setup\SetupCheck {
-		foreach ( ( new \Specflux\SenroFlux\Packs\Pages\PagesPack() )->setupChecks( $user_id ) as $candidate ) {
+	private function bindingCheckFor( int $user_id ): \Specflux\SiteAgent\Setup\SetupCheck {
+		foreach ( ( new \Specflux\SiteAgent\Packs\Pages\PagesPack() )->setupChecks( $user_id ) as $candidate ) {
 			if ( 'pages/binding' === $candidate->id() ) {
 				return $candidate;
 			}
@@ -420,22 +420,22 @@ final class OnboardingTest extends TestCase {
 	}
 
 	public function test_an_unbound_content_pack_tells_an_admin_what_to_bind_and_links_the_prefilled_page(): void {
-		$this->senrogateMode(); // SenroGate locator absent in the suite => unbound.
+		$this->governanceMode(); // Belayline Agent Governance locator absent in the suite => unbound.
 		$check = $this->bindingCheckFor( self::ADMIN );
 
-		$this->assertStringContainsString( 'Bind Administrator to SenroFlux content in SenroGate', $check->messageFor( self::ADMIN ) );
+		$this->assertStringContainsString( 'Bind Administrator to Specflux Site Agent content in Belayline Agent Governance', $check->messageFor( self::ADMIN ) );
 		$this->assertSame( Onboarding::bindUrl( self::ADMIN ), $check->fixUrl() );
 	}
 
 	public function test_an_unbound_content_pack_tells_an_editor_to_ask_an_administrator_by_role(): void {
-		$this->senrogateMode();
+		$this->governanceMode();
 		$check = $this->bindingCheckFor( self::EDITOR );
 
-		$this->assertSame( 'Ask an administrator to bind Editor to SenroFlux content in SenroGate.', $check->messageFor( self::EDITOR ) );
+		$this->assertSame( 'Ask an administrator to bind Editor to Specflux Site Agent content in Belayline Agent Governance.', $check->messageFor( self::EDITOR ) );
 	}
 
-	public function test_a_non_content_pack_is_not_told_to_bind_senroflux_content(): void {
-		$this->senrogateMode();
+	public function test_a_non_content_pack_is_not_told_to_bind_specflux_site_agent_content(): void {
+		$this->governanceMode();
 		$pack = new class() extends Pack {
 			public function name(): string {
 				return 'widgets';
@@ -456,7 +456,7 @@ final class OnboardingTest extends TestCase {
 		$message = $pack->preflight( self::ADMIN );
 
 		$this->assertInstanceOf( WP_Error::class, $message );
-		$this->assertStringNotContainsString( 'SenroFlux content', $message->get_error_message() );
+		$this->assertStringNotContainsString( 'Specflux Site Agent content', $message->get_error_message() );
 		$this->assertStringContainsString( 'widgets pack for Administrator', $message->get_error_message() );
 	}
 }

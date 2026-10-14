@@ -1,22 +1,22 @@
 <?php
 /**
- * SenroGate's ability-review status, behind one small seam (0.4 S6).
+ * Belayline Agent Governance's ability-review status, behind one small seam (0.4 S6).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Passthrough;
+namespace Specflux\SiteAgent\Passthrough;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Asks SenroGate (Agent Safety) whether an ability from another plugin has
- * been reviewed. The contract SenroGate will implement:
+ * Asks Belayline Agent Governance (Agent Safety) whether an ability from another plugin has
+ * been reviewed. The contract Belayline Agent Governance will implement:
  *
- *     agent_safety()->abilityReviews()->status( string $ability_name )
+ *     belayline()->abilityReviews()->status( string $ability_name )
  *         : 'reviewed' | 'unreviewed' | 'blocked'
  *
  * FAIL CLOSED: the only answer that lets an ability through is the exact
@@ -31,7 +31,7 @@ final class AbilityReviewProbe {
 	public const BLOCKED    = 'blocked';
 
 	/**
-	 * Does the installed SenroGate expose the review service at all?
+	 * Does the installed Belayline Agent Governance expose the review service at all?
 	 */
 	public static function available(): bool {
 		return null !== self::service();
@@ -65,7 +65,7 @@ final class AbilityReviewProbe {
 	}
 
 	/**
-	 * Is this ability reviewed (and so allowed through in SenroGate mode)?
+	 * Is this ability reviewed (and so allowed through in Belayline Agent Governance mode)?
 	 */
 	public static function isReviewed( string $ability_name ): bool {
 		return self::REVIEWED === self::status( $ability_name );
@@ -75,11 +75,11 @@ final class AbilityReviewProbe {
 	 * The review service object, or null when the contract is not met.
 	 */
 	private static function service(): ?object {
-		if ( ! function_exists( 'agent_safety' ) ) {
+		if ( ! function_exists( 'belayline' ) ) {
 			return null;
 		}
 
-		$container = agent_safety();
+		$container = belayline();
 		if ( ! is_object( $container ) || ! method_exists( $container, 'abilityReviews' ) ) {
 			return null;
 		}

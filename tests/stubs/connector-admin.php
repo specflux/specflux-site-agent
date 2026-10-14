@@ -3,10 +3,10 @@
  * Test-only shims for the Connect screen (K3): core's application passwords,
  * and an outbound `wp_remote_post()` that never touches the network.
  *
- * `wp_remote_post()` records each call in `$GLOBALS['senroflux_test_remote_post_calls']`
- * and pops the next response queued in `$GLOBALS['senroflux_test_remote_post_responses']`.
+ * `wp_remote_post()` records each call in `$GLOBALS['specflux_site_agent_test_remote_post_calls']`
+ * and pops the next response queued in `$GLOBALS['specflux_site_agent_test_remote_post_responses']`.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -17,7 +17,7 @@ if ( ! class_exists( 'WP_Application_Passwords', false ) ) {
 
 		/** @return array<int,array<string,mixed>> */
 		public static function get_user_application_passwords( $user_id ) {
-			return $GLOBALS['senroflux_test_app_passwords'][ (int) $user_id ] ?? array();
+			return $GLOBALS['specflux_site_agent_test_app_passwords'][ (int) $user_id ] ?? array();
 		}
 
 		/** @return array{0:string,1:array<string,mixed>}|WP_Error */
@@ -34,7 +34,7 @@ if ( ! class_exists( 'WP_Application_Passwords', false ) ) {
 				'last_used' => null,
 			);
 
-			$GLOBALS['senroflux_test_app_passwords'][ (int) $user_id ][] = $item;
+			$GLOBALS['specflux_site_agent_test_app_passwords'][ (int) $user_id ][] = $item;
 
 			return array( 'abcd efgh ijkl mnop qrst uvwx', $item );
 		}
@@ -42,8 +42,8 @@ if ( ! class_exists( 'WP_Application_Passwords', false ) ) {
 		public static function delete_application_password( $user_id, $uuid ) {
 			foreach ( self::get_user_application_passwords( $user_id ) as $i => $item ) {
 				if ( $item['uuid'] === $uuid ) {
-					unset( $GLOBALS['senroflux_test_app_passwords'][ (int) $user_id ][ $i ] );
-					$GLOBALS['senroflux_test_app_passwords'][ (int) $user_id ] = array_values( $GLOBALS['senroflux_test_app_passwords'][ (int) $user_id ] );
+					unset( $GLOBALS['specflux_site_agent_test_app_passwords'][ (int) $user_id ][ $i ] );
+					$GLOBALS['specflux_site_agent_test_app_passwords'][ (int) $user_id ] = array_values( $GLOBALS['specflux_site_agent_test_app_passwords'][ (int) $user_id ] );
 
 					return true;
 				}
@@ -61,12 +61,12 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	function wp_remote_post( string $url, array $args = array() ) {
-		$GLOBALS['senroflux_test_remote_post_calls'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_post_calls'][] = array(
 			'url'  => $url,
 			'args' => $args,
 		);
 
-		$queue = &$GLOBALS['senroflux_test_remote_post_responses'];
+		$queue = &$GLOBALS['specflux_site_agent_test_remote_post_responses'];
 		if ( ! is_array( $queue ) || array() === $queue ) {
 			return new WP_Error( 'http_request_failed', 'No response queued.' );
 		}
@@ -104,15 +104,15 @@ if ( ! defined( 'DAY_IN_SECONDS' ) ) {
 }
 
 if ( ! function_exists( 'wp_next_scheduled' ) ) {
-	/** Cron shim: `$GLOBALS['senroflux_test_cron'][hook] = array{time,recurrence}`. */
+	/** Cron shim: `$GLOBALS['specflux_site_agent_test_cron'][hook] = array{time,recurrence}`. */
 	function wp_next_scheduled( string $hook ): int|false {
-		return $GLOBALS['senroflux_test_cron'][ $hook ]['time'] ?? false;
+		return $GLOBALS['specflux_site_agent_test_cron'][ $hook ]['time'] ?? false;
 	}
 }
 
 if ( ! function_exists( 'wp_schedule_event' ) ) {
 	function wp_schedule_event( int $timestamp, string $recurrence, string $hook ): bool {
-		$GLOBALS['senroflux_test_cron'][ $hook ] = array(
+		$GLOBALS['specflux_site_agent_test_cron'][ $hook ] = array(
 			'time'       => $timestamp,
 			'recurrence' => $recurrence,
 		);
@@ -123,8 +123,8 @@ if ( ! function_exists( 'wp_schedule_event' ) ) {
 
 if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
 	function wp_clear_scheduled_hook( string $hook ): int {
-		$had = isset( $GLOBALS['senroflux_test_cron'][ $hook ] ) ? 1 : 0;
-		unset( $GLOBALS['senroflux_test_cron'][ $hook ] );
+		$had = isset( $GLOBALS['specflux_site_agent_test_cron'][ $hook ] ) ? 1 : 0;
+		unset( $GLOBALS['specflux_site_agent_test_cron'][ $hook ] );
 
 		return $had;
 	}

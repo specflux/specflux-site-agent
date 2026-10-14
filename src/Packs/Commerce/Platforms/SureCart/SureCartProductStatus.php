@@ -1,6 +1,6 @@
 <?php
 /**
- * `senroflux/surecart-product-status`: publish or unpublish a SureCart product.
+ * `specflux/surecart-product-status`: publish or unpublish a SureCart product.
  *
  * SureCart's own `update-product` ability changes only name, description and
  * metadata, so a product's draft/published state has no native ability. The
@@ -11,12 +11,12 @@
  * PATCHes it through `Product::update()`, the same call the native
  * `update-product` ability makes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart;
 
 use WP_Error;
 
@@ -45,10 +45,10 @@ final class SureCartProductStatus {
 	 */
 	public static function register( string $category, array $annotations ): void {
 		wp_register_ability(
-			'senroflux/' . self::TEMPLATE,
+			'specflux/' . self::TEMPLATE,
 			array(
-				'label'               => __( 'Set SureCart product status', 'senroflux' ),
-				'description'         => __( 'Publish a SureCart product or put it back to draft. SureCart\'s own update ability cannot change status.', 'senroflux' ),
+				'label'               => __( 'Set SureCart product status', 'specflux-site-agent' ),
+				'description'         => __( 'Publish a SureCart product or put it back to draft. SureCart\'s own update ability cannot change status.', 'specflux-site-agent' ),
 				'category'            => $category,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -88,7 +88,7 @@ final class SureCartProductStatus {
 				},
 				'meta'                => array(
 					'annotations' => $annotations,
-					'senroflux'   => array( 'hidden' => false ),
+					'specflux'    => array( 'hidden' => false ),
 				),
 			)
 		);
@@ -103,10 +103,10 @@ final class SureCartProductStatus {
 		$status = $input['status'] ?? null;
 
 		if ( ! is_string( $id ) || ! SureCartRemote::validId( $id ) ) {
-			return new WP_Error( 'invalid_id', __( 'A SureCart product id is required.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_id', __( 'A SureCart product id is required.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( ! in_array( $status, array( self::PUBLISHED, self::DRAFT ), true ) ) {
-			return new WP_Error( 'invalid_status', __( 'Status must be "published" or "draft".', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_status', __( 'Status must be "published" or "draft".', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$product = SureCartRemote::update(

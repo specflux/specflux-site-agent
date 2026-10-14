@@ -3,25 +3,25 @@
  * Runner::tick() tests for the S6 ask-the-user park, against a mocked
  * gateway (stage-3 failable check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -49,10 +49,10 @@ final class AskUserParkTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/read' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/read' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/read',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
@@ -61,7 +61,7 @@ final class AskUserParkTest extends TestCase {
 		// The S7 plan fence is separately tested in PlanParkTest. These tests
 		// exercise the approval/park mechanics with fence-free (tier-0) verbs.
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array(
 				'agsafe-smoke/spend'   => 0,
 				'agsafe-smoke/blocked' => 0,
@@ -74,7 +74,7 @@ final class AskUserParkTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 	}
 
 
@@ -183,7 +183,7 @@ final class AskUserParkTest extends TestCase {
 		$this->assertSame( '', $ui['default'] ?? null );
 		$this->assertSame( 'Need the theme.', $ui['rationale'] ?? null );
 		$this->assertSame( 4, $ui['remaining'] ?? -1, 'remaining = max_questions(5) − count(question steps)(1)' );
-		$this->assertStringContainsString( 'senroflux-runs', (string) ( $ui['review_url'] ?? '' ) );
+		$this->assertStringContainsString( 'specflux-site-agent-runs', (string) ( $ui['review_url'] ?? '' ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -587,10 +587,10 @@ final class AskUserParkTest extends TestCase {
 		$this->runner->tick( $run_id, 0, null );
 		$this->gateway->script = array( $this->textTurn( 'Thanks!' ), $this->textTurn( 'Thanks!' ) );
 
-		// A delegated admin (user 2) answers: senroflux_can_tick must allow it.
-		$GLOBALS['senroflux_test_current_user_id'] = 2;
+		// A delegated admin (user 2) answers: specflux_site_agent_can_tick must allow it.
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 2;
 		add_filter(
-			'senroflux_can_tick',
+			'specflux_site_agent_can_tick',
 			static fn (): bool => true,
 			10,
 			0
@@ -599,7 +599,7 @@ final class AskUserParkTest extends TestCase {
 		$before = $this->store->getRun( $run_id )->stepCount;
 		$result = $this->runner->tick( $run_id, $before, array( 'answer' => array( 'text' => 'dark' ) ) );
 
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'completed', $result['run']['status'] );

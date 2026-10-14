@@ -22,7 +22,7 @@ export function isTerminalStatus( status ) {
 /**
  * Compare two run ids for identity, tolerant of type. `WP_Scripts::
  * localize()` (core `wp_localize_script()`) casts every scalar value to a
- * STRING before JSON-encoding it, so `window.senrofluxRunsConfig.
+ * STRING before JSON-encoding it, so `window.specfluxSiteAgentRunsConfig.
  * initialRunId` always arrives in JS as a string (e.g. `"1"`), while every
  * `run.id` in a REST/ajax JSON payload is a genuine JSON number (`1`). A
  * strict `===`/`!==` comparison between a run id seeded from config and one
@@ -121,7 +121,7 @@ export function tabCounts( runs ) {
  * gives approvals no separate "approved" flag on the tool_result row itself,
  * so this is derived from adjacency, the only signal the payload carries.
  *
- * @param {Array} steps Step rows as returned by `GET /senroflux/v1/runs/{id}`.
+ * @param {Array} steps Step rows as returned by `GET /specflux-site-agent/v1/runs/{id}`.
  * @return {Array} A list of `{ type: 'ledger', calls: [...] }` or
  *                 `{ type: 'step', step }` entries, in original order.
  */
@@ -327,7 +327,7 @@ export function planApprovalCount( plan, gateMode ) {
  * A human-readable label for a ledger row, derived from the raw ability id.
  *
  * A live-review finding: the ledger showed the raw mangled ability id
- * (`wpab__senroflux__read-content`) as its own label, with nothing readable
+ * (`wpab__specflux__read-content`) as its own label, with nothing readable
  * next to it. S10 asks for BOTH a readable label and the ability id — the id
  * stays visible (`stepVerb()`, rendered separately in `LedgerGroup`), this
  * only derives the readable half. The mcp-adapter/Abilities-API id shape is
@@ -425,7 +425,7 @@ export function stepResult( step ) {
 /**
  * The store report the run produced on demand (J13), if any: the newest
  * successful `store-report` tool result, in the output shape
- * `senroflux/store-report` declares. `save-store-report` is a different
+ * `specflux/store-report` declares. `save-store-report` is a different
  * ability (it writes a page) and never counts. Returns null when the run made
  * none, or the result does not have the expected shape.
  *
@@ -486,7 +486,7 @@ export function latestPreviewable( steps ) {
 	return null;
 }
 
-const previewKey = ( userId ) => `senroflux.previewCollapsed.${ userId || 0 }`;
+const previewKey = ( userId ) => `specflux-site-agent.previewCollapsed.${ userId || 0 }`;
 
 /** The saved collapsed state of the preview pane for a user (default expanded). */
 export function readPreviewCollapsed( userId ) {

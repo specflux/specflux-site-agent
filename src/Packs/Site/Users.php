@@ -1,19 +1,19 @@
 <?php
 /**
- * The user abilities: `senroflux/list-users` and `senroflux/read-user`
- * (read-only) and `senroflux/set-user-role` (one role, never an escalation by
+ * The user abilities: `specflux/list-users` and `specflux/read-user`
+ * (read-only) and `specflux/set-user-role` (one role, never an escalation by
  * a non-administrator).
  *
  * Output is an allow-list: id, login, display name, roles, registration date,
  * url and email. Never password hashes, activation keys, session tokens,
  * application passwords, capability arrays or user meta.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
 use WP_Error;
 
@@ -61,13 +61,13 @@ final class Users {
 		self::registerSetRole();
 	}
 
-	/** senroflux/list-users. */
+	/** specflux/list-users. */
 	private static function registerList(): void {
 		wp_register_ability(
-			'senroflux/list-users',
+			'specflux/list-users',
 			array(
-				'label'               => __( 'List users', 'senroflux' ),
-				'description'         => __( 'List the site\'s users: id, login, display name, roles, registration date, url and email. Requires the list_users capability, so the email is included. Filter by search text and role; per_page is at most 100 (default 20). Passwords, keys, sessions and capability lists are never returned.', 'senroflux' ),
+				'label'               => __( 'List users', 'specflux-site-agent' ),
+				'description'         => __( 'List the site\'s users: id, login, display name, roles, registration date, url and email. Requires the list_users capability, so the email is included. Filter by search text and role; per_page is at most 100 (default 20). Passwords, keys, sessions and capability lists are never returned.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -113,13 +113,13 @@ final class Users {
 		);
 	}
 
-	/** senroflux/read-user. */
+	/** specflux/read-user. */
 	private static function registerRead(): void {
 		wp_register_ability(
-			'senroflux/read-user',
+			'specflux/read-user',
 			array(
-				'label'               => __( 'Read a user', 'senroflux' ),
-				'description'         => __( 'Read one user: id, login, display name, roles, registration date, url and email. You can always read yourself; reading anyone else needs the list_users and edit_user capabilities for that user.', 'senroflux' ),
+				'label'               => __( 'Read a user', 'specflux-site-agent' ),
+				'description'         => __( 'Read one user: id, login, display name, roles, registration date, url and email. You can always read yourself; reading anyone else needs the list_users and edit_user capabilities for that user.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -147,13 +147,13 @@ final class Users {
 		);
 	}
 
-	/** senroflux/set-user-role. */
+	/** specflux/set-user-role. */
 	private static function registerSetRole(): void {
 		wp_register_ability(
-			'senroflux/set-user-role',
+			'specflux/set-user-role',
 			array(
-				'label'               => __( 'Set a user\'s role', 'senroflux' ),
-				'description'         => __( 'Set one user\'s single role (replacing their current roles). You cannot change your own role, grant or change administrators unless you are an administrator, or change a network super admin. Cannot create or delete users or edit capabilities.', 'senroflux' ),
+				'label'               => __( 'Set a user\'s role', 'specflux-site-agent' ),
+				'description'         => __( 'Set one user\'s single role (replacing their current roles). You cannot change your own role, grant or change administrators unless you are an administrator, or change a network super admin. Cannot create or delete users or edit capabilities.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -187,7 +187,7 @@ final class Users {
 						&& current_user_can( 'promote_users' )
 						&& current_user_can( 'promote_user', $id );
 				},
-				// A role can be set back, so this is not destructive (SenroGate
+				// A role can be set back, so this is not destructive (Belayline Agent Governance
 				// parks destructive=true calls as irreversible).
 				'meta'                => self::meta(
 					array(
@@ -228,7 +228,7 @@ final class Users {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -236,7 +236,7 @@ final class Users {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -346,7 +346,7 @@ final class Users {
 
 		$user = get_userdata( $id );
 		if ( ! is_object( $user ) ) {
-			return new WP_Error( 'not_found', __( 'User not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'not_found', __( 'User not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		return self::shape( $user, get_current_user_id() === $id || current_user_can( 'list_users' ) );
@@ -371,28 +371,28 @@ final class Users {
 
 		$user = get_userdata( $id );
 		if ( ! is_object( $user ) ) {
-			return new WP_Error( 'not_found', __( 'User not found.', 'senroflux' ), array( 'status' => 404 ) );
+			return new WP_Error( 'not_found', __( 'User not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
 		}
 
 		if ( get_current_user_id() === $id ) {
-			return self::refuse( 'cannot_change_own_role', __( 'You cannot change your own role.', 'senroflux' ) );
+			return self::refuse( 'cannot_change_own_role', __( 'You cannot change your own role.', 'specflux-site-agent' ) );
 		}
 
 		if ( is_multisite() && function_exists( 'is_super_admin' ) && is_super_admin( $id ) ) {
-			return self::refuse( 'super_admin_target', __( 'A network super admin\'s role cannot be changed here.', 'senroflux' ) );
+			return self::refuse( 'super_admin_target', __( 'A network super admin\'s role cannot be changed here.', 'specflux-site-agent' ) );
 		}
 
 		$is_admin = self::callerIsAdministrator();
 		$previous = array_values( array_map( 'strval', (array) $user->roles ) );
 		if ( ! $is_admin && in_array( 'administrator', $previous, true ) ) {
-			return self::refuse( 'administrator_target', __( 'Only an administrator can change an administrator\'s role.', 'senroflux' ) );
+			return self::refuse( 'administrator_target', __( 'Only an administrator can change an administrator\'s role.', 'specflux-site-agent' ) );
 		}
 
 		if ( '' === $role || null === get_role( $role ) ) {
-			return new WP_Error( 'role_not_found', __( 'That role does not exist.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'role_not_found', __( 'That role does not exist.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( 'administrator' === $role && ! $is_admin ) {
-			return self::refuse( 'administrator_role_forbidden', __( 'Only an administrator can grant the administrator role.', 'senroflux' ) );
+			return self::refuse( 'administrator_role_forbidden', __( 'Only an administrator can grant the administrator role.', 'specflux-site-agent' ) );
 		}
 
 		if ( ! function_exists( 'get_editable_roles' ) && defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/user.php' ) ) {
@@ -400,7 +400,7 @@ final class Users {
 		}
 		$editable = function_exists( 'get_editable_roles' ) ? get_editable_roles() : array();
 		if ( ! isset( $editable[ $role ] ) ) {
-			return self::refuse( 'role_not_editable', __( 'You are not allowed to assign that role.', 'senroflux' ) );
+			return self::refuse( 'role_not_editable', __( 'You are not allowed to assign that role.', 'specflux-site-agent' ) );
 		}
 
 		$user->set_role( $role );

@@ -2,18 +2,18 @@
 /**
  * The Connect screen: creating, listing, re-scoping and revoking connections.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\ClientConfig;
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\ConnectScreen;
-use Specflux\SenroFlux\Connector\Connections;
-use Specflux\SenroFlux\Connector\Connector;
+use Specflux\SiteAgent\Connector\ClientConfig;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\ConnectScreen;
+use Specflux\SiteAgent\Connector\Connections;
+use Specflux\SiteAgent\Connector\Connector;
 use WP_Application_Passwords;
 
 final class ConnectScreenTest extends ConnectorTestCase {
@@ -41,9 +41,9 @@ final class ConnectScreenTest extends ConnectorTestCase {
 	/** Submit the create form and return the page. */
 	private function create( string $client, string $scope = '' ): string {
 		$_POST = array(
-			'senroflux_connect_action' => 'create',
-			'client'                   => $client,
-			'scope'                    => $scope,
+			'specflux_site_agent_connect_action' => 'create',
+			'client'                             => $client,
+			'scope'                              => $scope,
 		);
 
 		return $this->html();
@@ -54,12 +54,12 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		return array_values( WP_Application_Passwords::get_user_application_passwords( self::USER ) );
 	}
 
-	public function test_the_submenu_is_added_after_the_senroflux_parent_menu(): void {
-		$GLOBALS['senroflux_test_action_priorities'] = array();
+	public function test_the_submenu_is_added_after_the_specflux_site_agent_parent_menu(): void {
+		$GLOBALS['specflux_site_agent_test_action_priorities'] = array();
 		ConnectScreen::register();
 
 		$priorities = array();
-		foreach ( $GLOBALS['senroflux_test_action_priorities']['admin_menu'] ?? array() as $entry ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_action_priorities']['admin_menu'] ?? array() as $entry ) {
 			if ( array( ConnectScreen::class, 'menu' ) === $entry[0] ) {
 				$priorities[] = $entry[1];
 			}
@@ -79,7 +79,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertStringContainsString( 'version 0.6.0', $this->html() );
 
 		$this->enableConnector();
-		$GLOBALS['senroflux_test_multisite'] = true;
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
 		$this->assertStringContainsString( 'multisite', $this->html() );
 	}
 
@@ -97,7 +97,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 		$items = $this->passwords();
 		$this->assertCount( 1, $items );
-		$this->assertSame( 'SenroFlux – Cursor', $items[0]['name'] );
+		$this->assertSame( 'Specflux Site Agent – Cursor', $items[0]['name'] );
 		$this->assertSame( array( $items[0]['uuid'] => array( 'scope' => Connection::SCOPE_READ ) ), Connections::forUser( self::USER ) );
 		$this->assertStringContainsString( '&quot;mcpServers&quot;', $html );
 		$this->assertStringContainsString( ClientConfig::authorization( 'editor', self::PLAIN ), $html );
@@ -117,7 +117,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->enableConnector();
 		$this->create( ClientConfig::CURSOR );
 
-		$stored = (string) wp_json_encode( array( $GLOBALS['senroflux_test_options'], $GLOBALS['senroflux_test_user_meta'] ) );
+		$stored = (string) wp_json_encode( array( $GLOBALS['specflux_site_agent_test_options'], $GLOBALS['specflux_site_agent_test_user_meta'] ) );
 		$this->assertStringNotContainsString( self::PLAIN, $stored );
 		$this->assertStringNotContainsString( 'abcd efgh', $stored );
 	}
@@ -133,7 +133,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 	public function test_a_bad_nonce_creates_nothing(): void {
 		$this->enableConnector();
-		$GLOBALS['senroflux_test_bad_nonce'] = true;
+		$GLOBALS['specflux_site_agent_test_bad_nonce'] = true;
 
 		try {
 			$this->create( ClientConfig::CURSOR );
@@ -147,7 +147,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 	public function test_a_user_without_the_capability_sees_nothing(): void {
 		$this->enableConnector();
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		$this->assertSame( '', $this->html() );
 	}
@@ -164,7 +164,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
 		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
 		$this->assertStringContainsString( 'Plugins, open the Add menu, then Add custom MCP server', $html );
-		$this->assertStringContainsString( 'page=' . \Specflux\SenroFlux\Connector\OAuth\SignedInApps::SLUG, $html );
+		$this->assertStringContainsString( 'page=' . \Specflux\SiteAgent\Connector\OAuth\SignedInApps::SLUG, $html );
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}
 
@@ -182,12 +182,12 @@ final class ConnectScreenTest extends ConnectorTestCase {
 	public function test_wordpress_in_its_own_directory_shows_the_reason_instead_of_the_instructions(): void {
 		$this->enableConnector();
 		update_option( 'permalink_structure', '/%postname%/' );
-		$GLOBALS['senroflux_test_site_url'] = 'http://example.test/wp';
+		$GLOBALS['specflux_site_agent_test_site_url'] = 'http://example.test/wp';
 
 		try {
 			$html = $this->html();
 		} finally {
-			unset( $GLOBALS['senroflux_test_site_url'] );
+			unset( $GLOBALS['specflux_site_agent_test_site_url'] );
 		}
 
 		$this->assertSame( 2, substr_count( $html, 'installed in its own directory' ) );
@@ -198,11 +198,11 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->enableConnector();
 		$this->create( ClientConfig::CURSOR, Connection::SCOPE_READ_WRITE );
 		$_POST = array();
-		$GLOBALS['senroflux_test_app_passwords'][ self::USER ][0]['last_used'] = 1_800_003_600;
+		$GLOBALS['specflux_site_agent_test_app_passwords'][ self::USER ][0]['last_used'] = 1_800_003_600;
 
 		$html = $this->html();
 
-		$this->assertStringContainsString( 'SenroFlux – Cursor', $html );
+		$this->assertStringContainsString( 'Specflux Site Agent – Cursor', $html );
 		$this->assertStringContainsString( 'Read and write', $html );
 		$this->assertStringNotContainsString( 'Never', $html );
 		$this->assertStringContainsString( 'Revoke', $html );
@@ -247,9 +247,9 @@ final class ConnectScreenTest extends ConnectorTestCase {
 	public function test_a_revoke_without_the_capability_dies_and_changes_nothing(): void {
 		$this->enableConnector();
 		$this->create( ClientConfig::CURSOR );
-		$uuid                                = (string) array_key_first( Connections::forUser( self::USER ) );
-		$_POST                               = array( 'uuid' => $uuid );
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$uuid  = (string) array_key_first( Connections::forUser( self::USER ) );
+		$_POST = array( 'uuid' => $uuid );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		$this->expectException( \RuntimeException::class );
 		try {
@@ -263,37 +263,37 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->enableConnector();
 		$this->create( ClientConfig::CURSOR );
 		$uuid = (string) array_key_first( Connections::forUser( self::USER ) );
-		$GLOBALS['senroflux_test_remote_post_responses'] = array(
+		$GLOBALS['specflux_site_agent_test_remote_post_responses'] = array(
 			array(
 				'response' => array( 'code' => 401 ),
 				'body'     => '',
 			),
 		);
 		$_POST = array(
-			'senroflux_connect_action' => 'test',
-			'client'                   => ClientConfig::CURSOR,
-			'uuid'                     => $uuid,
-			'password'                 => self::PLAIN,
+			'specflux_site_agent_connect_action' => 'test',
+			'client'                             => ClientConfig::CURSOR,
+			'uuid'                               => $uuid,
+			'password'                           => self::PLAIN,
 		);
 
 		$html = $this->html();
 
 		$this->assertStringContainsString( 'refused the credential', $html );
-		$this->assertSame( ClientConfig::authorization( 'editor', self::PLAIN ), $GLOBALS['senroflux_test_remote_post_calls'][0]['args']['headers']['Authorization'] );
+		$this->assertSame( ClientConfig::authorization( 'editor', self::PLAIN ), $GLOBALS['specflux_site_agent_test_remote_post_calls'][0]['args']['headers']['Authorization'] );
 	}
 
 	public function test_test_connection_for_an_unregistered_uuid_makes_no_request(): void {
 		$this->enableConnector();
 		$_POST = array(
-			'senroflux_connect_action' => 'test',
-			'client'                   => ClientConfig::CURSOR,
-			'uuid'                     => 'nope',
-			'password'                 => self::PLAIN,
+			'specflux_site_agent_connect_action' => 'test',
+			'client'                             => ClientConfig::CURSOR,
+			'uuid'                               => 'nope',
+			'password'                           => self::PLAIN,
 		);
 
 		$html = $this->html();
 
 		$this->assertStringContainsString( 'no longer exists', $html );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_remote_post_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_remote_post_calls'] );
 	}
 }

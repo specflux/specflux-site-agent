@@ -10,23 +10,23 @@
  * payload validation so the Runner neither knows about the JSON schema nor
  * invents its own rules.
  *
- * S7 names the tool `senroflux/propose-plan`. Its function name in a
- * declaration is `senroflux__propose-plan` (the 0.1 namespace mapping), and
- * its `tool_name` column value is `senroflux/propose-plan`.
+ * S7 names the tool `specflux/propose-plan`. Its function name in a
+ * declaration is `specflux__propose-plan` (the 0.1 namespace mapping), and
+ * its `tool_name` column value is `specflux/propose-plan`.
  *
  * A plan is validated then annotated: each step carries the highest Agent
  * Safety tier among its verbs (S7 — "tier from Agent Safety's classifier,
  * never from the model"). Stage 4 resolves that tier through the site-wide
- * `senroflux_verb_map` filter (verb => int 0/1/2) via {@see VerbTier}; stage 6
+ * `specflux_site_agent_verb_map` filter (verb => int 0/1/2) via {@see VerbTier}; stage 6
  * replaces it with the pack's real verb map (the RUNNER re-resolves each call
  * through the same seam, so plan annotation and the fence agree).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 use WP_Error;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
@@ -42,8 +42,8 @@ final class PlanTools {
 	/**
 	 * The harness tool's identity, in the two forms the repo uses.
 	 */
-	public const TOOL_NAME     = 'senroflux/propose-plan';
-	public const FUNCTION_NAME = 'senroflux__propose-plan';
+	public const TOOL_NAME     = 'specflux/propose-plan';
+	public const FUNCTION_NAME = 'specflux__propose-plan';
 
 	/** Field caps/limits per S7. */
 	public const MAX_GOAL_CHARS      = 200;
@@ -86,7 +86,7 @@ final class PlanTools {
 	 * 0.3 quality fix (live run 2026-09-27, scenario-2-1): a plan that creates a
 	 * page but names no way to get an image ran the SAME failure loop
 	 * `ERROR_UNKNOWN_VERB` exists to prevent — the page write was refused
-	 * `page_needs_image` (see {@see \Specflux\SenroFlux\Packs\Content\Abilities::executeCreatePost()}),
+	 * `page_needs_image` (see {@see \Specflux\SiteAgent\Packs\Content\Abilities::executeCreatePost()}),
 	 * the follow-up `generate-image` call was then refused `not_in_plan`
 	 * (its verb was never in the accepted plan), and the run burned its
 	 * max_plans re-planning around a mistake the FENCE could see up front.
@@ -97,7 +97,7 @@ final class PlanTools {
 	public const ERROR_PAGE_NEEDS_IMAGE = 'page_needs_image';
 
 	/**
-	 * PACK VERBS, not ability ids (see {@see \Specflux\SenroFlux\Packs\Pack}'s
+	 * PACK VERBS, not ability ids (see {@see \Specflux\SiteAgent\Packs\Pack}'s
 	 * isolation rule — this class may not depend on src/Packs, so the handful
 	 * of verb strings the image check needs are duplicated here as bare
 	 * strings, sourced from PagesPack::verbMap()/SitePack::verbMap()).
@@ -163,7 +163,7 @@ final class PlanTools {
 	 *                                            list, spelled out in the
 	 *                                            declaration itself instead of
 	 *                                            a pack skill — the same list
-	 *                                            {@see \Specflux\SenroFlux\Run\Runner::knownVerbs()}
+	 *                                            {@see \Specflux\SiteAgent\Run\Runner::knownVerbs()}
 	 *                                            already resolves for
 	 *                                            `validateProposePlan()`'s
 	 *                                            `unknown_verb` check, so this
@@ -182,7 +182,7 @@ final class PlanTools {
 	}
 
 	/**
-	 * One FunctionDeclaration for `senroflux__propose-plan`, built directly
+	 * One FunctionDeclaration for `specflux__propose-plan`, built directly
 	 * (the harness tool is not an ability, so it cannot come from an ability's
 	 * get_input_schema()).
 	 *
@@ -196,11 +196,11 @@ final class PlanTools {
 	 * @return FunctionDeclaration|array<string,mixed>
 	 */
 	public static function proposePlanDeclaration( ?array $known_verbs = null ): FunctionDeclaration|array {
-		$verbs_description = __( 'The SenroGate verbs this step uses.', 'senroflux' );
+		$verbs_description = __( 'The Belayline Agent Governance verbs this step uses.', 'specflux-site-agent' );
 		if ( null !== $known_verbs ) {
 			$verbs_description .= ' ' . sprintf(
 				/* translators: %s is a comma-separated list of verb names. */
-				__( 'Spell each one exactly as one of: %s. Any other word is refused as unknown_verb.', 'senroflux' ),
+				__( 'Spell each one exactly as one of: %s. Any other word is refused as unknown_verb.', 'specflux-site-agent' ),
 				implode( ', ', $known_verbs )
 			);
 		}
@@ -226,21 +226,21 @@ final class PlanTools {
 		);
 
 		$step_text_description = $images_off
-			? __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its terms, excerpt) belong in its step. This run cannot add or edit images, so plan no image step.', 'senroflux' )
+			? __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its terms, excerpt) belong in its step. This run cannot add or edit images, so plan no image step.', 'specflux-site-agent' )
 			: ( $media_generate_available
-			? __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price, image or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its featured image, terms, excerpt, alt text) belong in its step. A step that adds or edits an image must ALSO list every media verb it will call in that SAME step\'s verbs — media-search, media-generate/generate-image, media-stock-import, generate-alt-text, update-alt, read-media, whichever apply, spelled exactly as this pack\'s own verb list gives them. A media call whose verb is missing from every step is refused not_in_plan.', 'senroflux' )
-			: __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price, image or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its featured image, terms, excerpt, alt text) belong in its step. A step that adds or edits an image must ALSO list every media verb it will call in that SAME step\'s verbs — media-search, media-stock-import, generate-alt-text, update-alt, read-media, whichever apply, spelled exactly as this pack\'s own verb list gives them. This run has no image-generation budget left, so use media-search then media-stock-import for any image. A media call whose verb is missing from every step is refused not_in_plan.', 'senroflux' ) );
+			? __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price, image or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its featured image, terms, excerpt, alt text) belong in its step. A step that adds or edits an image must ALSO list every media verb it will call in that SAME step\'s verbs — media-search, media-generate/generate-image, media-stock-import, generate-alt-text, update-alt, read-media, whichever apply, spelled exactly as this pack\'s own verb list gives them. A media call whose verb is missing from every step is refused not_in_plan.', 'specflux-site-agent' )
+			: __( 'One ordered step of the plan. A step that writes a page must state: who the page is for, what it must achieve, its sections in order, and the next step for the visitor. Give each post, page, product, price, image or order you change its own step, never one step for several of them: the plan\'s approval count, and any pre-approval, is counted from the steps, so a step covering several under-states what you will ask and its extra writes stop for approval again. Changes to that same object (its featured image, terms, excerpt, alt text) belong in its step. A step that adds or edits an image must ALSO list every media verb it will call in that SAME step\'s verbs — media-search, media-stock-import, generate-alt-text, update-alt, read-media, whichever apply, spelled exactly as this pack\'s own verb list gives them. This run has no image-generation budget left, so use media-search then media-stock-import for any image. A media call whose verb is missing from every step is refused not_in_plan.', 'specflux-site-agent' ) );
 
 		// A pre-approval is bound to objects, so a step that edits EXISTING
 		// ones must name them (live J10: five price changes all parked).
-		$step_text_description .= ' ' . __( 'When a step changes existing objects, list their ids in that step\'s "objects": a pre-approval covers only objects named in the plan or created by this run.', 'senroflux' );
+		$step_text_description .= ' ' . __( 'When a step changes existing objects, list their ids in that step\'s "objects": a pre-approval covers only objects named in the plan or created by this run.', 'specflux-site-agent' );
 
 		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
 				'goal'         => array(
 					'type'        => 'string',
-					'description' => __( 'The goal this plan proposes to achieve.', 'senroflux' ) . ' ' . self::lengthNote( self::MAX_GOAL_CHARS ),
+					'description' => __( 'The goal this plan proposes to achieve.', 'specflux-site-agent' ) . ' ' . self::lengthNote( self::MAX_GOAL_CHARS ),
 				),
 				'steps'        => array(
 					'type'        => 'array',
@@ -275,23 +275,23 @@ final class PlanTools {
 								'type'        => 'array',
 								'maxItems'    => self::MAX_STEP_OBJECTS,
 								'items'       => array( 'type' => 'string' ),
-								'description' => __( 'Ids of the EXISTING objects this step changes, as strings: a plain post, page or product id, or the prefixed id the tool reports (term:12). Leave out for a step that only creates.', 'senroflux' ),
+								'description' => __( 'Ids of the EXISTING objects this step changes, as strings: a plain post, page or product id, or the prefixed id the tool reports (term:12). Leave out for a step that only creates.', 'specflux-site-agent' ),
 							),
 						),
 						'required'             => array( 'text', 'verbs' ),
 						// Fail closed: a step may not smuggle extra fields in.
 						'additionalProperties' => false,
 					),
-					'description' => __( 'The ordered steps the plan will carry out.', 'senroflux' ),
+					'description' => __( 'The ordered steps the plan will carry out.', 'specflux-site-agent' ),
 				),
 				'assumptions'  => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'maxItems'    => self::MAX_ASSUMPTIONS,
-					'description' => __( 'Assumptions the plan rests on, if any.', 'senroflux' ),
+					'description' => __( 'Assumptions the plan rests on, if any.', 'specflux-site-agent' ),
 				),
-				'adopted'      => self::objectListSchema( __( 'Existing objects (pages, for example) this plan adopts as they are instead of creating new ones — each with its ID. Leave out when it adopts nothing.', 'senroflux' ) ),
-				'left_for_you' => self::objectListSchema( __( 'Existing objects the run will NOT touch but the human may want to remove, such as default-install leftovers — each with its ID. Leave out when there are none.', 'senroflux' ) ),
+				'adopted'      => self::objectListSchema( __( 'Existing objects (pages, for example) this plan adopts as they are instead of creating new ones — each with its ID. Leave out when it adopts nothing.', 'specflux-site-agent' ) ),
+				'left_for_you' => self::objectListSchema( __( 'Existing objects the run will NOT touch but the human may want to remove, such as default-install leftovers — each with its ID. Leave out when there are none.', 'specflux-site-agent' ) ),
 			),
 			'required'             => array( 'goal', 'steps' ),
 			// Fail closed: the model may not smuggle extra fields in.
@@ -300,7 +300,7 @@ final class PlanTools {
 
 		$description = __(
 			'Propose a step-by-step plan for the current goal and stop to wait for the user to review it before performing any Tier-1 or Tier-2 work. Widening scope after acceptance means proposing a new plan.',
-			'senroflux'
+			'specflux-site-agent'
 		);
 
 		if ( class_exists( FunctionDeclaration::class ) ) {
@@ -355,23 +355,23 @@ final class PlanTools {
 		$invalid = static fn ( string $what ): WP_Error => new WP_Error(
 			self::ERROR_INVALID_PLAN,
 			/* translators: %s names the offending field. */
-			sprintf( __( 'Invalid propose-plan call: %s', 'senroflux' ), $what )
+			sprintf( __( 'Invalid propose-plan call: %s', 'specflux-site-agent' ), $what )
 		);
 
 		if ( ! is_array( $args ) ) {
-			return $invalid( __( 'the payload must be an object.', 'senroflux' ) );
+			return $invalid( __( 'the payload must be an object.', 'specflux-site-agent' ) );
 		}
 
 		// goal: required, ≤ 200 chars.
 		$goal = $args['goal'] ?? null;
 		if ( ! is_string( $goal ) || '' === trim( $goal ) ) {
-			return $invalid( __( 'a non-empty "goal" is required.', 'senroflux' ) );
+			return $invalid( __( 'a non-empty "goal" is required.', 'specflux-site-agent' ) );
 		}
 		if ( self::overCap( $goal, self::MAX_GOAL_CHARS ) ) {
 			return $invalid(
 				sprintf(
 					/* translators: %1$d is the actual character count, %2$d is the character cap. */
-					__( '"goal" is %1$d characters; the limit is %2$d. Shorten it and propose the plan again.', 'senroflux' ),
+					__( '"goal" is %1$d characters; the limit is %2$d. Shorten it and propose the plan again.', 'specflux-site-agent' ),
 					mb_strlen( $goal ),
 					self::MAX_GOAL_CHARS
 				)
@@ -381,7 +381,7 @@ final class PlanTools {
 		// steps: required, non-empty, ≤ 10, each { text ≤ 200, verbs non-empty }.
 		$steps = $args['steps'] ?? null;
 		if ( ! is_array( $steps ) ) {
-			return $invalid( __( '"steps" must be an array of steps.', 'senroflux' ) );
+			return $invalid( __( '"steps" must be an array of steps.', 'specflux-site-agent' ) );
 		}
 		// A model can send "steps" as a JSON object; its string keys must not
 		// reach the 1-based step numbering below (string + int is a fatal).
@@ -390,18 +390,18 @@ final class PlanTools {
 		$normalized_steps = array();
 		foreach ( $steps as $step_index => $step ) {
 			if ( ! is_array( $step ) ) {
-				return $invalid( __( 'every "steps" entry must be an object.', 'senroflux' ) );
+				return $invalid( __( 'every "steps" entry must be an object.', 'specflux-site-agent' ) );
 			}
 
 			$text = $step['text'] ?? null;
 			if ( ! is_string( $text ) || '' === trim( $text ) ) {
-				return $invalid( __( 'every step needs a non-empty "text".', 'senroflux' ) );
+				return $invalid( __( 'every step needs a non-empty "text".', 'specflux-site-agent' ) );
 			}
 			if ( self::overCap( $text, self::MAX_STEP_TEXT_CHARS ) ) {
 				return $invalid(
 					sprintf(
 						/* translators: %1$d is the 1-based step number, %2$d is the actual character count, %3$d is the character cap. */
-						__( 'step %1$d "text" is %2$d characters; the limit is %3$d. Shorten it and propose the plan again.', 'senroflux' ),
+						__( 'step %1$d "text" is %2$d characters; the limit is %3$d. Shorten it and propose the plan again.', 'specflux-site-agent' ),
 						$step_index + 1,
 						mb_strlen( $text ),
 						self::MAX_STEP_TEXT_CHARS
@@ -411,13 +411,13 @@ final class PlanTools {
 
 			$verbs = $step['verbs'] ?? null;
 			if ( ! is_array( $verbs ) ) {
-				return $invalid( __( 'every step needs a "verbs" array.', 'senroflux' ) );
+				return $invalid( __( 'every step needs a "verbs" array.', 'specflux-site-agent' ) );
 			}
 
 			$normalized_verbs = array();
 			foreach ( $verbs as $verb ) {
 				if ( ! is_string( $verb ) || '' === trim( $verb ) ) {
-					return $invalid( __( 'every "verbs" entry must be a non-empty string.', 'senroflux' ) );
+					return $invalid( __( 'every "verbs" entry must be a non-empty string.', 'specflux-site-agent' ) );
 				}
 				// S7: verbs are validated against the run's verb vocabulary. A
 				// plan naming a verb the run cannot produce is not a plan — the
@@ -427,7 +427,7 @@ final class PlanTools {
 						self::ERROR_UNKNOWN_VERB,
 						sprintf(
 							/* translators: %s is the verb the plan named. */
-							__( 'Unknown verb in propose-plan: %s', 'senroflux' ),
+							__( 'Unknown verb in propose-plan: %s', 'specflux-site-agent' ),
 							$verb
 						)
 					);
@@ -435,7 +435,7 @@ final class PlanTools {
 				$normalized_verbs[] = $verb;
 			}
 			if ( array() === $normalized_verbs ) {
-				return $invalid( __( 'every step needs at least one verb.', 'senroflux' ) );
+				return $invalid( __( 'every step needs at least one verb.', 'specflux-site-agent' ) );
 			}
 
 			$objects = self::normaliseStepObjects( $step['objects'] ?? null, $step_index + 1, $object_lookup );
@@ -470,14 +470,14 @@ final class PlanTools {
 		// accepting one would set accepted_plan_step_id to an empty verb set,
 		// which reads as "a plan exists" while refusing every write.
 		if ( array() === $normalized_steps ) {
-			return $invalid( __( '"steps" must contain at least one step.', 'senroflux' ) );
+			return $invalid( __( '"steps" must contain at least one step.', 'specflux-site-agent' ) );
 		}
 
 		if ( count( $normalized_steps ) > self::MAX_STEPS ) {
 			return $invalid(
 				sprintf(
 					/* translators: %d is the maximum number of steps. */
-					__( '"steps" may contain at most %d entries.', 'senroflux' ),
+					__( '"steps" may contain at most %d entries.', 'specflux-site-agent' ),
 					self::MAX_STEPS
 				)
 			);
@@ -487,12 +487,12 @@ final class PlanTools {
 		// already mapped an absent or null field onto the empty array.
 		$assumptions = $args['assumptions'] ?? array();
 		if ( ! is_array( $assumptions ) ) {
-			return $invalid( __( '"assumptions" must be an array of strings.', 'senroflux' ) );
+			return $invalid( __( '"assumptions" must be an array of strings.', 'specflux-site-agent' ) );
 		}
 		$normalized_assumptions = array();
 		foreach ( $assumptions as $assumption ) {
 			if ( ! is_string( $assumption ) ) {
-				return $invalid( __( 'every "assumptions" entry must be a string.', 'senroflux' ) );
+				return $invalid( __( 'every "assumptions" entry must be a string.', 'specflux-site-agent' ) );
 			}
 			$normalized_assumptions[] = $assumption;
 		}
@@ -500,7 +500,7 @@ final class PlanTools {
 			return $invalid(
 				sprintf(
 					/* translators: %d is the maximum number of assumptions. */
-					__( '"assumptions" may contain at most %d entries.', 'senroflux' ),
+					__( '"assumptions" may contain at most %d entries.', 'specflux-site-agent' ),
 					self::MAX_ASSUMPTIONS
 				)
 			);
@@ -510,7 +510,7 @@ final class PlanTools {
 		// unstated guesses — the assumptions ARE the record of what it decided
 		// on its own, and the human accepting the plan is accepting them.
 		if ( null !== $remaining_questions && 0 >= $remaining_questions && array() === $normalized_assumptions ) {
-			return $invalid( __( 'no questions remain, so the plan must state its assumptions.', 'senroflux' ) );
+			return $invalid( __( 'no questions remain, so the plan must state its assumptions.', 'specflux-site-agent' ) );
 		}
 
 		$image_error = self::missingImageStepError( $normalized_steps, $known_verbs );
@@ -525,11 +525,11 @@ final class PlanTools {
 		// docblock) — a hook, not a hardcoded pack name, so ANY pack may
 		// refuse a plan through it. Each registered callback is passed the
 		// PRIOR error (null the first time) and must pass an existing WP_Error
-		// through unmodified; {@see \Specflux\SenroFlux\Packs\Site\Navigation::filterPlanError()}
+		// through unmodified; {@see \Specflux\SiteAgent\Packs\Site\Navigation::filterPlanError()}
 		// is the site pack's own contribution (the stock-Sample-Page-left-in-nav
 		// check), a no-op for every other pack's plan.
 		/** Filters an accepted plan for a pack-specific extra refusal. `@internal`. */
-		$pack_error = apply_filters( 'senroflux_plan_error', null, $normalized_steps, $known_verbs, $run_id );
+		$pack_error = apply_filters( 'specflux_site_agent_plan_error', null, $normalized_steps, $known_verbs, $run_id );
 		if ( $pack_error instanceof WP_Error ) {
 			return $pack_error;
 		}
@@ -580,18 +580,18 @@ final class PlanTools {
 		$invalid = static fn ( string $what ): WP_Error => new WP_Error(
 			self::ERROR_INVALID_PLAN,
 			/* translators: %s names the offending field. */
-			sprintf( __( 'Invalid propose-plan call: %s', 'senroflux' ), $what )
+			sprintf( __( 'Invalid propose-plan call: %s', 'specflux-site-agent' ), $what )
 		);
 
 		if ( ! is_array( $objects ) ) {
 			/* translators: %d is the 1-based step number. */
-			return $invalid( sprintf( __( 'step %d "objects" must be an array of ids.', 'senroflux' ), $step_number ) );
+			return $invalid( sprintf( __( 'step %d "objects" must be an array of ids.', 'specflux-site-agent' ), $step_number ) );
 		}
 		if ( count( $objects ) > self::MAX_STEP_OBJECTS ) {
 			return $invalid(
 				sprintf(
 					/* translators: 1: 1-based step number, 2: maximum ids per step. */
-					__( 'step %1$d "objects" lists more than %2$d ids; split the work across steps.', 'senroflux' ),
+					__( 'step %1$d "objects" lists more than %2$d ids; split the work across steps.', 'specflux-site-agent' ),
 					$step_number,
 					self::MAX_STEP_OBJECTS
 				)
@@ -605,7 +605,7 @@ final class PlanTools {
 			}
 			if ( ! is_string( $object ) || '' === trim( $object ) ) {
 				/* translators: %d is the 1-based step number. */
-				return $invalid( sprintf( __( 'step %d "objects" entries must be non-empty string or integer ids.', 'senroflux' ), $step_number ) );
+				return $invalid( sprintf( __( 'step %d "objects" entries must be non-empty string or integer ids.', 'specflux-site-agent' ), $step_number ) );
 			}
 			$ids[ trim( $object ) ] = true;
 		}
@@ -622,7 +622,7 @@ final class PlanTools {
 			return $invalid(
 				sprintf(
 					/* translators: 1: 1-based step number, 2: comma-separated ids. */
-					__( 'step %1$d "objects" names ids that are not existing objects: %2$s. Use the id exactly as the read tool reports it.', 'senroflux' ),
+					__( 'step %1$d "objects" names ids that are not existing objects: %2$s. Use the id exactly as the read tool reports it.', 'specflux-site-agent' ),
 					$step_number,
 					implode( ', ', $unknown )
 				)
@@ -648,11 +648,11 @@ final class PlanTools {
 				'properties'           => array(
 					'id'    => array(
 						'type'        => 'string',
-						'description' => __( 'The object\'s ID, as a string.', 'senroflux' ),
+						'description' => __( 'The object\'s ID, as a string.', 'specflux-site-agent' ),
 					),
 					'title' => array(
 						'type'        => 'string',
-						'description' => __( 'Its title, if you know it.', 'senroflux' ) . ' ' . self::lengthNote( self::MAX_STEP_TEXT_CHARS ),
+						'description' => __( 'Its title, if you know it.', 'specflux-site-agent' ) . ' ' . self::lengthNote( self::MAX_STEP_TEXT_CHARS ),
 					),
 				),
 				'required'             => array( 'id' ),
@@ -674,14 +674,14 @@ final class PlanTools {
 		$invalid = static fn ( string $what ): WP_Error => new WP_Error(
 			self::ERROR_INVALID_PLAN,
 			/* translators: %s names the offending field. */
-			sprintf( __( 'Invalid propose-plan call: %s', 'senroflux' ), $what )
+			sprintf( __( 'Invalid propose-plan call: %s', 'specflux-site-agent' ), $what )
 		);
 
 		if ( ! is_array( $value ) || count( $value ) > self::MAX_OBJECT_LIST ) {
 			return $invalid(
 				sprintf(
 					/* translators: 1: the field name, 2: the maximum number of entries. */
-					__( '"%1$s" must be a list of at most %2$d objects.', 'senroflux' ),
+					__( '"%1$s" must be a list of at most %2$d objects.', 'specflux-site-agent' ),
 					$key,
 					self::MAX_OBJECT_LIST
 				)
@@ -698,7 +698,7 @@ final class PlanTools {
 				return $invalid(
 					sprintf(
 						/* translators: %s: the field name. */
-						__( 'every "%s" entry needs an "id".', 'senroflux' ),
+						__( 'every "%s" entry needs an "id".', 'specflux-site-agent' ),
 						$key
 					)
 				);
@@ -725,10 +725,10 @@ final class PlanTools {
 	 * `update-post` step cannot be checked here — the plan names a VERB, never
 	 * the `content`/`no_image_reason` arguments the actual call will carry, so
 	 * whether that particular update needs an image is undecidable at plan
-	 * time (see {@see \Specflux\SenroFlux\Packs\Content\Abilities}'s own
+	 * time (see {@see \Specflux\SiteAgent\Packs\Content\Abilities}'s own
 	 * per-call check for that half of the rule).
 	 *
-	 * `senroflux_require_page_image` off disables this too — same filter, same
+	 * `specflux_site_agent_require_page_image` off disables this too — same filter, same
 	 * meaning ("this site's runs don't need page images").
 	 *
 	 * @param list<array{text:string,verbs:list<string>,tier:int}> $steps       Normalized steps.
@@ -739,7 +739,7 @@ final class PlanTools {
 	 */
 	private static function missingImageStepError( array $steps, ?array $known_verbs ): ?WP_Error {
 		/** Filters whether a page write must include an image step. `@internal`. */
-		if ( ! apply_filters( 'senroflux_require_page_image', true ) ) {
+		if ( ! apply_filters( 'specflux_site_agent_require_page_image', true ) ) {
 			return null;
 		}
 
@@ -785,13 +785,13 @@ final class PlanTools {
 		$message = $has_generate_option
 			? sprintf(
 				/* translators: 1: media-search verb list, 2: media-generate/upload/stock-import verb list. */
-				__( 'This plan creates a page but no step lists a way to get an image. Add a media-search verb (%1$s) AND a media-generate, media-upload or media-stock-import verb (%2$s) to a step, spelled exactly as this pack\'s own verb list gives them, then propose the plan again.', 'senroflux' ),
+				__( 'This plan creates a page but no step lists a way to get an image. Add a media-search verb (%1$s) AND a media-generate, media-upload or media-stock-import verb (%2$s) to a step, spelled exactly as this pack\'s own verb list gives them, then propose the plan again.', 'specflux-site-agent' ),
 				implode( ', ', $narrow( self::MEDIA_SEARCH_VERBS ) ),
 				implode( ', ', $narrowed_acquire )
 			)
 			: sprintf(
 				/* translators: 1: media-search verb list, 2: media-upload/stock-import verb list. */
-				__( 'This plan creates a page but no step lists a way to get an image. Add a media-search verb (%1$s) AND a media-upload or media-stock-import verb (%2$s) to a step, spelled exactly as this pack\'s own verb list gives them, then propose the plan again.', 'senroflux' ),
+				__( 'This plan creates a page but no step lists a way to get an image. Add a media-search verb (%1$s) AND a media-upload or media-stock-import verb (%2$s) to a step, spelled exactly as this pack\'s own verb list gives them, then propose the plan again.', 'specflux-site-agent' ),
 				implode( ', ', $narrow( self::MEDIA_SEARCH_VERBS ) ),
 				implode( ', ', $narrowed_acquire )
 			);
@@ -809,7 +809,7 @@ final class PlanTools {
 	 */
 	public static function lengthNote( int $cap ): string {
 		/* translators: %d: maximum number of characters. */
-		return sprintf( __( 'Keep it under %d characters; longer text is refused and you must rephrase, never cut it.', 'senroflux' ), $cap );
+		return sprintf( __( 'Keep it under %d characters; longer text is refused and you must rephrase, never cut it.', 'specflux-site-agent' ), $cap );
 	}
 
 	/**

@@ -28,7 +28,7 @@ describe( 'a suggestion created by a tick', () => {
 		listRuns.mockResolvedValue( [ parkedRun ] );
 		getRun.mockResolvedValue( {
 			run: parkedRun,
-			steps: [ { seq: 4, kind: 'approval', message: { verb: 'senroflux/create-post', tier: 1, args: {} } } ],
+			steps: [ { seq: 4, kind: 'approval', message: { verb: 'specflux/create-post', tier: 1, args: {} } } ],
 			suggestions: [],
 		} );
 		tickRun.mockResolvedValue( {
@@ -45,8 +45,8 @@ describe( 'a suggestion created by a tick', () => {
 		fireEvent.click( await screen.findByRole( 'button', { name: 'Approve' } ) );
 
 		await waitFor( () => {
-			expect( document.querySelector( '.senroflux-suggestion-card' ) ).not.toBeNull();
+			expect( document.querySelector( '.specflux-site-agent-suggestion-card' ) ).not.toBeNull();
 		} );
-		expect( document.querySelector( '.senroflux-suggestion-card' ).textContent ).toContain( 'Mention free parking on Saturdays.' );
+		expect( document.querySelector( '.specflux-site-agent-suggestion-card' ).textContent ).toContain( 'Mention free parking on Saturdays.' );
 	} );
 } );

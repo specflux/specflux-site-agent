@@ -1,7 +1,7 @@
 <?php
 /**
  * Section tone (0.3 quality, D3b): a layout item's `tone` becomes a
- * `backgroundColor` + `textColor` preset pair that SenroFlux writes on a
+ * `backgroundColor` + `textColor` preset pair that Specflux Site Agent writes on a
  * curated section's top-level group. The model never writes the attributes.
  *
  * A palette's slugs differ per theme, so a tone is resolved by luminance, not
@@ -10,12 +10,12 @@
  * darkest or lightest reads on it. A pair under WCAG AA (4.5:1) is not used;
  * the section then renders in the default colours.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
 use WP_Error;
 
@@ -254,9 +254,9 @@ final class Tone {
 				continue;
 			}
 
-			// A curated section is named `senroflux/<slug>`; a theme pattern's is
-			// `senroflux/<theme>/<slug>`, and its colours are the theme's own.
-			$curated = 1 === preg_match( '#^senroflux/[^/]+$#', (string) ( $block['attrs']['metadata']['name'] ?? '' ) );
+			// A curated section is named `specflux/<slug>`; a theme pattern's is
+			// `specflux/<theme>/<slug>`, and its colours are the theme's own.
+			$curated = 1 === preg_match( '#^specflux/[^/]+$#', (string) ( $block['attrs']['metadata']['name'] ?? '' ) );
 
 			return $curated ? ( self::appliedTone( $block ) ?? self::DEFAULT ) : self::DEFAULT;
 		}
@@ -267,7 +267,7 @@ final class Tone {
 	/**
 	 * Whether `$block` is a top-level group carrying a tone's whole pair, as
 	 * {@see apply()} writes it: both attributes and all four classes. The
-	 * validator uses this to tell SenroFlux's colour from one a model wrote.
+	 * validator uses this to tell Specflux Site Agent's colour from one a model wrote.
 	 *
 	 * @param array<string,mixed> $block A parsed top-level block.
 	 */
@@ -303,7 +303,7 @@ final class Tone {
 	 * `$sections` with an untoned hero set to `default` wherever its
 	 * `contrast` default would break {@see pageCheck()}: beside a section the
 	 * model toned `contrast`, or on a page the model already toned
-	 * {@see MAX_PER_PAGE} times. The default is SenroFlux's choice, so it
+	 * {@see MAX_PER_PAGE} times. The default is Specflux Site Agent's choice, so it
 	 * must never be the reason a page is refused.
 	 *
 	 * @param list<mixed> $sections The call's `sections` input.
@@ -347,7 +347,7 @@ final class Tone {
 					'layout_tone_adjacent',
 					sprintf(
 						/* translators: 1: first section number, 2: second section number, 3: tone name. */
-						__( 'Sections %1$d and %2$d are side by side and both `%3$s`. Give one of them another `tone`, or `default`.', 'senroflux' ),
+						__( 'Sections %1$d and %2$d are side by side and both `%3$s`. Give one of them another `tone`, or `default`.', 'specflux-site-agent' ),
 						$i + 1,
 						$i + 2,
 						$tone
@@ -366,7 +366,7 @@ final class Tone {
 				'layout_tone_count',
 				sprintf(
 					/* translators: 1: section numbers, 2: how many sections a page may tone. */
-					__( 'Sections %1$s all have a `tone`; a page takes at most %2$d. Set `tone` to `default` on the others.', 'senroflux' ),
+					__( 'Sections %1$s all have a `tone`; a page takes at most %2$d. Set `tone` to `default` on the others.', 'specflux-site-agent' ),
 					implode( ', ', $numbers ) . ' and ' . $last,
 					self::MAX_PER_PAGE
 				),

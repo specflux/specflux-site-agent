@@ -2,17 +2,17 @@
 /**
  * FluentCart as a store platform (C4-F).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart;
 
-use Specflux\SenroFlux\Packs\Commerce\DescriptionValidator;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
+use Specflux\SiteAgent\Packs\Commerce\DescriptionValidator;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
 use WP_Error;
 
 // Bail on direct access.
@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  * Role resolution: FluentCart's own `fluent-cart/` abilities exist only when
  * its MCP module is switched on (`fluent_cart_modules_settings['mcp']`, off by
  * default: `app/Modules/MCP/MCPInit.php` `boot()`), so EVERY role also has a
- * `senroflux/fluentcart-*` polyfill and the pack works with the module off.
+ * `specflux/fluentcart-*` polyfill and the pack works with the module off.
  * Where the native ability is a safe fit it is preferred (store report,
  * coupon create/enable, product and order reads). It is NOT adopted for the
  * refund: native `refund-order` is a two-call dry-run/confirm-token flow
@@ -46,21 +46,21 @@ final class FluentCartPlatform implements StorePlatform {
 
 	/**
 	 * The release whose source (`app/Modules/MCP/`, `app/Http/Routes/api.php`)
-	 * this platform and SenroGate's FluentCart catalog were verified against.
+	 * this platform and Belayline Agent Governance's FluentCart catalog were verified against.
 	 */
 	public const MIN_VERSION = '1.7.0';
 
 	/** @var (callable():?string)|null */
 	private static $version_probe = null;
 
-	/** Register this platform on the `senroflux_store_platforms` filter (composition root). */
+	/** Register this platform on the `specflux_site_agent_store_platforms` filter (composition root). */
 	public static function boot(): void {
 		if ( ! function_exists( 'add_filter' ) ) {
 			return;
 		}
 
 		add_filter(
-			'senroflux_store_platforms',
+			'specflux_site_agent_store_platforms',
 			static function ( $platforms ) {
 				$platforms   = is_array( $platforms ) ? $platforms : array();
 				$platforms[] = new self();
@@ -118,14 +118,14 @@ final class FluentCartPlatform implements StorePlatform {
 		return self::MIN_VERSION;
 	}
 
-	/** SenroGate's FluentCart module exists only in SenroGate mode (and 1.7.0+, same floor as ours). */
+	/** Belayline Agent Governance's FluentCart module exists only in Belayline Agent Governance mode (and 1.7.0+, same floor as ours). */
 	public function isGoverned(): bool {
 		return GateMode::AgentSafety === Plugin::currentGateMode();
 	}
 
 	/** @return list<string> */
 	public function abilityNamespaces(): array {
-		return array( 'fluent-cart/', 'senroflux/' );
+		return array( 'fluent-cart/', 'specflux/' );
 	}
 
 	/**
@@ -474,7 +474,7 @@ final class FluentCartPlatform implements StorePlatform {
 				$row,
 				'fluentcart_order',
 				/* translators: %d: order id. */
-				sprintf( __( 'Order #%d', 'senroflux' ), $id ),
+				sprintf( __( 'Order #%d', 'specflux-site-agent' ), $id ),
 				$row['status'] ?? '',
 				$app( 'orders/' . $id . '/view' )
 			);
@@ -564,7 +564,7 @@ final class FluentCartPlatform implements StorePlatform {
 	/**
 	 * The pack-verb tiers are platform-neutral: the same table as WooCommerce.
 	 * The parity test checks every native `fluent-cart/` ability this platform
-	 * classifies against SenroGate's FluentCartVerbCatalog.
+	 * classifies against Belayline Agent Governance's FluentCartVerbCatalog.
 	 *
 	 * @return array<string,int>
 	 */
@@ -632,7 +632,7 @@ final class FluentCartPlatform implements StorePlatform {
 	}
 
 	/**
-	 * Mirrors SenroGate's CouponActivationElevationRule for native-shaped input
+	 * Mirrors Belayline Agent Governance's CouponActivationElevationRule for native-shaped input
 	 * (an explicit `action`), and reads the pack's own coupon inputs (no
 	 * `action`) by their shape, which {@see shapeCoupon()} then pins to a draft
 	 * create or an enable.

@@ -1,65 +1,65 @@
 <?php
 /**
- * Tools → SenroFlux Runs: the observation + standalone-start screen (S10/S13).
+ * Tools → Specflux Site Agent Runs: the observation + standalone-start screen (S10/S13).
  *
  * TARGET REPO PATH: src/Admin/RunsScreen.php
  *
  * 0.2 stage 9. The screen is now the FULL human seam for a run:
  *   - a "New run" form (S13) that starts through the ONE start path
- *     `senroflux()->start( 'senroflux-admin', … )`, gated by the chosen pack's
+ *     `specflux_site_agent()->start( 'specflux-site-agent-admin', … )`, gated by the chosen pack's
  *     S13 preflight (a preflight failure replaces the form with a notice
- *     linking to Agent Capability Packs; SenroFlux never auto-binds);
+ *     linking to Agent Capability Packs; Specflux Site Agent never auto-binds);
  *   - the run detail, which renders the three park cards INLINE (question /
  *     plan / approval) server-side and submits their resolutions back through
- *     the ONE tick path `senroflux()->tick()` (S5 resume objects);
+ *     the ONE tick path `specflux_site_agent()->tick()` (S5 resume objects);
  *   - the existing list, cancel, and complete-without-JS behaviour.
  *
  * Progressive enhancement: every mutation is a plain admin-post form that works
  * with JS disabled; `assets/runs.js` only polls for new steps, swaps the status
  * badge, and announces status transitions in an aria-live region.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Admin;
+namespace Specflux\SiteAgent\Admin;
 
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Approval\GrantBridge;
-use Specflux\SenroFlux\Connector\ApprovalsScreen;
-use Specflux\SenroFlux\Http\ConsumerPolicy;
-use Specflux\SenroFlux\Model\ModelChoice;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\SiteBrief;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Setup\Onboarding;
-use Specflux\SenroFlux\Setup\SetupCheck;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Approval\GrantBridge;
+use Specflux\SiteAgent\Connector\ApprovalsScreen;
+use Specflux\SiteAgent\Http\ConsumerPolicy;
+use Specflux\SiteAgent\Model\ModelChoice;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\SiteBrief;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Setup\Onboarding;
+use Specflux\SiteAgent\Setup\SetupCheck;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Render + act on SenroFlux runs.
+ * Render + act on Specflux Site Agent runs.
  *
- * The one consumer id the screen starts runs for is `senroflux-admin` (S13),
+ * The one consumer id the screen starts runs for is `specflux-site-agent-admin` (S13),
  * and it goes through the SAME server-side policy seam as every other
- * consumer. `senroflux-admin` is registered in `senroflux_http_consumers`
+ * consumer. `specflux-site-agent-admin` is registered in `specflux_site_agent_http_consumers`
  * ONLY while the current user holds the screen capability (see
  * {@see self::registerAdminConsumer()}), and the New-run handler resolves the
  * request through {@see ConsumerPolicy} before it ever reaches `start()`. So:
  *
  *   - one start path, one allow-list authority, one budget ceiling;
- *   - a user without the capability resolves to `senroflux_unknown_consumer`
+ *   - a user without the capability resolves to `specflux_site_agent_unknown_consumer`
  *     (403) at the policy seam — fail closed — as well as being stopped by the
  *     handler's own `current_user_can()` check;
- *   - a JS consumer POSTing `wp_ajax_senroflux_start` with `senroflux-admin`
+ *   - a JS consumer POSTing `wp_ajax_specflux_site_agent_start` with `specflux-site-agent-admin`
  *     gets exactly the same treatment, because it is the same filter entry.
  *
  * The chosen pack still narrows the allow-list inside `start()` (S9: with a
@@ -68,21 +68,21 @@ defined( 'ABSPATH' ) || exit;
  */
 class RunsScreen {
 
-	public const SLUG = 'senroflux-runs';
+	public const SLUG = 'specflux-site-agent-runs';
 
 	/**
 	 * The consumer id label for admin-started runs (S13). Public (0.3 S3): the
 	 * only consumer allowed to drive a built-in-mode run — its approval park
 	 * can only be resolved on this screen, so a third-party consumer starting
-	 * or ticking one is refused (`senroflux_ungoverned`, Plugin::start/tick).
+	 * or ticking one is refused (`specflux_site_agent_ungoverned`, Plugin::start/tick).
 	 */
-	public const CONSUMER = 'senroflux-admin';
+	public const CONSUMER = 'specflux-site-agent-admin';
 
 	/** Goal length cap (S13: required, ≤ 1000 chars). */
 	private const MAX_GOAL = 1000;
 
 	/** Transient set on activation, cleared the first time the Plugins-screen notice renders (S10). */
-	public const ACTIVATION_NOTICE_TRANSIENT = 'senroflux_activation_notice';
+	public const ACTIVATION_NOTICE_TRANSIENT = 'specflux_site_agent_activation_notice';
 
 	/** Register on admin_menu (+ posts + assets). */
 	public function register(): void {
@@ -90,14 +90,14 @@ class RunsScreen {
 		add_action( 'admin_init', array( $this, 'redirectOldToolsUrl' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'commandPaletteAssets' ) );
-		add_action( 'admin_post_senroflux_cancel_run', array( $this, 'handleCancel' ) );
-		add_action( 'admin_post_senroflux_new_run', array( $this, 'handleNewRun' ) );
-		add_action( 'admin_post_senroflux_answer', array( $this, 'handleAnswer' ) );
-		add_action( 'admin_post_senroflux_plan_decision', array( $this, 'handlePlanDecision' ) );
-		add_action( 'admin_post_senroflux_approval_decision', array( $this, 'handleApprovalDecision' ) );
-		add_action( 'admin_post_senroflux_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
-		add_action( 'wp_ajax_senroflux_setup_panel', array( $this, 'handleSetupPanel' ) );
-		add_action( 'wp_ajax_senroflux_setup_brief', array( $this, 'handleSetupBrief' ) );
+		add_action( 'admin_post_specflux_site_agent_cancel_run', array( $this, 'handleCancel' ) );
+		add_action( 'admin_post_specflux_site_agent_new_run', array( $this, 'handleNewRun' ) );
+		add_action( 'admin_post_specflux_site_agent_answer', array( $this, 'handleAnswer' ) );
+		add_action( 'admin_post_specflux_site_agent_plan_decision', array( $this, 'handlePlanDecision' ) );
+		add_action( 'admin_post_specflux_site_agent_approval_decision', array( $this, 'handleApprovalDecision' ) );
+		add_action( 'admin_post_specflux_site_agent_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
+		add_action( 'wp_ajax_specflux_site_agent_setup_panel', array( $this, 'handleSetupPanel' ) );
+		add_action( 'wp_ajax_specflux_site_agent_setup_brief', array( $this, 'handleSetupBrief' ) );
 		add_action( 'admin_notices', array( $this, 'maybeRenderActivationNotice' ) );
 		add_filter( ConsumerPolicy::FILTER, array( $this, 'registerAdminConsumer' ) );
 	}
@@ -114,15 +114,15 @@ class RunsScreen {
 	}
 
 	/**
-	 * Register `senroflux-admin` as an HTTP consumer — ONLY for a user who
+	 * Register `specflux-site-agent-admin` as an HTTP consumer — ONLY for a user who
 	 * holds the screen capability (S13).
 	 *
 	 * This is what makes the Runs screen's start "one start path": the New-run
-	 * form and any `wp_ajax_senroflux_start` call resolve through the SAME
+	 * form and any `wp_ajax_specflux_site_agent_start` call resolve through the SAME
 	 * {@see ConsumerPolicy} entry, so the allow-list and the budget ceiling are
 	 * server-owned in both. A visitor without the capability never sees the
 	 * consumer registered at all, so `ConsumerPolicy::resolve()` refuses with
-	 * `senroflux_unknown_consumer` (403) — fail closed.
+	 * `specflux_site_agent_unknown_consumer` (403) — fail closed.
 	 *
 	 * The allow-list here is the union of the registered packs' allow-lists:
 	 * the OUTER bound of what an admin-started run may ever touch. `start()`
@@ -166,7 +166,7 @@ class RunsScreen {
 	}
 
 	/**
-	 * The top-level "SenroFlux" menu (0.3 S10 — moved out of Tools).
+	 * The top-level "Specflux Site Agent" menu (0.3 S10 — moved out of Tools).
 	 *
 	 * The capability is computed fresh on every `admin_menu` call
 	 * ({@see ScreenCapability::current()}: the first registered pack's run
@@ -176,8 +176,8 @@ class RunsScreen {
 	 */
 	public function menu(): void {
 		add_menu_page(
-			__( 'SenroFlux', 'senroflux' ),
-			__( 'SenroFlux', 'senroflux' ),
+			__( 'Specflux Site Agent', 'specflux-site-agent' ),
+			__( 'Specflux Site Agent', 'specflux-site-agent' ),
 			$this->capability(),
 			self::SLUG,
 			array( $this, 'render' ),
@@ -187,8 +187,8 @@ class RunsScreen {
 
 	/**
 	 * 0.3 S10 `[assumed]`: the old Tools submenu URL
-	 * (`tools.php?page=senroflux-runs`) redirects to the new top-level one,
-	 * preserving `run_id`/`senroflux_filter` so a bookmarked review link keeps
+	 * (`tools.php?page=specflux-site-agent-runs`) redirects to the new top-level one,
+	 * preserving `run_id`/`specflux_site_agent_filter` so a bookmarked review link keeps
 	 * working.
 	 */
 	public function redirectOldToolsUrl(): void {
@@ -243,7 +243,7 @@ class RunsScreen {
 			return;
 		}
 
-		$asset_file = SENROFLUX_PATH . 'build/runs/index.asset.php';
+		$asset_file = SPECFLUX_SITE_AGENT_PATH . 'build/runs/index.asset.php';
 		if ( ! file_exists( $asset_file ) ) {
 			return;
 		}
@@ -256,23 +256,23 @@ class RunsScreen {
 		// re-checked (fail closed) rather than trusted blindly from disk.
 		$dependencies = array_values( array_filter( $asset['dependencies'], static fn ( string $handle ): bool => '' !== $handle ) );
 
-		wp_enqueue_style( 'senroflux-runs', SENROFLUX_URL . 'build/runs/style-index.css', array(), $asset['version'] );
+		wp_enqueue_style( 'specflux-site-agent-runs', SPECFLUX_SITE_AGENT_URL . 'build/runs/style-index.css', array(), $asset['version'] );
 		// S22 RTL gate: `wp-scripts build` emits a `style-index-rtl.css`
 		// alongside the LTR stylesheet, but nothing loads it unless the
 		// handle is told an RTL replacement exists — `wp_style_add_data()`
 		// with the `rtl` key is how core wires that swap in for any locale
 		// whose `WP_Locale::is_rtl()` is true (arabic, hebrew, etc.).
-		wp_style_add_data( 'senroflux-runs', 'rtl', 'replace' );
-		wp_enqueue_script( 'senroflux-runs', SENROFLUX_URL . 'build/runs/index.js', $dependencies, $asset['version'], true );
+		wp_style_add_data( 'specflux-site-agent-runs', 'rtl', 'replace' );
+		wp_enqueue_script( 'specflux-site-agent-runs', SPECFLUX_SITE_AGENT_URL . 'build/runs/index.js', $dependencies, $asset['version'], true );
 
 		if ( function_exists( 'wp_set_script_translations' ) ) {
-			wp_set_script_translations( 'senroflux-runs', 'senroflux' );
+			wp_set_script_translations( 'specflux-site-agent-runs', 'specflux-site-agent' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only, decides which run opens first.
 		$run_id = absint( $_GET['run_id'] ?? ( $_GET['run'] ?? 0 ) );
 
-		// 0.3 S10: the command palette's "SenroFlux: run "<text>"" command
+		// 0.3 S10: the command palette's "Specflux Site Agent: run "<text>"" command
 		// (see `commandPaletteAssets()`) links here with `goal` set — it only
 		// ever PRE-FILLS the message box, never starts a run itself, so this
 		// is read-only same as `run_id` above. Capped at the same length the
@@ -285,8 +285,8 @@ class RunsScreen {
 		}
 
 		wp_localize_script(
-			'senroflux-runs',
-			'senrofluxRunsConfig',
+			'specflux-site-agent-runs',
+			'specfluxSiteAgentRunsConfig',
 			array(
 				'initialRunId'       => $run_id > 0 ? $run_id : null,
 				'initialGoal'        => '' !== $goal ? $goal : null,
@@ -303,7 +303,7 @@ class RunsScreen {
 				// names — so the message box can offer a real pack choice
 				// instead of starting a pack-less run with an empty verb map
 				// (every read/plan call would then be refused fail-closed,
-				// {@see \Specflux\SenroFlux\Tools\VerbTier}).
+				// {@see \Specflux\SiteAgent\Tools\VerbTier}).
 				'packs'              => $this->runnablePacks(),
 				// runs-pack fix: the packs the viewer's preflight refuses,
 				// with why — so the message box can SAY something when the
@@ -313,9 +313,9 @@ class RunsScreen {
 				// Stage 22b (J1): a failing BLOCKING harness check (no model
 				// provider, WordPress too old) disables Start. The setup panel
 				// above the app names the fix; this is the app's half. It is
-				// refreshed on window focus through `senroflux_setup_panel`.
+				// refreshed on window focus through `specflux_site_agent_setup_panel`.
 				'startBlocked'       => $this->startBlocked( get_current_user_id() ),
-				// Guided setup: the "Set up SenroFlux" panel's steps, computed
+				// Guided setup: the "Set up Specflux Site Agent" panel's steps, computed
 				// per viewer ({@see Onboarding::steps()}) and refreshed on focus.
 				'setupSteps'         => Onboarding::steps( get_current_user_id() ),
 				// Per-run model choice: only currently-configured
@@ -324,15 +324,15 @@ class RunsScreen {
 				// same list, never re-deriving it from a role guess.
 				'modelChoices'       => ModelChoice::availableChoices(),
 				// 0.3 S10 (17c): the admin-ajax surface's tick/cancel/start
-				// actions carry the SAME `senroflux_run` nonce + `read`
+				// actions carry the SAME `specflux_site_agent_run` nonce + `read`
 				// capability check the admin-post handlers use, RE-CHECKED
 				// server-side in `Ajax` — this is only the browser's half.
 				// admin-ajax (not REST) is the interaction layer's surface:
-				// {@see \Specflux\SenroFlux\Admin\ScreenCapability::tickAsScreen()}
+				// {@see \Specflux\SiteAgent\Admin\ScreenCapability::tickAsScreen()}
 				// only wraps the ajax tick handler, so it is the one path
 				// that lets a screen-capability holder resolve a run they do
 				// not own; REST's tick route has no such wrapper.
-				'nonce'              => wp_create_nonce( 'senroflux_run' ),
+				'nonce'              => wp_create_nonce( 'specflux_site_agent_run' ),
 				// The one HTTP consumer this screen is allowed to start as
 				// (S13); registered only for a holder of the screen
 				// capability ({@see registerAdminConsumer()}).
@@ -347,7 +347,7 @@ class RunsScreen {
 	}
 
 	/**
-	 * Register the "SenroFlux: run "<text>"" command palette command,
+	 * Register the "Specflux Site Agent: run "<text>"" command palette command,
 	 * site-wide (0.3 S10) — Cmd/Ctrl+K is available on every wp-admin screen
 	 * since WP 6.9 (`wp_enqueue_command_palette_assets()`, hooked on this
 	 * same `admin_enqueue_scripts` action), not only the Runs screen, so this
@@ -360,7 +360,7 @@ class RunsScreen {
 	 * This command is a NAVIGATION only. It opens the Runs screen with the
 	 * typed text already in the message box (via the SAME read-only `goal`
 	 * query arg `assets()` reads above) and stops there — it never calls
-	 * `senroflux()->start()` or anything that ticks a run. A human still has
+	 * `specflux_site_agent()->start()` or anything that ticks a run. A human still has
 	 * to look at the pre-filled box and click "Start run" themselves.
 	 */
 	public function commandPaletteAssets(): void {
@@ -368,7 +368,7 @@ class RunsScreen {
 			return;
 		}
 
-		$asset_file = SENROFLUX_PATH . 'build/commands/index.asset.php';
+		$asset_file = SPECFLUX_SITE_AGENT_PATH . 'build/commands/index.asset.php';
 		if ( ! file_exists( $asset_file ) ) {
 			return;
 		}
@@ -378,15 +378,15 @@ class RunsScreen {
 
 		$dependencies = array_values( array_filter( $asset['dependencies'], static fn ( string $handle ): bool => '' !== $handle ) );
 
-		wp_enqueue_script( 'senroflux-commands', SENROFLUX_URL . 'build/commands/index.js', $dependencies, $asset['version'], true );
+		wp_enqueue_script( 'specflux-site-agent-commands', SPECFLUX_SITE_AGENT_URL . 'build/commands/index.js', $dependencies, $asset['version'], true );
 
 		if ( function_exists( 'wp_set_script_translations' ) ) {
-			wp_set_script_translations( 'senroflux-commands', 'senroflux' );
+			wp_set_script_translations( 'specflux-site-agent-commands', 'specflux-site-agent' );
 		}
 
 		wp_localize_script(
-			'senroflux-commands',
-			'senrofluxCommandsConfig',
+			'specflux-site-agent-commands',
+			'specfluxSiteAgentCommandsConfig',
 			array(
 				'runsUrl' => admin_url( 'admin.php?page=' . self::SLUG ),
 			)
@@ -410,7 +410,7 @@ class RunsScreen {
 			if ( true === $pack->preflight( $user_id ) ) {
 				$examples[] = sprintf(
 					/* translators: %s: a capability pack's name, e.g. "pages". */
-					__( 'Try something with the %s pack', 'senroflux' ),
+					__( 'Try something with the %s pack', 'specflux-site-agent' ),
 					$pack->name()
 				);
 			}
@@ -454,7 +454,7 @@ class RunsScreen {
 			return true;
 		}
 
-		// The old Agent Safety plugin beside SenroGate: the panel's step 3.
+		// The old Agent Safety plugin beside Belayline Agent Governance: the panel's step 3.
 		// The binding step (4) needs no entry here; it already empties
 		// {@see runnablePacks()}.
 		return Onboarding::oldPluginBlocks( $user_id );
@@ -462,13 +462,13 @@ class RunsScreen {
 
 	/**
 	 * The packs the CURRENT viewer may NOT run, with why (runs-pack fix): a
-	 * pack whose {@see \Specflux\SenroFlux\Packs\Pack::preflight()} fails used
+	 * pack whose {@see \Specflux\SiteAgent\Packs\Pack::preflight()} fails used
 	 * to simply vanish from {@see runnablePacks()} — when EVERY pack fails,
 	 * the message box rendered no picker and no explanation, so the screen
 	 * said nothing about why nothing could run. `reason` is the preflight
 	 * `WP_Error`'s own message (`pack_unbound`, `skills_too_large`, or a
-	 * capability-check message — see {@see \Specflux\SenroFlux\Packs\Pack::preflight()}
-	 * and {@see \Specflux\SenroFlux\Packs\Pack::setupChecks()}), already
+	 * capability-check message — see {@see \Specflux\SiteAgent\Packs\Pack::preflight()}
+	 * and {@see \Specflux\SiteAgent\Packs\Pack::setupChecks()}), already
 	 * translated by whichever check produced it — never re-translated here.
 	 *
 	 * @return list<array{name:string,reason:string}>
@@ -501,13 +501,13 @@ class RunsScreen {
 			return;
 		}
 
-		check_admin_referer( 'senroflux_cancel_' . $run_id );
+		check_admin_referer( 'specflux_site_agent_cancel_' . $run_id );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
-		senroflux()->cancel( $run_id );
+		specflux_site_agent()->cancel( $run_id );
 
 		$this->redirectBack( $run_id );
 	}
@@ -520,9 +520,9 @@ class RunsScreen {
 	 * {@see ConsumerPolicy} seam every HTTP consumer goes through. The policy
 	 * owns the allow-list and the budget CEILING; the request may only lower
 	 * the budget. Only then does this call
-	 * `senroflux()->start( 'senroflux-admin', $goal, $allow, $budget, $pack )`.
+	 * `specflux_site_agent()->start( 'specflux-site-agent-admin', $goal, $allow, $budget, $pack )`.
 	 *
-	 * `senroflux-admin` is only in the consumer map while the current user
+	 * `specflux-site-agent-admin` is only in the consumer map while the current user
 	 * holds the screen capability, so a request that slips past the capability
 	 * check would still be refused at the policy seam (fail closed, twice).
 	 *
@@ -530,29 +530,29 @@ class RunsScreen {
 	 * a preflight failure surfaces as the preflight notice on the list view.
 	 */
 	public function handleNewRun(): void {
-		check_admin_referer( 'senroflux_new_run' );
+		check_admin_referer( 'specflux_site_agent_new_run' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		$goal = sanitize_textarea_field( wp_unslash( $_POST['goal'] ?? '' ) );
 		if ( '' === $goal ) {
-			$this->redirectList( 'senroflux_bad_request' );
+			$this->redirectList( 'specflux_site_agent_bad_request' );
 
 			return;
 		}
 
 		$goal_len = $this->strLen( $goal );
 		if ( $goal_len > self::MAX_GOAL ) {
-			$this->redirectList( 'senroflux_bad_request' );
+			$this->redirectList( 'specflux_site_agent_bad_request' );
 
 			return;
 		}
 
 		$pack = sanitize_text_field( wp_unslash( $_POST['pack'] ?? '' ) );
 		if ( '' === $pack ) {
-			$this->redirectList( 'senroflux_bad_request' );
+			$this->redirectList( 'specflux_site_agent_bad_request' );
 
 			return;
 		}
@@ -580,7 +580,7 @@ class RunsScreen {
 			return;
 		}
 
-		$result = senroflux()->start(
+		$result = specflux_site_agent()->start(
 			self::CONSUMER,
 			$goal,
 			$policy['allow'],   // Outer bound; start() narrows it to the pack (S9).
@@ -602,7 +602,7 @@ class RunsScreen {
 	/** admin-post endpoint backing the question park's Answer/Skip (S5/S6). */
 	public function handleAnswer(): void {
 		$run_id = absint( $_POST['run_id'] ?? 0 );
-		check_admin_referer( 'senroflux_answer_' . $run_id );
+		check_admin_referer( 'specflux_site_agent_answer_' . $run_id );
 
 		$resume = $this->assembleAnswerResume();
 		if ( is_wp_error( $resume ) ) {
@@ -617,7 +617,7 @@ class RunsScreen {
 	/** admin-post endpoint backing the plan park's Submit (S5/S7). */
 	public function handlePlanDecision(): void {
 		$run_id = absint( $_POST['run_id'] ?? 0 );
-		check_admin_referer( 'senroflux_plan_' . $run_id );
+		check_admin_referer( 'specflux_site_agent_plan_' . $run_id );
 
 		$resume = $this->assemblePlanResume();
 		if ( is_wp_error( $resume ) ) {
@@ -632,9 +632,9 @@ class RunsScreen {
 	/** admin-post endpoint backing the approval park's Approve/Reject (S5/S6). */
 	public function handleApprovalDecision(): void {
 		$run_id = absint( $_POST['run_id'] ?? 0 );
-		check_admin_referer( 'senroflux_approval_' . $run_id );
+		check_admin_referer( 'specflux_site_agent_approval_' . $run_id );
 
-		$action = sanitize_text_field( wp_unslash( $_POST['senroflux_approval_action'] ?? '' ) );
+		$action = sanitize_text_field( wp_unslash( $_POST['specflux_site_agent_approval_action'] ?? '' ) );
 		if ( ! in_array( $action, array( 'approve', 'reject' ), true ) ) {
 			$this->redirectBack( $run_id, 'resume_mismatch' );
 
@@ -654,23 +654,23 @@ class RunsScreen {
 	 * admin-post endpoint backing a suggestion's Save/Dismiss (0.3 S20).
 	 *
 	 * `manage_options` and the nonce are BOTH checked here — RE-CHECKED
-	 * inside {@see \Specflux\SenroFlux\Plugin::resolveSuggestion()}'s callee
+	 * inside {@see \Specflux\SiteAgent\Plugin::resolveSuggestion()}'s callee
 	 * is not the point; this is the one human-click seam, and it fails
-	 * closed on its own, same as {@see \Specflux\SenroFlux\Http\Rest::routeSuggestionDecision()}.
+	 * closed on its own, same as {@see \Specflux\SiteAgent\Http\Rest::routeSuggestionDecision()}.
 	 */
 	public function handleSuggestionDecision(): void {
 		$run_id = absint( $_POST['run_id'] ?? 0 );
-		check_admin_referer( 'senroflux_suggestion_' . $run_id );
+		check_admin_referer( 'specflux_site_agent_suggestion_' . $run_id );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		$seq    = absint( $_POST['seq'] ?? 0 );
-		$action = sanitize_text_field( wp_unslash( $_POST['senroflux_suggestion_action'] ?? '' ) );
+		$action = sanitize_text_field( wp_unslash( $_POST['specflux_site_agent_suggestion_action'] ?? '' ) );
 		$text   = isset( $_POST['text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['text'] ) ) : null;
 
-		$result = senroflux()->resolveSuggestion( $run_id, $seq, $action, $text );
+		$result = specflux_site_agent()->resolveSuggestion( $run_id, $seq, $action, $text );
 
 		$this->redirectBack( $run_id, is_wp_error( $result ) ? (string) $result->get_error_code() : null );
 	}
@@ -679,7 +679,7 @@ class RunsScreen {
 	 * The error code to carry back in the redirect, or null on success.
 	 *
 	 * A park handler used to DISCARD the tick result, so a 403 (or a
-	 * `senroflux_conflict`) redirected silently back to a card that looked
+	 * `specflux_site_agent_conflict`) redirected silently back to a card that looked
 	 * unchanged. Surfacing the code lets `renderRunErrorFlash()` say what
 	 * happened.
 	 *
@@ -692,7 +692,7 @@ class RunsScreen {
 
 		$code = (string) $result->get_error_code();
 
-		return '' !== $code ? $code : 'senroflux_bad_request';
+		return '' !== $code ? $code : 'specflux_site_agent_bad_request';
 	}
 
 	// ------------------------------------------------------------------
@@ -707,13 +707,13 @@ class RunsScreen {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	protected function assembleAnswerResume(): array|WP_Error {
-		if ( 'skip' === $this->param( 'senroflux_answer_action' ) ) {
+		if ( 'skip' === $this->param( 'specflux_site_agent_answer_action' ) ) {
 			return array( 'skip' => true );
 		}
 
-		$choice = (string) $this->param( 'senroflux_answer_choice' );
-		$other  = (string) $this->param( 'senroflux_answer_other' );
-		$text   = (string) $this->param( 'senroflux_answer_text' );
+		$choice = (string) $this->param( 'specflux_site_agent_answer_choice' );
+		$other  = (string) $this->param( 'specflux_site_agent_answer_other' );
+		$text   = (string) $this->param( 'specflux_site_agent_answer_text' );
 
 		// The "Other" affordance (or a textarea-only card) wins: a typed answer
 		// is a text answer, never a choice.
@@ -721,7 +721,7 @@ class RunsScreen {
 			if ( '' === trim( $other ) ) {
 				return new WP_Error(
 					'resume_mismatch',
-					__( 'Type your answer, or pick one of the offered choices.', 'senroflux' ),
+					__( 'Type your answer, or pick one of the offered choices.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -741,7 +741,7 @@ class RunsScreen {
 
 		return new WP_Error(
 			'resume_mismatch',
-			__( 'Choose a response to continue.', 'senroflux' ),
+			__( 'Choose a response to continue.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -752,13 +752,13 @@ class RunsScreen {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	protected function assemblePlanResume(): array|WP_Error {
-		$action = (string) $this->param( 'senroflux_plan_action' );
-		$note   = (string) $this->param( 'senroflux_plan_note' );
+		$action = (string) $this->param( 'specflux_site_agent_plan_action' );
+		$note   = (string) $this->param( 'specflux_site_agent_plan_note' );
 
 		if ( ! in_array( $action, array( 'accept', 'accept_preapprove', 'veto' ), true ) ) {
 			return new WP_Error(
 				'resume_mismatch',
-				__( 'Choose Accept or Veto.', 'senroflux' ),
+				__( 'Choose Accept or Veto.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -766,7 +766,7 @@ class RunsScreen {
 		if ( 'veto' === $action && '' === trim( $note ) ) {
 			return new WP_Error(
 				'resume_mismatch',
-				__( 'A veto needs a note saying why.', 'senroflux' ),
+				__( 'A veto needs a note saying why.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -784,10 +784,10 @@ class RunsScreen {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Advance a run through `senroflux()->tick()` from the screen context.
+	 * Advance a run through `specflux_site_agent()->tick()` from the screen context.
 	 *
 	 * The Runner's `mayTick()` defaults to owner-only but is gated by the
-	 * `senroflux_can_tick` filter (the delegation seam). A holder of the screen
+	 * `specflux_site_agent_can_tick` filter (the delegation seam). A holder of the screen
 	 * capability may answer/act on a run even when they are not its owner; the
 	 * Runner itself records the `answered_by` system step (S6/S7).
 	 *
@@ -796,7 +796,7 @@ class RunsScreen {
 	 * the nonce, not the capability, so this method must never assume they did.
 	 * The allowance is scoped to this ONE run id and removed in a `finally`, so
 	 * it never leaks outside this call. The exact same helper backs the
-	 * admin-ajax poll ({@see \Specflux\SenroFlux\Http\Ajax::handleTick()}), so
+	 * admin-ajax poll ({@see \Specflux\SiteAgent\Http\Ajax::handleTick()}), so
 	 * polling a delegated run behaves like submitting its form.
 	 *
 	 * @param array<string,mixed>|null $resume Park resolution.
@@ -805,7 +805,7 @@ class RunsScreen {
 	private function tickThroughScreen( int $run_id, int $step_count, ?array $resume ): array|WP_Error {
 		return ScreenCapability::tickAsScreen(
 			$run_id,
-			static fn (): array|WP_Error => senroflux()->tick( $run_id, $step_count, $resume )
+			static fn (): array|WP_Error => specflux_site_agent()->tick( $run_id, $step_count, $resume )
 		);
 	}
 
@@ -817,7 +817,7 @@ class RunsScreen {
 	protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 		$url = admin_url( 'tools.php?page=' . self::SLUG . '&run_id=' . $run_id );
 		if ( null !== $error_code && '' !== $error_code ) {
-			$url .= '&senroflux_run_error=' . rawurlencode( $error_code );
+			$url .= '&specflux_site_agent_run_error=' . rawurlencode( $error_code );
 		}
 		wp_safe_redirect( $url );
 
@@ -827,7 +827,7 @@ class RunsScreen {
 	/** Redirect back to the list (used by start-failure / missing input). */
 	protected function redirectList( string $error_code ): void {
 		wp_safe_redirect(
-			admin_url( 'tools.php?page=' . self::SLUG . '&senroflux_start_error=' . rawurlencode( $error_code ) )
+			admin_url( 'tools.php?page=' . self::SLUG . '&specflux_site_agent_start_error=' . rawurlencode( $error_code ) )
 		);
 
 		exit;
@@ -856,7 +856,7 @@ class RunsScreen {
 		}
 
 		echo '<div class="wrap">';
-		printf( '<h1>%s</h1>', esc_html__( 'SenroFlux', 'senroflux' ) );
+		printf( '<h1>%s</h1>', esc_html__( 'Specflux Site Agent', 'specflux-site-agent' ) );
 
 		// K2: the "From AI apps" tab (calls parked by the MCP connector in built-in mode).
 		ApprovalsScreen::renderTabs();
@@ -870,10 +870,10 @@ class RunsScreen {
 		echo $this->renderSetupPanel( get_current_user_id() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-escaped fragment.
 
 		echo '<noscript><div class="notice notice-warning"><p>'
-			. esc_html__( 'The SenroFlux Runs screen needs JavaScript to be enabled in your browser.', 'senroflux' )
+			. esc_html__( 'The Specflux Site Agent Runs screen needs JavaScript to be enabled in your browser.', 'specflux-site-agent' )
 			. '</p></div></noscript>';
 
-		echo '<div id="senroflux-runs-root"></div>';
+		echo '<div id="specflux-site-agent-runs-root"></div>';
 
 		echo '</div>';
 	}
@@ -888,13 +888,13 @@ class RunsScreen {
 	/**
 	 * The server-rendered notices above the app: ADVISORY harness checks only
 	 * (an ability awaiting review). Every blocking check, and the "install
-	 * SenroGate" nudge, now lives in the React "Set up SenroFlux" panel
+	 * Belayline Agent Governance" nudge, now lives in the React "Set up Specflux Site Agent" panel
 	 * ({@see Onboarding}), so the same problem is never said twice. Always
-	 * emits the `#senroflux-setup-panel` container, which the screen swaps on
+	 * emits the `#specflux-site-agent-setup-panel` container, which the screen swaps on
 	 * window focus.
 	 */
 	private function renderSetupPanel( int $user_id ): string {
-		$html = '<div id="senroflux-setup-panel" class="senroflux-setup-panel">';
+		$html = '<div id="specflux-site-agent-setup-panel" class="specflux-site-agent-setup-panel">';
 		foreach ( Checks::harnessChecks() as $check ) {
 			if ( $check->isBlocking() ) {
 				continue;
@@ -916,7 +916,7 @@ class RunsScreen {
 			$link = sprintf(
 				' <a href="%s">%s</a>',
 				esc_url( $check->fixUrl() ),
-				esc_html__( 'Fix this', 'senroflux' )
+				esc_html__( 'Fix this', 'specflux-site-agent' )
 			);
 		}
 
@@ -927,7 +927,7 @@ class RunsScreen {
 		// it, one copy of every check ends up duplicated outside this panel,
 		// and a stale copy can linger there after the panel re-renders.
 		return sprintf(
-			'<div class="notice %1$s inline senroflux-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p></div>',
+			'<div class="notice %1$s inline specflux-site-agent-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p></div>',
 			esc_attr( $css_class ),
 			esc_attr( $check->id() ),
 			esc_html( $message ),
@@ -941,10 +941,10 @@ class RunsScreen {
 	 * one that gates the whole screen).
 	 */
 	public function handleSetupPanel(): void {
-		check_ajax_referer( 'senroflux_run', 'nonce' );
+		check_ajax_referer( 'specflux_site_agent_run', 'nonce' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ), 403 );
 		}
 
 		$user_id  = get_current_user_id();
@@ -974,10 +974,10 @@ class RunsScreen {
 	 * suggestion card's Save. A too-long brief is refused, never truncated.
 	 */
 	public function handleSetupBrief(): void {
-		check_ajax_referer( 'senroflux_run', 'nonce' );
+		check_ajax_referer( 'specflux_site_agent_run', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'senroflux' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ), 403 );
 		}
 
 		$action = sanitize_key( wp_unslash( $_POST['brief_action'] ?? '' ) );
@@ -996,7 +996,7 @@ class RunsScreen {
 				);
 			}
 		} else {
-			wp_send_json_error( array( 'message' => __( 'Unknown action.', 'senroflux' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Unknown action.', 'specflux-site-agent' ) ), 400 );
 		}
 
 		wp_send_json_success( array( 'steps' => Onboarding::steps( get_current_user_id() ) ) );
@@ -1005,7 +1005,7 @@ class RunsScreen {
 	/**
 	 * One-time notice on the Plugins screen only (S10 activation: no
 	 * redirect, no site-wide notice). The transient is set on activation
-	 * ({@see \Specflux\SenroFlux\senroflux_activate()}) and deleted the first
+	 * ({@see \Specflux\SiteAgent\specflux_site_agent_activate()}) and deleted the first
 	 * time this renders, so it never shows twice.
 	 */
 	public function maybeRenderActivationNotice(): void {
@@ -1023,20 +1023,20 @@ class RunsScreen {
 
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
-			esc_html__( 'SenroFlux is active.', 'senroflux' ),
+			esc_html__( 'Specflux Site Agent is active.', 'specflux-site-agent' ),
 			esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ),
-			esc_html__( 'Start a run', 'senroflux' )
+			esc_html__( 'Start a run', 'specflux-site-agent' )
 		);
 	}
 
 	/**
 	 * 0.3 S9: a run "needs" the viewer when it is parked AND the viewer may
-	 * tick it (the same `senroflux_can_tick` delegation seam the Runner
+	 * tick it (the same `specflux_site_agent_can_tick` delegation seam the Runner
 	 * itself gates on) — a stalled `running` run is NOT a park (S9 names
 	 * park kinds and the stalled state as two different things), so it never
 	 * qualifies here even though it also wants a human to reopen the tab.
 	 *
-	 * @param array<string,mixed> $run {@see \Specflux\SenroFlux\Plugin::listRecent()} row shape.
+	 * @param array<string,mixed> $run {@see \Specflux\SiteAgent\Plugin::listRecent()} row shape.
 	 */
 	public static function needsYou( array $run ): bool {
 		return self::isParkedStatus( (string) $run['status'] ) && (bool) ( $run['viewer_may_tick'] ?? false );
@@ -1048,7 +1048,7 @@ class RunsScreen {
 	 * run capability" to check, so it is never eligible — fail closed), and
 	 * the CURRENT viewer holds that pack's run capability.
 	 *
-	 * @param array<string,mixed> $run {@see \Specflux\SenroFlux\Plugin::listRecent()} row shape.
+	 * @param array<string,mixed> $run {@see \Specflux\SiteAgent\Plugin::listRecent()} row shape.
 	 */
 	public static function eligibleForFollowUp( array $run ): bool {
 		if ( ! in_array(
@@ -1088,7 +1088,7 @@ class RunsScreen {
 	 * "paused while closed — open to continue" for a stalled `running` run,
 	 * or the ordinary status label otherwise.
 	 *
-	 * @param array<string,mixed> $run {@see \Specflux\SenroFlux\Plugin::listRecent()} row shape.
+	 * @param array<string,mixed> $run {@see \Specflux\SiteAgent\Plugin::listRecent()} row shape.
 	 */
 	public static function listRowLabel( array $run ): string {
 		$status = (string) $run['status'];
@@ -1099,7 +1099,7 @@ class RunsScreen {
 		}
 
 		if ( RunStatus::Running->value === $status && (bool) ( $run['stalled'] ?? false ) ) {
-			return __( 'paused while closed — open to continue', 'senroflux' );
+			return __( 'paused while closed — open to continue', 'specflux-site-agent' );
 		}
 
 		return self::statusLabel( $status );
@@ -1112,9 +1112,9 @@ class RunsScreen {
 	 */
 	public static function parkKindLabel( string $status ): ?string {
 		return match ( $status ) {
-			RunStatus::AwaitingUser->value => __( 'waiting for your answer', 'senroflux' ),
-			RunStatus::AwaitingApproval->value => __( 'waiting for approval', 'senroflux' ),
-			RunStatus::AwaitingPlan->value => __( 'waiting on the plan', 'senroflux' ),
+			RunStatus::AwaitingUser->value => __( 'waiting for your answer', 'specflux-site-agent' ),
+			RunStatus::AwaitingApproval->value => __( 'waiting for approval', 'specflux-site-agent' ),
+			RunStatus::AwaitingPlan->value => __( 'waiting on the plan', 'specflux-site-agent' ),
 			default => null,
 		};
 	}
@@ -1131,14 +1131,14 @@ class RunsScreen {
 	 */
 	public static function statusLabels(): array {
 		return array(
-			RunStatus::Pending->value          => __( 'pending', 'senroflux' ),
-			RunStatus::Running->value          => __( 'running', 'senroflux' ),
-			RunStatus::AwaitingApproval->value => __( 'awaiting approval', 'senroflux' ),
-			RunStatus::AwaitingUser->value     => __( 'awaiting your answer', 'senroflux' ),
-			RunStatus::AwaitingPlan->value     => __( 'awaiting plan decision', 'senroflux' ),
-			RunStatus::Completed->value        => __( 'completed', 'senroflux' ),
-			RunStatus::Failed->value           => __( 'failed', 'senroflux' ),
-			RunStatus::Cancelled->value        => __( 'cancelled', 'senroflux' ),
+			RunStatus::Pending->value          => __( 'pending', 'specflux-site-agent' ),
+			RunStatus::Running->value          => __( 'running', 'specflux-site-agent' ),
+			RunStatus::AwaitingApproval->value => __( 'awaiting approval', 'specflux-site-agent' ),
+			RunStatus::AwaitingUser->value     => __( 'awaiting your answer', 'specflux-site-agent' ),
+			RunStatus::AwaitingPlan->value     => __( 'awaiting plan decision', 'specflux-site-agent' ),
+			RunStatus::Completed->value        => __( 'completed', 'specflux-site-agent' ),
+			RunStatus::Failed->value           => __( 'failed', 'specflux-site-agent' ),
+			RunStatus::Cancelled->value        => __( 'cancelled', 'specflux-site-agent' ),
 		);
 	}
 

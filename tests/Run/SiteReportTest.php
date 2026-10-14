@@ -6,30 +6,30 @@
  * (`update-navigation`) must resolve to a real "navigation" row, not
  * "unknown".
  *
- * Runs the REAL `senroflux/read-navigation` / `senroflux/update-navigation`
+ * Runs the REAL `specflux/read-navigation` / `specflux/update-navigation`
  * abilities (via {@see Navigation}) through the REAL {@see SitePack}
  * verb/id-key/id-prefix/write-id seams and the REAL {@see Runner}, with a
  * `$post_lookup` and `write_object_id_resolver` that mirror the dispatchers
  * wired in `Plugin::runner()` — the same seams a real run uses.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Site\Navigation;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Report;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Site\Navigation;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Report;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -55,19 +55,19 @@ final class SiteReportTest extends TestCase {
 		require_once __DIR__ . '/../stubs/blocks.php';
 		require_once __DIR__ . '/../stubs/navigation.php';
 
-		$GLOBALS['senroflux_test_abilities']               = array();
-		$GLOBALS['senroflux_test_ability_categories']      = array();
-		$GLOBALS['senroflux_test_posts']                   = array();
-		$GLOBALS['senroflux_test_next_post_id']            = 100;
-		$GLOBALS['senroflux_test_user_caps']               = array( 'edit_theme_options' => true );
-		$GLOBALS['senroflux_test_is_block_theme']          = true;
-		$GLOBALS['senroflux_test_header_template_content'] = null;
-		$GLOBALS['senroflux_test_nav_fallback']            = null;
-		$GLOBALS['senroflux_test_registered_nav_menus']    = array();
-		$GLOBALS['senroflux_test_nav_menu_locations']      = array();
-		$GLOBALS['senroflux_test_nav_menu_items']          = array();
-		$GLOBALS['senroflux_test_current_user_id']         = 1;
-		$GLOBALS['senroflux_test_transients']              = array();
+		$GLOBALS['specflux_site_agent_test_abilities']               = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories']      = array();
+		$GLOBALS['specflux_site_agent_test_posts']                   = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']            = 100;
+		$GLOBALS['specflux_site_agent_test_user_caps']               = array( 'edit_theme_options' => true );
+		$GLOBALS['specflux_site_agent_test_is_block_theme']          = true;
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = null;
+		$GLOBALS['specflux_site_agent_test_nav_fallback']            = null;
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus']    = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']      = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_items']          = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id']         = 1;
+		$GLOBALS['specflux_site_agent_test_transients']              = array();
 
 		Navigation::reset();
 		Navigation::registerCategory();
@@ -100,7 +100,7 @@ final class SiteReportTest extends TestCase {
 			fn ( $run, string $ability, array $args ) => $this->pack->verbFor( $ability, $args ),
 			fn () => $this->pack,
 			fn ( $run, string $verb ) => $this->pack->objectIdKey( $verb ),
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
 			null,
 			null,
@@ -130,7 +130,7 @@ final class SiteReportTest extends TestCase {
 	}
 
 	private function createRun( array $plan_verbs ): int {
-		$run_id = $this->store->createRun( 1, 'test', 'Tidy up the site navigation', array( 'senroflux/*' ), Budget::defaults() );
+		$run_id = $this->store->createRun( 1, 'test', 'Tidy up the site navigation', array( 'specflux/*' ), Budget::defaults() );
 		Navigation::useRunContext( $run_id, $this->store );
 
 		$this->store->appendStep(
@@ -154,7 +154,7 @@ final class SiteReportTest extends TestCase {
 					),
 					'assumptions' => array(),
 				),
-				'senroflux/propose-plan',
+				'specflux/propose-plan',
 				null,
 				'parked'
 			);
@@ -182,13 +182,13 @@ final class SiteReportTest extends TestCase {
 
 	public function test_a_read_only_navigation_never_nudges_and_opens_no_report_row(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Home","url":"https://example.test/"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$run_id = $this->createRun( array() );
 
 		$this->gateway->script[] = self::turn(
 			new MessagePart( 'Reading the navigation.' ),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-navigation', array() ) )
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-navigation', array() ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'The navigation lists Home. Nothing to change.' );
 		$this->gateway->script[] = self::textTurn( 'The navigation lists Home. Nothing to change.' );
@@ -213,7 +213,7 @@ final class SiteReportTest extends TestCase {
 
 	public function test_an_update_navigation_write_reports_a_real_row_not_unknown(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Old","url":"https://example.test/old"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$run_id = $this->createRun( array( 'site/update-navigation' ) );
 
@@ -222,11 +222,11 @@ final class SiteReportTest extends TestCase {
 		// like the site pack's own "read, then write" sequencing.
 		$this->gateway->script[] = self::turn(
 			new MessagePart( 'Reading, then updating the navigation.' ),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-navigation', array() ) ),
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-navigation', array() ) ),
 			new MessagePart(
 				new FunctionCall(
 					'call_update',
-					'wpab__senroflux__update-navigation',
+					'wpab__specflux__update-navigation',
 					array(
 						'items' => array(
 							array(
@@ -269,17 +269,17 @@ final class SiteReportTest extends TestCase {
 
 	public function test_re_reading_the_navigation_after_writing_it_verifies_it_without_a_nudge(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Old","url":"https://example.test/old"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$run_id = $this->createRun( array( 'site/update-navigation' ) );
 
 		$this->gateway->script[] = self::turn(
 			new MessagePart( 'Reading, then updating the navigation.' ),
-			new MessagePart( new FunctionCall( 'call_read', 'wpab__senroflux__read-navigation', array() ) ),
+			new MessagePart( new FunctionCall( 'call_read', 'wpab__specflux__read-navigation', array() ) ),
 			new MessagePart(
 				new FunctionCall(
 					'call_update',
-					'wpab__senroflux__update-navigation',
+					'wpab__specflux__update-navigation',
 					array(
 						'items' => array(
 							array(
@@ -294,7 +294,7 @@ final class SiteReportTest extends TestCase {
 		);
 		$this->gateway->script[] = self::turn(
 			new MessagePart( 'Checking the result.' ),
-			new MessagePart( new FunctionCall( 'call_reread', 'wpab__senroflux__read-navigation', array() ) )
+			new MessagePart( new FunctionCall( 'call_reread', 'wpab__specflux__read-navigation', array() ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 
@@ -318,12 +318,12 @@ final class SiteReportTest extends TestCase {
 
 	public function test_the_resent_history_drops_old_reasoning_and_shortens_old_long_arguments(): void {
 		$nav_id = $this->insertNav( '<!-- wp:navigation-link {"label":"Old","url":"https://example.test/old"} /-->' );
-		$GLOBALS['senroflux_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
+		$GLOBALS['specflux_site_agent_test_header_template_content'] = '<!-- wp:navigation {"ref":' . $nav_id . '} /-->';
 
 		$run_id    = $this->createRun( array( 'site/update-navigation' ) );
 		$long_url  = 'https://example.test/' . str_repeat( 'a', 600 );
 		$thought   = static fn ( string $sig ): MessagePart => new MessagePart( '', MessagePartChannelEnum::thought(), $sig );
-		$read_call = static fn ( string $id ): MessagePart => new MessagePart( new FunctionCall( $id, 'wpab__senroflux__read-navigation', array() ) );
+		$read_call = static fn ( string $id ): MessagePart => new MessagePart( new FunctionCall( $id, 'wpab__specflux__read-navigation', array() ) );
 
 		$this->gateway->script[] = self::turn(
 			$thought( 'sig-1' ),
@@ -331,7 +331,7 @@ final class SiteReportTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_update',
-					'wpab__senroflux__update-navigation',
+					'wpab__specflux__update-navigation',
 					array(
 						'items' => array(
 							array(

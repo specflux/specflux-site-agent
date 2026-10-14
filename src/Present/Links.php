@@ -2,12 +2,12 @@
 /**
  * Link builder for result cards — local reads by id through core helpers.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present;
+namespace Specflux\SiteAgent\Present;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

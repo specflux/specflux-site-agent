@@ -2,17 +2,17 @@
 /**
  * Consumer side of Agent Safety's frozen gate-error contract.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare(strict_types=1);
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\AgentSafety\Plugin\Tests\Fixtures\VerdictErrorFixture;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use SenroFlux_Test_Fake_Ability;
+use Belayline\Plugin\Tests\Fixtures\VerdictErrorFixture;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 
 /**
@@ -23,7 +23,7 @@ use WP_Error;
  *
  * The fixture is loaded by path from the sibling checkout (the two repos live
  * side by side in the working tree); when it is absent the test is skipped
- * loudly rather than passing vacuously. Set SENROFLUX_REQUIRE_AS_FIXTURE=1
+ * loudly rather than passing vacuously. Set SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE=1
  * (CI does) to turn that skip into a hard failure instead, so the contract
  * cannot silently stop being checked.
  */
@@ -35,9 +35,9 @@ final class AgentSafetyContractTest extends TestCase {
 		$fixture = dirname( __DIR__, 3 ) . self::FIXTURE;
 		if ( ! is_readable( $fixture ) ) {
 			if ( self::fixtureRequired() ) {
-				$this->fail( 'SENROFLUX_REQUIRE_AS_FIXTURE is set but the Agent Safety contract fixture is unavailable at ' . $fixture );
+				$this->fail( 'SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE is set but the Agent Safety contract fixture is unavailable at ' . $fixture );
 			}
-			$this->markTestSkipped( 'Agent Safety checkout not found beside senroflux/; contract fixture unavailable at ' . $fixture );
+			$this->markTestSkipped( 'Agent Safety checkout not found beside specflux/; contract fixture unavailable at ' . $fixture );
 		}
 		require_once $fixture;
 	}
@@ -49,7 +49,7 @@ final class AgentSafetyContractTest extends TestCase {
 	 * mode this guard exists to close off.
 	 */
 	private static function fixtureRequired(): bool {
-		$value = getenv( 'SENROFLUX_REQUIRE_AS_FIXTURE' );
+		$value = getenv( 'SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE' );
 		if ( false === $value ) {
 			return false;
 		}
@@ -66,7 +66,7 @@ final class AgentSafetyContractTest extends TestCase {
 			// (PHPUnit builds the test list from this before setUp() ever
 			// runs). Yield one placeholder case so setUp() gets to decide
 			// skip vs. hard failure instead of PHPUnit reporting a generic
-			// "empty data set" error regardless of SENROFLUX_REQUIRE_AS_FIXTURE.
+			// "empty data set" error regardless of SPECFLUX_SITE_AGENT_REQUIRE_AS_FIXTURE.
 			yield 'fixture missing' => array(
 				array(
 					'code'        => '',
@@ -89,8 +89,8 @@ final class AgentSafetyContractTest extends TestCase {
 	 * @param array{code: string, verb: string, tier: ?int, approval_id: ?string, data: array<string, mixed>} $shape
 	 */
 	public function test_every_gate_error_shape_maps_to_the_expected_outcome( array $shape ): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			$shape['verb'] => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			$shape['verb'] => new SpecfluxSiteAgent_Test_Fake_Ability(
 				$shape['verb'],
 				permission_result: new WP_Error( $shape['code'], 'blocked', $shape['data'] )
 			),

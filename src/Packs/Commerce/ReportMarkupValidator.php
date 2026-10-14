@@ -4,7 +4,7 @@
  *
  * TARGET REPO PATH: src/Packs/Commerce/ReportMarkupValidator.php
  *
- * The report's markup is HARNESS-BUILT (a table SenroFlux itself renders
+ * The report's markup is HARNESS-BUILT (a table Specflux Site Agent itself renders
  * from `store-report`'s output) but `save-store-report`'s `markup` argument
  * is still model-authored text the model may edit before saving, so it is
  * validated the same way {@see DescriptionValidator} validates a product
@@ -16,12 +16,12 @@
  * so there is no href-safety rule to apply here (unlike
  * {@see DescriptionValidator}, which allows `a`).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
 use WP_Error;
 
@@ -47,7 +47,7 @@ final class ReportMarkupValidator {
 				'disallowed_tag',
 				sprintf(
 					/* translators: %s: the disallowed HTML tag name. */
-					__( 'A store report may not use <%s>. Allowed tags: p, table, thead, tbody, tr, th, td, h2, ul, li.', 'senroflux' ),
+					__( 'A store report may not use <%s>. Allowed tags: p, table, thead, tbody, tr, th, td, h2, ul, li.', 'specflux-site-agent' ),
 					$tag
 				),
 				array( 'status' => 400 )

@@ -2,16 +2,16 @@
 /**
  * The "Connect an AI app" screen (K3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Admin\RunsScreen;
-use Specflux\SenroFlux\Connector\OAuth\SignedInApps;
-use Specflux\SenroFlux\MultisiteGuard;
+use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Connector\OAuth\SignedInApps;
+use Specflux\SiteAgent\MultisiteGuard;
 use WP_Application_Passwords;
 use WP_Error;
 
@@ -28,29 +28,29 @@ defined( 'ABSPATH' ) || exit;
 final class ConnectScreen {
 
 	/** Submenu slug. */
-	public const SLUG = 'senroflux-connect';
+	public const SLUG = 'specflux-site-agent-connect';
 
 	/** Nonce action for the create / test forms. */
-	public const NONCE_FORM = 'senroflux_connect_form';
+	public const NONCE_FORM = 'specflux_site_agent_connect_form';
 
 	/** Nonce action prefix for the per-connection buttons; the UUID is appended. */
-	public const NONCE_CONNECTION = 'senroflux_connection_';
+	public const NONCE_CONNECTION = 'specflux_site_agent_connection_';
 
 	/** Hook the menu and the two admin-post handlers. */
 	public static function register(): void {
-		// After RunsScreen adds the SenroFlux parent at 10: a submenu added before its
+		// After RunsScreen adds the Specflux Site Agent parent at 10: a submenu added before its
 		// parent gets a bare-slug URL and becomes the parent's own link.
 		add_action( 'admin_menu', array( self::class, 'menu' ), 20 );
-		add_action( 'admin_post_senroflux_connection_scope', array( self::class, 'handleScope' ) );
-		add_action( 'admin_post_senroflux_connection_revoke', array( self::class, 'handleRevoke' ) );
+		add_action( 'admin_post_specflux_site_agent_connection_scope', array( self::class, 'handleScope' ) );
+		add_action( 'admin_post_specflux_site_agent_connection_revoke', array( self::class, 'handleRevoke' ) );
 	}
 
-	/** The submenu under SenroFlux. */
+	/** The submenu under Specflux Site Agent. */
 	public static function menu(): void {
 		add_submenu_page(
 			RunsScreen::SLUG,
-			__( 'Connect an AI app', 'senroflux' ),
-			__( 'Connect an AI app', 'senroflux' ),
+			__( 'Connect an AI app', 'specflux-site-agent' ),
+			__( 'Connect an AI app', 'specflux-site-agent' ),
 			Connector::capability(),
 			self::SLUG,
 			array( self::class, 'render' )
@@ -76,13 +76,13 @@ final class ConnectScreen {
 	 */
 	public static function oauthBlocker(): ?string {
 		if ( '' === (string) get_option( 'permalink_structure', '' ) ) {
-			return __( 'Sign-in is not available on this site: it uses plain permalinks. Choose any other structure under Settings > Permalinks, then come back.', 'senroflux' );
+			return __( 'Sign-in is not available on this site: it uses plain permalinks. Choose any other structure under Settings > Permalinks, then come back.', 'specflux-site-agent' );
 		}
 
 		$home = untrailingslashit( (string) wp_parse_url( home_url(), PHP_URL_PATH ) );
 		$site = untrailingslashit( (string) wp_parse_url( site_url(), PHP_URL_PATH ) );
 		if ( $home !== $site ) {
-			return __( 'Sign-in is not available on this site: WordPress is installed in its own directory, so the sign-in check never sees requests. Use an application-password connection above instead.', 'senroflux' );
+			return __( 'Sign-in is not available on this site: WordPress is installed in its own directory, so the sign-in check never sees requests. Use an application-password connection above instead.', 'specflux-site-agent' );
 		}
 
 		return null;
@@ -91,11 +91,11 @@ final class ConnectScreen {
 	/** @return array<string,string> client id => label, for the app-password cards. */
 	public static function clientLabels(): array {
 		return array(
-			ClientConfig::CLAUDE_CODE    => __( 'Claude Code', 'senroflux' ),
-			ClientConfig::CURSOR         => __( 'Cursor', 'senroflux' ),
-			ClientConfig::VS_CODE        => __( 'VS Code', 'senroflux' ),
-			ClientConfig::CLAUDE_DESKTOP => __( 'Claude Desktop (local proxy)', 'senroflux' ),
-			ClientConfig::OTHER          => __( 'Other (copy the URL)', 'senroflux' ),
+			ClientConfig::CLAUDE_CODE    => __( 'Claude Code', 'specflux-site-agent' ),
+			ClientConfig::CURSOR         => __( 'Cursor', 'specflux-site-agent' ),
+			ClientConfig::VS_CODE        => __( 'VS Code', 'specflux-site-agent' ),
+			ClientConfig::CLAUDE_DESKTOP => __( 'Claude Desktop (local proxy)', 'specflux-site-agent' ),
+			ClientConfig::OTHER          => __( 'Other (copy the URL)', 'specflux-site-agent' ),
 		);
 	}
 
@@ -104,27 +104,27 @@ final class ConnectScreen {
 	 */
 	public static function unavailableReason(): ?string {
 		if ( MultisiteGuard::refused() ) {
-			return __( 'SenroFlux does not support WordPress multisite, so AI apps cannot connect to this site.', 'senroflux' );
+			return __( 'Specflux Site Agent does not support WordPress multisite, so AI apps cannot connect to this site.', 'specflux-site-agent' );
 		}
 		if ( ! Connector::stored() ) {
 			return sprintf(
 				/* translators: %s: link to the settings screen. */
-				__( 'AI apps are switched off. Turn on "Allow AI apps to connect" under %s first.', 'senroflux' ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=senroflux-settings' ) ) . '">' . esc_html__( 'SenroFlux Settings', 'senroflux' ) . '</a>'
+				__( 'AI apps are switched off. Turn on "Allow AI apps to connect" under %s first.', 'specflux-site-agent' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=specflux-site-agent-settings' ) ) . '">' . esc_html__( 'Specflux Site Agent Settings', 'specflux-site-agent' ) . '</a>'
 			);
 		}
 		$version = Connector::adapterVersion();
 		if ( null === $version ) {
 			return sprintf(
 				/* translators: %s: the minimum MCP Adapter version. */
-				esc_html__( 'The MCP Adapter plugin is not installed. Install and activate version %s or newer from WordPress.org.', 'senroflux' ),
+				esc_html__( 'The MCP Adapter plugin is not installed. Install and activate version %s or newer from WordPress.org.', 'specflux-site-agent' ),
 				esc_html( Connector::MIN_ADAPTER_VERSION )
 			);
 		}
 		if ( ! Connector::adapterReady() ) {
 			return sprintf(
 				/* translators: 1: installed MCP Adapter version, 2: minimum version. */
-				esc_html__( 'The MCP Adapter plugin is version %1$s; SenroFlux needs %2$s or newer. Update it.', 'senroflux' ),
+				esc_html__( 'The MCP Adapter plugin is version %1$s; Specflux Site Agent needs %2$s or newer. Update it.', 'specflux-site-agent' ),
 				esc_html( $version ),
 				esc_html( Connector::MIN_ADAPTER_VERSION )
 			);
@@ -140,7 +140,7 @@ final class ConnectScreen {
 		}
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Connect an AI app', 'senroflux' ) . '</h1>';
+		echo '<h1>' . esc_html__( 'Connect an AI app', 'specflux-site-agent' ) . '</h1>';
 
 		$reason = self::unavailableReason();
 		if ( null !== $reason ) {
@@ -169,8 +169,8 @@ final class ConnectScreen {
 	 */
 	private static function handlePost(): array|WP_Error|null {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() just below.
-		$action = isset( $_POST['senroflux_connect_action'] ) && is_string( $_POST['senroflux_connect_action'] )
-			? sanitize_key( wp_unslash( $_POST['senroflux_connect_action'] ) )
+		$action = isset( $_POST['specflux_site_agent_connect_action'] ) && is_string( $_POST['specflux_site_agent_connect_action'] )
+			? sanitize_key( wp_unslash( $_POST['specflux_site_agent_connect_action'] ) )
 			: '';
 		if ( ! in_array( $action, array( 'create', 'test' ), true ) ) {
 			return null;
@@ -179,7 +179,7 @@ final class ConnectScreen {
 
 		$client = isset( $_POST['client'] ) && is_string( $_POST['client'] ) ? sanitize_key( wp_unslash( $_POST['client'] ) ) : '';
 		if ( ! ClientConfig::known( $client ) ) {
-			return new WP_Error( 'senroflux_connect_client', __( 'Pick an app from the list.', 'senroflux' ) );
+			return new WP_Error( 'specflux_site_agent_connect_client', __( 'Pick an app from the list.', 'specflux-site-agent' ) );
 		}
 
 		if ( 'create' === $action ) {
@@ -195,7 +195,7 @@ final class ConnectScreen {
 		$registry = Connections::forUser( get_current_user_id() );
 		$user     = get_userdata( get_current_user_id() );
 		if ( ! isset( $registry[ $uuid ] ) || '' === $password || ! is_object( $user ) ) {
-			return new WP_Error( 'senroflux_connect_test', __( 'That connection no longer exists.', 'senroflux' ) );
+			return new WP_Error( 'specflux_site_agent_connect_test', __( 'That connection no longer exists.', 'specflux-site-agent' ) );
 		}
 
 		return array(
@@ -217,12 +217,12 @@ final class ConnectScreen {
 	 */
 	public static function create( int $user_id, string $client, string $scope ): array|WP_Error {
 		if ( function_exists( 'wp_is_application_passwords_available_for_user' ) && ! wp_is_application_passwords_available_for_user( $user_id ) ) {
-			return new WP_Error( 'senroflux_connect_unavailable', __( 'Application passwords are turned off for your account, so no connection can be made. Your host or another plugin has disabled them.', 'senroflux' ) );
+			return new WP_Error( 'specflux_site_agent_connect_unavailable', __( 'Application passwords are turned off for your account, so no connection can be made. Your host or another plugin has disabled them.', 'specflux-site-agent' ) );
 		}
 
 		$made = WP_Application_Passwords::create_new_application_password(
 			$user_id,
-			array( 'name' => 'SenroFlux – ' . ( self::clientLabels()[ $client ] ?? $client ) )
+			array( 'name' => 'Specflux Site Agent – ' . ( self::clientLabels()[ $client ] ?? $client ) )
 		);
 		if ( $made instanceof WP_Error ) {
 			return $made;
@@ -249,11 +249,11 @@ final class ConnectScreen {
 		$login  = is_object( $user ) ? (string) $user->user_login : '';
 		$config = ClientConfig::render( $shown['client'], self::serverUrl(), $login, $shown['password'] );
 
-		echo '<div class="notice notice-success inline"><p><strong>' . esc_html__( 'Connection created.', 'senroflux' ) . '</strong> ';
-		echo esc_html__( 'The password below is shown once. Copy the config now: it cannot be shown again, only replaced by a new connection.', 'senroflux' ) . '</p></div>';
+		echo '<div class="notice notice-success inline"><p><strong>' . esc_html__( 'Connection created.', 'specflux-site-agent' ) . '</strong> ';
+		echo esc_html__( 'The password below is shown once. Copy the config now: it cannot be shown again, only replaced by a new connection.', 'specflux-site-agent' ) . '</p></div>';
 		echo '<p>' . esc_html( $config['where'] ) . '</p>';
-		echo '<pre id="senroflux-config" style="background:#fff;border:1px solid #c3c4c7;padding:12px;white-space:pre-wrap;word-break:break-all">' . esc_html( $config['text'] ) . '</pre>';
-		echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'senroflux-config\').textContent)">' . esc_html__( 'Copy', 'senroflux' ) . '</button></p>';
+		echo '<pre id="specflux-site-agent-config" style="background:#fff;border:1px solid #c3c4c7;padding:12px;white-space:pre-wrap;word-break:break-all">' . esc_html( $config['text'] ) . '</pre>';
+		echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'specflux-site-agent-config\').textContent)">' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</button></p>';
 
 		if ( is_array( $shown['test'] ) ) {
 			printf(
@@ -265,31 +265,31 @@ final class ConnectScreen {
 
 		echo '<form method="post" action="' . esc_url( self::url() ) . '">';
 		wp_nonce_field( self::NONCE_FORM );
-		echo '<input type="hidden" name="senroflux_connect_action" value="test">';
+		echo '<input type="hidden" name="specflux_site_agent_connect_action" value="test">';
 		printf( '<input type="hidden" name="client" value="%s">', esc_attr( $shown['client'] ) );
 		printf( '<input type="hidden" name="uuid" value="%s">', esc_attr( $shown['uuid'] ) );
 		printf( '<input type="hidden" name="password" value="%s">', esc_attr( $shown['password'] ) );
-		echo '<button type="submit" class="button">' . esc_html__( 'Test connection', 'senroflux' ) . '</button> ';
-		echo '<span class="description">' . esc_html__( 'Makes two requests from this site to its own address, with this connection\'s password.', 'senroflux' ) . '</span>';
+		echo '<button type="submit" class="button">' . esc_html__( 'Test connection', 'specflux-site-agent' ) . '</button> ';
+		echo '<span class="description">' . esc_html__( 'Makes two requests from this site to its own address, with this connection\'s password.', 'specflux-site-agent' ) . '</span>';
 		echo '</form><hr>';
 	}
 
 	/** The client cards. */
 	private static function renderCards(): void {
-		echo '<p>' . esc_html__( 'Pick the app you use. SenroFlux makes a WordPress application password for you, named after the app, and shows the exact setup text to paste in. Read only is the safe default: the app can look but not change anything.', 'senroflux' ) . '</p>';
+		echo '<p>' . esc_html__( 'Pick the app you use. Specflux Site Agent makes a WordPress application password for you, named after the app, and shows the exact setup text to paste in. Read only is the safe default: the app can look but not change anything.', 'specflux-site-agent' ) . '</p>';
 		echo '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;max-width:1000px">';
 
 		foreach ( self::clientLabels() as $client => $label ) {
 			echo '<div class="card" style="margin:0"><h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
 			echo '<form method="post" action="' . esc_url( self::url() ) . '">';
 			wp_nonce_field( self::NONCE_FORM );
-			echo '<input type="hidden" name="senroflux_connect_action" value="create">';
+			echo '<input type="hidden" name="specflux_site_agent_connect_action" value="create">';
 			printf( '<input type="hidden" name="client" value="%s">', esc_attr( $client ) );
-			echo '<p><label>' . esc_html__( 'Access', 'senroflux' ) . ' <select name="scope">';
-			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ ), esc_html__( 'Read only', 'senroflux' ) );
-			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ_WRITE ), esc_html__( 'Read and write', 'senroflux' ) );
+			echo '<p><label>' . esc_html__( 'Access', 'specflux-site-agent' ) . ' <select name="scope">';
+			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ ), esc_html__( 'Read only', 'specflux-site-agent' ) );
+			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ_WRITE ), esc_html__( 'Read and write', 'specflux-site-agent' ) );
 			echo '</select></label></p>';
-			echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Create connection', 'senroflux' ) . '</button></p>';
+			echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Create connection', 'specflux-site-agent' ) . '</button></p>';
 			echo '</form></div>';
 		}
 
@@ -298,11 +298,11 @@ final class ConnectScreen {
 		$cards   = array(
 			// Menu labels checked against https://claude.com/docs/connectors/custom/remote-mcp
 			// (Customize > Connectors > Add custom connector).
-			__( 'Claude (web, desktop and mobile)', 'senroflux' ) => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'senroflux' ),
+			__( 'Claude (web, desktop and mobile)', 'specflux-site-agent' ) => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ),
 			// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
 			// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
 			// Seen live 2026-10-09 on a Free account: Plugins > Add > Add custom MCP server, no developer mode.
-			__( 'ChatGPT', 'senroflux' ) => __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'senroflux' ),
+			__( 'ChatGPT', 'specflux-site-agent' ) => __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'specflux-site-agent' ),
 		);
 
 		foreach ( $cards as $label => $steps ) {
@@ -311,11 +311,11 @@ final class ConnectScreen {
 				echo '<p>' . esc_html( $blocker ) . '</p></div>';
 				continue;
 			}
-			$id = 'senroflux-oauth-url-' . substr( md5( $label ), 0, 6 );
+			$id = 'specflux-site-agent-oauth-url-' . substr( md5( $label ), 0, 6 );
 			echo '<p><code id="' . esc_attr( $id ) . '" style="word-break:break-all">' . esc_html( $url ) . '</code></p>';
-			echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'' . esc_attr( $id ) . '\').textContent)">' . esc_html__( 'Copy URL', 'senroflux' ) . '</button></p>';
+			echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'' . esc_attr( $id ) . '\').textContent)">' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</button></p>';
 			echo '<p>' . esc_html( $steps ) . '</p>';
-			echo '<p><a href="' . esc_url( SignedInApps::url() ) . '">' . esc_html__( 'Signed-in apps: see or revoke these sign-ins', 'senroflux' ) . '</a></p></div>';
+			echo '<p><a href="' . esc_url( SignedInApps::url() ) . '">' . esc_html__( 'Signed-in apps: see or revoke these sign-ins', 'specflux-site-agent' ) . '</a></p></div>';
 		}
 
 		echo '</div>';
@@ -332,16 +332,16 @@ final class ConnectScreen {
 			}
 		}
 
-		echo '<h2>' . esc_html__( 'Your connections', 'senroflux' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Your connections', 'specflux-site-agent' ) . '</h2>';
 		$rows = array_intersect_key( $registry, $core );
 		if ( array() === $rows ) {
-			echo '<p>' . esc_html__( 'No connections yet.', 'senroflux' ) . '</p>';
+			echo '<p>' . esc_html__( 'No connections yet.', 'specflux-site-agent' ) . '</p>';
 
 			return;
 		}
 
 		echo '<table class="widefat striped"><thead><tr>';
-		foreach ( array( __( 'Connection', 'senroflux' ), __( 'Access', 'senroflux' ), __( 'Created', 'senroflux' ), __( 'Last used', 'senroflux' ), '' ) as $heading ) {
+		foreach ( array( __( 'Connection', 'specflux-site-agent' ), __( 'Access', 'specflux-site-agent' ), __( 'Created', 'specflux-site-agent' ), __( 'Last used', 'specflux-site-agent' ), '' ) as $heading ) {
 			echo '<th>' . esc_html( $heading ) . '</th>';
 		}
 		echo '</tr></thead><tbody>';
@@ -349,13 +349,13 @@ final class ConnectScreen {
 			$item = $core[ $uuid ];
 			echo '<tr>';
 			echo '<td>' . esc_html( (string) ( $item['name'] ?? '' ) ) . ' <code>' . esc_html( substr( $uuid, 0, 8 ) ) . '</code></td>';
-			echo '<td>' . esc_html( Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Read and write', 'senroflux' ) : __( 'Read only', 'senroflux' ) ) . '</td>';
+			echo '<td>' . esc_html( Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Read and write', 'specflux-site-agent' ) : __( 'Read only', 'specflux-site-agent' ) ) . '</td>';
 			echo '<td>' . esc_html( (string) wp_date( 'Y-m-d H:i', (int) ( $item['created'] ?? 0 ) ) ) . '</td>';
 			$used = (int) ( $item['last_used'] ?? 0 );
-			echo '<td>' . esc_html( $used > 0 ? (string) wp_date( 'Y-m-d H:i', $used ) : __( 'Never', 'senroflux' ) ) . '</td>';
+			echo '<td>' . esc_html( $used > 0 ? (string) wp_date( 'Y-m-d H:i', $used ) : __( 'Never', 'specflux-site-agent' ) ) . '</td>';
 			echo '<td>';
-			self::renderConnectionForm( 'senroflux_connection_scope', $uuid, Connection::SCOPE_READ_WRITE === $entry['scope'] ? Connection::SCOPE_READ : Connection::SCOPE_READ_WRITE, Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Make read only', 'senroflux' ) : __( 'Allow writes', 'senroflux' ) );
-			self::renderConnectionForm( 'senroflux_connection_revoke', $uuid, '', __( 'Revoke', 'senroflux' ) );
+			self::renderConnectionForm( 'specflux_site_agent_connection_scope', $uuid, Connection::SCOPE_READ_WRITE === $entry['scope'] ? Connection::SCOPE_READ : Connection::SCOPE_READ_WRITE, Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Make read only', 'specflux-site-agent' ) : __( 'Allow writes', 'specflux-site-agent' ) );
+			self::renderConnectionForm( 'specflux_site_agent_connection_revoke', $uuid, '', __( 'Revoke', 'specflux-site-agent' ) );
 			echo '</td></tr>';
 		}
 		echo '</tbody></table>';
@@ -375,31 +375,31 @@ final class ConnectScreen {
 			}
 		}
 
-		echo '<h2>' . esc_html__( 'Recent activity', 'senroflux' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'The last 50 calls from AI apps, kept for 30 days. Only what was called and how it ended is kept, never the details of the request or its result.', 'senroflux' ) . '</p>';
+		echo '<h2>' . esc_html__( 'Recent activity', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'The last 50 calls from AI apps, kept for 30 days. Only what was called and how it ended is kept, never the details of the request or its result.', 'specflux-site-agent' ) . '</p>';
 		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '"><input type="hidden" name="page" value="' . esc_attr( self::SLUG ) . '">';
-		echo '<p><label>' . esc_html__( 'Connection', 'senroflux' ) . ' <select name="connection">';
-		printf( '<option value="">%s</option>', esc_html__( 'All', 'senroflux' ) );
+		echo '<p><label>' . esc_html__( 'Connection', 'specflux-site-agent' ) . ' <select name="connection">';
+		printf( '<option value="">%s</option>', esc_html__( 'All', 'specflux-site-agent' ) );
 		foreach ( array_intersect_key( $names, $registry ) as $uuid => $name ) {
 			printf( '<option value="%s"%s>%s</option>', esc_attr( $uuid ), selected( $filter, $uuid, false ), esc_html( $name ) );
 		}
-		echo '</select></label> <button type="submit" class="button">' . esc_html__( 'Filter', 'senroflux' ) . '</button></p></form>';
+		echo '</select></label> <button type="submit" class="button">' . esc_html__( 'Filter', 'specflux-site-agent' ) . '</button></p></form>';
 
 		$rows = ActivityLog::recent( 50, '' === $filter ? null : $filter );
 		if ( array() === $rows ) {
-			echo '<p>' . esc_html__( 'No calls yet.', 'senroflux' ) . '</p>';
+			echo '<p>' . esc_html__( 'No calls yet.', 'specflux-site-agent' ) . '</p>';
 
 			return;
 		}
 
 		$outcomes = array(
-			ActivityLog::RAN     => __( 'Ran', 'senroflux' ),
-			ActivityLog::WAITING => __( 'Waiting for approval', 'senroflux' ),
-			ActivityLog::REFUSED => __( 'Refused', 'senroflux' ),
-			ActivityLog::ERROR   => __( 'Error', 'senroflux' ),
+			ActivityLog::RAN     => __( 'Ran', 'specflux-site-agent' ),
+			ActivityLog::WAITING => __( 'Waiting for approval', 'specflux-site-agent' ),
+			ActivityLog::REFUSED => __( 'Refused', 'specflux-site-agent' ),
+			ActivityLog::ERROR   => __( 'Error', 'specflux-site-agent' ),
 		);
 		echo '<table class="widefat striped"><thead><tr>';
-		foreach ( array( __( 'Time', 'senroflux' ), __( 'Connection', 'senroflux' ), __( 'User', 'senroflux' ), __( 'Tool', 'senroflux' ), __( 'Outcome', 'senroflux' ) ) as $heading ) {
+		foreach ( array( __( 'Time', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Outcome', 'specflux-site-agent' ) ) as $heading ) {
 			echo '<th>' . esc_html( $heading ) . '</th>';
 		}
 		echo '</tr></thead><tbody>';
@@ -461,7 +461,7 @@ final class ConnectScreen {
 		check_admin_referer( self::NONCE_CONNECTION . $uuid );
 
 		if ( ! current_user_can( Connector::capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		return isset( Connections::forUser( get_current_user_id() )[ $uuid ] ) ? $uuid : null;

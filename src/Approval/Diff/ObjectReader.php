@@ -2,12 +2,12 @@
 /**
  * Read-only access to the current state of the objects an approval touches.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval\Diff;
+namespace Specflux\SiteAgent\Approval\Diff;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

@@ -1,36 +1,36 @@
 <?php
 /**
  * Turning the connector on must not widen mcp-adapter's default server:
- * SenroFlux abilities never opt in with `meta.mcp.public`.
+ * Specflux Site Agent abilities never opt in with `meta.mcp.public`.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use SenroFlux_Test_Fake_Mcp_Adapter;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use SpecfluxSiteAgent_Test_Fake_Mcp_Adapter;
 
 final class DefaultServerUnchangedTest extends ConnectorTestCase {
 
-	public function test_no_registered_senroflux_ability_sets_mcp_public(): void {
+	public function test_no_registered_specflux_site_agent_ability_sets_mcp_public(): void {
 		require_once dirname( __DIR__ ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__ ) . '/stubs/media.php';
 		require_once dirname( __DIR__ ) . '/stubs/commerce.php';
 
-		$GLOBALS['senroflux_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
 		Abilities::reset();
 		Abilities::registerCategory();
 		Abilities::register();
 		$this->enableConnector();
-		Connector::createServer( new SenroFlux_Test_Fake_Mcp_Adapter() );
+		Connector::createServer( new SpecfluxSiteAgent_Test_Fake_Mcp_Adapter() );
 
 		$registered = array_filter(
-			$GLOBALS['senroflux_test_abilities'],
-			static fn ( string $name ): bool => str_starts_with( $name, 'senroflux/' ),
+			$GLOBALS['specflux_site_agent_test_abilities'],
+			static fn ( string $name ): bool => str_starts_with( $name, 'specflux/' ),
 			ARRAY_FILTER_USE_KEY
 		);
 		$this->assertNotEmpty( $registered, 'the registration under test registered nothing' );

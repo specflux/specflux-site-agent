@@ -8,10 +8,10 @@
  * `wc_get_orders()`, `wc_get_is_paid_statuses()`, `get_woocommerce_currency()`,
  * `wc_get_low_stock_amount()`, `wc_get_products()`, `WC_Product`).
  *
- * `$GLOBALS['senroflux_test_orders']` is a plain array of order-like stdClass
+ * `$GLOBALS['specflux_site_agent_test_orders']` is a plain array of order-like stdClass
  * rows a test seeds directly (id, total, total_refunded, payment_method,
  * status, date_created as a Unix timestamp) — a SEPARATE store from
- * `senroflux_test_posts` because a WooCommerce order is a `shop_order`
+ * `specflux_site_agent_test_posts` because a WooCommerce order is a `shop_order`
  * custom-table row in real WooCommerce (HPOS), never a post this stub's
  * shared post store already models.
  *
@@ -22,40 +22,40 @@
  * WooCommerce" test needs to keep meaning something. Tests that need
  * `WC_Coupon` require this file directly.
  *
- * Coupons live in the SAME `senroflux_test_posts` in-memory store
+ * Coupons live in the SAME `specflux_site_agent_test_posts` in-memory store
  * tests/stubs/blocks.php uses for pages/posts, as `post_type: 'shop_coupon'`
- * — the same object identity {@see \Specflux\SenroFlux\Run\Tracker} tracks.
+ * — the same object identity {@see \Specflux\SiteAgent\Run\Tracker} tracks.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-if ( ! isset( $GLOBALS['senroflux_test_posts'] ) ) {
-	$GLOBALS['senroflux_test_posts'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_posts'] ) ) {
+	$GLOBALS['specflux_site_agent_test_posts'] = array();
 }
-if ( ! isset( $GLOBALS['senroflux_test_coupon_codes'] ) ) {
-	$GLOBALS['senroflux_test_coupon_codes'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_coupon_codes'] ) ) {
+	$GLOBALS['specflux_site_agent_test_coupon_codes'] = array();
 }
-if ( ! isset( $GLOBALS['senroflux_test_next_post_id'] ) ) {
-	$GLOBALS['senroflux_test_next_post_id'] = 1000;
+if ( ! isset( $GLOBALS['specflux_site_agent_test_next_post_id'] ) ) {
+	$GLOBALS['specflux_site_agent_test_next_post_id'] = 1000;
 }
 
-if ( ! isset( $GLOBALS['senroflux_test_coupon_meta'] ) ) {
-	$GLOBALS['senroflux_test_coupon_meta'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_coupon_meta'] ) ) {
+	$GLOBALS['specflux_site_agent_test_coupon_meta'] = array();
 }
 
 if ( ! class_exists( 'WC_Coupon', false ) ) {
 	/**
 	 * Minimal stand-in: enough of WC_Coupon's setter/save surface for
-	 * {@see \Specflux\SenroFlux\Packs\Commerce\Abilities} to exercise for
+	 * {@see \Specflux\SiteAgent\Packs\Commerce\Abilities} to exercise for
 	 * real, backed by the shared in-memory post store.
 	 *
 	 * Stage 14 (AS-15/S19 approval cards) adds the READ side: the amount,
 	 * discount type, expiry and usage limit are persisted to a SEPARATE
-	 * `senroflux_test_coupon_meta` store on save() (never onto the post
+	 * `specflux_site_agent_test_coupon_meta` store on save() (never onto the post
 	 * store the code/status pair already use), and a FRESH `new
-	 * WC_Coupon($id)` reloads them for {@see \Specflux\SenroFlux\Packs\Commerce\CommerceSummary}
+	 * WC_Coupon($id)` reloads them for {@see \Specflux\SiteAgent\Packs\Commerce\CommerceSummary}
 	 * to read, mirroring real WooCommerce's own coupon meta storage.
 	 */
 	class WC_Coupon {
@@ -72,13 +72,13 @@ if ( ! class_exists( 'WC_Coupon', false ) ) {
 
 		public function __construct( int $id = 0 ) {
 			$this->id = $id;
-			$existing = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+			$existing = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 			if ( $id > 0 && is_object( $existing ) ) {
 				$this->code   = (string) ( $existing->post_title ?? '' );
 				$this->status = (string) ( $existing->post_status ?? 'draft' );
 			}
 
-			$meta = $GLOBALS['senroflux_test_coupon_meta'][ $id ] ?? null;
+			$meta = $GLOBALS['specflux_site_agent_test_coupon_meta'][ $id ] ?? null;
 			if ( $id > 0 && is_object( $meta ) ) {
 				$this->discount_type = (string) ( $meta->discount_type ?? $this->discount_type );
 				$this->amount        = (string) ( $meta->amount ?? $this->amount );
@@ -143,23 +143,23 @@ if ( ! class_exists( 'WC_Coupon', false ) ) {
 
 		public function save(): int {
 			if ( 0 === $this->id ) {
-				$this->id                                = (int) $GLOBALS['senroflux_test_next_post_id'];
-				$GLOBALS['senroflux_test_next_post_id'] += 1;
+				$this->id = (int) $GLOBALS['specflux_site_agent_test_next_post_id'];
+				$GLOBALS['specflux_site_agent_test_next_post_id'] += 1;
 			}
 
-			$post                    = $GLOBALS['senroflux_test_posts'][ $this->id ] ?? new \stdClass();
+			$post                    = $GLOBALS['specflux_site_agent_test_posts'][ $this->id ] ?? new \stdClass();
 			$post->ID                = $this->id;
 			$post->post_type         = 'shop_coupon';
 			$post->post_title        = $this->code;
 			$post->post_status       = $this->status;
-			$post->post_modified_gmt = $GLOBALS['senroflux_test_clock_gmt'] ?? gmdate( 'Y-m-d H:i:s' );
+			$post->post_modified_gmt = $GLOBALS['specflux_site_agent_test_clock_gmt'] ?? gmdate( 'Y-m-d H:i:s' );
 			$post->post_excerpt      = '';
 			$post->post_parent       = 0;
 			$post->post_name         = '';
 
-			$GLOBALS['senroflux_test_posts'][ $this->id ]                        = $post;
-			$GLOBALS['senroflux_test_coupon_codes'][ strtolower( $this->code ) ] = $this->id;
-			$GLOBALS['senroflux_test_coupon_meta'][ $this->id ]                  = (object) array(
+			$GLOBALS['specflux_site_agent_test_posts'][ $this->id ]                        = $post;
+			$GLOBALS['specflux_site_agent_test_coupon_codes'][ strtolower( $this->code ) ] = $this->id;
+			$GLOBALS['specflux_site_agent_test_coupon_meta'][ $this->id ]                  = (object) array(
 				'discount_type' => $this->discount_type,
 				'amount'        => $this->amount,
 				'expires'       => $this->expires,
@@ -175,13 +175,13 @@ if ( ! class_exists( 'WC_Coupon', false ) ) {
 
 if ( ! function_exists( 'wc_get_coupon_id_by_code' ) ) {
 	function wc_get_coupon_id_by_code( string $code ): int {
-		return (int) ( $GLOBALS['senroflux_test_coupon_codes'][ strtolower( $code ) ] ?? 0 );
+		return (int) ( $GLOBALS['specflux_site_agent_test_coupon_codes'][ strtolower( $code ) ] ?? 0 );
 	}
 }
 
 if ( ! function_exists( 'get_post_mime_type' ) ) {
 	function get_post_mime_type( int $id ): string|false {
-		$post = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+		$post = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 
 		return ( is_object( $post ) && isset( $post->post_mime_type ) ) ? (string) $post->post_mime_type : false;
 	}
@@ -191,16 +191,16 @@ if ( ! function_exists( 'get_post_mime_type' ) ) {
 // Stage 13: orders / refunds
 // ------------------------------------------------------------------
 
-if ( ! isset( $GLOBALS['senroflux_test_orders'] ) ) {
-	$GLOBALS['senroflux_test_orders'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_orders'] ) ) {
+	$GLOBALS['specflux_site_agent_test_orders'] = array();
 }
-if ( ! isset( $GLOBALS['senroflux_test_gateway_supports_refunds'] ) ) {
-	$GLOBALS['senroflux_test_gateway_supports_refunds'] = true;
+if ( ! isset( $GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] ) ) {
+	$GLOBALS['specflux_site_agent_test_gateway_supports_refunds'] = true;
 }
 
 if ( ! class_exists( 'WC_Order', false ) ) {
 	/**
-	 * Minimal stand-in over one row of `$GLOBALS['senroflux_test_orders']`.
+	 * Minimal stand-in over one row of `$GLOBALS['specflux_site_agent_test_orders']`.
 	 */
 	class WC_Order {
 
@@ -211,7 +211,7 @@ if ( ! class_exists( 'WC_Order', false ) ) {
 		}
 
 		private function row(): ?object {
-			$row = $GLOBALS['senroflux_test_orders'][ $this->id ] ?? null;
+			$row = $GLOBALS['specflux_site_agent_test_orders'][ $this->id ] ?? null;
 
 			return is_object( $row ) ? $row : null;
 		}
@@ -255,7 +255,7 @@ if ( ! class_exists( 'WC_Order', false ) ) {
 
 if ( ! function_exists( 'wc_get_order' ) ) {
 	function wc_get_order( int $id ): WC_Order|false {
-		return isset( $GLOBALS['senroflux_test_orders'][ $id ] ) ? new WC_Order( $id ) : false;
+		return isset( $GLOBALS['specflux_site_agent_test_orders'][ $id ] ) ? new WC_Order( $id ) : false;
 	}
 }
 
@@ -265,7 +265,7 @@ if ( ! function_exists( 'wc_create_refund' ) ) {
 	 */
 	function wc_create_refund( array $args ): object {
 		$order_id = (int) ( $args['order_id'] ?? 0 );
-		$row      = $GLOBALS['senroflux_test_orders'][ $order_id ] ?? null;
+		$row      = $GLOBALS['specflux_site_agent_test_orders'][ $order_id ] ?? null;
 		if ( ! is_object( $row ) ) {
 			return new WP_Error( 'not_found', 'Order not found.' );
 		}
@@ -279,23 +279,23 @@ if ( ! function_exists( 'wc_create_refund' ) ) {
 	}
 }
 
-if ( ! class_exists( 'SenroFlux_Test_Payment_Gateway', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Payment_Gateway', false ) ) {
 	/**
 	 * A REAL class with a REAL `supports()` method — `method_exists()` (the
 	 * production code's check, matching a genuine `WC_Payment_Gateway`) only
 	 * ever returns true for an actual declared method, never a closure
 	 * assigned to a `stdClass` property, so the stub must be a real object.
 	 */
-	class SenroFlux_Test_Payment_Gateway {
+	class SpecfluxSiteAgent_Test_Payment_Gateway {
 		public function supports( string $feature ): bool {
-			return 'refunds' === $feature && (bool) $GLOBALS['senroflux_test_gateway_supports_refunds'];
+			return 'refunds' === $feature && (bool) $GLOBALS['specflux_site_agent_test_gateway_supports_refunds'];
 		}
 	}
 }
 
 if ( ! function_exists( 'wc_get_payment_gateway_by_order' ) ) {
 	function wc_get_payment_gateway_by_order( WC_Order|int $order ): object|false {
-		return new SenroFlux_Test_Payment_Gateway();
+		return new SpecfluxSiteAgent_Test_Payment_Gateway();
 	}
 }
 
@@ -303,14 +303,14 @@ if ( ! function_exists( 'wc_get_payment_gateway_by_order' ) ) {
 // Stage 13: shipping zones
 // ------------------------------------------------------------------
 
-if ( ! isset( $GLOBALS['senroflux_test_shipping_zones'] ) ) {
-	$GLOBALS['senroflux_test_shipping_zones'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_shipping_zones'] ) ) {
+	$GLOBALS['specflux_site_agent_test_shipping_zones'] = array();
 }
-if ( ! isset( $GLOBALS['senroflux_test_next_zone_id'] ) ) {
-	$GLOBALS['senroflux_test_next_zone_id'] = 1;
+if ( ! isset( $GLOBALS['specflux_site_agent_test_next_zone_id'] ) ) {
+	$GLOBALS['specflux_site_agent_test_next_zone_id'] = 1;
 }
-if ( ! isset( $GLOBALS['senroflux_test_next_instance_id'] ) ) {
-	$GLOBALS['senroflux_test_next_instance_id'] = 1;
+if ( ! isset( $GLOBALS['specflux_site_agent_test_next_instance_id'] ) ) {
+	$GLOBALS['specflux_site_agent_test_next_instance_id'] = 1;
 }
 
 if ( ! class_exists( 'WC_Shipping_Method', false ) ) {
@@ -365,7 +365,7 @@ if ( ! class_exists( 'WC_Shipping_Zones', false ) ) {
 
 		/** @return WC_Shipping_Method|false */
 		public static function get_shipping_method( int $instance_id ) {
-			foreach ( $GLOBALS['senroflux_test_shipping_zones'] as $zone ) {
+			foreach ( $GLOBALS['specflux_site_agent_test_shipping_zones'] as $zone ) {
 				foreach ( $zone['methods'] as $row ) {
 					if ( $row['instance_id'] === $instance_id ) {
 						$method     = new WC_Shipping_Method( $instance_id );
@@ -392,7 +392,7 @@ if ( ! class_exists( 'WC_Shipping_Zone', false ) ) {
 		private array $methods = array();
 
 		public function __construct( int|null $zone = null ) {
-			$existing = $GLOBALS['senroflux_test_shipping_zones'][ $zone ] ?? null;
+			$existing = $GLOBALS['specflux_site_agent_test_shipping_zones'][ $zone ] ?? null;
 			if ( (int) $zone > 0 && is_array( $existing ) ) {
 				$this->id        = $zone;
 				$this->name      = $existing['name'];
@@ -400,7 +400,7 @@ if ( ! class_exists( 'WC_Shipping_Zone', false ) ) {
 				foreach ( $existing['methods'] as $method ) {
 					// Fixtures may list bare method ids; real zones always have instances.
 					$this->methods[] = is_array( $method ) ? $method : array(
-						'instance_id' => (int) $GLOBALS['senroflux_test_next_instance_id']++,
+						'instance_id' => (int) $GLOBALS['specflux_site_agent_test_next_instance_id']++,
 						'method_id'   => (string) $method,
 					);
 				}
@@ -459,7 +459,7 @@ if ( ! class_exists( 'WC_Shipping_Zone', false ) ) {
 			if ( ! in_array( $type, array( 'flat_rate', 'free_shipping', 'local_pickup' ), true ) ) {
 				return 0;
 			}
-			$instance_id     = (int) $GLOBALS['senroflux_test_next_instance_id']++;
+			$instance_id     = (int) $GLOBALS['specflux_site_agent_test_next_instance_id']++;
 			$this->methods[] = array(
 				'instance_id' => $instance_id,
 				'method_id'   => $type,
@@ -471,11 +471,11 @@ if ( ! class_exists( 'WC_Shipping_Zone', false ) ) {
 
 		public function save(): int {
 			if ( 0 === $this->id ) {
-				$this->id                                = (int) $GLOBALS['senroflux_test_next_zone_id'];
-				$GLOBALS['senroflux_test_next_zone_id'] += 1;
+				$this->id = (int) $GLOBALS['specflux_site_agent_test_next_zone_id'];
+				$GLOBALS['specflux_site_agent_test_next_zone_id'] += 1;
 			}
 
-			$GLOBALS['senroflux_test_shipping_zones'][ $this->id ] = array(
+			$GLOBALS['specflux_site_agent_test_shipping_zones'][ $this->id ] = array(
 				'name'      => $this->name,
 				'locations' => array_map( 'get_object_vars', $this->locations ),
 				'methods'   => $this->methods,
@@ -496,17 +496,17 @@ if ( ! function_exists( 'WC' ) ) {
 				$this->countries = new class() {
 					/** @return array<string,string> */
 					public function get_countries(): array {
-						return $GLOBALS['senroflux_test_countries'] ?? array();
+						return $GLOBALS['specflux_site_agent_test_countries'] ?? array();
 					}
 
 					/** @return array<string,array{name:string,countries:list<string>}> */
 					public function get_continents(): array {
-						return $GLOBALS['senroflux_test_continents'] ?? array();
+						return $GLOBALS['specflux_site_agent_test_continents'] ?? array();
 					}
 
 					/** @return array<string,string>|false */
 					public function get_states( ?string $cc = null ): array|false {
-						return $GLOBALS['senroflux_test_states'][ $cc ] ?? false;
+						return $GLOBALS['specflux_site_agent_test_states'][ $cc ] ?? false;
 					}
 				};
 			}
@@ -537,11 +537,11 @@ if ( ! function_exists( 'wc_get_price_decimals' ) ) {
 // Stage 13: tax rates
 // ------------------------------------------------------------------
 
-if ( ! isset( $GLOBALS['senroflux_test_tax_rates'] ) ) {
-	$GLOBALS['senroflux_test_tax_rates'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_tax_rates'] ) ) {
+	$GLOBALS['specflux_site_agent_test_tax_rates'] = array();
 }
-if ( ! isset( $GLOBALS['senroflux_test_next_tax_rate_id'] ) ) {
-	$GLOBALS['senroflux_test_next_tax_rate_id'] = 1;
+if ( ! isset( $GLOBALS['specflux_site_agent_test_next_tax_rate_id'] ) ) {
+	$GLOBALS['specflux_site_agent_test_next_tax_rate_id'] = 1;
 }
 
 if ( ! class_exists( 'WC_Tax', false ) ) {
@@ -552,9 +552,9 @@ if ( ! class_exists( 'WC_Tax', false ) ) {
 		 */
 		// phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore -- mirrors WooCommerce's real WC_Tax method name.
 		public static function _insert_tax_rate( array $data ): int {
-			$id = (int) $GLOBALS['senroflux_test_next_tax_rate_id'];
-			$GLOBALS['senroflux_test_next_tax_rate_id'] += 1;
-			$GLOBALS['senroflux_test_tax_rates'][ $id ]  = $data;
+			$id = (int) $GLOBALS['specflux_site_agent_test_next_tax_rate_id'];
+			$GLOBALS['specflux_site_agent_test_next_tax_rate_id'] += 1;
+			$GLOBALS['specflux_site_agent_test_tax_rates'][ $id ]  = $data;
 
 			return $id;
 		}
@@ -564,7 +564,7 @@ if ( ! class_exists( 'WC_Tax', false ) ) {
 		 */
 		// phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore -- mirrors WooCommerce's real WC_Tax method name.
 		public static function _update_tax_rate( int $id, array $data ): void {
-			$GLOBALS['senroflux_test_tax_rates'][ $id ] = $data;
+			$GLOBALS['specflux_site_agent_test_tax_rates'][ $id ] = $data;
 		}
 
 		/**
@@ -572,7 +572,7 @@ if ( ! class_exists( 'WC_Tax', false ) ) {
 		 */
 		// phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore -- mirrors WooCommerce's real WC_Tax method name.
 		public static function _get_tax_rate( int $id ): ?array {
-			$row = $GLOBALS['senroflux_test_tax_rates'][ $id ] ?? null;
+			$row = $GLOBALS['specflux_site_agent_test_tax_rates'][ $id ] ?? null;
 
 			// Real `$wpdb->get_row()` returns null for a missing row.
 			return is_array( $row ) ? $row : null;
@@ -602,7 +602,7 @@ if ( ! function_exists( 'wc_get_orders' ) ) {
 		$to       = isset( $window[1] ) ? (int) $window[1] : null;
 
 		$matches = array();
-		foreach ( $GLOBALS['senroflux_test_orders'] as $id => $row ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_orders'] as $id => $row ) {
 			if ( ! is_object( $row ) ) {
 				continue;
 			}
@@ -625,7 +625,7 @@ if ( ! function_exists( 'wc_get_orders' ) ) {
 
 if ( ! function_exists( 'get_woocommerce_currency' ) ) {
 	function get_woocommerce_currency(): string {
-		return $GLOBALS['senroflux_test_currency'] ?? 'USD';
+		return $GLOBALS['specflux_site_agent_test_currency'] ?? 'USD';
 	}
 }
 
@@ -633,22 +633,22 @@ if ( ! function_exists( 'wc_get_low_stock_amount' ) ) {
 	// Real signature: `wc_get_low_stock_amount( WC_Product $product )` (WC 11);
 	// a product-level amount wins, else the store setting.
 	function wc_get_low_stock_amount( WC_Product $product ): int {
-		return $GLOBALS['senroflux_test_low_stock_by_product'][ $product->get_id() ]
-			?? $GLOBALS['senroflux_test_low_stock_amount']
+		return $GLOBALS['specflux_site_agent_test_low_stock_by_product'][ $product->get_id() ]
+			?? $GLOBALS['specflux_site_agent_test_low_stock_amount']
 			?? 2;
 	}
 }
 
-if ( ! isset( $GLOBALS['senroflux_test_products'] ) ) {
-	$GLOBALS['senroflux_test_products'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_products'] ) ) {
+	$GLOBALS['specflux_site_agent_test_products'] = array();
 }
 
 // Stage 14 (AS-15/S19 approval cards): a SEPARATE store for a product's
-// name/price/status fields, keyed by the SAME id as `senroflux_test_posts`
-// (a product is a post) — `senroflux_test_products` above stays the
+// name/price/status fields, keyed by the SAME id as `specflux_site_agent_test_posts`
+// (a product is a post) — `specflux_site_agent_test_products` above stays the
 // stock-only shape the store-report tests already seed.
-if ( ! isset( $GLOBALS['senroflux_test_product_rows'] ) ) {
-	$GLOBALS['senroflux_test_product_rows'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_product_rows'] ) ) {
+	$GLOBALS['specflux_site_agent_test_product_rows'] = array();
 }
 
 if ( ! class_exists( 'WC_Product', false ) ) {
@@ -661,7 +661,7 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 		}
 
 		private function row(): ?object {
-			$row = $GLOBALS['senroflux_test_product_rows'][ $this->id ] ?? null;
+			$row = $GLOBALS['specflux_site_agent_test_product_rows'][ $this->id ] ?? null;
 
 			return is_object( $row ) ? $row : null;
 		}
@@ -691,7 +691,7 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 			return (string) ( $this->row()->status ?? 'publish' );
 		}
 
-		// Catalogue-read surface (`senroflux/products-catalogue`).
+		// Catalogue-read surface (`specflux/products-catalogue`).
 		public function get_type(): string {
 			return (string) ( $this->row()->type ?? 'simple' );
 		}
@@ -740,11 +740,11 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 		}
 
 		private function put( string $prop, mixed $value ): void {
-			if ( ! isset( $GLOBALS['senroflux_test_product_rows'][ $this->id ] ) ) {
-				$GLOBALS['senroflux_test_product_rows'][ $this->id ] = (object) array();
+			if ( ! isset( $GLOBALS['specflux_site_agent_test_product_rows'][ $this->id ] ) ) {
+				$GLOBALS['specflux_site_agent_test_product_rows'][ $this->id ] = (object) array();
 			}
-			$GLOBALS['senroflux_test_product_rows'][ $this->id ]->$prop = $value;
-			$GLOBALS['senroflux_test_product_saves'][]                  = array( $this->id, $prop );
+			$GLOBALS['specflux_site_agent_test_product_rows'][ $this->id ]->$prop = $value;
+			$GLOBALS['specflux_site_agent_test_product_saves'][]                  = array( $this->id, $prop );
 		}
 
 		public function set_regular_price( string $v ): void {
@@ -768,7 +768,7 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 		}
 
 		public function save(): int {
-			$GLOBALS['senroflux_test_product_saves'][] = array( $this->id, 'save' );
+			$GLOBALS['specflux_site_agent_test_product_saves'][] = array( $this->id, 'save' );
 
 			return $this->id;
 		}
@@ -777,11 +777,11 @@ if ( ! class_exists( 'WC_Product', false ) ) {
 
 if ( ! function_exists( 'wc_get_product' ) ) {
 	function wc_get_product( int $id ): WC_Product|false {
-		if ( ! isset( $GLOBALS['senroflux_test_product_rows'][ $id ] ) && ! isset( $GLOBALS['senroflux_test_products'][ $id ] ) ) {
+		if ( ! isset( $GLOBALS['specflux_site_agent_test_product_rows'][ $id ] ) && ! isset( $GLOBALS['specflux_site_agent_test_products'][ $id ] ) ) {
 			return false;
 		}
 
-		$stock = $GLOBALS['senroflux_test_products'][ $id ] ?? null;
+		$stock = $GLOBALS['specflux_site_agent_test_products'][ $id ] ?? null;
 
 		return new WC_Product( $id, null === $stock ? null : (int) $stock );
 	}
@@ -795,19 +795,19 @@ if ( ! function_exists( 'wc_update_product_stock' ) ) {
 			'decrease' => $current - $quantity,
 			default    => $quantity,
 		};
-		if ( ! isset( $GLOBALS['senroflux_test_product_rows'][ $product->get_id() ] ) ) {
-			$GLOBALS['senroflux_test_product_rows'][ $product->get_id() ] = (object) array();
+		if ( ! isset( $GLOBALS['specflux_site_agent_test_product_rows'][ $product->get_id() ] ) ) {
+			$GLOBALS['specflux_site_agent_test_product_rows'][ $product->get_id() ] = (object) array();
 		}
-		$GLOBALS['senroflux_test_product_rows'][ $product->get_id() ]->stock_quantity = $new;
-		$GLOBALS['senroflux_test_stock_calls'][]                                      = array( $product->get_id(), $operation, $quantity );
+		$GLOBALS['specflux_site_agent_test_product_rows'][ $product->get_id() ]->stock_quantity = $new;
+		$GLOBALS['specflux_site_agent_test_stock_calls'][]                                      = array( $product->get_id(), $operation, $quantity );
 
 		return $new;
 	}
 }
 
 // `product_cat` terms a catalogue test seeds: id => array( name, slug, count ).
-if ( ! isset( $GLOBALS['senroflux_test_product_cats'] ) ) {
-	$GLOBALS['senroflux_test_product_cats'] = array();
+if ( ! isset( $GLOBALS['specflux_site_agent_test_product_cats'] ) ) {
+	$GLOBALS['specflux_site_agent_test_product_cats'] = array();
 }
 
 if ( ! function_exists( 'wc_get_products' ) ) {
@@ -821,13 +821,13 @@ if ( ! function_exists( 'wc_get_products' ) ) {
 	 */
 	function wc_get_products( array $args ): array|object {
 		$products = array();
-		foreach ( $GLOBALS['senroflux_test_products'] as $id => $stock ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_products'] as $id => $stock ) {
 			$products[] = new WC_Product( (int) $id, null === $stock ? null : (int) $stock );
 		}
 
 		if ( ! empty( $args['category'] ) ) {
 			$ids = array();
-			foreach ( $GLOBALS['senroflux_test_product_cats'] as $term_id => $row ) {
+			foreach ( $GLOBALS['specflux_site_agent_test_product_cats'] as $term_id => $row ) {
 				if ( in_array( $row['slug'], (array) $args['category'], true ) ) {
 					$ids[] = (int) $term_id;
 				}

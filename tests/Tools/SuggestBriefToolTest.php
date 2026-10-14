@@ -2,15 +2,15 @@
 /**
  * SuggestBriefTool tests (0.3 S20): payload validation + normalisation.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
 use WP_Error;
 
 final class SuggestBriefToolTest extends TestCase {

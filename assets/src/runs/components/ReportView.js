@@ -14,16 +14,16 @@ function safeUrl( url ) {
  */
 function typeLabels() {
 	return {
-		post: __( 'Post', 'senroflux' ),
-		page: __( 'Page', 'senroflux' ),
-		attachment: __( 'Media', 'senroflux' ),
-		category: __( 'Category', 'senroflux' ),
-		post_tag: __( 'Tag', 'senroflux' ),
-		product: __( 'Product', 'senroflux' ),
-		shop_coupon: __( 'Coupon', 'senroflux' ),
-		shop_order: __( 'Order', 'senroflux' ),
-		shipping_zone: __( 'Shipping zone', 'senroflux' ),
-		tax_rate: __( 'Tax rate', 'senroflux' ),
+		post: __( 'Post', 'specflux-site-agent' ),
+		page: __( 'Page', 'specflux-site-agent' ),
+		attachment: __( 'Media', 'specflux-site-agent' ),
+		category: __( 'Category', 'specflux-site-agent' ),
+		post_tag: __( 'Tag', 'specflux-site-agent' ),
+		product: __( 'Product', 'specflux-site-agent' ),
+		shop_coupon: __( 'Coupon', 'specflux-site-agent' ),
+		shop_order: __( 'Order', 'specflux-site-agent' ),
+		shipping_zone: __( 'Shipping zone', 'specflux-site-agent' ),
+		tax_rate: __( 'Tax rate', 'specflux-site-agent' ),
 	};
 }
 
@@ -40,12 +40,12 @@ function EditLink( { object } ) {
 	}
 	return (
 		<a
-			className="senroflux-report-edit"
+			className="specflux-site-agent-report-edit"
 			href={ url }
 			/* translators: %s: the title of the object to edit. */
-			aria-label={ sprintf( __( 'Edit %s', 'senroflux' ), objectName( object ) ) }
+			aria-label={ sprintf( __( 'Edit %s', 'specflux-site-agent' ), objectName( object ) ) }
 		>
-			{ __( 'Edit', 'senroflux' ) }
+			{ __( 'Edit', 'specflux-site-agent' ) }
 		</a>
 	);
 }
@@ -53,8 +53,8 @@ function EditLink( { object } ) {
 /** The "Built-in approvals" / "Agent Safety" half of the gate-mode line. */
 function gateModeLabel( gateMode ) {
 	return 'agent_safety' === gateMode
-		? __( 'SenroGate', 'senroflux' )
-		: __( 'Built-in approvals', 'senroflux' );
+		? __( 'Belayline Agent Governance', 'specflux-site-agent' )
+		: __( 'Built-in approvals', 'specflux-site-agent' );
 }
 
 /** A grant's expiry as the viewer's own local date/time; the ISO string stays on `<time>`. */
@@ -75,18 +75,18 @@ function formatMoney( amount, currency ) {
 /** The "3 changes, 1 not checked" line (S12). */
 function summaryLine( counts ) {
 	if ( 0 === counts.total ) {
-		return __( 'No changes', 'senroflux' );
+		return __( 'No changes', 'specflux-site-agent' );
 	}
 	const changes = sprintf(
 		/* translators: %d: number of changes the run made. */
-		_n( '%d change', '%d changes', counts.total, 'senroflux' ),
+		_n( '%d change', '%d changes', counts.total, 'specflux-site-agent' ),
 		counts.total
 	);
 	return 0 === counts.notChecked
 		? changes
 		: sprintf(
 				/* translators: 1: "N changes", 2: how many of them were not re-read after the change. */
-				__( '%1$s, %2$d not checked', 'senroflux' ),
+				__( '%1$s, %2$d not checked', 'specflux-site-agent' ),
 				changes,
 				counts.notChecked
 		  );
@@ -103,15 +103,15 @@ function ChangeRow( { change, revisionUrl } ) {
 	const labels = typeLabels();
 	const type = 'unknown' === change.object_type ? '' : labels[ change.object_type ] || change.object_type;
 	return (
-		<li className={ `senroflux-report-change ${ verified ? 'is-verified' : 'is-unchecked' }` }>
-			<span className="senroflux-report-mark" aria-hidden="true">
+		<li className={ `specflux-site-agent-report-change ${ verified ? 'is-verified' : 'is-unchecked' }` }>
+			<span className="specflux-site-agent-report-mark" aria-hidden="true">
 				{ verified ? '✓' : '⚠' }
 			</span>
 			{ /* S22 pseudo-locale: title, type and status are the object's own data. */ }
-			<span className="senroflux-report-object" data-senroflux-content dir="auto">
+			<span className="specflux-site-agent-report-object" data-specflux-site-agent-content dir="auto">
 				{ objectName( change ) }
 				{ ( type || change.status ) && (
-					<span className="senroflux-report-object-meta">
+					<span className="specflux-site-agent-report-object-meta">
 						{ ' ' }
 						{ [ type, change.status ].filter( Boolean ).join( ' · ' ) }
 					</span>
@@ -120,16 +120,16 @@ function ChangeRow( { change, revisionUrl } ) {
 			<EditLink object={ change } />
 			{ revisionUrl && (
 				<a
-					className="senroflux-report-revisions"
+					className="specflux-site-agent-report-revisions"
 					href={ revisionUrl }
 					/* translators: %s: the title of the object whose revisions open. */
-					aria-label={ sprintf( __( 'Revisions of %s', 'senroflux' ), objectName( change ) ) }
+					aria-label={ sprintf( __( 'Revisions of %s', 'specflux-site-agent' ), objectName( change ) ) }
 				>
-					{ __( 'Revisions', 'senroflux' ) }
+					{ __( 'Revisions', 'specflux-site-agent' ) }
 				</a>
 			) }
-			<span className="senroflux-report-state">
-				{ verified ? __( 'Verified', 'senroflux' ) : __( 'Not checked after the change', 'senroflux' ) }
+			<span className="specflux-site-agent-report-state">
+				{ verified ? __( 'Verified', 'specflux-site-agent' ) : __( 'Not checked after the change', 'specflux-site-agent' ) }
 			</span>
 		</li>
 	);
@@ -139,13 +139,13 @@ function ChangeRow( { change, revisionUrl } ) {
 function ObjectList( { title, objects } ) {
 	return (
 		<>
-			<h3 className="senroflux-report-subheading">{ title }</h3>
-			<ul className="senroflux-report-objects">
+			<h3 className="specflux-site-agent-report-subheading">{ title }</h3>
+			<ul className="specflux-site-agent-report-objects">
 				{ objects.map( ( object ) => (
-					<li key={ object.object_id } className="senroflux-report-object-row">
-						<span className="senroflux-report-object" data-senroflux-content dir="auto">
+					<li key={ object.object_id } className="specflux-site-agent-report-object-row">
+						<span className="specflux-site-agent-report-object" data-specflux-site-agent-content dir="auto">
 							{ objectName( object ) }
-							{ object.status && <span className="senroflux-report-object-meta"> { object.status }</span> }
+							{ object.status && <span className="specflux-site-agent-report-object-meta"> { object.status }</span> }
 						</span>
 						<EditLink object={ object } />
 					</li>
@@ -159,24 +159,24 @@ function ObjectList( { title, objects } ) {
 function StoreReport( { data } ) {
 	const money = ( amount ) => formatMoney( amount, data.currency );
 	const rows = [
-		[ __( 'Window', 'senroflux' ), `${ data.from } – ${ data.to }` ],
-		[ __( 'Orders', 'senroflux' ), String( data.order_count ) ],
-		[ __( 'Gross sales', 'senroflux' ), money( data.gross_sales ) ],
-		[ __( 'Net sales', 'senroflux' ), money( data.net_sales ) ],
-		[ __( 'Refunds', 'senroflux' ), money( data.refunds_total ) ],
+		[ __( 'Window', 'specflux-site-agent' ), `${ data.from } – ${ data.to }` ],
+		[ __( 'Orders', 'specflux-site-agent' ), String( data.order_count ) ],
+		[ __( 'Gross sales', 'specflux-site-agent' ), money( data.gross_sales ) ],
+		[ __( 'Net sales', 'specflux-site-agent' ), money( data.net_sales ) ],
+		[ __( 'Refunds', 'specflux-site-agent' ), money( data.refunds_total ) ],
 		[
-			__( 'Low stock products', 'senroflux' ),
+			__( 'Low stock products', 'specflux-site-agent' ),
 			String( Array.isArray( data.low_stock_products ) ? data.low_stock_products.length : 0 ),
 		],
 	];
 	return (
 		<>
-			<h3 className="senroflux-report-subheading">{ __( 'Store report', 'senroflux' ) }</h3>
-			<dl className="senroflux-report-store">
+			<h3 className="specflux-site-agent-report-subheading">{ __( 'Store report', 'specflux-site-agent' ) }</h3>
+			<dl className="specflux-site-agent-report-store">
 				{ rows.map( ( [ label, value ] ) => (
-					<div key={ label } className="senroflux-report-store-row">
+					<div key={ label } className="specflux-site-agent-report-store-row">
 						<dt>{ label }</dt>
-						<dd data-senroflux-content>{ value }</dd>
+						<dd data-specflux-site-agent-content>{ value }</dd>
 					</div>
 				) ) }
 			</dl>
@@ -196,7 +196,7 @@ function StoreReport( { data } ) {
  * @param {Object} props.report `run.report` (`result_json`).
  * @param {Array}  props.steps  The run's steps, for the J13 store report.
  * @param {number} [props.runId]  The run, for undo requests.
- * @param {Object} [props.changesSection] `run.changes_section` (0.4 S3.2): undo with SenroGate 0.5+, otherwise Revisions links and one note.
+ * @param {Object} [props.changesSection] `run.changes_section` (0.4 S3.2): undo with Belayline Agent Governance 0.5+, otherwise Revisions links and one note.
  */
 export default function ReportView( { report, steps, runId, changesSection } ) {
 	const revisions =
@@ -210,13 +210,13 @@ export default function ReportView( { report, steps, runId, changesSection } ) {
 	const storeReport = storeReportFromSteps( steps );
 
 	return (
-		<section className="senroflux-report" aria-labelledby="senroflux-report-heading">
-			<h2 id="senroflux-report-heading" className="senroflux-report-heading">
-				{ __( 'Report', 'senroflux' ) }
+		<section className="specflux-site-agent-report" aria-labelledby="specflux-site-agent-report-heading">
+			<h2 id="specflux-site-agent-report-heading" className="specflux-site-agent-report-heading">
+				{ __( 'Report', 'specflux-site-agent' ) }
 			</h2>
-			<p className="senroflux-report-summary">{ summaryLine( counts ) }</p>
+			<p className="specflux-site-agent-report-summary">{ summaryLine( counts ) }</p>
 			{ changes.length > 0 && (
-				<ul className="senroflux-report-changes">
+				<ul className="specflux-site-agent-report-changes">
 					{ changes.map( ( change, index ) => (
 						<ChangeRow
 							key={ `${ change.object_id }-${ index }` }
@@ -227,27 +227,27 @@ export default function ReportView( { report, steps, runId, changesSection } ) {
 				</ul>
 			) }
 			<ChangesSection runId={ runId } section={ changesSection } />
-			<ul className="senroflux-report-meta">
-				<li className="senroflux-report-gate">
-					{ __( 'Gate mode:', 'senroflux' ) } { gateModeLabel( report.gate_mode ) }
+			<ul className="specflux-site-agent-report-meta">
+				<li className="specflux-site-agent-report-gate">
+					{ __( 'Gate mode:', 'specflux-site-agent' ) } { gateModeLabel( report.gate_mode ) }
 				</li>
-				{ report.gate_mode_note && <li className="senroflux-report-gate-note">{ report.gate_mode_note }</li> }
+				{ report.gate_mode_note && <li className="specflux-site-agent-report-gate-note">{ report.gate_mode_note }</li> }
 				{ withheld.length > 0 && (
-					<li className="senroflux-report-withheld">
-						{ __( 'Withheld roles:', 'senroflux' ) }{ ' ' }
-						<span data-senroflux-content>{ withheld.join( ', ' ) }</span>
+					<li className="specflux-site-agent-report-withheld">
+						{ __( 'Withheld roles:', 'specflux-site-agent' ) }{ ' ' }
+						<span data-specflux-site-agent-content>{ withheld.join( ', ' ) }</span>
 					</li>
 				) }
 			</ul>
 			{ grants.length > 0 && (
 				<>
-					<h3 className="senroflux-report-subheading">{ __( 'Pre-approvals', 'senroflux' ) }</h3>
-					<ul className="senroflux-report-grants">
+					<h3 className="specflux-site-agent-report-subheading">{ __( 'Pre-approvals', 'specflux-site-agent' ) }</h3>
+					<ul className="specflux-site-agent-report-grants">
 						{ grants.map( ( grant, index ) => (
-							<li key={ `${ grant.verb }-${ index }` } className="senroflux-report-grant">
+							<li key={ `${ grant.verb }-${ index }` } className="specflux-site-agent-report-grant">
 								<code>{ grant.verb }</code>{ ' ' }
-								{ __( 'Expires', 'senroflux' ) }{ ' ' }
-								<time dateTime={ grant.expires_at } data-senroflux-content>
+								{ __( 'Expires', 'specflux-site-agent' ) }{ ' ' }
+								<time dateTime={ grant.expires_at } data-specflux-site-agent-content>
 									{ formatExpiry( grant.expires_at ) }
 								</time>
 							</li>
@@ -255,9 +255,9 @@ export default function ReportView( { report, steps, runId, changesSection } ) {
 					</ul>
 				</>
 			) }
-			{ adopted.length > 0 && <ObjectList title={ __( 'Adopted', 'senroflux' ) } objects={ adopted } /> }
+			{ adopted.length > 0 && <ObjectList title={ __( 'Adopted', 'specflux-site-agent' ) } objects={ adopted } /> }
 			{ leftForYou.length > 0 && (
-				<ObjectList title={ __( 'Left for you to remove', 'senroflux' ) } objects={ leftForYou } />
+				<ObjectList title={ __( 'Left for you to remove', 'specflux-site-agent' ) } objects={ leftForYou } />
 			) }
 			{ storeReport && <StoreReport data={ storeReport } /> }
 		</section>

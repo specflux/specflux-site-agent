@@ -2,12 +2,12 @@
 /**
  * Thin wrapper over the Openverse API for stock-photo search/import.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WP_Error;
 
@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  * file to WordPress's HTTP client: `wordpress` (the WordPress Photo
  * Directory, CC0) and `rawpixel`. Not `stocksnap` (its CDN answers 403 to
  * any non-browser client), not `nappy` (no results on Openverse), not
- * flickr/wikimedia. Filterable via `senroflux_stock_image_sources`.
+ * flickr/wikimedia. Filterable via `specflux_site_agent_stock_image_sources`.
  */
 final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 
@@ -53,7 +53,7 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 		 *
 		 * @param list<string> $sources Default source slugs.
 		 */
-		$filtered = apply_filters( 'senroflux_stock_image_sources', $sources );
+		$filtered = apply_filters( 'specflux_site_agent_stock_image_sources', $sources );
 
 		return is_array( $filtered ) ? array_values( array_map( 'strval', $filtered ) ) : $sources;
 	}
@@ -108,14 +108,14 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 	public function download( array $detail ): array|WP_Error {
 		$url = is_string( $detail['url'] ?? null ) ? $detail['url'] : '';
 		if ( '' === $url ) {
-			return new WP_Error( 'stock_images_unavailable', __( 'That stock image has no downloadable file.', 'senroflux' ) );
+			return new WP_Error( 'stock_images_unavailable', __( 'That stock image has no downloadable file.', 'specflux-site-agent' ) );
 		}
 
 		if ( ! function_exists( 'download_url' ) && defined( 'ABSPATH' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 		if ( ! function_exists( 'download_url' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'File downloads are not available.', 'senroflux' ) );
+			return new WP_Error( 'gateway_unavailable', __( 'File downloads are not available.', 'specflux-site-agent' ) );
 		}
 
 		$tmp_file = download_url( $url, self::TIMEOUT_SECONDS );
@@ -124,7 +124,7 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 				'stock_images_unavailable',
 				sprintf(
 					/* translators: %s: the download error, e.g. "Forbidden". */
-					__( 'The photo host refused the download (%s). Import a different result from the same search.', 'senroflux' ),
+					__( 'The photo host refused the download (%s). Import a different result from the same search.', 'specflux-site-agent' ),
 					$tmp_file->get_error_message()
 				)
 			);
@@ -136,20 +136,20 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 		wp_delete_file( $tmp_file );
 
 		if ( null === $extension ) {
-			return new WP_Error( 'stock_images_unavailable', __( 'The stock image download was not an image file. Import a different result from the same search.', 'senroflux' ) );
+			return new WP_Error( 'stock_images_unavailable', __( 'The stock image download was not an image file. Import a different result from the same search.', 'specflux-site-agent' ) );
 		}
 		if ( false === $binary ) {
-			return new WP_Error( 'stock_images_unavailable', __( 'The stock image could not be downloaded.', 'senroflux' ) );
+			return new WP_Error( 'stock_images_unavailable', __( 'The stock image could not be downloaded.', 'specflux-site-agent' ) );
 		}
 
 		if ( ! function_exists( 'wp_upload_bits' ) && defined( 'ABSPATH' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Uploads are not available.', 'senroflux' ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Uploads are not available.', 'specflux-site-agent' ) );
 		}
 
-		$filename = sprintf( 'senroflux-stock-%s.%s', wp_generate_password( 12, false, false ), $extension );
+		$filename = sprintf( 'specflux-site-agent-stock-%s.%s', wp_generate_password( 12, false, false ), $extension );
 
 		$uploaded = wp_upload_bits( $filename, null, $binary );
 		if ( ! empty( $uploaded['error'] ) ) {
@@ -181,7 +181,7 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 	 */
 	private function get( string $url ): array|WP_Error {
 		if ( ! function_exists( 'wp_remote_get' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Outbound HTTP requests are not available.', 'senroflux' ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Outbound HTTP requests are not available.', 'specflux-site-agent' ) );
 		}
 
 		$response = wp_remote_get( // phpcs:ignore WordPress.WP.AlternativeFunctions.wp_remote_get -- the Openverse gateway's own request, not a generic file fetch.
@@ -199,7 +199,7 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 				'stock_images_unavailable',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'The stock photo provider returned an error (%d).', 'senroflux' ),
+					__( 'The stock photo provider returned an error (%d).', 'specflux-site-agent' ),
 					$code
 				)
 			);
@@ -209,7 +209,7 @@ final class OpenverseStockImageGateway implements StockImageGatewayInterface {
 		$decoded = json_decode( (string) $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			return new WP_Error( 'stock_images_unavailable', __( 'The stock photo provider returned an unexpected response.', 'senroflux' ) );
+			return new WP_Error( 'stock_images_unavailable', __( 'The stock photo provider returned an unexpected response.', 'specflux-site-agent' ) );
 		}
 
 		return $decoded;

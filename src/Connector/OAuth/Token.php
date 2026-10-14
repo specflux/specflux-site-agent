@@ -2,21 +2,21 @@
 /**
  * The token endpoint.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * `POST /wp-json/senroflux/oauth/token`. Grants: `authorization_code` (PKCE
+ * `POST /wp-json/specflux-site-agent/oauth/token`. Grants: `authorization_code` (PKCE
  * S256) and `refresh_token` (rotating, family-revoking on reuse). No
  * `client_credentials`. Only lookups by hash; no remote calls.
  */

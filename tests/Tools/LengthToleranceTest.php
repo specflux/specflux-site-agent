@@ -6,17 +6,17 @@
  * times at 290, 266, 218, 207, 207, 203, 203 characters against a 200 limit —
  * the refusal named the exact length, the model still could not count to it.
  *
- * @package Specflux\SenroFlux\Tests\Tools
+ * @package Specflux\SiteAgent\Tests\Tools
  */
 
 declare(strict_types=1);
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WP_Error;
 

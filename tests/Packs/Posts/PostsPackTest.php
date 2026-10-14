@@ -4,21 +4,21 @@
  *
  * TARGET REPO PATH: tests/Packs/Posts/PostsPackTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Posts;
+namespace Specflux\SiteAgent\Tests\Packs\Posts;
 
-use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
+use Specflux\SiteAgent\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Skills\SkillSet;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Skills\SkillSet;
+use Specflux\SiteAgent\Skills\SkillSource;
 
 final class PostsPackTest extends TestCase {
 
@@ -32,20 +32,20 @@ final class PostsPackTest extends TestCase {
 	public function test_verb_for_maps_every_ability_template(): void {
 		$pack = new PostsPack();
 
-		$this->assertSame( 'posts/read', $pack->verbFor( 'senroflux/read-content', array() ) );
-		$this->assertSame( 'posts/list-patterns', $pack->verbFor( 'senroflux/list-patterns', array() ) );
-		$this->assertSame( 'posts/preview', $pack->verbFor( 'senroflux/get-preview-url', array() ) );
-		$this->assertSame( 'posts/media-search', $pack->verbFor( 'senroflux/media-search', array() ) );
-		$this->assertSame( 'posts/list-missing-alt', $pack->verbFor( 'senroflux/list-missing-alt', array() ) );
-		$this->assertSame( 'posts/create-draft', $pack->verbFor( 'senroflux/create-post', array() ) );
-		$this->assertSame( 'posts/update-draft', $pack->verbFor( 'senroflux/update-post', array() ) );
-		$this->assertSame( 'posts/media-upload', $pack->verbFor( 'senroflux/media-upload', array() ) );
-		$this->assertSame( 'posts/media-generate', $pack->verbFor( 'senroflux/generate-image', array() ) );
-		$this->assertSame( 'posts/generate-alt-text', $pack->verbFor( 'senroflux/generate-alt-text', array() ) );
-		$this->assertSame( 'posts/set-featured-image', $pack->verbFor( 'senroflux/set-featured-image', array() ) );
-		$this->assertSame( 'posts/update-alt', $pack->verbFor( 'senroflux/update-alt', array() ) );
-		$this->assertSame( 'posts/set-terms', $pack->verbFor( 'senroflux/set-terms', array() ) );
-		$this->assertSame( 'posts/create-term', $pack->verbFor( 'senroflux/create-term', array() ) );
+		$this->assertSame( 'posts/read', $pack->verbFor( 'specflux/read-content', array() ) );
+		$this->assertSame( 'posts/list-patterns', $pack->verbFor( 'specflux/list-patterns', array() ) );
+		$this->assertSame( 'posts/preview', $pack->verbFor( 'specflux/get-preview-url', array() ) );
+		$this->assertSame( 'posts/media-search', $pack->verbFor( 'specflux/media-search', array() ) );
+		$this->assertSame( 'posts/list-missing-alt', $pack->verbFor( 'specflux/list-missing-alt', array() ) );
+		$this->assertSame( 'posts/create-draft', $pack->verbFor( 'specflux/create-post', array() ) );
+		$this->assertSame( 'posts/update-draft', $pack->verbFor( 'specflux/update-post', array() ) );
+		$this->assertSame( 'posts/media-upload', $pack->verbFor( 'specflux/media-upload', array() ) );
+		$this->assertSame( 'posts/media-generate', $pack->verbFor( 'specflux/generate-image', array() ) );
+		$this->assertSame( 'posts/generate-alt-text', $pack->verbFor( 'specflux/generate-alt-text', array() ) );
+		$this->assertSame( 'posts/set-featured-image', $pack->verbFor( 'specflux/set-featured-image', array() ) );
+		$this->assertSame( 'posts/update-alt', $pack->verbFor( 'specflux/update-alt', array() ) );
+		$this->assertSame( 'posts/set-terms', $pack->verbFor( 'specflux/set-terms', array() ) );
+		$this->assertSame( 'posts/create-term', $pack->verbFor( 'specflux/create-term', array() ) );
 	}
 
 	/**
@@ -55,8 +55,8 @@ final class PostsPackTest extends TestCase {
 	public function test_stock_image_verbs_are_tiered_and_gated_like_the_other_media_writes(): void {
 		$pack = new PostsPack();
 
-		$this->assertSame( 'posts/media-stock-search', $pack->verbFor( 'senroflux/stock-image-search', array() ) );
-		$this->assertSame( 'posts/media-stock-import', $pack->verbFor( 'senroflux/stock-image-import', array() ) );
+		$this->assertSame( 'posts/media-stock-search', $pack->verbFor( 'specflux/stock-image-search', array() ) );
+		$this->assertSame( 'posts/media-stock-import', $pack->verbFor( 'specflux/stock-image-import', array() ) );
 
 		$map = $pack->verbMap();
 		$this->assertSame( 0, $map['posts/media-stock-search'] );
@@ -72,10 +72,10 @@ final class PostsPackTest extends TestCase {
 	public function test_publish_verb_routes_publish_future_and_update_live(): void {
 		$pack = new PostsPack();
 
-		$this->assertSame( 'posts/publish', $pack->verbFor( 'senroflux/publish-post', array( 'status' => 'publish' ) ) );
-		$this->assertSame( 'posts/schedule', $pack->verbFor( 'senroflux/publish-post', array( 'status' => 'future' ) ) );
-		$this->assertSame( 'posts/update-live', $pack->verbFor( 'senroflux/publish-post', array( 'status' => 'draft' ) ) );
-		$this->assertSame( 'posts/update-live', $pack->verbFor( 'senroflux/publish-post', array() ) );
+		$this->assertSame( 'posts/publish', $pack->verbFor( 'specflux/publish-post', array( 'status' => 'publish' ) ) );
+		$this->assertSame( 'posts/schedule', $pack->verbFor( 'specflux/publish-post', array( 'status' => 'future' ) ) );
+		$this->assertSame( 'posts/update-live', $pack->verbFor( 'specflux/publish-post', array( 'status' => 'draft' ) ) );
+		$this->assertSame( 'posts/update-live', $pack->verbFor( 'specflux/publish-post', array() ) );
 	}
 
 	public function test_verb_map_has_the_s5_tiers(): void {
@@ -113,7 +113,7 @@ final class PostsPackTest extends TestCase {
 	public function test_verb_for_maps_read_media(): void {
 		$pack = new PostsPack();
 
-		$this->assertSame( 'posts/read-media', $pack->verbFor( 'senroflux/read-media', array() ) );
+		$this->assertSame( 'posts/read-media', $pack->verbFor( 'specflux/read-media', array() ) );
 	}
 
 	public function test_role_capabilities_require_upload_files_for_every_image_role(): void {
@@ -140,13 +140,13 @@ final class PostsPackTest extends TestCase {
 	public function test_list_terms_is_a_tier_zero_read_wired_through_every_seam(): void {
 		$pack = new PostsPack();
 
-		$this->assertSame( 'posts/list-terms', $pack->verbFor( 'senroflux/list-terms', array() ) );
+		$this->assertSame( 'posts/list-terms', $pack->verbFor( 'specflux/list-terms', array() ) );
 		$this->assertSame( 0, $pack->verbMap()['posts/list-terms'] );
 		$this->assertSame( array( 'posts/list-terms' ), $pack->roleVerbs()['list-terms'] );
-		$this->assertSame( 'senroflux/list-terms', $pack->resolveAbilities()['list-terms'] );
-		$this->assertContains( 'senroflux/list-terms', $pack->allowList() );
-		$this->assertSame( 'senroflux/list-terms', $pack->gateVerbFor( 'posts/list-terms' ) );
-		$this->assertSame( 0, $pack->agentSafetyVerbMap()['senroflux/list-terms'] );
+		$this->assertSame( 'specflux/list-terms', $pack->resolveAbilities()['list-terms'] );
+		$this->assertContains( 'specflux/list-terms', $pack->allowList() );
+		$this->assertSame( 'specflux/list-terms', $pack->gateVerbFor( 'posts/list-terms' ) );
+		$this->assertSame( 0, $pack->agentSafetyVerbMap()['specflux/list-terms'] );
 		$this->assertArrayNotHasKey( 'list-terms', $pack->roleCapabilities(), 'not an image role: a Contributor keeps it' );
 	}
 
@@ -232,7 +232,7 @@ final class PostsPackTest extends TestCase {
 
 	/**
 	 * The B3 stage-5 check: after the registry merges the pages pack and the
-	 * posts pack, `senroflux/update-post` (the ability the two packs SHARE)
+	 * posts pack, `specflux/update-post` (the ability the two packs SHARE)
 	 * must stay Tier 1 — neither pack's own role for it ever spans a Tier-2
 	 * verb, so the merge's `max()` has nothing Tier-2 to pick up.
 	 */
@@ -243,8 +243,8 @@ final class PostsPackTest extends TestCase {
 
 		$map = $registry->agentSafetyVerbMap();
 
-		$this->assertSame( 1, $map['senroflux/update-post'] );
-		$this->assertSame( 2, $map['senroflux/publish-post'] );
+		$this->assertSame( 1, $map['specflux/update-post'] );
+		$this->assertSame( 2, $map['specflux/publish-post'] );
 	}
 
 	/**

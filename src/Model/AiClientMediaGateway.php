@@ -2,12 +2,12 @@
 /**
  * Thin wrapper over the WordPress AI Client for image/alt-text generation.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
@@ -78,7 +78,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return new WP_Error(
 				'gateway_unavailable',
-				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'senroflux' )
+				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'specflux-site-agent' )
 			);
 		}
 
@@ -98,7 +98,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		}
 
 		if ( ! is_object( $result ) || ! method_exists( $result, 'toImageFile' ) ) {
-			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'specflux-site-agent' ) );
 		}
 
 		try {
@@ -108,7 +108,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		}
 
 		if ( ! $file instanceof File ) {
-			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'specflux-site-agent' ) );
 		}
 
 		return $this->persistImageFile( $file );
@@ -159,7 +159,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 				'unsupported_mime_type',
 				sprintf(
 					/* translators: %s: MIME type. */
-					__( 'The image provider returned an unsupported file type: %s', 'senroflux' ),
+					__( 'The image provider returned an unsupported file type: %s', 'specflux-site-agent' ),
 					$file->getMimeType()
 				)
 			);
@@ -168,7 +168,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		if ( $file->isInline() ) {
 			$binary = base64_decode( (string) $file->getBase64Data(), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- decoding a real inline image File, not obfuscating code.
 			if ( false === $binary ) {
-				return new WP_Error( 'gateway_failed', __( 'The image provider returned malformed image data.', 'senroflux' ) );
+				return new WP_Error( 'gateway_failed', __( 'The image provider returned malformed image data.', 'specflux-site-agent' ) );
 			}
 		} elseif ( $file->isRemote() ) {
 			$binary = $this->downloadRemoteFile( (string) $file->getUrl() );
@@ -176,7 +176,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 				return $binary;
 			}
 		} else {
-			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The image provider returned an unexpected result.', 'specflux-site-agent' ) );
 		}
 
 		return $this->writeToUploads( $binary, $extension );
@@ -195,7 +195,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		}
 
 		if ( ! function_exists( 'download_url' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'File downloads are not available.', 'senroflux' ) );
+			return new WP_Error( 'gateway_unavailable', __( 'File downloads are not available.', 'specflux-site-agent' ) );
 		}
 
 		$tmp_file = download_url( $url, (int) self::IMAGE_TIMEOUT_SECONDS );
@@ -207,7 +207,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		wp_delete_file( $tmp_file );
 
 		if ( false === $binary ) {
-			return new WP_Error( 'gateway_failed', __( 'The generated image could not be downloaded.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The generated image could not be downloaded.', 'specflux-site-agent' ) );
 		}
 
 		return $binary;
@@ -222,10 +222,10 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		}
 
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Uploads are not available.', 'senroflux' ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Uploads are not available.', 'specflux-site-agent' ) );
 		}
 
-		$filename = sprintf( 'senroflux-%s.%s', wp_generate_password( 12, false, false ), $extension );
+		$filename = sprintf( 'specflux-site-agent-%s.%s', wp_generate_password( 12, false, false ), $extension );
 
 		$uploaded = wp_upload_bits( $filename, null, $binary );
 		if ( ! empty( $uploaded['error'] ) ) {
@@ -243,14 +243,14 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return new WP_Error(
 				'gateway_unavailable',
-				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'senroflux' )
+				__( 'The WordPress AI Client is not available. WordPress 7.0+ is required.', 'specflux-site-agent' )
 			);
 		}
 
 		if ( ! is_file( $image_path ) ) {
 			return new WP_Error(
 				'attachment_file_missing',
-				__( 'The attachment file could not be found on disk.', 'senroflux' ),
+				__( 'The attachment file could not be found on disk.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -274,7 +274,7 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 			// treating it as a URL — passing the on-disk path here, never
 			// the public URL, is what actually attaches image DATA rather
 			// than a link the provider must fetch.
-			$prompt = __( 'Write concise, descriptive alt text (under 125 characters) for this image. Return only the alt text.', 'senroflux' );
+			$prompt = __( 'Write concise, descriptive alt text (under 125 characters) for this image. Return only the alt text.', 'specflux-site-agent' );
 			$result = wp_ai_client_prompt( $prompt )->with_file( $image_path )->using_request_options( $request_options )->generate_text_result();
 		} catch ( \Throwable $e ) {
 			return new WP_Error( 'gateway_failed', $e->getMessage() );
@@ -285,12 +285,12 @@ final class AiClientMediaGateway implements MediaGatewayInterface {
 		}
 
 		if ( ! is_object( $result ) || ! method_exists( $result, 'toMessage' ) ) {
-			return new WP_Error( 'gateway_failed', __( 'The provider returned an unexpected result.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The provider returned an unexpected result.', 'specflux-site-agent' ) );
 		}
 
 		$message = $result->toMessage();
 		if ( ! $message instanceof \WordPress\AiClient\Messages\DTO\Message ) {
-			return new WP_Error( 'gateway_failed', __( 'The provider returned an unexpected result.', 'senroflux' ) );
+			return new WP_Error( 'gateway_failed', __( 'The provider returned an unexpected result.', 'specflux-site-agent' ) );
 		}
 
 		$text = '';

@@ -4,19 +4,19 @@
  * Api\LayoutVocabulary, the Skill/SkillSource/SetupCheck value types a pack
  * constructs, and the three `@api` filters), compared against the committed
  * `tests/Api/public-surface.json`. A difference fails unless
- * SENROFLUX_API_VERSION changed by the right kind of bump (major for a
+ * SPECFLUX_SITE_AGENT_API_VERSION changed by the right kind of bump (major for a
  * break, minor for an addition).
  *
  * Regenerate the snapshot after a deliberate, version-bumped change:
  *
- *   SENROFLUX_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest
+ *   SPECFLUX_SITE_AGENT_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Api;
+namespace Specflux\SiteAgent\Tests\Api;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -24,11 +24,11 @@ use ReflectionEnum;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Specflux\SenroFlux\Api\LayoutVocabulary;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Setup\SetupCheck;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Api\LayoutVocabulary;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Setup\SetupCheck;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use UnitEnum;
 
 final class PublicSurfaceTest extends TestCase {
@@ -45,10 +45,10 @@ final class PublicSurfaceTest extends TestCase {
 	 */
 	private static function apiHooks(): array {
 		return array(
-			'senroflux_packs'             => array( 'array<string,Pack>' ),
-			'senroflux_run_skills'        => array( 'list<Skill>', 'Pack|null', 'string', 'string' ),
-			'senroflux_result_presenters' => array( 'list<Presenter>' ),
-			'senroflux_default_budget'    => array(
+			'specflux_site_agent_packs'             => array( 'array<string,Pack>' ),
+			'specflux_site_agent_run_skills'        => array( 'list<Skill>', 'Pack|null', 'string', 'string' ),
+			'specflux_site_agent_result_presenters' => array( 'list<Presenter>' ),
+			'specflux_site_agent_default_budget'    => array(
 				'array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int}',
 			),
 		);
@@ -203,34 +203,34 @@ final class PublicSurfaceTest extends TestCase {
 	public function test_public_surface_matches_snapshot(): void {
 		$current = self::buildSurface();
 
-		if ( '1' === (string) getenv( 'SENROFLUX_UPDATE_SURFACE' ) ) {
+		if ( '1' === (string) getenv( 'SPECFLUX_SITE_AGENT_UPDATE_SURFACE' ) ) {
 			file_put_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- regenerating a committed test fixture on disk, not a runtime WP operation.
 				self::SNAPSHOT_PATH,
 				(string) wp_json_encode(
 					array(
-						'api_version' => SENROFLUX_API_VERSION,
+						'api_version' => SPECFLUX_SITE_AGENT_API_VERSION,
 						'surface'     => $current,
 					),
 					JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 				) . "\n"
 			);
-			$this->markTestSkipped( 'Snapshot regenerated at ' . self::SNAPSHOT_PATH . '; re-run without SENROFLUX_UPDATE_SURFACE to verify.' );
+			$this->markTestSkipped( 'Snapshot regenerated at ' . self::SNAPSHOT_PATH . '; re-run without SPECFLUX_SITE_AGENT_UPDATE_SURFACE to verify.' );
 		}
 
-		$this->assertFileExists( self::SNAPSHOT_PATH, 'Run SENROFLUX_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest to create it.' );
+		$this->assertFileExists( self::SNAPSHOT_PATH, 'Run SPECFLUX_SITE_AGENT_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest to create it.' );
 
 		/** @var array{api_version:string,surface:array<string,mixed>} $stored */
 		$stored = json_decode( (string) file_get_contents( self::SNAPSHOT_PATH ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local test fixture, not a remote URL.
 
-		$violations = self::gateViolations( $stored['surface'], $current, $stored['api_version'], SENROFLUX_API_VERSION );
+		$violations = self::gateViolations( $stored['surface'], $current, $stored['api_version'], SPECFLUX_SITE_AGENT_API_VERSION );
 
 		$this->assertSame(
 			array(),
 			$violations,
-			"The @api surface changed without a compatible SENROFLUX_API_VERSION bump:\n" . implode( "\n", $violations )
-				. "\n\nIf this change is deliberate: bump SENROFLUX_API_VERSION in senroflux.php (major for a"
+			"The @api surface changed without a compatible SPECFLUX_SITE_AGENT_API_VERSION bump:\n" . implode( "\n", $violations )
+				. "\n\nIf this change is deliberate: bump SPECFLUX_SITE_AGENT_API_VERSION in specflux-site-agent.php (major for a"
 				. ' removal/signature break, minor for an addition), then regenerate the snapshot with'
-				. ' SENROFLUX_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest.'
+				. ' SPECFLUX_SITE_AGENT_UPDATE_SURFACE=1 vendor/bin/phpunit --filter PublicSurfaceTest.'
 		);
 	}
 

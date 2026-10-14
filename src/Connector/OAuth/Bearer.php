@@ -2,17 +2,17 @@
 /**
  * Turns a bearer token into the request's user and connection, on the MCP route only.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\MultisiteGuard;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\MultisiteGuard;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -24,9 +24,9 @@ defined( 'ABSPATH' ) || exit;
  * independent layers:
  *
  * 1. `determine_current_user` accepts a token only when the request's
- *    effective REST route is the SenroFlux MCP route. "Effective" matters:
+ *    effective REST route is the Specflux Site Agent MCP route. "Effective" matters:
  *    `?rest_route=` in the query overrides the URL path in WordPress, so
- *    `/wp-json/senroflux/mcp?rest_route=/wp/v2/users` is the users route.
+ *    `/wp-json/specflux-site-agent/mcp?rest_route=/wp/v2/users` is the users route.
  * 2. `rest_pre_dispatch` refuses any OAuth-authenticated request whose
  *    dispatched route is not the MCP route, whatever step 1 concluded.
  */
@@ -41,7 +41,7 @@ final class Bearer {
 	public static function register(): void {
 		// After core's application-password check (priority 20): never override an existing user.
 		add_filter( 'determine_current_user', array( self::class, 'authenticate' ), 21 );
-		add_filter( 'senroflux_connector_connection', array( self::class, 'connection' ) );
+		add_filter( 'specflux_site_agent_connector_connection', array( self::class, 'connection' ) );
 		add_filter( 'rest_pre_dispatch', array( self::class, 'guardDispatch' ), 0, 3 );
 		add_filter( 'rest_post_dispatch', array( self::class, 'challenge' ), 10, 3 );
 	}
@@ -132,7 +132,7 @@ final class Bearer {
 	 * Is this PHP request served by the site's front controller (`index.php` in ABSPATH)?
 	 *
 	 * A positive allowlist of the entry point. `?rest_route=` is honoured by REST routing only,
-	 * so without this a token could ride `admin-ajax.php?rest_route=/senroflux/mcp` (or
+	 * so without this a token could ride `admin-ajax.php?rest_route=/specflux-site-agent/mcp` (or
 	 * admin-post.php, wp-login.php, xmlrpc.php, wp-cron.php, any wp-admin page) past layer 2,
 	 * which only sees REST dispatches. `REST_REQUEST` cannot be used: it is not yet defined
 	 * when `determine_current_user` resolves the user.
@@ -191,7 +191,7 @@ final class Bearer {
 	}
 
 	/**
-	 * `senroflux_connector_connection` filter: the OAuth-authenticated request's connection.
+	 * `specflux_site_agent_connector_connection` filter: the OAuth-authenticated request's connection.
 	 *
 	 * @param mixed $connection Connection resolved so far.
 	 * @return mixed

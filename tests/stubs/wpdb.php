@@ -10,7 +10,7 @@
  * query + canned-return knobs (queryReturn/varReturn/…), which remain
  * available for string-level assertions.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -81,7 +81,7 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			if ( str_contains( $query, 'SET step_count = step_count + 1' )
 				&& preg_match( '/WHERE id = (\d+)\b/', $query, $m ) ) {
 				foreach ( array_keys( $this->tables ) as $name ) {
-					if ( ! str_ends_with( $name, 'senroflux_runs' ) ) {
+					if ( ! str_ends_with( $name, 'specflux_site_agent_runs' ) ) {
 						continue;
 					}
 					$count = count( $this->tables[ $name ] );

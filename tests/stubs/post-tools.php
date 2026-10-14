@@ -4,27 +4,27 @@
  * WordPress surface the `Packs\Content\PostTools` tests call.
  * TARGET REPO PATH: tests/stubs/post-tools.php
  *
- * Revisions live in the same `senroflux_test_posts` store as posts (a
+ * Revisions live in the same `specflux_site_agent_test_posts` store as posts (a
  * revision is a post with post_type `revision` and a post_parent). Everything
  * is `function_exists`-guarded so a real WordPress load order wins.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
 // Post-type registry: slug => show_in_rest. post and page are always present.
-$GLOBALS['senroflux_test_post_types'] = array(
+$GLOBALS['specflux_site_agent_test_post_types'] = array(
 	'post' => true,
 	'page' => true,
 );
 
 // Registered meta: post type => key => args (type, single, show_in_rest).
-$GLOBALS['senroflux_test_registered_meta'] = array();
+$GLOBALS['specflux_site_agent_test_registered_meta'] = array();
 
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	function get_post_type_object( string $post_type ): ?object {
-		$type = $GLOBALS['senroflux_test_post_types'][ $post_type ] ?? null;
+		$type = $GLOBALS['specflux_site_agent_test_post_types'][ $post_type ] ?? null;
 		if ( null === $type || is_object( $type ) ) {
 			return $type;
 		}
@@ -47,7 +47,7 @@ if ( ! function_exists( 'get_registered_meta_keys' ) ) {
 	function get_registered_meta_keys( string $object_type, string $object_subtype = '' ): array {
 		unset( $object_type );
 
-		return (array) ( $GLOBALS['senroflux_test_registered_meta'][ $object_subtype ] ?? array() );
+		return (array) ( $GLOBALS['specflux_site_agent_test_registered_meta'][ $object_subtype ] ?? array() );
 	}
 }
 
@@ -65,8 +65,8 @@ if ( ! function_exists( 'get_permalink' ) ) {
 
 if ( ! function_exists( 'wp_trash_post' ) ) {
 	function wp_trash_post( int $id ): ?object {
-		$GLOBALS['senroflux_test_trash_calls'][] = $id;
-		$post                                    = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+		$GLOBALS['specflux_site_agent_test_trash_calls'][] = $id;
+		$post = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 		if ( ! is_object( $post ) ) {
 			return null;
 		}
@@ -78,7 +78,7 @@ if ( ! function_exists( 'wp_trash_post' ) ) {
 
 if ( ! function_exists( 'wp_untrash_post' ) ) {
 	function wp_untrash_post( int $id ): ?object {
-		$post = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+		$post = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 		if ( ! is_object( $post ) ) {
 			return null;
 		}
@@ -89,11 +89,11 @@ if ( ! function_exists( 'wp_untrash_post' ) ) {
 }
 
 // wp_get_post_revisions() comes from tests/stubs/admin.php (bootstrap): it reads
-// $GLOBALS['senroflux_test_revisions'][ $post_id ], which the tests seed.
+// $GLOBALS['specflux_site_agent_test_revisions'][ $post_id ], which the tests seed.
 
 if ( ! function_exists( 'wp_get_post_revision' ) ) {
 	function wp_get_post_revision( int $id ): ?object {
-		$post = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+		$post = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 
 		return is_object( $post ) && 'revision' === $post->post_type ? $post : null;
 	}
@@ -107,8 +107,8 @@ if ( ! function_exists( 'wp_is_post_autosave' ) ) {
 
 if ( ! function_exists( 'wp_restore_post_revision' ) ) {
 	function wp_restore_post_revision( int $id ): int|false|null {
-		$GLOBALS['senroflux_test_restored_revisions'][] = $id;
-		$revision                                       = $GLOBALS['senroflux_test_posts'][ $id ] ?? null;
+		$GLOBALS['specflux_site_agent_test_restored_revisions'][] = $id;
+		$revision = $GLOBALS['specflux_site_agent_test_posts'][ $id ] ?? null;
 
 		return is_object( $revision ) ? (int) $revision->post_parent : null;
 	}

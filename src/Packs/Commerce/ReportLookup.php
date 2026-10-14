@@ -2,14 +2,14 @@
 /**
  * Report rows for the WooCommerce objects a commerce run writes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
-use Specflux\SenroFlux\Run\Report;
+use Specflux\SiteAgent\Run\Report;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -37,7 +37,7 @@ final class ReportLookup {
 	 */
 	public static function resolve( string $object_id ): ?array {
 		// C4: the active store platform may describe its own objects.
-		$custom = \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::resolve()->describeObject( $object_id );
+		$custom = \Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms::resolve()->describeObject( $object_id );
 		if ( null !== $custom ) {
 			return $custom;
 		}
@@ -78,7 +78,7 @@ final class ReportLookup {
 		return array(
 			'object_type' => 'shop_order',
 			/* translators: %s: the order's number. */
-			'title'       => sprintf( __( 'Order #%s', 'senroflux' ), method_exists( $order, 'get_order_number' ) ? (string) $order->get_order_number() : (string) $order_id ),
+			'title'       => sprintf( __( 'Order #%s', 'specflux-site-agent' ), method_exists( $order, 'get_order_number' ) ? (string) $order->get_order_number() : (string) $order_id ),
 			'status'      => method_exists( $order, 'get_status' ) ? (string) $order->get_status() : '',
 			'edit_url'    => ( is_string( $edit ) && '' !== $edit ) ? $edit : null,
 			'preview_url' => null,

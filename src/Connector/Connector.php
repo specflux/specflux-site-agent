@@ -1,25 +1,25 @@
 <?php
 /**
- * The SenroFlux MCP connector: setting, feature detection, server (K1).
+ * The Specflux Site Agent MCP connector: setting, feature detection, server (K1).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Admin\ScreenCapability;
-use Specflux\SenroFlux\MultisiteGuard;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Admin\ScreenCapability;
+use Specflux\SiteAgent\MultisiteGuard;
+use Specflux\SiteAgent\Plugin;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Lets external AI apps (Claude, ChatGPT, Cursor...) use SenroFlux's abilities
- * through one MCP server at `/wp-json/senroflux/mcp`, built on the WordPress.org
- * MCP adapter. SenroFlux writes no transport and never bundles the adapter: it
+ * Lets external AI apps (Claude, ChatGPT, Cursor...) use Specflux Site Agent's abilities
+ * through one MCP server at `/wp-json/specflux-site-agent/mcp`, built on the WordPress.org
+ * MCP adapter. Specflux Site Agent writes no transport and never bundles the adapter: it
  * feature-detects the plugin and creates its server on `mcp_adapter_init`.
  *
  * Everything here fails closed. The setting is off until an admin turns it on;
@@ -30,30 +30,30 @@ defined( 'ABSPATH' ) || exit;
 final class Connector {
 
 	/** Option holding the admin's switch (stored '1' / '0'). */
-	public const OPTION = 'senroflux_connector_enabled';
+	public const OPTION = 'specflux_site_agent_connector_enabled';
 
 	/** The server id the adapter knows this server by. */
-	public const SERVER_ID = 'senroflux';
+	public const SERVER_ID = 'specflux';
 
-	/** REST namespace and route: `/wp-json/senroflux/mcp`. */
-	public const ROUTE_NAMESPACE = 'senroflux';
+	/** REST namespace and route: `/wp-json/specflux-site-agent/mcp`. */
+	public const ROUTE_NAMESPACE = 'specflux-site-agent';
 	public const ROUTE           = 'mcp';
 
 	/** The capability the connection's user needs, unless a site filters it. */
 	public const DEFAULT_CAPABILITY = 'manage_options';
 
 	/** The filter a site uses to move the connector to another capability. */
-	public const CAPABILITY_FILTER = 'senroflux_connector_capability';
+	public const CAPABILITY_FILTER = 'specflux_site_agent_connector_capability';
 
 	/**
-	 * The oldest mcp-adapter SenroFlux supports. 0.7.0 is the first release on
+	 * The oldest mcp-adapter Specflux Site Agent supports. 0.7.0 is the first release on
 	 * wordpress.org, the one the connector was built and checked against, and
 	 * it reworked custom transports, so anything older has an unknown
 	 * `create_server()` / `HttpTransport` contract.
 	 */
 	public const MIN_ADAPTER_VERSION = '0.7.0';
 
-	/** The adapter's singleton class, and the transport SenroFlux asks it for. */
+	/** The adapter's singleton class, and the transport Specflux Site Agent asks it for. */
 	public const ADAPTER_CLASS   = 'WP\MCP\Core\McpAdapter';
 	public const TRANSPORT_CLASS = 'WP\MCP\Transport\HttpTransport';
 
@@ -67,7 +67,7 @@ final class Connector {
 	public static function register(): void {
 		add_action( 'mcp_adapter_init', array( self::class, 'createServer' ) );
 		add_filter( 'mcp_adapter_tools_list', array( Gate::class, 'filterTools' ), 10, 3 );
-		// Priority 20: after SenroGate's wrapper (10), so ours is outermost. Abilities
+		// Priority 20: after Belayline Agent Governance's wrapper (10), so ours is outermost. Abilities
 		// register on `wp_abilities_api_init` (init), long after plugins_loaded.
 		add_filter( 'wp_register_ability_args', array( Gate::class, 'wrapAbilityArgs' ), 20, 2 );
 		add_filter( 'mcp_adapter_pre_tool_call', array( Gate::class, 'preCall' ), 10, 4 );
@@ -129,7 +129,7 @@ final class Connector {
 	 */
 	public static function capability(): string {
 		/** Filters the capability the connector requires of the connection's user. `@internal`. */
-		$capability = apply_filters( 'senroflux_connector_capability', self::DEFAULT_CAPABILITY );
+		$capability = apply_filters( 'specflux_site_agent_connector_capability', self::DEFAULT_CAPABILITY );
 
 		return ( is_string( $capability ) && '' !== $capability ) ? $capability : ScreenCapability::NOBODY;
 	}
@@ -137,7 +137,7 @@ final class Connector {
 	/**
 	 * The request's connection when the connector may serve it, else null.
 	 *
-	 * Enabled, an application password SenroFlux registered, and a user who
+	 * Enabled, an application password Specflux Site Agent registered, and a user who
 	 * holds the connector capability. A cookie session is never a connection.
 	 */
 	public static function authorise(): ?Connection {
@@ -167,7 +167,7 @@ final class Connector {
 	}
 
 	/**
-	 * The connection this request is serving on SenroFlux's MCP route, set by
+	 * The connection this request is serving on Specflux Site Agent's MCP route, set by
 	 * {@see permission()} and null everywhere else (harness runs, other
 	 * servers, cron, CLI).
 	 */
@@ -181,7 +181,7 @@ final class Connector {
 	}
 
 	/**
-	 * `mcp_adapter_init` callback: create SenroFlux's one server.
+	 * `mcp_adapter_init` callback: create Specflux Site Agent's one server.
 	 *
 	 * The tool list is the broadest exposure set. It is fixed here, before any
 	 * request's connection is known, so {@see Gate::filterTools()} narrows it
@@ -198,9 +198,9 @@ final class Connector {
 			self::SERVER_ID,
 			self::ROUTE_NAMESPACE,
 			self::ROUTE,
-			'SenroFlux',
+			'Specflux Site Agent',
 			'Pages, posts, media, site settings and store tools for this WordPress site. Changes follow the site\'s approval rules.',
-			SENROFLUX_API_VERSION,
+			SPECFLUX_SITE_AGENT_API_VERSION,
 			array( self::TRANSPORT_CLASS ),
 			null,
 			null,

@@ -1,29 +1,29 @@
 <?php
 /**
- * PHPUnit bootstrap for the SenroFlux plugin suite.
+ * PHPUnit bootstrap for the Specflux Site Agent plugin suite.
  *
  * Defines the minimal WordPress shims the code under test calls — only when a
  * real WP load order hasn't already provided them. The hook functions are a
  * WORKING mini-registry (not no-ops) so tests can exercise filter contracts
- * like `senroflux_default_budget` for real.
+ * like `specflux_site_agent_default_budget` for real.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-$senroflux_autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
-if ( ! is_readable( $senroflux_autoload ) ) {
+$specflux_site_agent_autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+if ( ! is_readable( $specflux_site_agent_autoload ) ) {
 	fwrite( STDERR, "Missing vendor/autoload.php — run `composer install` first.\n" );
 	exit( 1 );
 }
-require_once $senroflux_autoload;
+require_once $specflux_site_agent_autoload;
 
 // WordPress defines ABSPATH before any plugin file loads; every src file
 // guards itself with `defined( 'ABSPATH' ) || exit`. Under bare PHPUnit that
 // guard would silently EXIT the whole test run, so provide the constant.
 if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', '/tmp/senroflux-tests/' );
+	define( 'ABSPATH', '/tmp/specflux-site-agent-tests/' );
 }
 
 // Test-only stand-ins for WordPress globals (a real WP load order wins).
@@ -35,11 +35,11 @@ if ( ! class_exists( 'WP_Error', false ) ) {
 }
 require_once __DIR__ . '/stubs/abilities.php';
 require_once __DIR__ . '/Packs/BreadthFilter.php';
-// Agent Safety host surface (S14): the agent_safety() locator, its grants
+// Agent Safety host surface (S14): the belayline() locator, its grants
 // service, and RequestContext's correlation scope. Inert until a test opts in.
 require_once __DIR__ . '/stubs/agent-safety.php';
 require_once __DIR__ . '/stubs/agent-safety-context.php';
-// SenroGate 0.5 change-history API shapes (0.4 S3.2).
+// Belayline Agent Governance 0.5 change-history API shapes (0.4 S3.2).
 require_once __DIR__ . '/stubs/agent-safety-changes-core.php';
 require_once __DIR__ . '/stubs/agent-safety-changes.php';
 // Runner test doubles (FakeGateway, RecordingBridge) — class_exists-guarded.
@@ -56,10 +56,10 @@ require_once __DIR__ . '/stubs/connector-admin.php';
 require_once __DIR__ . '/stubs/mcp-adapter.php';
 require_once __DIR__ . '/Connector/ConnectorTestCase.php';
 
-// The global senroflux() locator (function_exists-guarded, same as main).
+// The global specflux_site_agent() locator (function_exists-guarded, same as main).
 require_once dirname( __DIR__ ) . '/src/api.php';
 
-$GLOBALS['senroflux_test_abilities'] = array();
+$GLOBALS['specflux_site_agent_test_abilities'] = array();
 
 
 if ( ! defined( 'ARRAY_A' ) ) {
@@ -68,18 +68,18 @@ if ( ! defined( 'ARRAY_A' ) ) {
 // RunsScreen::assets() (S10) reads these for its enqueue URLs/paths — a real
 // WP load order defines both from the plugin's own file location; under bare
 // PHPUnit there is no such file, so point them at the plugin root, matching
-// senroflux.php's own definitions closely enough for tests that call
+// specflux-site-agent.php's own definitions closely enough for tests that call
 // assets() directly (it only needs `build/runs/index.asset.php` to resolve).
-if ( ! defined( 'SENROFLUX_PATH' ) ) {
-	define( 'SENROFLUX_PATH', dirname( __DIR__ ) . '/' );
+if ( ! defined( 'SPECFLUX_SITE_AGENT_PATH' ) ) {
+	define( 'SPECFLUX_SITE_AGENT_PATH', dirname( __DIR__ ) . '/' );
 }
-if ( ! defined( 'SENROFLUX_URL' ) ) {
-	define( 'SENROFLUX_URL', 'http://example.test/wp-content/plugins/senroflux/' );
+if ( ! defined( 'SPECFLUX_SITE_AGENT_URL' ) ) {
+	define( 'SPECFLUX_SITE_AGENT_URL', 'http://example.test/wp-content/plugins/specflux-site-agent/' );
 }
-// S23: senroflux.php (never loaded under bare PHPUnit) defines this; tests
+// S23: specflux-site-agent.php (never loaded under bare PHPUnit) defines this; tests
 // that read it (PublicSurfaceTest) need the same value.
-if ( ! defined( 'SENROFLUX_API_VERSION' ) ) {
-	define( 'SENROFLUX_API_VERSION', '0.4.0' );
+if ( ! defined( 'SPECFLUX_SITE_AGENT_API_VERSION' ) ) {
+	define( 'SPECFLUX_SITE_AGENT_API_VERSION', '0.4.0' );
 }
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
@@ -92,11 +92,11 @@ if ( ! defined( 'DAY_IN_SECONDS' ) ) {
 }
 
 // Site-timezone shims. Tests pick the zone via
-// $GLOBALS['senroflux_test_timezone'] (default UTC).
+// $GLOBALS['specflux_site_agent_test_timezone'] (default UTC).
 if ( ! function_exists( 'wp_timezone_string' ) ) {
 	/** Test stand-in: the configured test timezone string. */
 	function wp_timezone_string(): string {
-		return (string) ( $GLOBALS['senroflux_test_timezone'] ?? 'UTC' );
+		return (string) ( $GLOBALS['specflux_site_agent_test_timezone'] ?? 'UTC' );
 	}
 }
 if ( ! function_exists( 'wp_timezone' ) ) {
@@ -116,7 +116,7 @@ if ( ! function_exists( 'wp_date' ) ) {
 
 // --- Working mini hook registry -------------------------------------------
 
-$GLOBALS['senroflux_test_filters'] = array();
+$GLOBALS['specflux_site_agent_test_filters'] = array();
 
 if ( ! function_exists( 'add_filter' ) ) {
 	/**
@@ -129,7 +129,7 @@ if ( ! function_exists( 'add_filter' ) ) {
 	 * @return bool
 	 */
 	function add_filter( string $hook, $callback, int $priority = 10, int $accepted_args = 1 ): bool {
-		$GLOBALS['senroflux_test_filters'][ $hook ][ $priority ][] = array( $callback, $accepted_args );
+		$GLOBALS['specflux_site_agent_test_filters'][ $hook ][ $priority ][] = array( $callback, $accepted_args );
 
 		return true;
 	}
@@ -188,7 +188,7 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	 * @return mixed
 	 */
 	function apply_filters( string $hook, $value, ...$args ) {
-		foreach ( $GLOBALS['senroflux_test_filters'][ $hook ] ?? array() as $callbacks ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_filters'][ $hook ] ?? array() as $callbacks ) {
 			foreach ( $callbacks as list( $callback, $accepted_args ) ) {
 				$value = $callback( $value, ...array_slice( $args, 0, $accepted_args - 1 ) );
 			}
@@ -201,20 +201,20 @@ if ( ! function_exists( 'apply_filters' ) ) {
 if ( ! function_exists( 'get_stylesheet' ) ) {
 	/**
 	 * Active theme slug; Twenty Twenty-Five unless a test sets
-	 * `$GLOBALS['senroflux_test_stylesheet']`.
+	 * `$GLOBALS['specflux_site_agent_test_stylesheet']`.
 	 */
 	function get_stylesheet(): string {
-		return $GLOBALS['senroflux_test_stylesheet'] ?? 'twentytwentyfive';
+		return $GLOBALS['specflux_site_agent_test_stylesheet'] ?? 'twentytwentyfive';
 	}
 }
 
 if ( ! function_exists( 'get_template' ) ) {
 	/**
 	 * Parent theme slug; follows the stylesheet unless a test sets
-	 * `$GLOBALS['senroflux_test_template']`.
+	 * `$GLOBALS['specflux_site_agent_test_template']`.
 	 */
 	function get_template(): string {
-		return $GLOBALS['senroflux_test_template'] ?? get_stylesheet();
+		return $GLOBALS['specflux_site_agent_test_template'] ?? get_stylesheet();
 	}
 }
 
@@ -227,28 +227,28 @@ if ( ! function_exists( 'remove_all_filters' ) ) {
 	 */
 	function remove_all_filters( ?string $hook = null ): void {
 		if ( null === $hook ) {
-			$GLOBALS['senroflux_test_filters'] = array();
+			$GLOBALS['specflux_site_agent_test_filters'] = array();
 			return;
 		}
-		unset( $GLOBALS['senroflux_test_filters'][ $hook ] );
+		unset( $GLOBALS['specflux_site_agent_test_filters'][ $hook ] );
 	}
 }
 
 // --- Minimal function shims (recording where useful) -----------------------
 
 if ( ! function_exists( 'add_action' ) ) {
-	$GLOBALS['senroflux_test_actions'] = array();
+	$GLOBALS['specflux_site_agent_test_actions'] = array();
 
 	/**
-	 * Recording shim: $GLOBALS['senroflux_test_actions'][$hook][] = callback,
-	 * and $GLOBALS['senroflux_test_action_priorities'][$hook][] = [callback, priority].
+	 * Recording shim: $GLOBALS['specflux_site_agent_test_actions'][$hook][] = callback,
+	 * and $GLOBALS['specflux_site_agent_test_action_priorities'][$hook][] = [callback, priority].
 	 *
 	 * @param mixed ...$args Hook args.
 	 * @return bool
 	 */
 	function add_action( ...$args ): bool {
-		$GLOBALS['senroflux_test_actions'][ (string) $args[0] ][]           = $args[1] ?? null;
-		$GLOBALS['senroflux_test_action_priorities'][ (string) $args[0] ][] = array( $args[1] ?? null, (int) ( $args[2] ?? 10 ) );
+		$GLOBALS['specflux_site_agent_test_actions'][ (string) $args[0] ][]           = $args[1] ?? null;
+		$GLOBALS['specflux_site_agent_test_action_priorities'][ (string) $args[0] ][] = array( $args[1] ?? null, (int) ( $args[2] ?? 10 ) );
 
 		return true;
 	}
@@ -268,54 +268,54 @@ if ( ! function_exists( 'esc_html__' ) ) {
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
-	$GLOBALS['senroflux_test_user_caps'] = array();
+	$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 	/**
-	 * Test knob: $GLOBALS['senroflux_test_user_caps'][$cap] = bool. A
+	 * Test knob: $GLOBALS['specflux_site_agent_test_user_caps'][$cap] = bool. A
 	 * per-object entry under "$cap:$object_id" wins when a call passes an id.
 	 */
 	function current_user_can( string $capability, mixed ...$args ): bool {
-		if ( isset( $args[0] ) && isset( $GLOBALS['senroflux_test_user_caps'][ $capability . ':' . $args[0] ] ) ) {
-			return (bool) $GLOBALS['senroflux_test_user_caps'][ $capability . ':' . $args[0] ];
+		if ( isset( $args[0] ) && isset( $GLOBALS['specflux_site_agent_test_user_caps'][ $capability . ':' . $args[0] ] ) ) {
+			return (bool) $GLOBALS['specflux_site_agent_test_user_caps'][ $capability . ':' . $args[0] ];
 		}
 
-		return (bool) ( $GLOBALS['senroflux_test_user_caps'][ $capability ] ?? false );
+		return (bool) ( $GLOBALS['specflux_site_agent_test_user_caps'][ $capability ] ?? false );
 	}
 }
 
 if ( ! function_exists( 'user_can' ) ) {
 	/**
-	 * Test knob: $GLOBALS['senroflux_test_user_caps_by_id'][$user_id][$cap] = bool.
+	 * Test knob: $GLOBALS['specflux_site_agent_test_user_caps_by_id'][$user_id][$cap] = bool.
 	 * Falls back to the current-user knob when no per-user entry exists, so
 	 * tests that only set current_user_can()'s knob keep working.
 	 */
 	function user_can( int $user_id, string $capability ): bool {
-		if ( isset( $GLOBALS['senroflux_test_user_caps_by_id'][ $user_id ][ $capability ] ) ) {
-			return (bool) $GLOBALS['senroflux_test_user_caps_by_id'][ $user_id ][ $capability ];
+		if ( isset( $GLOBALS['specflux_site_agent_test_user_caps_by_id'][ $user_id ][ $capability ] ) ) {
+			return (bool) $GLOBALS['specflux_site_agent_test_user_caps_by_id'][ $user_id ][ $capability ];
 		}
 
-		return (bool) ( $GLOBALS['senroflux_test_user_caps'][ $capability ] ?? false );
+		return (bool) ( $GLOBALS['specflux_site_agent_test_user_caps'][ $capability ] ?? false );
 	}
 }
 
 if ( ! function_exists( 'get_user_meta' ) ) {
-	$GLOBALS['senroflux_test_user_meta'] = array();
+	$GLOBALS['specflux_site_agent_test_user_meta'] = array();
 
 	/**
-	 * Test knob: $GLOBALS['senroflux_test_user_meta'][$user_id][$key] = mixed.
+	 * Test knob: $GLOBALS['specflux_site_agent_test_user_meta'][$user_id][$key] = mixed.
 	 * `$single` is always honoured (the harness never reads a meta array).
 	 */
 	function get_user_meta( int $user_id, string $key = '', bool $single = false ) {
 		unset( $single );
 
-		return $GLOBALS['senroflux_test_user_meta'][ $user_id ][ $key ] ?? '';
+		return $GLOBALS['specflux_site_agent_test_user_meta'][ $user_id ][ $key ] ?? '';
 	}
 }
 
 if ( ! function_exists( 'update_user_meta' ) ) {
-	/** Test knob: records the write in $GLOBALS['senroflux_test_user_meta']. */
+	/** Test knob: records the write in $GLOBALS['specflux_site_agent_test_user_meta']. */
 	function update_user_meta( int $user_id, string $key, $value ) {
-		$GLOBALS['senroflux_test_user_meta'][ $user_id ][ $key ] = $value;
+		$GLOBALS['specflux_site_agent_test_user_meta'][ $user_id ][ $key ] = $value;
 
 		return true;
 	}
@@ -324,7 +324,7 @@ if ( ! function_exists( 'update_user_meta' ) ) {
 if ( ! function_exists( 'delete_user_meta' ) ) {
 	/** Test knob: clears one meta key for one user. */
 	function delete_user_meta( int $user_id, string $key ) {
-		unset( $GLOBALS['senroflux_test_user_meta'][ $user_id ][ $key ] );
+		unset( $GLOBALS['specflux_site_agent_test_user_meta'][ $user_id ][ $key ] );
 
 		return true;
 	}
@@ -358,11 +358,11 @@ if ( ! function_exists( 'wp_nonce_url' ) ) {
 }
 
 if ( ! function_exists( 'check_admin_referer' ) ) {
-	/** No-op shim; $GLOBALS['senroflux_test_bad_nonce'] makes it die like core does. */
+	/** No-op shim; $GLOBALS['specflux_site_agent_test_bad_nonce'] makes it die like core does. */
 	function check_admin_referer( string $action ): bool {
 		unset( $action );
 
-		if ( ! empty( $GLOBALS['senroflux_test_bad_nonce'] ) ) {
+		if ( ! empty( $GLOBALS['specflux_site_agent_test_bad_nonce'] ) ) {
 			wp_die( 'The link you followed has expired.' );
 		}
 
@@ -371,18 +371,18 @@ if ( ! function_exists( 'check_admin_referer' ) ) {
 }
 
 if ( ! function_exists( 'wp_safe_redirect' ) ) {
-	$GLOBALS['senroflux_test_redirect'] = '';
+	$GLOBALS['specflux_site_agent_test_redirect'] = '';
 
 	/** Recording shim. */
 	function wp_safe_redirect( string $location ): void {
-		$GLOBALS['senroflux_test_redirect'] = $location;
+		$GLOBALS['specflux_site_agent_test_redirect'] = $location;
 	}
 }
 
 if ( ! function_exists( 'is_multisite' ) ) {
-	/** Toggle shim: tests set $GLOBALS['senroflux_test_multisite']. */
+	/** Toggle shim: tests set $GLOBALS['specflux_site_agent_test_multisite']. */
 	function is_multisite(): bool {
-		return ! empty( $GLOBALS['senroflux_test_multisite'] );
+		return ! empty( $GLOBALS['specflux_site_agent_test_multisite'] );
 	}
 }
 
@@ -394,12 +394,12 @@ if ( ! function_exists( 'plugin_basename' ) ) {
 }
 
 if ( ! function_exists( 'deactivate_plugins' ) ) {
-	$GLOBALS['senroflux_test_deactivated_plugins'] = array();
+	$GLOBALS['specflux_site_agent_test_deactivated_plugins'] = array();
 
-	/** Recording shim: $GLOBALS['senroflux_test_deactivated_plugins'][]. */
+	/** Recording shim: $GLOBALS['specflux_site_agent_test_deactivated_plugins'][]. */
 	function deactivate_plugins( $plugins ): void {
 		foreach ( (array) $plugins as $plugin ) {
-			$GLOBALS['senroflux_test_deactivated_plugins'][] = $plugin;
+			$GLOBALS['specflux_site_agent_test_deactivated_plugins'][] = $plugin;
 		}
 	}
 }
@@ -473,11 +473,11 @@ if ( ! function_exists( 'esc_html' ) ) {
 }
 
 if ( ! function_exists( 'get_current_user_id' ) ) {
-	$GLOBALS['senroflux_test_current_user_id'] = 0;
+	$GLOBALS['specflux_site_agent_test_current_user_id'] = 0;
 
-	/** Test control knob: set $GLOBALS['senroflux_test_current_user_id'] per-test. */
+	/** Test control knob: set $GLOBALS['specflux_site_agent_test_current_user_id'] per-test. */
 	function get_current_user_id(): int {
-		return (int) ( $GLOBALS['senroflux_test_current_user_id'] ?? 0 );
+		return (int) ( $GLOBALS['specflux_site_agent_test_current_user_id'] ?? 0 );
 	}
 }
 
@@ -491,24 +491,24 @@ if ( ! function_exists( 'admin_url' ) ) {
 if ( ! function_exists( 'menu_page_url' ) ) {
 	/** Minimal shim: a page is "registered" when the test seeded its URL. */
 	function menu_page_url( string $menu_slug, bool $display = true ): string {
-		return (string) ( $GLOBALS['senroflux_test_menu_urls'][ $menu_slug ] ?? '' );
+		return (string) ( $GLOBALS['specflux_site_agent_test_menu_urls'][ $menu_slug ] ?? '' );
 	}
 }
 
 if ( ! function_exists( 'get_transient' ) ) {
-	$GLOBALS['senroflux_test_transients'] = array();
+	$GLOBALS['specflux_site_agent_test_transients'] = array();
 
 	/** Recording shim mirroring the options-table backing. */
 	function get_transient( string $key ): mixed {
-		return $GLOBALS['senroflux_test_transients'][ $key ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_transients'][ $key ] ?? false;
 	}
 }
 
 if ( ! function_exists( 'set_transient' ) ) {
 	/** Recording shim. */
 	function set_transient( string $key, mixed $value, int $expiration = 0 ): bool {
-		$GLOBALS['senroflux_test_transients'][ $key ]     = $value;
-		$GLOBALS['senroflux_test_transient_ttls'][ $key ] = $expiration;
+		$GLOBALS['specflux_site_agent_test_transients'][ $key ]     = $value;
+		$GLOBALS['specflux_site_agent_test_transient_ttls'][ $key ] = $expiration;
 
 		return true;
 	}
@@ -517,7 +517,7 @@ if ( ! function_exists( 'set_transient' ) ) {
 if ( ! function_exists( 'delete_transient' ) ) {
 	/** Recording shim. */
 	function delete_transient( string $key ): bool {
-		unset( $GLOBALS['senroflux_test_transients'][ $key ] );
+		unset( $GLOBALS['specflux_site_agent_test_transients'][ $key ] );
 
 		return true;
 	}
@@ -538,7 +538,7 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 }
 
 if ( ! function_exists( 'dbDelta' ) ) {
-	$GLOBALS['senroflux_test_dbdelta_queries'] = array();
+	$GLOBALS['specflux_site_agent_test_dbdelta_queries'] = array();
 
 	/**
 	 * Recording shim: captures statements instead of touching a database.
@@ -548,7 +548,7 @@ if ( ! function_exists( 'dbDelta' ) ) {
 	 */
 	function dbDelta( $queries = '', bool $execute = true ): array {
 		foreach ( (array) $queries as $query ) {
-			$GLOBALS['senroflux_test_dbdelta_queries'][] = (string) $query;
+			$GLOBALS['specflux_site_agent_test_dbdelta_queries'][] = (string) $query;
 		}
 
 		return array();
@@ -556,25 +556,25 @@ if ( ! function_exists( 'dbDelta' ) ) {
 }
 
 if ( ! function_exists( 'site_url' ) ) {
-	/** Test site URL; override with $GLOBALS['senroflux_test_site_url']. */
+	/** Test site URL; override with $GLOBALS['specflux_site_agent_test_site_url']. */
 	function site_url( string $path = '' ): string {
-		return ( $GLOBALS['senroflux_test_site_url'] ?? 'http://example.test' ) . $path;
+		return ( $GLOBALS['specflux_site_agent_test_site_url'] ?? 'http://example.test' ) . $path;
 	}
 }
 
 if ( ! function_exists( 'get_option' ) ) {
-	$GLOBALS['senroflux_test_options'] = array();
+	$GLOBALS['specflux_site_agent_test_options'] = array();
 
 	/** Test knob: options backed by an in-memory array. */
 	function get_option( string $option, mixed $fallback = false ): mixed {
-		return $GLOBALS['senroflux_test_options'][ $option ] ?? $fallback;
+		return $GLOBALS['specflux_site_agent_test_options'][ $option ] ?? $fallback;
 	}
 }
 
 if ( ! function_exists( 'update_option' ) ) {
 	/** Test knob: options backed by an in-memory array. */
 	function update_option( string $option, mixed $value, ?bool $autoload = null ): bool {
-		$GLOBALS['senroflux_test_options'][ $option ] = $value;
+		$GLOBALS['specflux_site_agent_test_options'][ $option ] = $value;
 
 		return true;
 	}
@@ -583,16 +583,16 @@ if ( ! function_exists( 'update_option' ) ) {
 if ( ! function_exists( 'delete_option' ) ) {
 	/** Test knob: options backed by an in-memory array. */
 	function delete_option( string $option ): bool {
-		if ( ! array_key_exists( $option, $GLOBALS['senroflux_test_options'] ) ) {
+		if ( ! array_key_exists( $option, $GLOBALS['specflux_site_agent_test_options'] ) ) {
 			return false; // Like core: nothing deleted, nothing to report.
 		}
-		unset( $GLOBALS['senroflux_test_options'][ $option ] );
+		unset( $GLOBALS['specflux_site_agent_test_options'][ $option ] );
 
 		return true;
 	}
 }
 
-// 0.3 S11 follow-up: `Plugin::start()` now asks the SAME `senroflux/provider`
+// 0.3 S11 follow-up: `Plugin::start()` now asks the SAME `specflux/provider`
 // harness check the setup panel renders (Checks::providerCheck()). Most of
 // the suite starts runs without ever configuring a model provider and is not
 // testing that check at all, so the suite-wide default is "configured" —
@@ -602,15 +602,15 @@ if ( ! function_exists( 'delete_option' ) ) {
 // this explicitly and restore it to `true` (never to `null`, which would fall
 // through to the real, unconfigured `wordpress/php-ai-client` registry and
 // strand every OTHER test file that runs afterwards in the same process).
-\Specflux\SenroFlux\Setup\Checks::setProviderProbe( true );
+\Specflux\SiteAgent\Setup\Checks::setProviderProbe( true );
 
 // K1: the connector resolves the request's connection from core's REST
-// auth. Test knob: $GLOBALS['senroflux_test_app_password'] is the application
+// auth. Test knob: $GLOBALS['specflux_site_agent_test_app_password'] is the application
 // password UUID the request authenticated with (null = a cookie session).
 if ( ! function_exists( 'rest_get_authenticated_app_password' ) ) {
 	/** Knob-backed stand-in for core's helper. */
 	function rest_get_authenticated_app_password(): ?string {
-		$uuid = $GLOBALS['senroflux_test_app_password'] ?? null;
+		$uuid = $GLOBALS['specflux_site_agent_test_app_password'] ?? null;
 
 		return is_string( $uuid ) ? $uuid : null;
 	}

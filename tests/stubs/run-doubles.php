@@ -4,16 +4,16 @@
  * recording approval bridge. Loaded from tests/bootstrap.php so any test
  * file can use them (not just RunnerTest.php).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
-use Specflux\SenroFlux\Approval\ApprovalBridge;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
 use WP_Error;
 
 if ( ! class_exists( FakeGateway::class ) ) {
@@ -32,7 +32,7 @@ if ( ! class_exists( FakeGateway::class ) ) {
 		/** @var list<string> The system instruction each generateTurn() received. */
 		public array $systemInstructions = array();
 
-		/** @var list<\Specflux\SenroFlux\Tools\ToolRegistry> The tool surface each generateTurn() received. */
+		/** @var list<\Specflux\SiteAgent\Tools\ToolRegistry> The tool surface each generateTurn() received. */
 		public array $toolsLog = array();
 
 		/** @var list<list<mixed>> The message history each generateTurn() received, verbatim. */
@@ -44,7 +44,7 @@ if ( ! class_exists( FakeGateway::class ) ) {
 		/** @var list<array{0:string,1:string}|null> The model preference each generateTurn() received. */
 		public array $modelPreferences = array();
 
-		public function generateTurn( array $history, string $system_instruction, \Specflux\SenroFlux\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
+		public function generateTurn( array $history, string $system_instruction, \Specflux\SiteAgent\Tools\ToolRegistry $tools, ?array $model_preference = null ): ModelTurn|WP_Error {
 			$this->calls[]              = array( 'history_count' => count( $history ) );
 			$this->histories[]          = array_values( $history );
 			$this->systemInstructions[] = $system_instruction;

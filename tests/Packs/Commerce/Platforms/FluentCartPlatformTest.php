@@ -3,21 +3,21 @@
  * The FluentCart store platform (C4-F): detection, role map and resolution
  * (MCP module on and off), native shaping, verbs and tiers, cards, lookups.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart\FluentCartPlatform;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Commerce\ReportLookup;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart\FluentCartPlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Commerce\ReportLookup;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Tools\VerbTier;
 use wpdb;
 
 final class FluentCartPlatformTest extends TestCase {
@@ -25,11 +25,11 @@ final class FluentCartPlatformTest extends TestCase {
 	private FluentCartPlatform $platform;
 
 	protected function setUp(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
-		$GLOBALS['senroflux_test_options']   = array();
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
-		$GLOBALS['wpdb']                     = new wpdb();
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		$GLOBALS['wpdb']                               = new wpdb();
 		Plugin::reset();
 		Plugin::set_dependency_probe( true );
 		FluentCartPlatform::boot();
@@ -38,10 +38,10 @@ final class FluentCartPlatformTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
 		FluentCartPlatform::useVersionProbe( null );
-		$GLOBALS['senroflux_test_abilities'] = array();
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_abilities'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 		unset( $GLOBALS['wpdb'] );
 		Plugin::set_dependency_probe( null );
 		Plugin::reset();
@@ -64,7 +64,7 @@ final class FluentCartPlatformTest extends TestCase {
 	/** @param list<string> $names Native ability names under fluent-cart/. */
 	private function registerNatives( array $names ): void {
 		foreach ( $names as $name ) {
-			$GLOBALS['senroflux_test_abilities'][ 'fluent-cart/' . $name ] = new \SenroFlux_Test_Fake_Ability(
+			$GLOBALS['specflux_site_agent_test_abilities'][ 'fluent-cart/' . $name ] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 				'fluent-cart/' . $name,
 				input_schema: array(
 					'type'       => 'object',
@@ -81,7 +81,7 @@ final class FluentCartPlatformTest extends TestCase {
 	public function test_it_registers_on_the_platform_filter_after_woo(): void {
 		$this->assertSame( array( 'woo', 'fluentcart' ), array_keys( StorePlatforms::all() ) );
 		$this->assertContains( 'fluent-cart/', StorePlatforms::governedNamespaces() );
-		$this->assertNotContains( 'senroflux/', StorePlatforms::governedNamespaces() );
+		$this->assertNotContains( 'specflux/', StorePlatforms::governedNamespaces() );
 	}
 
 	public function test_detection_not_installed_below_min_and_active(): void {
@@ -99,7 +99,7 @@ final class FluentCartPlatformTest extends TestCase {
 		$this->assertSame( '1.7.0', $this->platform->minVersion() );
 	}
 
-	public function test_it_is_governed_only_where_senrogate_governs_it(): void {
+	public function test_it_is_governed_only_where_agent_governance_governs_it(): void {
 		$this->assertTrue( $this->platform->isGoverned() );
 		Plugin::set_dependency_probe( false );
 		Plugin::reset();
@@ -115,7 +115,7 @@ final class FluentCartPlatformTest extends TestCase {
 	public function test_identity_and_capabilities(): void {
 		$this->assertSame( 'fluentcart', $this->platform->id() );
 		$this->assertSame( 'FluentCart', $this->platform->label() );
-		$this->assertSame( array( 'fluent-cart/', 'senroflux/' ), $this->platform->abilityNamespaces() );
+		$this->assertSame( array( 'fluent-cart/', 'specflux/' ), $this->platform->abilityNamespaces() );
 		$this->assertSame( 'manage_options', $this->platform->runCapability() );
 		$this->assertSame( 'manage_options', $this->platform->restoreCapability() );
 		$this->assertSame( 'manage_options', $this->pack()->runCapability() );
@@ -145,14 +145,14 @@ final class FluentCartPlatformTest extends TestCase {
 		}
 	}
 
-	public function test_with_the_mcp_module_off_every_role_is_a_senroflux_polyfill(): void {
+	public function test_with_the_mcp_module_off_every_role_is_a_specflux_site_agent_polyfill(): void {
 		$resolved = $this->pack()->resolveAbilities();
 
 		foreach ( $resolved as $role => $ability ) {
-			$this->assertStringStartsWith( 'senroflux/', $ability, $role );
+			$this->assertStringStartsWith( 'specflux/', $ability, $role );
 		}
-		$this->assertSame( 'senroflux/fluentcart-orders-refund', $resolved['refund'] );
-		$this->assertSame( 'senroflux/fluentcart-coupon-create', $resolved['coupon-create'] );
+		$this->assertSame( 'specflux/fluentcart-orders-refund', $resolved['refund'] );
+		$this->assertSame( 'specflux/fluentcart-coupon-create', $resolved['coupon-create'] );
 	}
 
 	public function test_with_the_mcp_module_on_safe_roles_go_native_and_refund_stays_a_polyfill(): void {
@@ -164,9 +164,9 @@ final class FluentCartPlatformTest extends TestCase {
 		$this->assertSame( 'fluent-cart/get-sales-report', $resolved['store-report'] );
 		$this->assertSame( 'fluent-cart/get-product', $resolved['read'] );
 		$this->assertSame( 'fluent-cart/get-order', $resolved['order-read'] );
-		$this->assertSame( 'senroflux/fluentcart-orders-refund', $resolved['refund'], 'native refund-order needs a dry-run/confirm-token pair a role call cannot give' );
-		$this->assertSame( 'senroflux/fluentcart-product-create', $resolved['create'] );
-		$this->assertSame( 'senroflux/save-store-report', $resolved['report-save'] );
+		$this->assertSame( 'specflux/fluentcart-orders-refund', $resolved['refund'], 'native refund-order needs a dry-run/confirm-token pair a role call cannot give' );
+		$this->assertSame( 'specflux/fluentcart-product-create', $resolved['create'] );
+		$this->assertSame( 'specflux/save-store-report', $resolved['report-save'] );
 	}
 
 	// ------------------------------------------------------------------
@@ -192,7 +192,7 @@ final class FluentCartPlatformTest extends TestCase {
 				)
 			)
 		);
-		$this->assertSame( array( 'id' => 5 ), $pack->shapeInput( 'senroflux/fluentcart-product-read', array( 'id' => 5 ) ) );
+		$this->assertSame( array( 'id' => 5 ), $pack->shapeInput( 'specflux/fluentcart-product-read', array( 'id' => 5 ) ) );
 	}
 
 	public function test_a_coupon_create_is_always_pinned_to_an_inactive_draft(): void {
@@ -286,13 +286,13 @@ final class FluentCartPlatformTest extends TestCase {
 		}
 
 		$map = $pack->agentSafetyVerbMap();
-		$this->assertSame( 2, $map['senroflux/fluentcart-orders-refund'] );
-		$this->assertSame( 1, $map['senroflux/fluentcart-coupon-create'] );
-		$this->assertSame( 2, $map['senroflux/fluentcart-coupon-enable'] );
-		$this->assertSame( 2, $map['senroflux/fluentcart-product-update'], 'price/publish collapse the ability up to Tier 2' );
-		$this->assertSame( 2, $map['senroflux/fluentcart-shipping-zone-save'] );
-		$this->assertSame( 2, $map['senroflux/fluentcart-tax-rate-save'] );
-		$this->assertSame( 0, $map['senroflux/fluentcart-store-report'] );
+		$this->assertSame( 2, $map['specflux/fluentcart-orders-refund'] );
+		$this->assertSame( 1, $map['specflux/fluentcart-coupon-create'] );
+		$this->assertSame( 2, $map['specflux/fluentcart-coupon-enable'] );
+		$this->assertSame( 2, $map['specflux/fluentcart-product-update'], 'price/publish collapse the ability up to Tier 2' );
+		$this->assertSame( 2, $map['specflux/fluentcart-shipping-zone-save'] );
+		$this->assertSame( 2, $map['specflux/fluentcart-tax-rate-save'] );
+		$this->assertSame( 0, $map['specflux/fluentcart-store-report'] );
 		$this->assertContains( 'commerce/refund', $pack->ungrantableVerbs() );
 	}
 
@@ -324,7 +324,7 @@ final class FluentCartPlatformTest extends TestCase {
 		$this->assertSame( 2, VerbTier::tierFor( 'fluent-cart/change-order-status', $p->verbTiers() ) );
 	}
 
-	public function test_manage_coupon_verbs_mirror_senrogates_activation_rule(): void {
+	public function test_manage_coupon_verbs_mirror_governances_activation_rule(): void {
 		$p = $this->platform;
 		$this->row(
 			'fct_coupons',
@@ -480,7 +480,7 @@ final class FluentCartPlatformTest extends TestCase {
 		$this->assertNotNull( $this->platform->validateCall( 'fluentcart-product-update', array( 'short_description' => '<script>x</script>' ) ) );
 		$this->assertNotNull( $this->platform->validateCall( 'fluentcart-product-create', array( 'description' => '<a href="javascript:alert(1)">x</a>' ) ) );
 		$this->assertNull( $this->platform->validateCall( 'fluentcart-coupon-create', array( 'description' => '<script>x</script>' ) ), 'only the product abilities carry descriptions' );
-		$this->assertNull( $this->pack()->validateCall( 'senroflux/fluentcart-product-create', array( 'description' => 'plain' ) ) );
+		$this->assertNull( $this->pack()->validateCall( 'specflux/fluentcart-product-create', array( 'description' => 'plain' ) ) );
 	}
 
 	public function test_object_ids_come_from_flat_polyfill_and_enveloped_native_outputs(): void {
@@ -517,7 +517,7 @@ final class FluentCartPlatformTest extends TestCase {
 
 		$card = CommerceSummary::filter(
 			'plain',
-			'senroflux/fluentcart-orders-refund',
+			'specflux/fluentcart-orders-refund',
 			array(
 				'order_id' => 7,
 				'amount'   => 12.5,

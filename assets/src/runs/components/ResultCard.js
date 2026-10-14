@@ -35,12 +35,12 @@ function Links( { links } ) {
 		return null;
 	}
 	return (
-		<ul className="senroflux-card-links">
+		<ul className="specflux-site-agent-card-links">
 			{ safe.map( ( l, i ) => (
 				<li key={ i }>
 					<a href={ safeUrl( l.url ) } target="_blank" rel="noopener noreferrer">
 						{ text( l.label ) }
-						<span className="screen-reader-text">{ ' ' + __( '(opens in a new tab)', 'senroflux' ) }</span>
+						<span className="screen-reader-text">{ ' ' + __( '(opens in a new tab)', 'specflux-site-agent' ) }</span>
 					</a>
 				</li>
 			) ) }
@@ -55,9 +55,9 @@ function Thumb( { url, alt } ) {
 	}
 	const altText = text( alt );
 	return (
-		<span className="senroflux-card-thumb-wrap">
-			<img className="senroflux-card-thumb" src={ src } alt={ altText } loading="lazy" />
-			{ '' === altText && <span className="senroflux-card-noalt">{ __( 'No alt text', 'senroflux' ) }</span> }
+		<span className="specflux-site-agent-card-thumb-wrap">
+			<img className="specflux-site-agent-card-thumb" src={ src } alt={ altText } loading="lazy" />
+			{ '' === altText && <span className="specflux-site-agent-card-noalt">{ __( 'No alt text', 'specflux-site-agent' ) }</span> }
 		</span>
 	);
 }
@@ -68,11 +68,11 @@ function Fields( { fields } ) {
 		return null;
 	}
 	return (
-		<dl className="senroflux-card-fields">
+		<dl className="specflux-site-agent-card-fields">
 			{ rows.map( ( f, i ) => (
-				<div key={ i } className="senroflux-card-field">
+				<div key={ i } className="specflux-site-agent-card-field">
 					<dt>{ text( f.label ) }</dt>
-					<dd data-senroflux-content>{ text( f.value ) }</dd>
+					<dd data-specflux-site-agent-content>{ text( f.value ) }</dd>
 				</div>
 			) ) }
 		</dl>
@@ -85,8 +85,8 @@ function More( { count } ) {
 		return null;
 	}
 	return (
-		<p className="senroflux-card-more">
-			{ /* translators: %d: number of items not shown. */ sprintf( _n( '+ %d more not shown', '+ %d more not shown', n, 'senroflux' ), n ) }
+		<p className="specflux-site-agent-card-more">
+			{ /* translators: %d: number of items not shown. */ sprintf( _n( '+ %d more not shown', '+ %d more not shown', n, 'specflux-site-agent' ), n ) }
 		</p>
 	);
 }
@@ -96,28 +96,28 @@ function Body( { display } ) {
 	switch ( display.type ) {
 		case 'error':
 			return (
-				<div className="senroflux-card-error">
-					<p className="senroflux-card-title">
+				<div className="specflux-site-agent-card-error">
+					<p className="specflux-site-agent-card-title">
 						<span aria-hidden="true">{ '⚠ ' }</span>
-						<span className="senroflux-card-errorlabel">{ __( 'Error', 'senroflux' ) }</span>
-						{ text( display.title ) && <span data-senroflux-content>{ ': ' + text( display.title ) }</span> }
+						<span className="specflux-site-agent-card-errorlabel">{ __( 'Error', 'specflux-site-agent' ) }</span>
+						{ text( display.title ) && <span data-specflux-site-agent-content>{ ': ' + text( display.title ) }</span> }
 					</p>
-					{ text( display.message ) && <p className="senroflux-card-message" data-senroflux-content>{ text( display.message ) }</p> }
+					{ text( display.message ) && <p className="specflux-site-agent-card-message" data-specflux-site-agent-content>{ text( display.message ) }</p> }
 				</div>
 			);
 		case 'list':
 			return (
 				<>
-					<p className="senroflux-card-title">
-						<span data-senroflux-content>{ text( display.title ) }</span>{ ' ' }
-						{ /* translators: %d: number of items in the list. */ sprintf( _n( '(%d item)', '(%d items)', Number( display.count ) || 0, 'senroflux' ), Number( display.count ) || 0 ) }
+					<p className="specflux-site-agent-card-title">
+						<span data-specflux-site-agent-content>{ text( display.title ) }</span>{ ' ' }
+						{ /* translators: %d: number of items in the list. */ sprintf( _n( '(%d item)', '(%d items)', Number( display.count ) || 0, 'specflux-site-agent' ), Number( display.count ) || 0 ) }
 					</p>
-					<ul className="senroflux-card-list">
+					<ul className="specflux-site-agent-card-list">
 						{ ( Array.isArray( display.items ) ? display.items : [] ).map( ( item, i ) => (
 							<li key={ i }>
 								{ item && item.thumbnail_url && <Thumb url={ item.thumbnail_url } alt={ item.label } /> }
-								<span data-senroflux-content>{ text( item && item.label ) }</span>
-								{ text( item && item.detail ) && <span className="senroflux-card-detail" data-senroflux-content>{ text( item.detail ) }</span> }
+								<span data-specflux-site-agent-content>{ text( item && item.label ) }</span>
+								{ text( item && item.detail ) && <span className="specflux-site-agent-card-detail" data-specflux-site-agent-content>{ text( item.detail ) }</span> }
 							</li>
 						) ) }
 					</ul>
@@ -129,12 +129,12 @@ function Body( { display } ) {
 			const rows = Array.isArray( display.rows ) ? display.rows : [];
 			return (
 				<>
-					{ text( display.title ) && <p className="senroflux-card-title" data-senroflux-content>{ text( display.title ) }</p> }
-					<table className="senroflux-card-table">
+					{ text( display.title ) && <p className="specflux-site-agent-card-title" data-specflux-site-agent-content>{ text( display.title ) }</p> }
+					<table className="specflux-site-agent-card-table">
 						<thead>
 							<tr>
 								{ columns.map( ( c, i ) => (
-									<th key={ i } scope="col" data-senroflux-content>{ text( c ) }</th>
+									<th key={ i } scope="col" data-specflux-site-agent-content>{ text( c ) }</th>
 								) ) }
 							</tr>
 						</thead>
@@ -142,7 +142,7 @@ function Body( { display } ) {
 							{ rows.map( ( row, r ) => (
 								<tr key={ r }>
 									{ ( Array.isArray( row ) ? row : [] ).map( ( cell, c ) =>
-										0 === c ? <th key={ c } scope="row" data-senroflux-content>{ text( cell ) }</th> : <td key={ c } data-senroflux-content>{ text( cell ) }</td>
+										0 === c ? <th key={ c } scope="row" data-specflux-site-agent-content>{ text( cell ) }</th> : <td key={ c } data-specflux-site-agent-content>{ text( cell ) }</td>
 									) }
 								</tr>
 							) ) }
@@ -157,9 +157,9 @@ function Body( { display } ) {
 			return (
 				<>
 					{ 'media' === display.type && <Thumb url={ display.thumbnail_url } alt={ display.alt } /> }
-					<p className="senroflux-card-title">
-						<span data-senroflux-content>{ text( display.title ) }</span>
-						{ status && <span className="senroflux-card-status" data-senroflux-content>{ status }</span> }
+					<p className="specflux-site-agent-card-title">
+						<span data-specflux-site-agent-content>{ text( display.title ) }</span>
+						{ status && <span className="specflux-site-agent-card-status" data-specflux-site-agent-content>{ status }</span> }
 					</p>
 					<Fields fields={ display.fields } />
 					<Links links={ display.links } />
@@ -180,22 +180,22 @@ function Body( { display } ) {
 export default function ResultCard( { display, raw } ) {
 	const [ showRaw, setShowRaw ] = useState( false );
 	if ( ! isRenderableDisplay( display ) ) {
-		return <span data-senroflux-content>{ raw }</span>;
+		return <span data-specflux-site-agent-content>{ raw }</span>;
 	}
 	return (
-		<div className="senroflux-card" data-card-type={ display.type }>
+		<div className="specflux-site-agent-card" data-card-type={ display.type }>
 			<Body display={ display } />
 			{ raw && (
 				<>
 					<button
 						type="button"
-						className="senroflux-card-raw-toggle button-link"
+						className="specflux-site-agent-card-raw-toggle button-link"
 						aria-expanded={ showRaw }
 						onClick={ () => setShowRaw( ! showRaw ) }
 					>
-						{ showRaw ? __( 'Hide raw', 'senroflux' ) : __( 'Show raw', 'senroflux' ) }
+						{ showRaw ? __( 'Hide raw', 'specflux-site-agent' ) : __( 'Show raw', 'specflux-site-agent' ) }
 					</button>
-					{ showRaw && <pre className="senroflux-card-raw" data-senroflux-content>{ raw }</pre> }
+					{ showRaw && <pre className="specflux-site-agent-card-raw" data-specflux-site-agent-content>{ raw }</pre> }
 				</>
 			) }
 		</div>

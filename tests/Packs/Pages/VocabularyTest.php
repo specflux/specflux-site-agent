@@ -5,24 +5,24 @@
  * TARGET REPO PATH: tests/Packs/Pages/VocabularyTest.php
  *
  * Verifies the seven-pattern vocabulary: registerability under the
- * `senroflux-pages` category, `serialize_blocks(parse_blocks())` round-trip
+ * `specflux-pages` category, `serialize_blocks(parse_blocks())` round-trip
  * identity on ALL SEVEN markups, and the single-source assertion that
  * `listPayload`'s `constraints.stated` lines are exactly the copy lines the
  * `pages/copy-rules` skill is rendered from (so the tool payload and the
  * instruction can never drift).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
-use Specflux\SenroFlux\Packs\Site\SitePack;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Packs\Site\SitePack;
 
 final class VocabularyTest extends TestCase {
 
@@ -33,12 +33,12 @@ final class VocabularyTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		$GLOBALS['senroflux_test_patterns']           = array();
-		$GLOBALS['senroflux_test_pattern_categories'] = array();
-		\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
-		$GLOBALS['senroflux_test_theme_patterns'] = array();
-		$GLOBALS['senroflux_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
-		$GLOBALS['senroflux_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_patterns']           = array();
+		$GLOBALS['specflux_site_agent_test_pattern_categories'] = array();
+		\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
+		$GLOBALS['specflux_site_agent_test_stylesheet_dir'] = dirname( __DIR__, 2 ) . '/ThemePatterns';
+		$GLOBALS['specflux_site_agent_test_template_dir']   = dirname( __DIR__, 2 ) . '/ThemePatterns';
 	}
 
 	/**
@@ -57,11 +57,11 @@ final class VocabularyTest extends TestCase {
 
 	public function test_image_patterns_resolve_the_placeholder_to_the_local_plugin_file(): void {
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
-			if ( ! in_array( $pattern['name'], array( 'senroflux/cover-hero', 'senroflux/media-text' ), true ) ) {
+			if ( ! in_array( $pattern['name'], array( 'specflux/cover-hero', 'specflux/media-text' ), true ) ) {
 				continue;
 			}
 			$this->assertStringNotContainsString( '{{', $pattern['markup'] );
-			$this->assertStringContainsString( SENROFLUX_URL . 'images/placeholder.jpg', $pattern['markup'] );
+			$this->assertStringContainsString( SPECFLUX_SITE_AGENT_URL . 'images/placeholder.jpg', $pattern['markup'] );
 		}
 	}
 
@@ -75,14 +75,14 @@ final class VocabularyTest extends TestCase {
 		$count      = $vocabulary->register();
 
 		$this->assertSame( 9, $count );
-		$this->assertSame( 9, count( $GLOBALS['senroflux_test_patterns'] ) );
-		$this->assertArrayHasKey( Vocabulary::CATEGORY, $GLOBALS['senroflux_test_pattern_categories'] );
+		$this->assertSame( 9, count( $GLOBALS['specflux_site_agent_test_patterns'] ) );
+		$this->assertArrayHasKey( Vocabulary::CATEGORY, $GLOBALS['specflux_site_agent_test_pattern_categories'] );
 
 		foreach ( $vocabulary->all() as $pattern ) {
-			$this->assertArrayHasKey( $pattern['name'], $GLOBALS['senroflux_test_patterns'] );
+			$this->assertArrayHasKey( $pattern['name'], $GLOBALS['specflux_site_agent_test_patterns'] );
 			$this->assertContains(
 				Vocabulary::CATEGORY,
-				$GLOBALS['senroflux_test_patterns'][ $pattern['name'] ]['categories']
+				$GLOBALS['specflux_site_agent_test_patterns'][ $pattern['name'] ]['categories']
 			);
 		}
 	}
@@ -111,7 +111,7 @@ final class VocabularyTest extends TestCase {
 		// to "no `-background-color` class" below.
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
 			$markup     = (string) $pattern['markup'];
-			$is_overlay = 'senroflux/cover-hero' === $pattern['name'];
+			$is_overlay = 'specflux/cover-hero' === $pattern['name'];
 
 			$this->assertStringNotContainsString( 'backgroundColor', $markup, $pattern['name'] );
 			$this->assertStringNotContainsString( 'textColor', $markup, $pattern['name'] );
@@ -129,7 +129,7 @@ final class VocabularyTest extends TestCase {
 	public function test_no_pattern_carries_an_image_or_a_placeholder(): void {
 		// 0.3 quality fix: `cover-hero`/`media-text` are the two DELIBERATE
 		// exceptions — the whole point of adding them was a real image.
-		$image_patterns = array( 'senroflux/cover-hero', 'senroflux/media-text' );
+		$image_patterns = array( 'specflux/cover-hero', 'specflux/media-text' );
 
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
 			$markup = (string) $pattern['markup'];
@@ -148,7 +148,7 @@ final class VocabularyTest extends TestCase {
 	public function test_every_pattern_names_itself_canonically(): void {
 		foreach ( ( new Vocabulary() )->all() as $pattern ) {
 			$this->assertStringContainsString(
-				'"metadata":{"name":"senroflux/' . $pattern['slug'] . '"}',
+				'"metadata":{"name":"specflux/' . $pattern['slug'] . '"}',
 				(string) $pattern['markup'],
 				$pattern['name']
 			);
@@ -235,7 +235,7 @@ final class VocabularyTest extends TestCase {
 	 * and the `{pattern, slots}` fill shape.
 	 */
 	public function test_theme_derived_patterns_get_one_summary_line_not_stated_lines(): void {
-		$GLOBALS['senroflux_test_theme_patterns'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array(
 			array(
 				'name'        => 'sometheme/hero',
 				'title'       => 'Hero banner',
@@ -244,7 +244,7 @@ final class VocabularyTest extends TestCase {
 				'filePath'    => dirname( __DIR__, 2 ) . '/ThemePatterns/fake-hero.php',
 			),
 		);
-		\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
+		\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
 
 		$vocabulary   = new Vocabulary();
 		$full_entries = $vocabulary->all();
@@ -275,9 +275,9 @@ final class VocabularyTest extends TestCase {
 	public function test_copy_rules_do_not_grow_with_the_number_of_theme_patterns(): void {
 		$lengths = array();
 		foreach ( array( 1, 60 ) as $count ) {
-			$GLOBALS['senroflux_test_theme_patterns'] = array();
+			$GLOBALS['specflux_site_agent_test_theme_patterns'] = array();
 			for ( $i = 0; $i < $count; $i++ ) {
-				$GLOBALS['senroflux_test_theme_patterns'][] = array(
+				$GLOBALS['specflux_site_agent_test_theme_patterns'][] = array(
 					'name'        => 'sometheme/section-' . $i,
 					'title'       => 'A fairly long theme pattern title number ' . $i,
 					'description' => 'A section.',
@@ -285,13 +285,13 @@ final class VocabularyTest extends TestCase {
 					'filePath'    => dirname( __DIR__, 2 ) . '/ThemePatterns/fake-section-' . $i . '.php',
 				);
 			}
-			\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
+			\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
 			$vocabulary = ( new Vocabulary() )->all();
 			$this->assertCount( $count, array_filter( $vocabulary, static fn ( array $p ): bool => ! empty( $p['theme_derived'] ) ) );
 			$lengths[ $count ] = mb_strlen( ( new PagesPack() )->copyRulesBody( $vocabulary ) );
 		}
-		\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'] );
+		\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'] );
 
 		// Only the digit count may differ ("1" versus "60").
 		$this->assertSame( $lengths[1] + 1, $lengths[60] );
@@ -303,7 +303,7 @@ final class VocabularyTest extends TestCase {
 	 * vocabulary that opts in still does.
 	 */
 	public function test_list_payload_leaves_out_theme_patterns_unless_the_vocabulary_offers_slots(): void {
-		$GLOBALS['senroflux_test_theme_patterns'] = array(
+		$GLOBALS['specflux_site_agent_test_theme_patterns'] = array(
 			array(
 				'name'        => 'sometheme/hero',
 				'title'       => 'Hero banner',
@@ -312,14 +312,14 @@ final class VocabularyTest extends TestCase {
 				'filePath'    => dirname( __DIR__, 2 ) . '/ThemePatterns/fake-hero.php',
 			),
 		);
-		\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
+		\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
 
 		$pages = new Vocabulary();
 		$this->assertNotNull( $pages->resolveThemePattern( 'sometheme/hero' ), 'layouts and the validator still see it' );
 		$this->assertNotContains( 'sometheme/hero', array_column( $pages->listPayload()['patterns'], 'name' ) );
 		$this->assertSame( array( 'sometheme/hero' ), $pages->listPayload( array( 'sometheme/hero' ) )['not_found'] );
 
-		$site = new \Specflux\SenroFlux\Packs\Site\Vocabulary();
+		$site = new \Specflux\SiteAgent\Packs\Site\Vocabulary();
 		$this->assertNotContains( 'sometheme/hero', array_column( $site->listPayload()['patterns'], 'name' ) );
 
 		$slots = new class() extends Vocabulary {
@@ -329,8 +329,8 @@ final class VocabularyTest extends TestCase {
 		};
 		$this->assertContains( 'sometheme/hero', array_column( $slots->listPayload()['patterns'], 'name' ) );
 
-		\Specflux\SenroFlux\Packs\Pages\ThemePatterns::resetCache();
-		unset( $GLOBALS['senroflux_test_theme_patterns'] );
+		\Specflux\SiteAgent\Packs\Pages\ThemePatterns::resetCache();
+		unset( $GLOBALS['specflux_site_agent_test_theme_patterns'] );
 	}
 
 	/**
@@ -394,21 +394,21 @@ final class VocabularyTest extends TestCase {
 	public function test_list_payload_with_names_returns_only_requested_in_vocabulary_order(): void {
 		$vocabulary = new Vocabulary();
 
-		$payload = $vocabulary->listPayload( array( 'senroflux/cta', 'senroflux/hero' ) );
+		$payload = $vocabulary->listPayload( array( 'specflux/cta', 'specflux/hero' ) );
 
 		$this->assertCount( 2, $payload['patterns'] );
-		$this->assertSame( 'senroflux/hero', $payload['patterns'][0]['name'] );
-		$this->assertSame( 'senroflux/cta', $payload['patterns'][1]['name'] );
+		$this->assertSame( 'specflux/hero', $payload['patterns'][0]['name'] );
+		$this->assertSame( 'specflux/cta', $payload['patterns'][1]['name'] );
 	}
 
 	/** An unrecognised name is reported back, not a call failure. */
 	public function test_list_payload_unknown_name_is_reported_not_found(): void {
 		$vocabulary = new Vocabulary();
 
-		$payload = $vocabulary->listPayload( array( 'senroflux/hero', 'senroflux/no-such-pattern' ) );
+		$payload = $vocabulary->listPayload( array( 'specflux/hero', 'specflux/no-such-pattern' ) );
 
 		$this->assertCount( 1, $payload['patterns'] );
-		$this->assertSame( array( 'senroflux/no-such-pattern' ), $payload['not_found'] );
+		$this->assertSame( array( 'specflux/no-such-pattern' ), $payload['not_found'] );
 	}
 
 	/**

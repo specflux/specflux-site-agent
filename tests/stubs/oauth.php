@@ -2,7 +2,7 @@
 /**
  * WordPress shims the OAuth suites need beyond tests/bootstrap.php (function_exists-guarded).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -15,23 +15,23 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
 		return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 	}
 }
-// Entry-point knobs: senroflux_test_is_admin, senroflux_test_doing_ajax, senroflux_test_doing_cron (globals).
+// Entry-point knobs: specflux_site_agent_test_is_admin, specflux_site_agent_test_doing_ajax, specflux_site_agent_test_doing_cron (globals).
 if ( ! function_exists( 'is_admin' ) ) {
 	/** Test knob. */
 	function is_admin(): bool {
-		return ! empty( $GLOBALS['senroflux_test_is_admin'] );
+		return ! empty( $GLOBALS['specflux_site_agent_test_is_admin'] );
 	}
 }
 if ( ! function_exists( 'wp_doing_ajax' ) ) {
 	/** Test knob. */
 	function wp_doing_ajax(): bool {
-		return ! empty( $GLOBALS['senroflux_test_doing_ajax'] );
+		return ! empty( $GLOBALS['specflux_site_agent_test_doing_ajax'] );
 	}
 }
 if ( ! function_exists( 'wp_doing_cron' ) ) {
 	/** Test knob. */
 	function wp_doing_cron(): bool {
-		return ! empty( $GLOBALS['senroflux_test_doing_cron'] );
+		return ! empty( $GLOBALS['specflux_site_agent_test_doing_cron'] );
 	}
 }
 if ( ! function_exists( 'wp_normalize_path' ) ) {
@@ -49,7 +49,7 @@ if ( ! function_exists( 'trailingslashit' ) ) {
 if ( ! function_exists( 'home_url' ) ) {
 	/** Test site root. */
 	function home_url( string $path = '' ): string {
-		return ( $GLOBALS['senroflux_test_home_url'] ?? 'http://example.test' ) . $path;
+		return ( $GLOBALS['specflux_site_agent_test_home_url'] ?? 'http://example.test' ) . $path;
 	}
 }
 if ( ! function_exists( 'untrailingslashit' ) ) {
@@ -79,15 +79,15 @@ if ( ! function_exists( 'rest_ensure_response' ) ) {
 if ( ! function_exists( 'register_rest_route' ) ) {
 	/** Recording shim. */
 	function register_rest_route( string $rest_namespace, string $route, array $args = array() ): bool {
-		$GLOBALS['senroflux_test_rest_routes'][ $rest_namespace . $route ] = $args;
+		$GLOBALS['specflux_site_agent_test_rest_routes'][ $rest_namespace . $route ] = $args;
 
 		return true;
 	}
 }
 
-if ( ! class_exists( 'SenroFlux_Test_Header_Response', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Header_Response', false ) ) {
 	/** REST response double that records headers. */
-	class SenroFlux_Test_Header_Response {
+	class SpecfluxSiteAgent_Test_Header_Response {
 
 		/** @var array<string,string> */
 		public array $headers = array();
@@ -104,9 +104,9 @@ if ( ! class_exists( 'SenroFlux_Test_Header_Response', false ) ) {
 		}
 	}
 }
-if ( ! class_exists( 'SenroFlux_Test_Route_Request', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Route_Request', false ) ) {
 	/** REST request double that knows only its route. */
-	class SenroFlux_Test_Route_Request {
+	class SpecfluxSiteAgent_Test_Route_Request {
 
 		public function __construct( private string $route ) {
 		}

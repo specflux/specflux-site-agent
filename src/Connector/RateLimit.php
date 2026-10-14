@@ -2,20 +2,20 @@
 /**
  * The built-in per-connection rate limit (K4).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * 60 calls a minute per connection, in built-in mode only (SenroGate does its
+ * 60 calls a minute per connection, in built-in mode only (Belayline Agent Governance does its
  * own limiting). A fixed one-minute window keyed by connection: simple, cheap,
  * and good enough to stop a runaway loop. Counted in a transient per window,
  * so it is approximate under concurrency (a burst can overshoot by a few) and
@@ -38,7 +38,7 @@ final class RateLimit {
 	public static function hit( string $uuid ): ?int {
 		$now    = Clock::now();
 		$window = intdiv( $now, self::WINDOW );
-		$key    = 'senroflux_rl_' . md5( $uuid ) . '_' . $window;
+		$key    = 'specflux_site_agent_rl_' . md5( $uuid ) . '_' . $window;
 		$count  = (int) get_transient( $key );
 
 		if ( $count >= self::LIMIT ) {

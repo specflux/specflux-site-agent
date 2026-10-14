@@ -5,13 +5,13 @@ const text = ( value ) => ( null === value || undefined === value ? '' : String(
 /** Field keys the server sends, as translatable labels. Unknown keys are skipped. */
 function fieldLabel( key ) {
 	const labels = {
-		title: __( 'Title', 'senroflux' ),
-		status: __( 'Status', 'senroflux' ),
-		slug: __( 'Slug', 'senroflux' ),
-		excerpt: __( 'Excerpt', 'senroflux' ),
-		regular_price: __( 'Regular price', 'senroflux' ),
-		sale_price: __( 'Sale price', 'senroflux' ),
-		amount: __( 'Coupon amount', 'senroflux' ),
+		title: __( 'Title', 'specflux-site-agent' ),
+		status: __( 'Status', 'specflux-site-agent' ),
+		slug: __( 'Slug', 'specflux-site-agent' ),
+		excerpt: __( 'Excerpt', 'specflux-site-agent' ),
+		regular_price: __( 'Regular price', 'specflux-site-agent' ),
+		sale_price: __( 'Sale price', 'specflux-site-agent' ),
+		amount: __( 'Coupon amount', 'specflux-site-agent' ),
 	};
 	return labels[ key ] || '';
 }
@@ -23,20 +23,20 @@ function Ops( { ops, label } ) {
 		return null;
 	}
 	return (
-		<p className="senroflux-diff-ops" aria-label={ label } data-senroflux-content dir="auto">
+		<p className="specflux-site-agent-diff-ops" aria-label={ label } data-specflux-site-agent-content dir="auto">
 			{ list.map( ( op, i ) => {
 				if ( 'del' === op.t ) {
 					return (
-						<del key={ i } className="senroflux-diff-del">
-							<span className="screen-reader-text">{ __( 'Removed:', 'senroflux' ) + ' ' }</span>
+						<del key={ i } className="specflux-site-agent-diff-del">
+							<span className="screen-reader-text">{ __( 'Removed:', 'specflux-site-agent' ) + ' ' }</span>
 							{ text( op.text ) }{ ' ' }
 						</del>
 					);
 				}
 				if ( 'ins' === op.t ) {
 					return (
-						<ins key={ i } className="senroflux-diff-ins">
-							<span className="screen-reader-text">{ __( 'Added:', 'senroflux' ) + ' ' }</span>
+						<ins key={ i } className="specflux-site-agent-diff-ins">
+							<span className="screen-reader-text">{ __( 'Added:', 'specflux-site-agent' ) + ' ' }</span>
 							{ text( op.text ) }{ ' ' }
 						</ins>
 					);
@@ -69,23 +69,23 @@ export default function ApprovalDiff( { diff } ) {
 	}
 
 	return (
-		<div className="senroflux-approval-diff">
+		<div className="specflux-site-agent-approval-diff">
 			<p>
-				<strong>{ __( 'What changes', 'senroflux' ) }:</strong>
+				<strong>{ __( 'What changes', 'specflux-site-agent' ) }:</strong>
 			</p>
 			{ fields.length > 0 && (
-				<dl className="senroflux-diff-fields">
+				<dl className="specflux-site-agent-diff-fields">
 					{ fields.map( ( f, i ) => (
-						<div key={ i } className="senroflux-diff-field">
+						<div key={ i } className="specflux-site-agent-diff-field">
 							<dt>{ fieldLabel( f.field ) }</dt>
 							<dd>
-								<span className="senroflux-diff-current">
-									<span className="senroflux-diff-tag">{ __( 'Current', 'senroflux' ) }:</span>{ ' ' }
-									<del data-senroflux-content dir="auto">{ text( f.current ) }</del>
+								<span className="specflux-site-agent-diff-current">
+									<span className="specflux-site-agent-diff-tag">{ __( 'Current', 'specflux-site-agent' ) }:</span>{ ' ' }
+									<del data-specflux-site-agent-content dir="auto">{ text( f.current ) }</del>
 								</span>
-								<span className="senroflux-diff-proposed">
-									<span className="senroflux-diff-tag">{ __( 'Proposed', 'senroflux' ) }:</span>{ ' ' }
-									<ins data-senroflux-content dir="auto">{ text( f.proposed ) }</ins>
+								<span className="specflux-site-agent-diff-proposed">
+									<span className="specflux-site-agent-diff-tag">{ __( 'Proposed', 'specflux-site-agent' ) }:</span>{ ' ' }
+									<ins data-specflux-site-agent-content dir="auto">{ text( f.proposed ) }</ins>
 								</span>
 							</dd>
 						</div>
@@ -93,18 +93,18 @@ export default function ApprovalDiff( { diff } ) {
 				</dl>
 			) }
 			{ content && (
-				<div className="senroflux-diff-block">
-					<p className="senroflux-diff-heading">{ __( 'Content (text only)', 'senroflux' ) }</p>
-					<Ops ops={ content.ops } label={ __( 'Content changes', 'senroflux' ) } />
+				<div className="specflux-site-agent-diff-block">
+					<p className="specflux-site-agent-diff-heading">{ __( 'Content (text only)', 'specflux-site-agent' ) }</p>
+					<Ops ops={ content.ops } label={ __( 'Content changes', 'specflux-site-agent' ) } />
 					{ content.truncated && (
-						<p className="senroflux-diff-note">{ __( 'Long text: shown as removed, then added.', 'senroflux' ) }</p>
+						<p className="specflux-site-agent-diff-note">{ __( 'Long text: shown as removed, then added.', 'specflux-site-agent' ) }</p>
 					) }
 				</div>
 			) }
 			{ menu && (
-				<div className="senroflux-diff-block">
-					<p className="senroflux-diff-heading">{ __( 'Menu item labels', 'senroflux' ) }</p>
-					<Ops ops={ menu.ops } label={ __( 'Menu label changes', 'senroflux' ) } />
+				<div className="specflux-site-agent-diff-block">
+					<p className="specflux-site-agent-diff-heading">{ __( 'Menu item labels', 'specflux-site-agent' ) }</p>
+					<Ops ops={ menu.ops } label={ __( 'Menu label changes', 'specflux-site-agent' ) } />
 				</div>
 			) }
 		</div>

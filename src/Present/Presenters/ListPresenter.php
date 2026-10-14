@@ -2,19 +2,19 @@
 /**
  * List-read card — a count plus the first five items.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 final class ListPresenter implements Presenter {
 
@@ -41,7 +41,7 @@ final class ListPresenter implements Presenter {
 			);
 			$thumb = Fmt::url( $row['url'] ?? null );
 			if ( '' === $item['label'] ) {
-				$item['label'] = is_int( $row['id'] ?? null ) ? '#' . $row['id'] : __( 'Item', 'senroflux' );
+				$item['label'] = is_int( $row['id'] ?? null ) ? '#' . $row['id'] : __( 'Item', 'specflux-site-agent' );
 			}
 			if ( '' !== $thumb && preg_match( '/\.(jpe?g|png|gif|webp|avif)(\?|$)/i', $thumb ) ) {
 				$item['thumbnail_url'] = $thumb;

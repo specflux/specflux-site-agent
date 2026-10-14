@@ -6,14 +6,14 @@
  * verb vocabulary, skills, budgets, the report. Everything that is specific to
  * one store plugin (WooCommerce today; FluentCart and SureCart later) lives
  * behind this interface, so adding a platform is one new class plus one
- * registration on the `senroflux_store_platforms` filter.
+ * registration on the `specflux_site_agent_store_platforms` filter.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms;
 
 use WP_Error;
 
@@ -50,12 +50,12 @@ interface StorePlatform {
 	/** The minimum supported platform version (the platform's own constant). */
 	public function minVersion(): string;
 
-	/** Does SenroGate govern this platform's abilities right now (feature-detected)? */
+	/** Does Belayline Agent Governance govern this platform's abilities right now (feature-detected)? */
 	public function isGoverned(): bool;
 
 	/**
 	 * Ability namespaces roles resolve through, in preference order. MUST end
-	 * with `senroflux/` (the polyfill namespace).
+	 * with `specflux/` (the polyfill namespace).
 	 *
 	 * @return list<string>
 	 */
@@ -66,9 +66,9 @@ interface StorePlatform {
 
 	/**
 	 * Commerce role => ability. A value is either a template string (the
-	 * native ability and the `senroflux/` polyfill share that name segment),
+	 * native ability and the `specflux/` polyfill share that name segment),
 	 * or `array{polyfill:string, native?:string, shape?:callable|null}`:
-	 * `polyfill` is the `senroflux/` template, `native` the platform ability's
+	 * `polyfill` is the `specflux/` template, `native` the platform ability's
 	 * namespace-relative name when it differs (default: the polyfill name), and
 	 * `shape` an optional `fn(array $input): array` turning the pack's input
 	 * into the native ability's input, applied only when the native ability
@@ -109,14 +109,14 @@ interface StorePlatform {
 	public function describeObject( string $object_id ): ?array;
 
 	/**
-	 * The `senroflux/` polyfill templates this platform needs registered.
+	 * The `specflux/` polyfill templates this platform needs registered.
 	 *
 	 * @return list<string>
 	 */
 	public function polyfills(): array;
 
 	/**
-	 * SenroFlux-side verb => tier mirror (kept in step with SenroGate's catalog
+	 * Specflux Site Agent-side verb => tier mirror (kept in step with Belayline Agent Governance's catalog
 	 * by the parity test).
 	 *
 	 * @return array<string,int>

@@ -12,15 +12,15 @@ function changeName( item ) {
 function itemStatusLabel( status ) {
 	switch ( status ) {
 		case 'restored':
-			return __( 'Restored', 'senroflux' );
+			return __( 'Restored', 'specflux-site-agent' );
 		case 'restorable':
-			return __( 'Will be restored', 'senroflux' );
+			return __( 'Will be restored', 'specflux-site-agent' );
 		case 'skipped':
-			return __( 'Skipped', 'senroflux' );
+			return __( 'Skipped', 'specflux-site-agent' );
 		case 'failed':
-			return __( 'Stopped here', 'senroflux' );
+			return __( 'Stopped here', 'specflux-site-agent' );
 		default:
-			return __( 'Not attempted', 'senroflux' );
+			return __( 'Not attempted', 'specflux-site-agent' );
 	}
 }
 
@@ -28,44 +28,44 @@ function itemStatusLabel( status ) {
 function outcomeLabel( status ) {
 	switch ( status ) {
 		case 'complete':
-			return __( 'Undone.', 'senroflux' );
+			return __( 'Undone.', 'specflux-site-agent' );
 		case 'partial':
-			return __( 'Partly undone. It stopped before the end.', 'senroflux' );
+			return __( 'Partly undone. It stopped before the end.', 'specflux-site-agent' );
 		case 'refused':
-			return __( 'Nothing was undone.', 'senroflux' );
+			return __( 'Nothing was undone.', 'specflux-site-agent' );
 		case 'forbidden':
-			return __( 'This undo was refused.', 'senroflux' );
+			return __( 'This undo was refused.', 'specflux-site-agent' );
 		default:
-			return __( 'There was nothing to undo.', 'senroflux' );
+			return __( 'There was nothing to undo.', 'specflux-site-agent' );
 	}
 }
 
 /** The three-way difference for a drifted field: before the run, after it, and now. */
 function DriftTable( { drift } ) {
 	return (
-		<table className="senroflux-drift-table">
-			<caption>{ __( 'Changed since the run', 'senroflux' ) }</caption>
+		<table className="specflux-site-agent-drift-table">
+			<caption>{ __( 'Changed since the run', 'specflux-site-agent' ) }</caption>
 			<thead>
 				<tr>
-					<th scope="col">{ __( 'Field', 'senroflux' ) }</th>
-					<th scope="col">{ __( 'Before the run', 'senroflux' ) }</th>
-					<th scope="col">{ __( 'After the run', 'senroflux' ) }</th>
-					<th scope="col">{ __( 'Now', 'senroflux' ) }</th>
+					<th scope="col">{ __( 'Field', 'specflux-site-agent' ) }</th>
+					<th scope="col">{ __( 'Before the run', 'specflux-site-agent' ) }</th>
+					<th scope="col">{ __( 'After the run', 'specflux-site-agent' ) }</th>
+					<th scope="col">{ __( 'Now', 'specflux-site-agent' ) }</th>
 				</tr>
 			</thead>
 			<tbody>
 				{ drift.map( ( row, index ) => (
 					<tr key={ `${ row.field }-${ index }` }>
-						<th scope="row" data-senroflux-content dir="auto">
+						<th scope="row" data-specflux-site-agent-content dir="auto">
 							{ row.field }
 						</th>
-						<td data-senroflux-content dir="auto">
+						<td data-specflux-site-agent-content dir="auto">
 							{ row.before }
 						</td>
-						<td data-senroflux-content dir="auto">
+						<td data-specflux-site-agent-content dir="auto">
 							{ row.after }
 						</td>
-						<td data-senroflux-content dir="auto">
+						<td data-specflux-site-agent-content dir="auto">
 							{ row.current }
 						</td>
 					</tr>
@@ -78,14 +78,14 @@ function DriftTable( { drift } ) {
 /** A list of UndoItems with their reasons and any drift table. */
 function ItemList( { items } ) {
 	return (
-		<ul className="senroflux-undo-items">
+		<ul className="specflux-site-agent-undo-items">
 			{ items.map( ( item ) => (
-				<li key={ item.change_id } className={ `senroflux-undo-item is-${ item.status }` }>
-					<span data-senroflux-content dir="auto">
+				<li key={ item.change_id } className={ `specflux-site-agent-undo-item is-${ item.status }` }>
+					<span data-specflux-site-agent-content dir="auto">
 						{ changeName( item ) }
 					</span>{ ' ' }
-					<span className="senroflux-undo-item-status">{ itemStatusLabel( item.status ) }</span>
-					{ item.reason_label && <span className="senroflux-undo-item-reason"> { item.reason_label }</span> }
+					<span className="specflux-site-agent-undo-item-status">{ itemStatusLabel( item.status ) }</span>
+					{ item.reason_label && <span className="specflux-site-agent-undo-item-reason"> { item.reason_label }</span> }
 					{ Array.isArray( item.drift ) && item.drift.length > 0 && <DriftTable drift={ item.drift } /> }
 				</li>
 			) ) }
@@ -97,9 +97,9 @@ function ItemList( { items } ) {
 function UndoOutcome( { result } ) {
 	const items = Array.isArray( result.items ) ? result.items : [];
 	return (
-		<div className="senroflux-undo-result" role="status">
-			<p className="senroflux-undo-result-line">{ outcomeLabel( result.status ) }</p>
-			{ result.message && <p className="senroflux-undo-result-reason">{ result.message }</p> }
+		<div className="specflux-site-agent-undo-result" role="status">
+			<p className="specflux-site-agent-undo-result-line">{ outcomeLabel( result.status ) }</p>
+			{ result.message && <p className="specflux-site-agent-undo-result-reason">{ result.message }</p> }
 			{ items.length > 0 && <ItemList items={ items } /> }
 		</div>
 	);
@@ -111,24 +111,24 @@ function DiffTable( { diff } ) {
 		return null;
 	}
 	return (
-		<table className="senroflux-changes-diff">
+		<table className="specflux-site-agent-changes-diff">
 			<thead>
 				<tr>
-					<th scope="col">{ __( 'Field', 'senroflux' ) }</th>
-					<th scope="col">{ __( 'Before', 'senroflux' ) }</th>
-					<th scope="col">{ __( 'After', 'senroflux' ) }</th>
+					<th scope="col">{ __( 'Field', 'specflux-site-agent' ) }</th>
+					<th scope="col">{ __( 'Before', 'specflux-site-agent' ) }</th>
+					<th scope="col">{ __( 'After', 'specflux-site-agent' ) }</th>
 				</tr>
 			</thead>
 			<tbody>
 				{ diff.map( ( row, index ) => (
 					<tr key={ `${ row.field }-${ index }` }>
-						<th scope="row" data-senroflux-content dir="auto">
+						<th scope="row" data-specflux-site-agent-content dir="auto">
 							{ row.field }
 						</th>
-						<td data-senroflux-content dir="auto">
+						<td data-specflux-site-agent-content dir="auto">
 							{ row.before }
 						</td>
-						<td data-senroflux-content dir="auto">
+						<td data-specflux-site-agent-content dir="auto">
 							{ row.after }
 						</td>
 					</tr>
@@ -140,10 +140,10 @@ function DiffTable( { diff } ) {
 
 /**
  * The report's Changes area (0.4 S3.2), built server-side and handed here as
- * `run.changes_section`. With SenroGate 0.5 or later it lists every recorded
+ * `run.changes_section`. With Belayline Agent Governance 0.5 or later it lists every recorded
  * change and offers "Undo this run" and a per-object "Undo", each behind a
  * confirm dialog that shows what would happen first. Otherwise it shows the
- * one "Undo needs SenroGate" line. The model never sees any of this.
+ * one "Undo needs Belayline Agent Governance" line. The model never sees any of this.
  *
  * @param {Object} props
  * @param {number} props.runId
@@ -161,7 +161,7 @@ export default function ChangesSection( { runId, section: initial } ) {
 	}
 	if ( 'undo' !== section.mode ) {
 		return section.note ? (
-			<p className="senroflux-changes-note" dir="auto">
+			<p className="specflux-site-agent-changes-note" dir="auto">
 				{ section.note }
 			</p>
 		) : null;
@@ -178,7 +178,7 @@ export default function ChangesSection( { runId, section: initial } ) {
 		setBusy( true );
 		previewUndo( runId, section.nonce, changeId )
 			.then( ( data ) => setPending( { changeId, items: Array.isArray( data.items ) ? data.items : [] } ) )
-			.catch( ( e ) => setError( e.message || __( 'Could not load the preview.', 'senroflux' ) ) )
+			.catch( ( e ) => setError( e.message || __( 'Could not load the preview.', 'specflux-site-agent' ) ) )
 			.finally( () => setBusy( false ) );
 	};
 
@@ -192,7 +192,7 @@ export default function ChangesSection( { runId, section: initial } ) {
 					setSection( data.section );
 				}
 			} )
-			.catch( ( e ) => setError( e.message || __( 'The undo failed.', 'senroflux' ) ) )
+			.catch( ( e ) => setError( e.message || __( 'The undo failed.', 'specflux-site-agent' ) ) )
 			.finally( () => {
 				setBusy( false );
 				setPending( null );
@@ -200,32 +200,32 @@ export default function ChangesSection( { runId, section: initial } ) {
 	};
 
 	return (
-		<section className="senroflux-changes" aria-labelledby="senroflux-changes-heading">
-			<h3 id="senroflux-changes-heading" className="senroflux-report-subheading senroflux-changes-heading">
-				{ __( 'Changes', 'senroflux' ) }
+		<section className="specflux-site-agent-changes" aria-labelledby="specflux-site-agent-changes-heading">
+			<h3 id="specflux-site-agent-changes-heading" className="specflux-site-agent-report-subheading specflux-site-agent-changes-heading">
+				{ __( 'Changes', 'specflux-site-agent' ) }
 			</h3>
-			<ul className="senroflux-changes-list">
+			<ul className="specflux-site-agent-changes-list">
 				{ changes.map( ( change ) => (
-					<li key={ change.id } className="senroflux-changes-row">
-						<div className="senroflux-changes-head">
-							<span className="senroflux-changes-name" data-senroflux-content dir="auto">
+					<li key={ change.id } className="specflux-site-agent-changes-row">
+						<div className="specflux-site-agent-changes-head">
+							<span className="specflux-site-agent-changes-name" data-specflux-site-agent-content dir="auto">
 								{ changeName( change ) }
 							</span>
-							<span className="senroflux-changes-state">
-								{ change.restored && __( 'Restored', 'senroflux' ) }
-								{ ! change.restored && change.restorable && __( 'Can be undone', 'senroflux' ) }
+							<span className="specflux-site-agent-changes-state">
+								{ change.restored && __( 'Restored', 'specflux-site-agent' ) }
+								{ ! change.restored && change.restorable && __( 'Can be undone', 'specflux-site-agent' ) }
 								{ ! change.restored && ! change.restorable && change.reason_label }
 							</span>
 							{ change.restorable && ! change.restored && (
 								<button
 									type="button"
-									className="button button-small senroflux-changes-undo"
+									className="button button-small specflux-site-agent-changes-undo"
 									disabled={ busy }
 									/* translators: %s: the name of the object whose change would be undone. */
-									aria-label={ sprintf( __( 'Undo %s', 'senroflux' ), changeName( change ) ) }
+									aria-label={ sprintf( __( 'Undo %s', 'specflux-site-agent' ), changeName( change ) ) }
 									onClick={ () => askPreview( change.id ) }
 								>
-									{ __( 'Undo', 'senroflux' ) }
+									{ __( 'Undo', 'specflux-site-agent' ) }
 								</button>
 							) }
 						</div>
@@ -234,34 +234,34 @@ export default function ChangesSection( { runId, section: initial } ) {
 				) ) }
 			</ul>
 			{ undoable && (
-				<button type="button" className="button senroflux-changes-undo-run" disabled={ busy } onClick={ () => askPreview( null ) }>
-					{ __( 'Undo this run', 'senroflux' ) }
+				<button type="button" className="button specflux-site-agent-changes-undo-run" disabled={ busy } onClick={ () => askPreview( null ) }>
+					{ __( 'Undo this run', 'specflux-site-agent' ) }
 				</button>
 			) }
 			{ error && (
-				<p className="senroflux-changes-error" role="alert" dir="auto">
+				<p className="specflux-site-agent-changes-error" role="alert" dir="auto">
 					{ error }
 				</p>
 			) }
 			{ result && <UndoOutcome result={ result } /> }
 			{ pending && (
 				<Modal
-					title={ pending.changeId ? __( 'Undo this change?', 'senroflux' ) : __( 'Undo this run?', 'senroflux' ) }
+					title={ pending.changeId ? __( 'Undo this change?', 'specflux-site-agent' ) : __( 'Undo this run?', 'specflux-site-agent' ) }
 					onRequestClose={ () => setPending( null ) }
-					className="senroflux-undo-dialog"
+					className="specflux-site-agent-undo-dialog"
 				>
-					<p>{ __( 'This is what an undo would do right now. Anything changed since the run is left alone and shown to you.', 'senroflux' ) }</p>
+					<p>{ __( 'This is what an undo would do right now. Anything changed since the run is left alone and shown to you.', 'specflux-site-agent' ) }</p>
 					{ pending.items.length > 0 ? (
 						<ItemList items={ pending.items } />
 					) : (
-						<p>{ __( 'There is nothing to restore.', 'senroflux' ) }</p>
+						<p>{ __( 'There is nothing to restore.', 'specflux-site-agent' ) }</p>
 					) }
-					<div className="senroflux-undo-dialog-actions">
+					<div className="specflux-site-agent-undo-dialog-actions">
 						<button type="button" className="button" onClick={ () => setPending( null ) }>
-							{ __( 'Cancel', 'senroflux' ) }
+							{ __( 'Cancel', 'specflux-site-agent' ) }
 						</button>
 						<button type="button" className="button button-primary" disabled={ busy } onClick={ confirm }>
-							{ __( 'Confirm undo', 'senroflux' ) }
+							{ __( 'Confirm undo', 'specflux-site-agent' ) }
 						</button>
 					</div>
 				</Modal>

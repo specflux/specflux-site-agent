@@ -8,12 +8,12 @@
  * model goes through this class, which is also the seam tests replace so no
  * test touches the network.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart;
 
 use Closure;
 use Throwable;

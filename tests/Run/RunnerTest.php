@@ -3,26 +3,26 @@
  * Runner::tick() tests — the full S4 algorithm against a mocked gateway
  * (stage-6 failable check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\VerbTier;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -51,11 +51,11 @@ final class RunnerTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/spend'   => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/spend' ),
-			'agsafe-smoke/blocked' => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/spend'   => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/spend' ),
+			'agsafe-smoke/blocked' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/blocked',
 				permission_result: new WP_Error(
 					'approval_required',
@@ -72,7 +72,7 @@ final class RunnerTest extends TestCase {
 		// The S7 plan fence is separately tested in PlanParkTest. These tests
 		// exercise the approval/park mechanics with fence-free (tier-0) verbs.
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array(
 				'agsafe-smoke/spend'   => 0,
 				'agsafe-smoke/blocked' => 0,
@@ -85,7 +85,7 @@ final class RunnerTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		Clock::reset();
 	}
 
@@ -127,20 +127,20 @@ final class RunnerTest extends TestCase {
 		$result = $this->runner->tick( $run_id, 99, null );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_conflict', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_conflict', $result->get_error_code() );
 		$this->assertCount( 0, $this->gateway->calls, 'a stale echo must never reach the model' );
 	}
 
 	public function test_lock_transient_blocks_concurrent_tick_and_is_released(): void {
 		$run_id = $this->createRun();
 
-		set_transient( 'senroflux_lock_' . $run_id, 1, 30 );
+		set_transient( 'specflux_site_agent_lock_' . $run_id, 1, 30 );
 		$result = $this->runner->tick( $run_id, 0, null );
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_conflict', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_conflict', $result->get_error_code() );
 
-		delete_transient( 'senroflux_lock_' . $run_id );
-		unset( $GLOBALS['senroflux_test_transients'][ 'senroflux_lock_' . $run_id ] );
+		delete_transient( 'specflux_site_agent_lock_' . $run_id );
+		unset( $GLOBALS['specflux_site_agent_test_transients'][ 'specflux_site_agent_lock_' . $run_id ] );
 	}
 
 	/**
@@ -152,7 +152,7 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_the_tick_lock_is_held_for_every_model_call(): void {
 		$run_id = $this->createRun();
-		$key    = 'senroflux_lock_' . $run_id;
+		$key    = 'specflux_site_agent_lock_' . $run_id;
 		$seen   = array();
 
 		$this->gateway->script[] = self::callTurn( 'wpab__nope__missing', array() );
@@ -161,7 +161,7 @@ final class RunnerTest extends TestCase {
 		$this->gateway->onCall   = static function ( int $call ) use ( $key, &$seen ): void {
 			$seen[ $call ] = array(
 				'held' => false !== get_transient( $key ),
-				'ttl'  => $GLOBALS['senroflux_test_transient_ttls'][ $key ] ?? 0,
+				'ttl'  => $GLOBALS['specflux_site_agent_test_transient_ttls'][ $key ] ?? 0,
 			);
 			// Simulate the transient expiring while the model is thinking.
 			delete_transient( $key );
@@ -182,7 +182,7 @@ final class RunnerTest extends TestCase {
 		$run_id = $this->createRun();
 		$this->store->updateRun(
 			$run_id,
-			array( 'status' => \Specflux\SenroFlux\Run\RunStatus::Cancelled->value )
+			array( 'status' => \Specflux\SiteAgent\Run\RunStatus::Cancelled->value )
 		);
 
 		$result = $this->runner->tick( $run_id, 0, null );
@@ -228,7 +228,7 @@ final class RunnerTest extends TestCase {
 			array(
 				'note'          => 'allow_from_pack',
 				'pack'          => 'pages',
-				'ignored_allow' => array( 'senroflux/*' ),
+				'ignored_allow' => array( 'specflux/*' ),
 			)
 		);
 
@@ -254,7 +254,7 @@ final class RunnerTest extends TestCase {
 		$this->gateway->script[] = self::textTurn( 'First.' );
 		$this->runner->tick( $run_id, 0, null );
 
-		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SenroFlux\Run\RunStatus::Running->value ) );
+		$this->store->updateRun( $run_id, array( 'status' => \Specflux\SiteAgent\Run\RunStatus::Running->value ) );
 		$this->gateway->script[] = self::textTurn( 'Second.' );
 		$this->gateway->script[] = self::textTurn( 'Second.' );
 		$run                     = $this->store->getRun( $run_id );
@@ -298,7 +298,7 @@ final class RunnerTest extends TestCase {
 		$this->assertSame( 'awaiting_approval', $result['run']['status'] );
 		$this->assertSame( 'apr_park1', $result['ui']['approval']['approval_id'] ?? '' );
 		$this->assertSame( 'agsafe-smoke/blocked', $result['ui']['approval']['verb'] ?? '' );
-		$this->assertStringContainsString( 'agent-safety-pending', (string) ( $result['ui']['approval']['review_url'] ?? '' ) );
+		$this->assertStringContainsString( 'belayline-pending', (string) ( $result['ui']['approval']['review_url'] ?? '' ) );
 
 		// A parked run without an action simply REMAINS parked (S6: the
 		// consumer polls by ticking until the grant exists).
@@ -316,8 +316,8 @@ final class RunnerTest extends TestCase {
 		$this->gateway->calls = array();
 
 		// After "approval", the gate lets the call through.
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] =
-			new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] =
+			new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
 
 		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
 		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
@@ -343,7 +343,7 @@ final class RunnerTest extends TestCase {
 
 		// apr_park1 expired in Agent Safety: approving it has no effect and
 		// the re-run demands a FRESH approval, apr_park2.
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] = new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] = new SpecfluxSiteAgent_Test_Fake_Ability(
 			'agsafe-smoke/blocked',
 			permission_result: new WP_Error(
 				'approval_required',
@@ -373,10 +373,10 @@ final class RunnerTest extends TestCase {
 		$this->assertSame( 'apr_park2', $poll['ui']['approval']['approval_id'] ?? '' );
 
 		// The next Approve targets the new id, and this time it executes.
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] =
-			new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
-		$this->gateway->script[]                                     = self::textTurn( 'Cache cleared.' );
-		$this->gateway->script[]                                     = self::textTurn( 'Cache cleared.' );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] =
+			new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
+		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
+		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
 
 		$again = $this->runner->tick( $run_id, $poll['run']['step_count'], array( 'action' => 'approve' ) );
 
@@ -391,10 +391,10 @@ final class RunnerTest extends TestCase {
 		$parked_tick             = $this->runner->tick( $run_id, 0, null );
 		$this->assertArrayNotHasKey( 'notice', $parked_tick['ui']['approval'] );
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] =
-			new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
-		$this->gateway->script[]                                     = self::textTurn( 'Done.' );
-		$this->gateway->script[]                                     = self::textTurn( 'Done.' );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] =
+			new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
+		$this->gateway->script[] = self::textTurn( 'Done.' );
+		$this->gateway->script[] = self::textTurn( 'Done.' );
 		$this->runner->tick( $run_id, $this->store->getRun( $run_id )->stepCount, array( 'action' => 'approve' ) );
 
 		$approvals = array_filter( $this->store->getSteps( $run_id ), static fn ( $s ) => 'approval' === $s->kind->value );
@@ -403,11 +403,11 @@ final class RunnerTest extends TestCase {
 
 	public function test_call_outside_allow_list_is_unknown_tool_and_never_executed(): void {
 		$run_id              = $this->createRun(); // allow: agsafe-smoke/*
-		$outside             = new SenroFlux_Test_Fake_Ability( 'other-plugin/refund', permission_result: true );
+		$outside             = new SpecfluxSiteAgent_Test_Fake_Ability( 'other-plugin/refund', permission_result: true );
 		$outside->on_execute = static function (): void {
 			throw new \RuntimeException( 'must never execute' );
 		};
-		$GLOBALS['senroflux_test_abilities']['other-plugin/refund'] = $outside;
+		$GLOBALS['specflux_site_agent_test_abilities']['other-plugin/refund'] = $outside;
 
 		$this->gateway->script[] = self::callTurn( 'wpab__other-plugin__refund', array( 'order' => 7 ) );
 		$this->gateway->script[] = self::textTurn( 'Could not do that.' );
@@ -427,7 +427,7 @@ final class RunnerTest extends TestCase {
 	private function allowStockSearch( string ...$abilities ): array {
 		$executed = array();
 		foreach ( $abilities as $name ) {
-			$ability = new SenroFlux_Test_Fake_Ability(
+			$ability = new SpecfluxSiteAgent_Test_Fake_Ability(
 				$name,
 				execute_result: array( 'results' => array() ),
 				output_schema: array(
@@ -440,11 +440,11 @@ final class RunnerTest extends TestCase {
 				$executed[] = array( $name, $input );
 			};
 
-			$GLOBALS['senroflux_test_abilities'][ $name ] = $ability;
+			$GLOBALS['specflux_site_agent_test_abilities'][ $name ] = $ability;
 		}
-		remove_all_filters( 'senroflux_verb_map' );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn (): array => array_fill_keys( $abilities, 0 ),
 			10,
 			0
@@ -554,16 +554,16 @@ final class RunnerTest extends TestCase {
 
 	/**
 	 * Live evidence (2026-09-28 fix1 scenario-1-1, seq 26/27): space-bunny
-	 * called `senroflux__senroflux__propose-plan` — a doubled `senroflux__`
+	 * called `specflux__specflux__propose-plan` — a doubled `specflux__`
 	 * namespace prefix — and the harness answered with the mangled ability
 	 * name as a cryptic `unknown_tool` error, wasting a turn. The doubled
 	 * call must resolve to the SAME harness tool as the correctly-named
-	 * call: it parks a plan exactly like `senroflux__propose-plan` would.
+	 * call: it parks a plan exactly like `specflux__propose-plan` would.
 	 */
-	public function test_a_doubled_senroflux_prefix_still_parks_the_plan(): void {
+	public function test_a_doubled_specflux_site_agent_prefix_still_parks_the_plan(): void {
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::callTurn(
-			'senroflux__senroflux__propose-plan',
+			'specflux__specflux__propose-plan',
 			array(
 				'goal'        => 'Clear the cache',
 				'steps'       => array(
@@ -590,9 +590,9 @@ final class RunnerTest extends TestCase {
 	 * naming the failure and listing the real available functions — instead
 	 * of the old behaviour of echoing the mangled name back verbatim.
 	 */
-	public function test_a_genuinely_unknown_senroflux_function_gets_a_helpful_error(): void {
+	public function test_a_genuinely_unknown_specflux_site_agent_function_gets_a_helpful_error(): void {
 		$run_id                  = $this->createRun();
-		$this->gateway->script[] = self::callTurn( 'senroflux__do-a-barrel-roll', array() );
+		$this->gateway->script[] = self::callTurn( 'specflux__do-a-barrel-roll', array() );
 		$this->gateway->script[] = self::textTurn( 'Could not do that.' );
 		$this->gateway->script[] = self::textTurn( 'Could not do that.' );
 
@@ -605,8 +605,8 @@ final class RunnerTest extends TestCase {
 		$response = $result['new_steps'][2]['message']['parts'][0]['functionResponse']['response'] ?? array();
 		$this->assertSame( 'unknown_function', $response['error'] ?? null );
 		$this->assertIsString( $response['message'] ?? null );
-		$this->assertStringContainsString( 'senroflux__do-a-barrel-roll', $response['message'] );
-		$this->assertStringNotContainsString( 'senroflux/do-a-barrel-roll', $response['message'], 'must not echo a mangled ability-name round-trip' );
+		$this->assertStringContainsString( 'specflux__do-a-barrel-roll', $response['message'] );
+		$this->assertStringNotContainsString( 'specflux/do-a-barrel-roll', $response['message'], 'must not echo a mangled ability-name round-trip' );
 		$this->assertStringContainsString( PlanTools::functionName(), $response['message'], 'must list the real available functions' );
 		$this->assertStringContainsString( HarnessTools::functionName(), $response['message'] );
 		$this->assertStringContainsString( SuggestBriefTool::functionName(), $response['message'] );
@@ -622,7 +622,7 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_budget_exceeded_after_writes_finished_completes_with_unverified_note(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'agsafe-smoke/write' => VerbTier::TIER_1 ),
 			20,
 			1
@@ -664,7 +664,7 @@ final class RunnerTest extends TestCase {
 
 		// The write itself succeeded.
 		$write_message              = ( new UserMessage(
-			array( new MessagePart( new FunctionResponse( 'call_w', 'agsafe_smoke_write', array( 'ok' => true ) ) ) )
+			array( new MessagePart( new FunctionResponse( 'call_w', 'belayline_smoke_write', array( 'ok' => true ) ) ) )
 		) )->toArray();
 		$write_message['plan_verb'] = 'agsafe-smoke/write';
 		$this->store->appendStep( $run_id, StepKind::ToolResult, $write_message, 'wpab__agsafe-smoke__write', null, 'ok' );
@@ -699,7 +699,7 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_budget_exceeded_with_an_undone_plan_write_step_still_fails(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'agsafe-smoke/write' => VerbTier::TIER_1 ),
 			20,
 			1
@@ -771,7 +771,7 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_budget_exceeded_after_multi_step_plan_with_unused_and_aliased_write_verbs_completes(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'create-draft'       => VerbTier::TIER_1,
 				'media-search'       => VerbTier::TIER_0,
@@ -866,7 +866,7 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_budget_exceeded_with_a_died_before_last_page_write_still_fails(): void {
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array( 'pages/create' => VerbTier::TIER_1 ),
 			20,
 			1
@@ -950,9 +950,9 @@ final class RunnerTest extends TestCase {
 		$this->gateway->script[] = self::callTurn( 'wpab__agsafe-smoke__blocked', array( 'target' => 'prod-cache' ) );
 		$this->runner->tick( $run_id, 0, null ); // Parks.
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] =
-			new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
-		$this->gateway->script[]                                     = self::textTurn( 'Cache cleared.' );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] =
+			new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
+		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
 
 		// Only 5 minutes pass before the resume tick: below the S9 threshold.
 		Clock::useFixed( time() + ( 5 * MINUTE_IN_SECONDS ) );
@@ -967,9 +967,9 @@ final class RunnerTest extends TestCase {
 		$this->gateway->script[] = self::callTurn( 'wpab__agsafe-smoke__blocked', array( 'target' => 'prod-cache' ) );
 		$this->runner->tick( $run_id, 0, null ); // Parks (e.g. left overnight).
 
-		$GLOBALS['senroflux_test_abilities']['agsafe-smoke/blocked'] =
-			new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
-		$this->gateway->script[]                                     = self::textTurn( 'Cache cleared.' );
+		$GLOBALS['specflux_site_agent_test_abilities']['agsafe-smoke/blocked'] =
+			new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', permission_result: true );
+		$this->gateway->script[] = self::textTurn( 'Cache cleared.' );
 
 		// 26 hours pass before the run is resumed — the S9 example gap.
 		Clock::useFixed( time() + ( 26 * HOUR_IN_SECONDS ) );
@@ -983,7 +983,7 @@ final class RunnerTest extends TestCase {
 	}
 
 	public function test_every_model_turn_carries_the_site_date_from_the_injected_clock(): void {
-		$GLOBALS['senroflux_test_timezone'] = 'Asia/Singapore';
+		$GLOBALS['specflux_site_agent_test_timezone'] = 'Asia/Singapore';
 		Clock::useFixed( gmmktime( 23, 10, 0, 10, 2, 2026 ) );
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::textTurn( 'Done.' );
@@ -993,16 +993,16 @@ final class RunnerTest extends TestCase {
 			'Today is Saturday, 3 October 2026, 07:10 (site timezone Asia/Singapore, UTC+08:00).',
 			$this->gateway->systemInstructions[0]
 		);
-		unset( $GLOBALS['senroflux_test_timezone'] );
+		unset( $GLOBALS['specflux_site_agent_test_timezone'] );
 	}
 
 	public function test_foreign_owner_is_forbidden(): void {
-		$run_id                                    = $this->createRun(); // owned by user 1
-		$GLOBALS['senroflux_test_current_user_id'] = 2;
+		$run_id = $this->createRun(); // owned by user 1
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 2;
 
 		$result = $this->runner->tick( $run_id, 0, null );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_forbidden', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_forbidden', $result->get_error_code() );
 	}
 }

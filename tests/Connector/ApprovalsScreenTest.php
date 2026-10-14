@@ -2,16 +2,16 @@
 /**
  * The "From AI apps" tab and its approve / deny handlers.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\Approvals;
-use Specflux\SenroFlux\Connector\ApprovalsScreen;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Approvals;
+use Specflux\SiteAgent\Connector\ApprovalsScreen;
+use Specflux\SiteAgent\Run\Clock;
 
 final class ApprovalsScreenTest extends ConnectorTestCase {
 
@@ -26,7 +26,7 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 	}
 
 	private function park( array $args = array( 'title' => 'Hi' ) ): string {
-		return Approvals::park( self::USER, self::UUID, 'senroflux/write-thing', $args );
+		return Approvals::park( self::USER, self::UUID, 'specflux/write-thing', $args );
 	}
 
 	private function post( string $hash ): void {
@@ -41,7 +41,7 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 
 		$this->assertSame( array(), Approvals::pending() );
 		$this->assertTrue( Approvals::consume( $hash ) );
-		$this->assertStringContainsString( 'tab=ai-apps', $GLOBALS['senroflux_test_redirect'] );
+		$this->assertStringContainsString( 'tab=ai-apps', $GLOBALS['specflux_site_agent_test_redirect'] );
 	}
 
 	public function test_deny_removes_the_call(): void {
@@ -57,7 +57,7 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 	public function test_a_bad_nonce_changes_nothing(): void {
 		$hash = $this->park();
 		$this->post( $hash );
-		$GLOBALS['senroflux_test_bad_nonce'] = true;
+		$GLOBALS['specflux_site_agent_test_bad_nonce'] = true;
 
 		foreach ( array( 'handleApprove', 'handleDeny' ) as $handler ) {
 			try {
@@ -74,7 +74,7 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 	public function test_without_the_capability_neither_handler_acts(): void {
 		$hash = $this->park();
 		$this->post( $hash );
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		foreach ( array( 'handleApprove', 'handleDeny' ) as $handler ) {
 			try {
@@ -98,20 +98,20 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 	}
 
 	public function test_the_tab_lists_pending_calls_escaped_with_both_buttons(): void {
-		$hash                            = $this->park( array( 'title' => '<script>alert(1)</script>' ) );
-		$GLOBALS['senroflux_test_users'] = array( self::USER => (object) array( 'user_login' => 'owner' ) );
+		$hash                                      = $this->park( array( 'title' => '<script>alert(1)</script>' ) );
+		$GLOBALS['specflux_site_agent_test_users'] = array( self::USER => (object) array( 'user_login' => 'owner' ) );
 
 		ob_start();
 		ApprovalsScreen::render();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'senroflux/write-thing', $html );
+		$this->assertStringContainsString( 'specflux/write-thing', $html );
 		$this->assertStringContainsString( substr( self::UUID, 0, 8 ), $html );
 		$this->assertStringContainsString( 'owner', $html );
 		$this->assertStringContainsString( '&lt;script&gt;', $html );
 		$this->assertStringNotContainsString( '<script>', $html );
-		$this->assertStringContainsString( 'value="senroflux_connector_approve"', $html );
-		$this->assertStringContainsString( 'value="senroflux_connector_deny"', $html );
+		$this->assertStringContainsString( 'value="specflux_site_agent_connector_approve"', $html );
+		$this->assertStringContainsString( 'value="specflux_site_agent_connector_deny"', $html );
 		$this->assertStringContainsString( 'value="' . $hash . '"', $html );
 	}
 
@@ -125,25 +125,25 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 	}
 
 	public function test_the_runs_screen_shows_the_tab_when_asked_and_not_otherwise(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => true );
-		add_filter( 'senroflux_runs_capability', static fn (): string => 'manage_options' );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 		$this->park();
-		update_option( 'senroflux_connector_enabled', '1' );
+		update_option( 'specflux_site_agent_connector_enabled', '1' );
 
 		$_GET = array( 'tab' => 'ai-apps' );
 		ob_start();
-		( new \Specflux\SenroFlux\Admin\RunsScreen() )->render();
+		( new \Specflux\SiteAgent\Admin\RunsScreen() )->render();
 		$tab = (string) ob_get_clean();
 
 		$_GET = array();
 		ob_start();
-		( new \Specflux\SenroFlux\Admin\RunsScreen() )->render();
+		( new \Specflux\SiteAgent\Admin\RunsScreen() )->render();
 		$runs = (string) ob_get_clean();
 
-		$this->assertStringNotContainsString( 'senroflux-runs-root', $tab );
-		$this->assertStringContainsString( 'senroflux/write-thing', $tab );
-		$this->assertStringNotContainsString( 'senroflux/write-thing', $runs );
-		$this->assertStringContainsString( 'senroflux-runs-root', $runs );
+		$this->assertStringNotContainsString( 'specflux-site-agent-runs-root', $tab );
+		$this->assertStringContainsString( 'specflux/write-thing', $tab );
+		$this->assertStringNotContainsString( 'specflux/write-thing', $runs );
+		$this->assertStringContainsString( 'specflux-site-agent-runs-root', $runs );
 		$this->assertStringContainsString( 'From AI apps (1)', $runs );
 	}
 }

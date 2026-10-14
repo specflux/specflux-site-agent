@@ -1,7 +1,7 @@
 <?php
 /**
- * The front-page registrar (0.3 S7): `senroflux/read-front-page` (Tier 0)
- * and `senroflux/set-front-page` (Tier 2, one write).
+ * The front-page registrar (0.3 S7): `specflux/read-front-page` (Tier 0)
+ * and `specflux/set-front-page` (Tier 2, one write).
  *
  * TARGET REPO PATH: src/Packs/Site/FrontPage.php
  *
@@ -17,15 +17,15 @@
  * fail closed on a mismatch or an unread front page. Scoped to one tick via
  * {@see useRunContext()}, mirroring `Navigation::useRunContext()`.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Run\RunStore;
-use Specflux\SenroFlux\Run\Tracker;
+use Specflux\SiteAgent\Run\RunStore;
+use Specflux\SiteAgent\Run\Tracker;
 use WP_Error;
 
 // Bail on direct access.
@@ -59,7 +59,7 @@ final class FrontPage {
 	/**
 	 * Wire the ability registration hook (call once, from the composition
 	 * root). The category is registered by {@see Navigation::registerCategory()}
-	 * (shared `senroflux-site` category) — boot() here only needs the
+	 * (shared `specflux-site` category) — boot() here only needs the
 	 * ability-init hook.
 	 */
 	public static function boot(): void {
@@ -154,7 +154,7 @@ final class FrontPage {
 
 	/**
 	 * Stage 14 (AS-15/S19 approval cards): the CURRENT front-page settings,
-	 * for {@see \Specflux\SenroFlux\Packs\Site\ContentSummary} to render
+	 * for {@see \Specflux\SiteAgent\Packs\Site\ContentSummary} to render
 	 * beside a `set-front-page` call's proposed replacement. A thin public
 	 * alias of {@see currentSettings()} — read-only, records no marker, same
 	 * reasoning as `Navigation::currentItemsForSummary()`.
@@ -183,14 +183,14 @@ final class FrontPage {
 	}
 
 	/**
-	 * senroflux/read-front-page — Tier 0.
+	 * specflux/read-front-page — Tier 0.
 	 */
 	private static function registerReadFrontPage(): void {
 		wp_register_ability(
-			'senroflux/read-front-page',
+			'specflux/read-front-page',
 			array(
-				'label'               => __( 'Read front page settings', 'senroflux' ),
-				'description'         => __( 'Read the current front-page and posts-page settings, with titles.', 'senroflux' ),
+				'label'               => __( 'Read front page settings', 'specflux-site-agent' ),
+				'description'         => __( 'Read the current front-page and posts-page settings, with titles.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -217,14 +217,14 @@ final class FrontPage {
 	}
 
 	/**
-	 * senroflux/set-front-page — Tier 2, one write.
+	 * specflux/set-front-page — Tier 2, one write.
 	 */
 	private static function registerSetFrontPage(): void {
 		wp_register_ability(
-			'senroflux/set-front-page',
+			'specflux/set-front-page',
 			array(
-				'label'               => __( 'Set front page', 'senroflux' ),
-				'description'         => __( 'Set the site\'s front page (a static page or the latest posts), optionally setting the posts page in the same write.', 'senroflux' ),
+				'label'               => __( 'Set front page', 'specflux-site-agent' ),
+				'description'         => __( 'Set the site\'s front page (a static page or the latest posts), optionally setting the posts page in the same write.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => self::setFrontPageSchema(),
 				'output_schema'       => self::frontPageOutputSchema(),
@@ -318,7 +318,7 @@ final class FrontPage {
 		if ( self::isStaleWrite( self::marker( self::currentSettings() ) ) ) {
 			return new WP_Error(
 				'stale_write',
-				__( 'The front page settings changed since this run last read them. Re-read them before writing again.', 'senroflux' ),
+				__( 'The front page settings changed since this run last read them. Re-read them before writing again.', 'specflux-site-agent' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -327,7 +327,7 @@ final class FrontPage {
 		if ( ! in_array( $show_on_front, array( 'page', 'posts' ), true ) ) {
 			return new WP_Error(
 				'front_page_bad_request',
-				__( 'show_on_front must be "page" or "posts".', 'senroflux' ),
+				__( 'show_on_front must be "page" or "posts".', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -336,7 +336,7 @@ final class FrontPage {
 			if ( ! isset( $input['page_id'] ) || ! is_numeric( $input['page_id'] ) ) {
 				return new WP_Error(
 					'front_page_bad_request',
-					__( 'page_id is required when show_on_front is "page".', 'senroflux' ),
+					__( 'page_id is required when show_on_front is "page".', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -346,7 +346,7 @@ final class FrontPage {
 			if ( null === $post || 'page' !== ( $post->post_type ?? '' ) ) {
 				return new WP_Error(
 					'not_found',
-					__( 'Page not found.', 'senroflux' ),
+					__( 'Page not found.', 'specflux-site-agent' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -363,7 +363,7 @@ final class FrontPage {
 					if ( null === $posts_page || 'page' !== ( $posts_page->post_type ?? '' ) ) {
 						return new WP_Error(
 							'not_found',
-							__( 'Posts page not found.', 'senroflux' ),
+							__( 'Posts page not found.', 'specflux-site-agent' ),
 							array( 'status' => 400 )
 						);
 					}
@@ -432,7 +432,7 @@ final class FrontPage {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 
@@ -449,7 +449,7 @@ final class FrontPage {
 	public static function reportLookup(): array {
 		return array(
 			'object_type' => 'setting',
-			'title'       => __( 'Front page', 'senroflux' ),
+			'title'       => __( 'Front page', 'specflux-site-agent' ),
 			'status'      => '',
 			'edit_url'    => function_exists( 'admin_url' ) ? admin_url( 'options-reading.php' ) : null,
 			'preview_url' => null,

@@ -2,18 +2,18 @@
 /**
  * The "Signed-in apps" admin actions, and hook wiring.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Connector\OAuth\Bearer;
-use Specflux\SenroFlux\Connector\OAuth\OAuth;
-use Specflux\SenroFlux\Connector\OAuth\SignedInApps;
-use Specflux\SenroFlux\Connector\OAuth\Store;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Connector\OAuth\Bearer;
+use Specflux\SiteAgent\Connector\OAuth\OAuth;
+use Specflux\SiteAgent\Connector\OAuth\SignedInApps;
+use Specflux\SiteAgent\Connector\OAuth\Store;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -33,8 +33,8 @@ final class SignedInAppsTest extends OAuthTestCase {
 
 	public function test_revoke_needs_a_valid_nonce(): void {
 		$this->tokens();
-		$_POST['grant']                      = (string) array_key_first( Store::grantIndex() );
-		$GLOBALS['senroflux_test_bad_nonce'] = true;
+		$_POST['grant']                                = (string) array_key_first( Store::grantIndex() );
+		$GLOBALS['specflux_site_agent_test_bad_nonce'] = true;
 
 		$this->expectException( \RuntimeException::class );
 		try {
@@ -46,8 +46,8 @@ final class SignedInAppsTest extends OAuthTestCase {
 
 	public function test_revoke_needs_the_capability(): void {
 		$this->tokens();
-		$_POST['grant']                      = (string) array_key_first( Store::grantIndex() );
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$_POST['grant']                                = (string) array_key_first( Store::grantIndex() );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		$this->expectException( \RuntimeException::class );
 		try {
@@ -69,9 +69,9 @@ final class SignedInAppsTest extends OAuthTestCase {
 	}
 
 	public function test_removing_a_client_needs_the_capability(): void {
-		$t                                   = $this->tokens();
-		$_POST['client']                     = $t['client'];
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$t               = $this->tokens();
+		$_POST['client'] = $t['client'];
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 
 		try {
 			SignedInApps::handleRemove();
@@ -84,9 +84,9 @@ final class SignedInAppsTest extends OAuthTestCase {
 	public function test_the_connector_wires_the_oauth_layer(): void {
 		Connector::register();
 
-		$filters = $GLOBALS['senroflux_test_filters'];
+		$filters = $GLOBALS['specflux_site_agent_test_filters'];
 		$this->assertArrayHasKey( 21, $filters['determine_current_user'] ?? array(), 'After core\'s application-password check at 20.' );
-		$this->assertArrayHasKey( 'senroflux_connector_connection', $filters );
+		$this->assertArrayHasKey( 'specflux_site_agent_connector_connection', $filters );
 		$this->assertArrayHasKey( 'rest_pre_dispatch', $filters );
 		$this->assertArrayHasKey( 'rest_post_dispatch', $filters );
 	}

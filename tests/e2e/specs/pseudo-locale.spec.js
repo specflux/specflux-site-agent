@@ -29,7 +29,7 @@ const { buildPseudoLocale, LOCALE } = require( '../support/pseudo-locale-build' 
  * EXISTING semantic class/element wherever one exists (run goals, model/
  * fake-provider text, ability ids, raw args, choice/step text the fake
  * provider supplies). Three places had no existing hook at all — see
- * ParkCard.js and LedgerGroup.js — and got a minimal `data-senroflux-content`
+ * ParkCard.js and LedgerGroup.js — and got a minimal `data-specflux-site-agent-content`
  * attribute added for exactly this purpose (documented in each of those
  * two files' diffs, and again in EXCLUDE_SELECTORS below).
  */
@@ -39,52 +39,52 @@ const PSEUDO_STATE_PATH = path.join( __dirname, '..', 'support', 'storage-state.
 /**
  * Every existing selector (or attribute) that marks DATA rather than
  * translatable chrome, for the Runs screen:
- *  - `[data-senroflux-content]`: question text, choice labels, plan-park
+ *  - `[data-specflux-site-agent-content]`: question text, choice labels, plan-park
  *    step text, plan assumptions, and the ledger group's derived label
  *    suffix — none had any other distinguishing hook (ParkCard.js,
  *    LedgerGroup.js).
- *  - `.senroflux-chat-bubble-user`, `.senroflux-run-heading`,
- *    `.senroflux-run-row-title`: the run's own goal (user-entered).
- *  - `.senroflux-chat-bubble-bot:not(.senroflux-typing)`: fake-provider
+ *  - `.specflux-site-agent-chat-bubble-user`, `.specflux-site-agent-run-heading`,
+ *    `.specflux-site-agent-run-row-title`: the run's own goal (user-entered).
+ *  - `.specflux-site-agent-chat-bubble-bot:not(.specflux-site-agent-typing)`: fake-provider
  *    "model" text steps — simulated model output, not chrome. The typing
  *    indicator keeps the same base class but IS chrome, hence `:not()`.
- *  - `.senroflux-pinned-plan-goal`, `.senroflux-plan-step-text`: the plan's
+ *  - `.specflux-site-agent-pinned-plan-goal`, `.specflux-site-agent-plan-step-text`: the plan's
  *    own goal/step text (PinnedPlan.js — data, from the model's plan).
- *  - `.senroflux-suggestion-text`, `.senroflux-suggestion-text-final`: the
+ *  - `.specflux-site-agent-suggestion-text`, `.specflux-site-agent-suggestion-text-final`: the
  *    model-authored brief-suggestion text.
- *  - `.senroflux-ledger-verb`: the raw `wpab__ns__name` ability id.
- *  - `.senroflux-ledger-label`: mechanically derived from that raw id
+ *  - `.specflux-site-agent-ledger-verb`: the raw `wpab__ns__name` ability id.
+ *  - `.specflux-site-agent-ledger-label`: mechanically derived from that raw id
  *    (stepLabel() in utils.js) — not real UI chrome, cannot be meaningfully
  *    localized.
- *  - `.senroflux-args`: raw JSON tool-call arguments.
- *  - `.senroflux-rationale`: model-authored rationale text.
- *  - `.senroflux-run-row-pack`: the pack slug (a technical identifier).
+ *  - `.specflux-site-agent-args`: raw JSON tool-call arguments.
+ *  - `.specflux-site-agent-rationale`: model-authored rationale text.
+ *  - `.specflux-site-agent-run-row-pack`: the pack slug (a technical identifier).
  *  - `code`: ability verb ids rendered inline (ApprovalBody).
  *  - `textarea`, `input`: user-editable data, never chrome.
- *  - `.notice:not([data-senroflux-notice])`: another plugin's admin notice,
+ *  - `.notice:not([data-specflux-site-agent-notice])`: another plugin's admin notice,
  *    which core moves into `.wrap` (WooCommerce's past-due Action Scheduler
- *    warning failed this spec on a long-lived env). SenroFlux's own notices
+ *    warning failed this spec on a long-lived env). Specflux Site Agent's own notices
  *    carry the attribute and are still checked.
  */
 const EXCLUDE_SELECTORS = [
-	'[data-senroflux-content]',
-	'.senroflux-chat-bubble-user',
-	'.senroflux-chat-bubble-bot:not(.senroflux-typing)',
-	'.senroflux-run-heading',
-	'.senroflux-pinned-plan-goal',
-	'.senroflux-plan-step-text',
-	'.senroflux-suggestion-text',
-	'.senroflux-suggestion-text-final',
-	'.senroflux-ledger-verb',
-	'.senroflux-ledger-label',
-	'.senroflux-args',
-	'.senroflux-rationale',
-	'.senroflux-run-row-title',
-	'.senroflux-run-row-pack',
+	'[data-specflux-site-agent-content]',
+	'.specflux-site-agent-chat-bubble-user',
+	'.specflux-site-agent-chat-bubble-bot:not(.specflux-site-agent-typing)',
+	'.specflux-site-agent-run-heading',
+	'.specflux-site-agent-pinned-plan-goal',
+	'.specflux-site-agent-plan-step-text',
+	'.specflux-site-agent-suggestion-text',
+	'.specflux-site-agent-suggestion-text-final',
+	'.specflux-site-agent-ledger-verb',
+	'.specflux-site-agent-ledger-label',
+	'.specflux-site-agent-args',
+	'.specflux-site-agent-rationale',
+	'.specflux-site-agent-run-row-title',
+	'.specflux-site-agent-run-row-pack',
 	'code',
 	'textarea',
 	'input',
-	'.notice:not([data-senroflux-notice])',
+	'.notice:not([data-specflux-site-agent-notice])',
 ];
 
 /**
@@ -144,26 +144,26 @@ test.describe( 'S22 pseudo-locale: no unwrapped English on Runs, Settings or the
 
 		await gotoRuns( page );
 		await waitLoaded( page );
-		await assertNoUnwrappedEnglish( page, '#senroflux-runs-root', 'idle Runs screen' );
+		await assertNoUnwrappedEnglish( page, '#specflux-site-agent-runs-root', 'idle Runs screen' );
 
 		await startRun( page, 'Build the launch page' );
 
 		await waitForPark( page, 'plan', 'Plan: needs your OK' );
-		await assertNoUnwrappedEnglish( page, '#senroflux-runs-root', 'plan park' );
+		await assertNoUnwrappedEnglish( page, '#specflux-site-agent-runs-root', 'plan park' );
 		await assertNoSeriousA11y( page, 'plan park (pseudo-locale)' );
 		await acceptPlan( page );
 
 		await waitForPark( page, 'question', 'Question for you' );
-		await assertNoUnwrappedEnglish( page, '#senroflux-runs-root', 'question park' );
+		await assertNoUnwrappedEnglish( page, '#specflux-site-agent-runs-root', 'question park' );
 		await answerChoice( page, 'Launch Day' );
 
 		await waitForPark( page, 'approval', 'Approve this change?' );
-		await assertNoUnwrappedEnglish( page, '#senroflux-runs-root', 'approval park' );
+		await assertNoUnwrappedEnglish( page, '#specflux-site-agent-runs-root', 'approval park' );
 		await approveCall( page );
 
 		await waitSettled( page );
-		await page.locator( '.senroflux-chat-bubble-bot' ).first().waitFor( { state: 'visible', timeout: 30000 } );
-		await assertNoUnwrappedEnglish( page, '#senroflux-runs-root', 'terminal report view' );
+		await page.locator( '.specflux-site-agent-chat-bubble-bot' ).first().waitFor( { state: 'visible', timeout: 30000 } );
+		await assertNoUnwrappedEnglish( page, '#specflux-site-agent-runs-root', 'terminal report view' );
 		await assertNoSeriousA11y( page, 'terminal report view (pseudo-locale)' );
 
 		await context.close();
@@ -173,7 +173,7 @@ test.describe( 'S22 pseudo-locale: no unwrapped English on Runs, Settings or the
 		const context = await browser.newContext( { storageState: PSEUDO_STATE_PATH } );
 		const page = await context.newPage();
 
-		await page.goto( '/wp-admin/admin.php?page=senroflux-settings' );
+		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-settings' );
 		await page.waitForSelector( '.wrap form' );
 
 		await assertNoUnwrappedEnglish( page, '.wrap', 'Settings screen' );

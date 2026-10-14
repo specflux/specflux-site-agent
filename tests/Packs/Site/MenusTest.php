@@ -2,15 +2,15 @@
 /**
  * Site\Menus tests: classic menu read / add / remove / reorder.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Menus;
+use Specflux\SiteAgent\Packs\Site\Menus;
 use WP_Error;
 
 final class MenusTest extends TestCase {
@@ -18,35 +18,35 @@ final class MenusTest extends TestCase {
 	protected function setUp(): void {
 		require_once dirname( __DIR__, 2 ) . '/stubs/site-tools.php';
 
-		$GLOBALS['senroflux_test_abilities']            = array();
-		$GLOBALS['senroflux_test_ability_categories']   = array();
-		$GLOBALS['senroflux_test_posts']                = array();
-		$GLOBALS['senroflux_test_next_post_id']         = 100;
-		$GLOBALS['senroflux_test_nav_menus']            = array();
-		$GLOBALS['senroflux_test_nav_menu_items']       = array();
-		$GLOBALS['senroflux_test_nav_update_calls']     = array();
-		$GLOBALS['senroflux_test_next_menu_item_id']    = 500;
-		$GLOBALS['senroflux_test_terms']                = array();
-		$GLOBALS['senroflux_test_taxonomies']           = array();
-		$GLOBALS['senroflux_test_registered_nav_menus'] = array(
+		$GLOBALS['specflux_site_agent_test_abilities']            = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories']   = array();
+		$GLOBALS['specflux_site_agent_test_posts']                = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']         = 100;
+		$GLOBALS['specflux_site_agent_test_nav_menus']            = array();
+		$GLOBALS['specflux_site_agent_test_nav_menu_items']       = array();
+		$GLOBALS['specflux_site_agent_test_nav_update_calls']     = array();
+		$GLOBALS['specflux_site_agent_test_next_menu_item_id']    = 500;
+		$GLOBALS['specflux_site_agent_test_terms']                = array();
+		$GLOBALS['specflux_site_agent_test_taxonomies']           = array();
+		$GLOBALS['specflux_site_agent_test_registered_nav_menus'] = array(
 			'primary' => 'Primary',
 			'footer'  => 'Footer',
 		);
-		$GLOBALS['senroflux_test_nav_menu_locations']   = array( 'primary' => 7 );
-		$GLOBALS['senroflux_test_user_caps']            = array(
+		$GLOBALS['specflux_site_agent_test_nav_menu_locations']   = array( 'primary' => 7 );
+		$GLOBALS['specflux_site_agent_test_user_caps']            = array(
 			'edit_theme_options' => true,
 			'read_post'          => true,
 		);
 
-		senroflux_test_add_menu( 7, 'Main', 'main' );
-		senroflux_test_add_menu( 8, 'Other', 'other' );
+		specflux_site_agent_test_add_menu( 7, 'Main', 'main' );
+		specflux_site_agent_test_add_menu( 8, 'Other', 'other' );
 
 		Menus::reset();
 		Menus::register();
 	}
 
 	private function ability( string $name ): object {
-		return $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $name ];
+		return $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $name ];
 	}
 
 	private function post( string $status = 'publish', string $type = 'page' ): int {
@@ -60,8 +60,8 @@ final class MenusTest extends TestCase {
 	}
 
 	public function test_every_ability_refuses_without_edit_theme_options(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'read_post' => true );
-		$inputs                              = array(
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'read_post' => true );
+		$inputs                                        = array(
 			'read-menus'         => array(),
 			'add-menu-item'      => array(
 				'menu_id' => 7,
@@ -83,12 +83,12 @@ final class MenusTest extends TestCase {
 			$this->assertFalse( $this->ability( $name )->check_permissions( $input ), $name );
 			$this->assertInstanceOf( WP_Error::class, $this->ability( $name )->execute( $input ), $name );
 		}
-		$this->assertSame( array(), $GLOBALS['senroflux_test_nav_update_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_nav_update_calls'] );
 	}
 
 	public function test_read_menus_lists_menus_with_locations(): void {
-		senroflux_test_add_menu_item( 7, 1 );
-		senroflux_test_add_menu_item( 7, 2 );
+		specflux_site_agent_test_add_menu_item( 7, 1 );
+		specflux_site_agent_test_add_menu_item( 7, 2 );
 
 		$result = $this->ability( 'read-menus' )->execute( array() );
 
@@ -109,10 +109,10 @@ final class MenusTest extends TestCase {
 	public function test_read_menus_with_id_lists_items_and_drops_unreadable_posts(): void {
 		$readable   = $this->post();
 		$unreadable = $this->post();
-		$GLOBALS['senroflux_test_user_caps'][ 'read_post:' . $unreadable ] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps'][ 'read_post:' . $unreadable ] = false;
 
-		senroflux_test_add_menu_item( 7, 1, array( 'title' => 'Custom' ) );
-		senroflux_test_add_menu_item(
+		specflux_site_agent_test_add_menu_item( 7, 1, array( 'title' => 'Custom' ) );
+		specflux_site_agent_test_add_menu_item(
 			7,
 			2,
 			array(
@@ -121,7 +121,7 @@ final class MenusTest extends TestCase {
 				'object_id' => $readable,
 			)
 		);
-		senroflux_test_add_menu_item(
+		specflux_site_agent_test_add_menu_item(
 			7,
 			3,
 			array(
@@ -161,7 +161,7 @@ final class MenusTest extends TestCase {
 
 		$this->assertSame( 7, $result['menu_id'] );
 		$this->assertSame( 500, $result['item_id'] );
-		$this->assertSame( 'Docs', $GLOBALS['senroflux_test_nav_menu_items'][7][500]->title );
+		$this->assertSame( 'Docs', $GLOBALS['specflux_site_agent_test_nav_menu_items'][7][500]->title );
 	}
 
 	public function test_add_post_item_uses_the_posts_type_and_requires_it_published(): void {
@@ -174,7 +174,7 @@ final class MenusTest extends TestCase {
 				'object_id' => $page,
 			)
 		);
-		$this->assertSame( 'page', $GLOBALS['senroflux_test_nav_menu_items'][7][ $result['item_id'] ]->object );
+		$this->assertSame( 'page', $GLOBALS['specflux_site_agent_test_nav_menu_items'][7][ $result['item_id'] ]->object );
 
 		$draft = $this->post( 'draft' );
 		$this->assertInstanceOf(
@@ -191,7 +191,7 @@ final class MenusTest extends TestCase {
 
 	public function test_add_item_for_an_unreadable_post_is_refused(): void {
 		$page = $this->post();
-		$GLOBALS['senroflux_test_user_caps'][ 'read_post:' . $page ] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps'][ 'read_post:' . $page ] = false;
 		$input = array(
 			'menu_id'   => 7,
 			'type'      => 'post_type',
@@ -200,7 +200,7 @@ final class MenusTest extends TestCase {
 
 		$this->assertFalse( $this->ability( 'add-menu-item' )->check_permissions( $input ) );
 		$this->assertInstanceOf( WP_Error::class, $this->ability( 'add-menu-item' )->execute( $input ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_nav_update_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_nav_update_calls'] );
 	}
 
 	/** @return array<string,array{0:string}> */
@@ -228,11 +228,11 @@ final class MenusTest extends TestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_nav_update_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_nav_update_calls'] );
 	}
 
 	public function test_add_item_validation_edges(): void {
-		senroflux_test_add_menu_item( 8, 40 );
+		specflux_site_agent_test_add_menu_item( 8, 40 );
 		$add = $this->ability( 'add-menu-item' );
 
 		$cases = array(
@@ -266,13 +266,13 @@ final class MenusTest extends TestCase {
 			$this->assertInstanceOf( WP_Error::class, $result, $label );
 		}
 		$this->assertInstanceOf( WP_Error::class, $add->execute( array_merge( array( 'menu_id' => 999 ), array( 'type' => 'custom' ) ) ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_nav_update_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_nav_update_calls'] );
 	}
 
 	public function test_add_item_accepts_parent_in_the_same_menu_and_a_term(): void {
-		senroflux_test_add_menu_item( 7, 40 );
-		$GLOBALS['senroflux_test_terms']['category:news'] = 5;
-		$GLOBALS['senroflux_test_taxonomies']['category'] = (object) array(
+		specflux_site_agent_test_add_menu_item( 7, 40 );
+		$GLOBALS['specflux_site_agent_test_terms']['category:news'] = 5;
+		$GLOBALS['specflux_site_agent_test_taxonomies']['category'] = (object) array(
 			'public'            => true,
 			'show_in_nav_menus' => true,
 		);
@@ -287,13 +287,13 @@ final class MenusTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( 'category', $GLOBALS['senroflux_test_nav_menu_items'][7][ $result['item_id'] ]->object );
-		$this->assertSame( '40', $GLOBALS['senroflux_test_nav_menu_items'][7][ $result['item_id'] ]->menu_item_parent );
+		$this->assertSame( 'category', $GLOBALS['specflux_site_agent_test_nav_menu_items'][7][ $result['item_id'] ]->object );
+		$this->assertSame( '40', $GLOBALS['specflux_site_agent_test_nav_menu_items'][7][ $result['item_id'] ]->menu_item_parent );
 	}
 
 	public function test_remove_item_happy_path_and_wrong_menu(): void {
-		senroflux_test_add_menu_item( 7, 1 );
-		senroflux_test_add_menu_item( 8, 2 );
+		specflux_site_agent_test_add_menu_item( 7, 1 );
+		specflux_site_agent_test_add_menu_item( 8, 2 );
 		$remove = $this->ability( 'remove-menu-item' );
 
 		$wrong = $remove->execute(
@@ -303,7 +303,7 @@ final class MenusTest extends TestCase {
 			)
 		);
 		$this->assertInstanceOf( WP_Error::class, $wrong );
-		$this->assertArrayHasKey( 2, $GLOBALS['senroflux_test_nav_menu_items'][8] );
+		$this->assertArrayHasKey( 2, $GLOBALS['specflux_site_agent_test_nav_menu_items'][8] );
 
 		$result = $remove->execute(
 			array(
@@ -319,7 +319,7 @@ final class MenusTest extends TestCase {
 			),
 			$result
 		);
-		$this->assertArrayNotHasKey( 1, $GLOBALS['senroflux_test_nav_menu_items'][7] );
+		$this->assertArrayNotHasKey( 1, $GLOBALS['specflux_site_agent_test_nav_menu_items'][7] );
 		$this->assertTrue( $remove->get_meta()['annotations']['destructive'] );
 	}
 
@@ -338,9 +338,9 @@ final class MenusTest extends TestCase {
 	}
 
 	public function test_reorder_happy_path_sets_positions(): void {
-		senroflux_test_add_menu_item( 7, 1 );
-		senroflux_test_add_menu_item( 7, 2 );
-		senroflux_test_add_menu_item( 7, 3 );
+		specflux_site_agent_test_add_menu_item( 7, 1 );
+		specflux_site_agent_test_add_menu_item( 7, 2 );
+		specflux_site_agent_test_add_menu_item( 7, 3 );
 
 		$result = $this->ability( 'reorder-menu-items' )->execute(
 			array(
@@ -356,7 +356,7 @@ final class MenusTest extends TestCase {
 			),
 			$result
 		);
-		$items = $GLOBALS['senroflux_test_nav_menu_items'][7];
+		$items = $GLOBALS['specflux_site_agent_test_nav_menu_items'][7];
 		$this->assertSame( 1, $items[3]->menu_order );
 		$this->assertSame( 2, $items[1]->menu_order );
 		$this->assertSame( 3, $items[2]->menu_order );
@@ -378,9 +378,9 @@ final class MenusTest extends TestCase {
 	 * @dataProvider badOrders
 	 */
 	public function test_reorder_refuses_a_mismatched_id_set( array $order ): void {
-		senroflux_test_add_menu_item( 7, 1 );
-		senroflux_test_add_menu_item( 7, 2 );
-		senroflux_test_add_menu_item( 7, 3 );
+		specflux_site_agent_test_add_menu_item( 7, 1 );
+		specflux_site_agent_test_add_menu_item( 7, 2 );
+		specflux_site_agent_test_add_menu_item( 7, 3 );
 
 		$result = $this->ability( 'reorder-menu-items' )->execute(
 			array(
@@ -390,16 +390,16 @@ final class MenusTest extends TestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_nav_update_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_nav_update_calls'] );
 	}
 
 	public function test_reorder_preserves_every_item_field(): void {
-		if ( ! senroflux_test_nav_update_recording() ) {
+		if ( ! specflux_site_agent_test_nav_update_recording() ) {
 			$this->markTestSkipped( 'navigation.php stub loaded first; update arguments are not recorded.' );
 		}
 
-		senroflux_test_add_menu_item( 7, 1 );
-		senroflux_test_add_menu_item(
+		specflux_site_agent_test_add_menu_item( 7, 1 );
+		specflux_site_agent_test_add_menu_item(
 			7,
 			2,
 			array(
@@ -425,7 +425,7 @@ final class MenusTest extends TestCase {
 			)
 		);
 
-		$call = $GLOBALS['senroflux_test_nav_update_calls'][0];
+		$call = $GLOBALS['specflux_site_agent_test_nav_update_calls'][0];
 		$this->assertSame( 7, $call[0] );
 		$this->assertSame( 2, $call[1] );
 		$this->assertSame(
@@ -449,7 +449,7 @@ final class MenusTest extends TestCase {
 	}
 
 	public function test_reorder_leaves_title_url_and_parent_untouched_in_the_store(): void {
-		senroflux_test_add_menu_item(
+		specflux_site_agent_test_add_menu_item(
 			7,
 			1,
 			array(
@@ -457,7 +457,7 @@ final class MenusTest extends TestCase {
 				'post_title' => 'One',
 			)
 		);
-		senroflux_test_add_menu_item(
+		specflux_site_agent_test_add_menu_item(
 			7,
 			2,
 			array(
@@ -474,7 +474,7 @@ final class MenusTest extends TestCase {
 			)
 		);
 
-		$items = $GLOBALS['senroflux_test_nav_menu_items'][7];
+		$items = $GLOBALS['specflux_site_agent_test_nav_menu_items'][7];
 		$this->assertSame( 'Two', $items[2]->title );
 		$this->assertSame( 'https://example.test/2', $items[2]->url );
 		$this->assertSame( '1', (string) $items[2]->menu_item_parent );

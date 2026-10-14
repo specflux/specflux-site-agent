@@ -3,14 +3,14 @@
  * Test helper: drops the K5 tool-breadth entries from a pack map so the
  * pre-existing pack tests keep pinning the original contract exactly.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
-use Specflux\SenroFlux\Packs\ToolBreadth;
+use Specflux\SiteAgent\Packs\ToolBreadth;
 
 final class BreadthFilter {
 

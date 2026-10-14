@@ -2,12 +2,12 @@
 /**
  * Budget ceilings for one run.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  * the provider's context window or the site's patience. Exceeding ANY of them
  * fails the run with error code budget_exceeded.
  *
- * Defaults are filterable site-wide via `senroflux_default_budget`; the
+ * Defaults are filterable site-wide via `specflux_site_agent_default_budget`; the
  * consumer may pass per-run overrides at start(), which are merged over the
  * (filtered) defaults and clamped to positive integers — a zero/negative cap
  * would make every run fail immediately.
@@ -30,7 +30,7 @@ defined( 'ABSPATH' ) || exit;
  * domain-agnostic even so — it knows only the KEY NAMES `images`/`refunds`,
  * never that one means pictures and the other means money back; the ability
  * asking "how much of this key is left" and "spend one" is a harness seam
- * ({@see \Specflux\SenroFlux\Packs\Content\Media}, and {@see self::spentCount()}
+ * ({@see \Specflux\SiteAgent\Packs\Content\Media}, and {@see self::spentCount()}
  * for the shared counting rule both use), not this class's job.
  */
 final class Budget {
@@ -66,7 +66,7 @@ final class Budget {
 		 *
 		 * @param array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int} $defaults
 		 */
-		$filtered = apply_filters( 'senroflux_default_budget', $base );
+		$filtered = apply_filters( 'specflux_site_agent_default_budget', $base );
 
 		if ( array() === $pack_overrides ) {
 			// Pre-0.3 behaviour, byte for byte: no pack in play, the filter may
@@ -82,7 +82,7 @@ final class Budget {
 	}
 
 	/**
-	 * The hard-coded table the `senroflux_default_budget` filter starts from.
+	 * The hard-coded table the `specflux_site_agent_default_budget` filter starts from.
 	 * The one place these numbers appear.
 	 *
 	 * Sized from live pages-pack runs (0.2 stage 10). A consumer may only LOWER
@@ -249,7 +249,7 @@ final class Budget {
 	 * domain-agnostic even so: it is handed the ability's base name and reads
 	 * only the run's own step history — never told what the key MEANS. The
 	 * pack ability that asks "how much of this key is left" and "spend one"
-	 * owns that knowledge ({@see \Specflux\SenroFlux\Packs\Content\Media} for
+	 * owns that knowledge ({@see \Specflux\SiteAgent\Packs\Content\Media} for
 	 * `images`; the commerce pack's refund ability, stage 12/13, is the
 	 * second caller `refunds` was added for).
 	 *
@@ -274,11 +274,11 @@ final class Budget {
 
 	/**
 	 * The ability name's final segment (namespace stripped). Steps store the
-	 * mangled function name the model called (`wpab__senroflux__orders-refund`),
+	 * mangled function name the model called (`wpab__specflux__orders-refund`),
 	 * so it is un-mangled first or nothing would ever be counted.
 	 */
 	private static function baseName( string $ability ): string {
-		$ability = \Specflux\SenroFlux\Tools\ToolRegistry::abilityName( $ability );
+		$ability = \Specflux\SiteAgent\Tools\ToolRegistry::abilityName( $ability );
 		$pos     = strrpos( $ability, '/' );
 
 		return false === $pos ? $ability : substr( $ability, $pos + 1 );

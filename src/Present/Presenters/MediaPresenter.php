@@ -2,19 +2,19 @@
 /**
  * Media card — thumbnail and alt text.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 final class MediaPresenter implements Presenter {
 
@@ -34,10 +34,10 @@ final class MediaPresenter implements Presenter {
 
 		return array(
 			'type'          => 'media',
-			'title'         => '' !== $title ? $title : sprintf( /* translators: %d: attachment id. */ __( 'Image #%d', 'senroflux' ), $id ),
+			'title'         => '' !== $title ? $title : sprintf( /* translators: %d: attachment id. */ __( 'Image #%d', 'specflux-site-agent' ), $id ),
 			'thumbnail_url' => Fmt::url( $response['url'] ),
 			'alt'           => $alt,
-			'links'         => Fmt::links( array( Fmt::link( __( 'Edit', 'senroflux' ), $links->edit( $id ), 'edit' ) ) ),
+			'links'         => Fmt::links( array( Fmt::link( __( 'Edit', 'specflux-site-agent' ), $links->edit( $id ), 'edit' ) ) ),
 		);
 	}
 }

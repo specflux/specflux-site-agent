@@ -2,14 +2,14 @@
 /**
  * Client registration, lookup and client ID metadata documents.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -154,7 +154,7 @@ final class Clients {
 			return null;
 		}
 
-		$key    = 'senroflux_oauth_cimd_' . OAuth::hash( $url );
+		$key    = 'specflux_site_agent_oauth_cimd_' . OAuth::hash( $url );
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return isset( $cached['uris'] ) ? new Client( $url, (string) $cached['name'], array_values( $cached['uris'] ), true ) : null;
@@ -185,7 +185,7 @@ final class Clients {
 				'reject_unsafe_urls'  => true,
 				'limit_response_size' => self::CIMD_MAX_BYTES,
 				'headers'             => array( 'Accept' => 'application/json' ),
-				'user-agent'          => 'SenroFlux OAuth (client metadata fetch)',
+				'user-agent'          => 'Specflux Site Agent OAuth (client metadata fetch)',
 			)
 		);
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {

@@ -4,12 +4,12 @@
  * are choosable right now, and validation of a candidate pair against that
  * list.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
@@ -35,7 +35,7 @@ defined( 'ABSPATH' ) || exit;
 final class ModelChoice {
 
 	/** Refusal code: the (provider, model) pair is not currently choosable. */
-	public const ERROR_UNAVAILABLE = 'senroflux_model_unavailable';
+	public const ERROR_UNAVAILABLE = 'specflux_site_agent_model_unavailable';
 
 	/**
 	 * Test seam: force the available-choices list. Null restores reality.
@@ -121,7 +121,7 @@ final class ModelChoice {
 
 		return new WP_Error(
 			self::ERROR_UNAVAILABLE,
-			__( 'That model is not currently available. Choose one from the list, or leave it automatic.', 'senroflux' ),
+			__( 'That model is not currently available. Choose one from the list, or leave it automatic.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}

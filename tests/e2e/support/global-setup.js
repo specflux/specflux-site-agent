@@ -10,19 +10,19 @@ const {
 	wpCli,
 } = require( './wp-cli' );
 
-const BASE_URL = process.env.SENROFLUX_E2E_BASE_URL || 'http://localhost:8895';
+const BASE_URL = process.env.SPECFLUX_SITE_AGENT_E2E_BASE_URL || 'http://localhost:8895';
 
 /**
  * Every plugin the suite needs active regardless of gate mode. A cold
- * wp-env mounts these but leaves them inactive, so senroflux's activation
- * hook (which creates wp_senroflux_runs/steps) never runs and the first
+ * wp-env mounts these but leaves them inactive, so specflux-site-agent's activation
+ * hook (which creates wp_specflux_site_agent_runs/steps) never runs and the first
  * spec dies deep inside an unrelated SQL error instead of at setup.
  *
  * S22: WooCommerce (`.wp-env.json`'s "plugins" entry, the newest wordpress.org
  * release) is in this always-active list too — the hardening bar wants Woo
  * on for every e2e leg, not a Woo-specific project/mode.
  */
-const ALWAYS_ACTIVE_PLUGINS = [ 'abilities-api', 'mcp-adapter', 'woocommerce', 'senroflux' ];
+const ALWAYS_ACTIVE_PLUGINS = [ 'abilities-api', 'mcp-adapter', 'woocommerce', 'specflux-site-agent' ];
 
 /** Fail setup itself, with a clear cause, instead of leaving it to a spec. */
 function assertEnvironmentReady() {
@@ -31,8 +31,8 @@ function assertEnvironmentReady() {
 			throw new Error( `e2e setup: plugin "${ slug }" did not report active after activation` );
 		}
 	}
-	if ( ! tableExists( 'wp_senroflux_runs' ) ) {
-		throw new Error( 'e2e setup: wp_senroflux_runs table is missing; senroflux activation hook did not run' );
+	if ( ! tableExists( 'wp_specflux_site_agent_runs' ) ) {
+		throw new Error( 'e2e setup: wp_specflux_site_agent_runs table is missing; specflux-site-agent activation hook did not run' );
 	}
 }
 
@@ -97,7 +97,7 @@ async function setupFor( gateMode, storageStatePath ) {
 
 	if ( 'agent_safety' === gateMode ) {
 		activateAgentSafety();
-		wpCli( [ 'option', 'update', 'agsafe_pack_bindings', '{"role:administrator":"senroflux-e2e-pack","role:editor":"senroflux-e2e-pack"}', '--format=json' ] );
+		wpCli( [ 'option', 'update', 'belayline_pack_bindings', '{"role:administrator":"specflux-e2e-pack","role:editor":"specflux-e2e-pack"}', '--format=json' ] );
 	} else {
 		deactivateAgentSafety();
 	}

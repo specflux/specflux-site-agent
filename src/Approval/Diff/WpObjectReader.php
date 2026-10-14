@@ -2,14 +2,14 @@
 /**
  * ObjectReader backed by WordPress and WooCommerce read APIs.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval\Diff;
+namespace Specflux\SiteAgent\Approval\Diff;
 
-use Specflux\SenroFlux\Packs\Site\Navigation;
+use Specflux\SiteAgent\Packs\Site\Navigation;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

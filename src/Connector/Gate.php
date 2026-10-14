@@ -2,16 +2,16 @@
 /**
  * The connector's two enforcement points on the adapter's filters (K1).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 // Bail on direct access.
@@ -19,24 +19,24 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Narrows what one connection sees (`mcp_adapter_tools_list`) and decides
- * every call (`mcp_adapter_pre_tool_call`), for SenroFlux's server only. Both
+ * every call (`mcp_adapter_pre_tool_call`), for Specflux Site Agent's server only. Both
  * re-resolve the connection from the request's own authentication; nothing a
  * client sends can prime them. {@see wrapAbilityArgs()} runs the same refusals
  * earlier, at ability permission time, for the one connection being served.
  */
 final class Gate {
 
-	/** SenroGate's WP_Error code for a call parked for human approval (Verdict::error()). */
-	private const SENROGATE_PENDING_CODE = 'approval_required';
+	/** Belayline Agent Governance's WP_Error code for a call parked for human approval (Verdict::error()). */
+	private const AGENT_GOVERNANCE_PENDING_CODE = 'approval_required';
 
-	/** Is this the adapter server SenroFlux created? */
+	/** Is this the adapter server Specflux Site Agent created? */
 	private static function isOurs( mixed $server ): bool {
 		return is_object( $server ) && method_exists( $server, 'get_server_id' ) && Connector::SERVER_ID === $server->get_server_id();
 	}
 
 	/**
 	 * The ability behind a tool name on this server, or null when the tool is
-	 * not ability-backed (SenroFlux registers only ability-backed tools).
+	 * not ability-backed (Specflux Site Agent registers only ability-backed tools).
 	 *
 	 * @param mixed  $server    The adapter server.
 	 * @param string $tool_name The tool name.
@@ -119,7 +119,7 @@ final class Gate {
 			ActivityLog::record(
 				$connection,
 				$ability ?? ( is_string( $tool_name ) ? $tool_name : '' ),
-				'senroflux_connector_awaiting_approval' === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
+				'specflux_site_agent_connector_awaiting_approval' === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
 			);
 		}
 
@@ -153,7 +153,7 @@ final class Gate {
 	}
 
 	/**
-	 * The decision for one call on SenroFlux's server.
+	 * The decision for one call on Specflux Site Agent's server.
 	 *
 	 * @param mixed           $args       The call's arguments.
 	 * @param Connection|null $connection The request's connection.
@@ -162,7 +162,7 @@ final class Gate {
 	 */
 	private static function decide( mixed $args, ?Connection $connection, ?string $ability ): mixed {
 		if ( null === $connection || null === $ability ) {
-			return self::denied( 'senroflux_connector_denied', __( 'This connection is not allowed to use SenroFlux.', 'senroflux' ) );
+			return self::denied( 'specflux_site_agent_connector_denied', __( 'This connection is not allowed to use Specflux Site Agent.', 'specflux-site-agent' ) );
 		}
 
 		$call = is_array( $args ) ? $args : array();
@@ -191,10 +191,10 @@ final class Gate {
 		}
 
 		return self::denied(
-			'senroflux_connector_rate_limited',
+			'specflux_site_agent_connector_rate_limited',
 			sprintf(
 				/* translators: %d: seconds to wait. */
-				_n( 'Too many calls: this connection is limited to 60 a minute. Wait %d second and try again.', 'Too many calls: this connection is limited to 60 a minute. Wait %d seconds and try again.', $wait, 'senroflux' ),
+				_n( 'Too many calls: this connection is limited to 60 a minute. Wait %d second and try again.', 'Too many calls: this connection is limited to 60 a minute. Wait %d seconds and try again.', $wait, 'specflux-site-agent' ),
 				$wait
 			)
 		);
@@ -214,24 +214,24 @@ final class Gate {
 	private static function refusal( array $call, Connection $connection, string $ability, GateMode $mode ): ?WP_Error {
 		// Re-checked at call time: a client can name any tool, listed or not.
 		if ( ! ExposureSet::visibleTo( $ability, $connection, $mode ) ) {
-			return self::denied( 'senroflux_connector_unavailable', __( 'This tool is not available to this connection.', 'senroflux' ) );
+			return self::denied( 'specflux_site_agent_connector_unavailable', __( 'This tool is not available to this connection.', 'specflux-site-agent' ) );
 		}
 
 		// The list shows a tool by its ceiling; the call is tiered by its arguments.
 		$tier = Tiering::forCall( $ability, $call, $mode );
 		if ( $tier > VerbTier::TIER_0 && ! $connection->mayWrite() ) {
-			return self::denied( 'senroflux_connector_read_only', __( 'This connection is read-only. Ask the site owner to give it read and write access.', 'senroflux' ) );
+			return self::denied( 'specflux_site_agent_connector_read_only', __( 'This connection is read-only. Ask the site owner to give it read and write access.', 'specflux-site-agent' ) );
 		}
 
-		// Built-in mode: commerce writes need SenroGate (a call can tier above
+		// Built-in mode: commerce writes need Belayline Agent Governance (a call can tier above
 		// its listed ceiling), and the connector's own settings are not for an
 		// AI app to change. Refused outright, never parked.
 		if ( GateMode::BuiltIn === $mode && VerbTier::TIER_0 !== $tier ) {
-			if ( Tiering::needsSenroGate( $ability ) ) {
-				return self::denied( 'senroflux_connector_needs_senrogate', __( 'Changes to the store need the SenroGate plugin. This site does not have it, so this call is refused.', 'senroflux' ) );
+			if ( Tiering::needsGovernance( $ability ) ) {
+				return self::denied( 'specflux_site_agent_connector_needs_governance', __( 'Changes to the store need the Belayline Agent Governance plugin. This site does not have it, so this call is refused.', 'specflux-site-agent' ) );
 			}
 			if ( self::touchesConnectorSettings( $call ) ) {
-				return self::denied( 'senroflux_connector_settings', __( 'AI apps cannot change the connector\'s own settings.', 'senroflux' ) );
+				return self::denied( 'specflux_site_agent_connector_settings', __( 'AI apps cannot change the connector\'s own settings.', 'specflux-site-agent' ) );
 			}
 		}
 
@@ -239,10 +239,10 @@ final class Gate {
 	}
 
 	/**
-	 * `wp_register_ability_args` callback (priority 20, after SenroGate's 10, so
+	 * `wp_register_ability_args` callback (priority 20, after Belayline Agent Governance's 10, so
 	 * this wrapper is outermost): the adapter runs an ability's permission
 	 * callback BEFORE `mcp_adapter_pre_tool_call`, and a governance plugin may
-	 * file an approval request inside that callback. So on SenroFlux's own MCP
+	 * file an approval request inside that callback. So on Specflux Site Agent's own MCP
 	 * route the refusals run first; anywhere else this is a pure pass-through.
 	 *
 	 * @param mixed  $args The ability's registration arguments.
@@ -276,7 +276,7 @@ final class Gate {
 
 			$result = $inner( ...$input );
 
-			// A governance plugin (SenroGate) refused or parked the call here;
+			// A governance plugin (Belayline Agent Governance) refused or parked the call here;
 			// the adapter then errors before `mcp_adapter_pre_tool_call`, so
 			// preCall() never sees it. Log it once, now. Calls that pass
 			// are logged by preCall() instead.
@@ -284,7 +284,7 @@ final class Gate {
 				ActivityLog::record(
 					$connection,
 					$name,
-					$result instanceof WP_Error && self::SENROGATE_PENDING_CODE === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
+					$result instanceof WP_Error && self::AGENT_GOVERNANCE_PENDING_CODE === $result->get_error_code() ? ActivityLog::WAITING : ActivityLog::REFUSED
 				);
 			}
 
@@ -295,7 +295,7 @@ final class Gate {
 	}
 
 	/**
-	 * Built-in mode (SenroGate absent): reads run; anything else parks until
+	 * Built-in mode (Belayline Agent Governance absent): reads run; anything else parks until
 	 * a site admin approves that exact call, then runs once.
 	 *
 	 * The adapter can only pass a call on or short-circuit it with a WP_Error,
@@ -320,10 +320,10 @@ final class Gate {
 		Approvals::park( $connection->userId, $connection->uuid, $ability, $call );
 
 		return new WP_Error(
-			'senroflux_connector_awaiting_approval',
+			'specflux_site_agent_connector_awaiting_approval',
 			sprintf(
 				/* translators: %s: wp-admin URL of the approvals tab. */
-				__( 'This change was not made. It needs the site owner\'s approval first. Ask them to open %s and approve it, then repeat exactly the same call. The approval works once, for 15 minutes.', 'senroflux' ),
+				__( 'This change was not made. It needs the site owner\'s approval first. Ask them to open %s and approve it, then repeat exactly the same call. The approval works once, for 15 minutes.', 'specflux-site-agent' ),
 				ApprovalsScreen::url()
 			)
 		);

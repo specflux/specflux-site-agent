@@ -2,12 +2,12 @@
 /**
  * The tail of a run's instruction block.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -158,7 +158,7 @@ final class Tail {
 
 	/**
 	 * The human-readable language name for a locale (S15). Best-effort: an
-	 * unknown locale renders as-is. Filterable via `senroflux_language_name`.
+	 * unknown locale renders as-is. Filterable via `specflux_site_agent_language_name`.
 	 *
 	 * @param string $locale Locale code, e.g. 'en_US'.
 	 */
@@ -177,7 +177,7 @@ final class Tail {
 		 *
 		 * @param array<string,string> $names Known locale names.
 		 */
-		$names = apply_filters( 'senroflux_language_name', $names );
+		$names = apply_filters( 'specflux_site_agent_language_name', $names );
 
 		$name = is_array( $names ) ? ( $names[ $locale ] ?? $locale ) : $locale;
 

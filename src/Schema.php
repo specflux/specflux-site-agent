@@ -2,12 +2,12 @@
 /**
  * Table schema for runs and steps.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux;
+namespace Specflux\SiteAgent;
 
 use wpdb;
 
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
  * UTC DATETIME strings (gmdate('Y-m-d H:i:s')), matching Agent Safety's
  * convention of never letting server timezone drift into stored comparisons.
  *
- * Versioned (0.2 S4): the option `senroflux_db_version` tracks the installed
+ * Versioned (0.2 S4): the option `specflux_site_agent_db_version` tracks the installed
  * shape; {@see self::maybe_upgrade()} re-runs dbDelta (idempotent by design)
  * until the option matches {@see self::DB_VERSION}.
  */
@@ -50,21 +50,21 @@ final class Schema {
 	 * Runs table name for this site.
 	 */
 	public static function runsTable( wpdb $db ): string {
-		return $db->prefix . 'senroflux_runs';
+		return $db->prefix . 'specflux_site_agent_runs';
 	}
 
 	/**
 	 * Steps table name for this site.
 	 */
 	public static function stepsTable( wpdb $db ): string {
-		return $db->prefix . 'senroflux_steps';
+		return $db->prefix . 'specflux_site_agent_steps';
 	}
 
 	/**
 	 * Connector activity table name for this site (0.4 K4).
 	 */
 	public static function activityTable( wpdb $db ): string {
-		return $db->prefix . 'senroflux_connector_activity';
+		return $db->prefix . 'specflux_site_agent_connector_activity';
 	}
 
 	/**
@@ -102,7 +102,7 @@ final class Schema {
 	 * @return void
 	 */
 	public static function maybe_upgrade( wpdb $db ): void {
-		$installed = function_exists( 'get_option' ) ? (int) get_option( 'senroflux_db_version', 0 ) : 0;
+		$installed = function_exists( 'get_option' ) ? (int) get_option( 'specflux_site_agent_db_version', 0 ) : 0;
 		if ( $installed >= self::DB_VERSION ) {
 			return;
 		}
@@ -116,7 +116,7 @@ final class Schema {
 		self::install( $db );
 
 		if ( function_exists( 'update_option' ) ) {
-			update_option( 'senroflux_db_version', self::DB_VERSION, false );
+			update_option( 'specflux_site_agent_db_version', self::DB_VERSION, false );
 		}
 	}
 
@@ -125,17 +125,17 @@ final class Schema {
 	 * (a fresh install, 0, has no rows to protect) and < 4 (0.3 S3's
 	 * `gate_mode` column, the first 0.3-era addition) — record the highest
 	 * run id that existed at upgrade time into the (non-autoloaded) option
-	 * `senroflux_legacy_run_watermark`, but ONLY when a live (non-terminal)
+	 * `specflux_site_agent_legacy_run_watermark`, but ONLY when a live (non-terminal)
 	 * run actually exists, and only once: an existing watermark is never
 	 * overwritten, even with a now-higher MAX(id), so a repeated upgrade
 	 * attempt can never creep the boundary later runs get judged against.
-	 * {@see \Specflux\SenroFlux\Run\Runner::legacyRunRefusal()} reads it
+	 * {@see \Specflux\SiteAgent\Run\Runner::legacyRunRefusal()} reads it
 	 * back: any run at or below the mark that is still non-terminal started
 	 * under 0.2 (ids are AUTO_INCREMENT, so every 0.3 run's id is strictly
 	 * greater) and cannot continue.
 	 *
 	 * Terminal statuses are hard-coded here as the three literal values from
-	 * {@see \Specflux\SenroFlux\Run\RunStatus::isTerminal()} — that enum
+	 * {@see \Specflux\SiteAgent\Run\RunStatus::isTerminal()} — that enum
 	 * lives in a namespace this framework-agnostic-adjacent class does not
 	 * otherwise depend on, so the literals are duplicated rather than
 	 * introducing a new coupling; RunStatus::isTerminal() remains the
@@ -158,7 +158,7 @@ final class Schema {
 			return;
 		}
 
-		if ( false !== get_option( 'senroflux_legacy_run_watermark', false ) ) {
+		if ( false !== get_option( 'specflux_site_agent_legacy_run_watermark', false ) ) {
 			return; // Never overwrite an existing watermark.
 		}
 
@@ -178,7 +178,7 @@ final class Schema {
 			"SELECT MAX(id) FROM {$runs}"
 		);
 
-		update_option( 'senroflux_legacy_run_watermark', $max_id, false );
+		update_option( 'specflux_site_agent_legacy_run_watermark', $max_id, false );
 	}
 
 	/**

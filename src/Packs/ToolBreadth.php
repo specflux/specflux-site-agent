@@ -11,19 +11,19 @@
  *
  * Tiers follow the existing precedent: reads are 0; reversible writes are 1
  * (restoring a post, which WordPress brings back as a draft; a post-meta write
- * is undone by SenroGate's post-meta capture); anything with a public effect
+ * is undone by Belayline Agent Governance's post-meta capture); anything with a public effect
  * on the site, or that grants access, is 2 (`site/set-front-page`,
  * `site/update-navigation`, publishing, approving a held comment, replying as
  * the site, a role change). Trashing a post is 2 for every post type: it takes
  * a live page or post off the site at once, so it needs approval even though
  * it is reversible (kept simple and fail-closed rather than status-dependent). There is no hard-delete verb here at all.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs;
+namespace Specflux\SiteAgent\Packs;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -217,7 +217,7 @@ final class ToolBreadth {
 
 	/**
 	 * Is this ability id one of the breadth abilities, in a namespace a pack
-	 * resolves them through (`senroflux/` polyfill or `core/`)? Used to keep
+	 * resolves them through (`specflux/` polyfill or `core/`)? Used to keep
 	 * them out of in-admin runs; the connector does not consult it.
 	 *
 	 * @param string $ability Ability id.
@@ -226,7 +226,7 @@ final class ToolBreadth {
 		$parts = explode( '/', $ability, 2 );
 
 		return 2 === count( $parts )
-			&& in_array( $parts[0], array( 'senroflux', 'core' ), true )
+			&& in_array( $parts[0], array( 'specflux-site-agent', 'core' ), true )
 			&& in_array( $parts[1], self::allTemplates(), true );
 	}
 

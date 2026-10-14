@@ -2,12 +2,12 @@
 /**
  * The config an AI app needs to reach the connector (K3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -27,7 +27,7 @@ final class ClientConfig {
 	public const OTHER          = 'other';
 
 	/** The key the server is filed under in each app's config. */
-	public const SERVER_NAME = 'senroflux';
+	public const SERVER_NAME = 'specflux';
 
 	/** @return list<string> Client ids that take an application-password connection. */
 	public static function clients(): array {
@@ -61,7 +61,7 @@ final class ClientConfig {
 				// https://code.claude.com/docs/en/mcp ("claude mcp add --transport http <name> <url>" with "--header").
 				return array(
 					'format' => 'shell',
-					'where'  => __( 'Run this in a terminal.', 'senroflux' ),
+					'where'  => __( 'Run this in a terminal.', 'specflux-site-agent' ),
 					'text'   => sprintf(
 						'claude mcp add --transport http %s %s --header %s',
 						self::SERVER_NAME,
@@ -74,7 +74,7 @@ final class ClientConfig {
 				// https://cursor.com/docs/context/mcp (remote server: "url" and "headers" under "mcpServers").
 				return array(
 					'format' => 'json',
-					'where'  => __( 'Add this to .cursor/mcp.json in your project, or ~/.cursor/mcp.json for every project.', 'senroflux' ),
+					'where'  => __( 'Add this to .cursor/mcp.json in your project, or ~/.cursor/mcp.json for every project.', 'specflux-site-agent' ),
 					'text'   => self::json(
 						array(
 							'mcpServers' => array(
@@ -91,7 +91,7 @@ final class ClientConfig {
 				// https://code.visualstudio.com/docs/agents/reference/mcp-configuration ("servers" with "type": "http", "url", "headers").
 				return array(
 					'format' => 'json',
-					'where'  => __( 'Add this to .vscode/mcp.json in your workspace.', 'senroflux' ),
+					'where'  => __( 'Add this to .vscode/mcp.json in your workspace.', 'specflux-site-agent' ),
 					'text'   => self::json(
 						array(
 							'servers' => array(
@@ -110,7 +110,7 @@ final class ClientConfig {
 				// application-password mode via WP_API_USERNAME / WP_API_PASSWORD with OAUTH_ENABLED "false").
 				return array(
 					'format' => 'json',
-					'where'  => __( 'Add this to claude_desktop_config.json, then restart Claude Desktop. It needs Node.js installed.', 'senroflux' ),
+					'where'  => __( 'Add this to claude_desktop_config.json, then restart Claude Desktop. It needs Node.js installed.', 'specflux-site-agent' ),
 					'text'   => self::json(
 						array(
 							'mcpServers' => array(
@@ -132,7 +132,7 @@ final class ClientConfig {
 			default:
 				return array(
 					'format' => 'text',
-					'where'  => __( 'Use the server URL and send this header with every request.', 'senroflux' ),
+					'where'  => __( 'Use the server URL and send this header with every request.', 'specflux-site-agent' ),
 					'text'   => "URL: {$url}\nHeader: Authorization: {$auth}",
 				);
 		}

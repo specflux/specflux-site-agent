@@ -7,14 +7,14 @@
  * Deliberately NOT named like the real classes: defining `WP\MCP\Core\McpAdapter`
  * would make every test believe the adapter plugin is installed.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-if ( ! class_exists( 'SenroFlux_Test_Fake_Mcp_Adapter', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_Fake_Mcp_Adapter', false ) ) {
 	/** Records the positional arguments `create_server()` was called with. */
-	class SenroFlux_Test_Fake_Mcp_Adapter {
+	class SpecfluxSiteAgent_Test_Fake_Mcp_Adapter {
 
 		/** @var list<list<mixed>> */
 		public array $created = array();
@@ -25,15 +25,15 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Mcp_Adapter', false ) ) {
 	}
 
 	/** A server that knows its id and a fixed set of tools by name. */
-	class SenroFlux_Test_Fake_Mcp_Server {
+	class SpecfluxSiteAgent_Test_Fake_Mcp_Server {
 
-		/** @var array<string,SenroFlux_Test_Fake_Mcp_Tool> */
+		/** @var array<string,SpecfluxSiteAgent_Test_Fake_Mcp_Tool> */
 		private array $tools = array();
 
-		public function __construct( private string $server_id = 'senroflux' ) {
+		public function __construct( private string $server_id = 'specflux' ) {
 		}
 
-		public function add( SenroFlux_Test_Fake_Mcp_Tool $tool ): self {
+		public function add( SpecfluxSiteAgent_Test_Fake_Mcp_Tool $tool ): self {
 			$this->tools[ $tool->getName() ] = $tool;
 
 			return $this;
@@ -43,13 +43,13 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Mcp_Adapter', false ) ) {
 			return $this->server_id;
 		}
 
-		public function get_mcp_tool( string $name ): ?SenroFlux_Test_Fake_Mcp_Tool {
+		public function get_mcp_tool( string $name ): ?SpecfluxSiteAgent_Test_Fake_Mcp_Tool {
 			return $this->tools[ $name ] ?? null;
 		}
 	}
 
 	/** An ability-backed (or not) tool. */
-	class SenroFlux_Test_Fake_Mcp_Tool {
+	class SpecfluxSiteAgent_Test_Fake_Mcp_Tool {
 
 		public function __construct( private string $tool_name, private ?string $ability = null ) {
 		}
@@ -70,8 +70,8 @@ if ( ! class_exists( 'SenroFlux_Test_Fake_Mcp_Adapter', false ) ) {
 }
 
 if ( ! function_exists( 'get_userdata' ) ) {
-	/** Same fixture lookup the blocks stub uses: $GLOBALS['senroflux_test_users'][id]. */
+	/** Same fixture lookup the blocks stub uses: $GLOBALS['specflux_site_agent_test_users'][id]. */
 	function get_userdata( int $id ): mixed {
-		return $GLOBALS['senroflux_test_users'][ $id ] ?? false;
+		return $GLOBALS['specflux_site_agent_test_users'][ $id ] ?? false;
 	}
 }

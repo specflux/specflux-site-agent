@@ -4,15 +4,15 @@
  *
  * TARGET REPO PATH: tests/Packs/Content/PostToolsTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Content;
+namespace Specflux\SiteAgent\Tests\Packs\Content;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Content\PostTools;
+use Specflux\SiteAgent\Packs\Content\PostTools;
 use WP_Error;
 
 final class PostToolsTest extends TestCase {
@@ -22,35 +22,35 @@ final class PostToolsTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/media.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/post-tools.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_user_caps']          = array();
-		$GLOBALS['senroflux_test_trash_calls']        = array();
-		$GLOBALS['senroflux_test_restored_revisions'] = array();
-		$GLOBALS['senroflux_test_empty_trash_days']   = 30;
-		$GLOBALS['senroflux_test_post_types']         = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array();
+		$GLOBALS['specflux_site_agent_test_trash_calls']        = array();
+		$GLOBALS['specflux_site_agent_test_restored_revisions'] = array();
+		$GLOBALS['specflux_site_agent_test_empty_trash_days']   = 30;
+		$GLOBALS['specflux_site_agent_test_post_types']         = array(
 			'post'       => true,
 			'page'       => true,
 			'product'    => true,
 			'private_t'  => false,
 			'attachment' => true,
 		);
-		$GLOBALS['senroflux_test_registered_meta']    = array();
-		$GLOBALS['senroflux_test_revisions']          = array();
+		$GLOBALS['specflux_site_agent_test_registered_meta']    = array();
+		$GLOBALS['specflux_site_agent_test_revisions']          = array();
 
 		PostTools::reset();
 		PostTools::register();
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['senroflux_test_empty_trash_days'] );
+		unset( $GLOBALS['specflux_site_agent_test_empty_trash_days'] );
 	}
 
 	private function ability( string $name ): object {
-		return $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $name ];
+		return $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $name ];
 	}
 
 	/**
@@ -78,7 +78,7 @@ final class PostToolsTest extends TestCase {
 	 * @param array<string,bool> $caps Capability knob entries.
 	 */
 	private function grant( array $caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = $caps;
+		$GLOBALS['specflux_site_agent_test_user_caps'] = $caps;
 	}
 
 	/**
@@ -113,7 +113,7 @@ final class PostToolsTest extends TestCase {
 	}
 
 	private function registerMeta( string $type, string $key, string $meta_type, bool $single = true, bool $rest = true ): void {
-		$GLOBALS['senroflux_test_registered_meta'][ $type ][ $key ] = array(
+		$GLOBALS['specflux_site_agent_test_registered_meta'][ $type ][ $key ] = array(
 			'type'         => $meta_type,
 			'single'       => $single,
 			'show_in_rest' => $rest,
@@ -145,7 +145,7 @@ final class PostToolsTest extends TestCase {
 
 	public function test_register_is_idempotent(): void {
 		PostTools::register();
-		$this->assertCount( 7, $GLOBALS['senroflux_test_abilities'] );
+		$this->assertCount( 7, $GLOBALS['specflux_site_agent_test_abilities'] );
 	}
 
 	// --- list-posts -----------------------------------------------------------
@@ -267,7 +267,7 @@ final class PostToolsTest extends TestCase {
 		$id = $this->makePost();
 		$this->grant( array( 'delete_posts' => true ) );
 		$this->assertTrue( $this->denied( 'trash-post', array( 'id' => $id ) ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_trash_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_trash_calls'] );
 	}
 
 	public function test_trash_post_refuses_disallowed_type(): void {
@@ -312,17 +312,17 @@ final class PostToolsTest extends TestCase {
 				'delete_post:' . $id => true,
 			)
 		);
-		$GLOBALS['senroflux_test_empty_trash_days'] = 0;
+		$GLOBALS['specflux_site_agent_test_empty_trash_days'] = 0;
 
 		$err = $this->runError( 'trash-post', array( 'id' => $id ) );
 
 		$this->assertSame( 'trash_disabled', $err->get_error_code() );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_trash_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_trash_calls'] );
 		$this->assertSame( 'publish', get_post_status( $id ) );
 	}
 
 	public function test_trash_days_seam_reads_constant_in_production(): void {
-		unset( $GLOBALS['senroflux_test_empty_trash_days'] );
+		unset( $GLOBALS['specflux_site_agent_test_empty_trash_days'] );
 		$expected = defined( 'EMPTY_TRASH_DAYS' ) ? (int) constant( 'EMPTY_TRASH_DAYS' ) : 0;
 		$this->assertSame( $expected, PostTools::trashDays() );
 	}
@@ -426,7 +426,7 @@ final class PostToolsTest extends TestCase {
 		);
 		get_post( $rev )->post_author = 7;
 		get_post( $aut )->post_author = 7;
-		$GLOBALS['senroflux_test_revisions'][ $id ] = array( get_post( $rev ), get_post( $aut ) );
+		$GLOBALS['specflux_site_agent_test_revisions'][ $id ] = array( get_post( $rev ), get_post( $aut ) );
 		$this->grant(
 			array(
 				'edit_posts'       => true,
@@ -501,7 +501,7 @@ final class PostToolsTest extends TestCase {
 			)
 		);
 		$this->assertTrue( $this->denied( 'restore-revision', array( 'revision_id' => $rev ) ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_restored_revisions'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_restored_revisions'] );
 	}
 
 	public function test_restore_revision_refuses_non_revision_id(): void {
@@ -549,7 +549,7 @@ final class PostToolsTest extends TestCase {
 			),
 			$out
 		);
-		$this->assertSame( array( $rev ), $GLOBALS['senroflux_test_restored_revisions'] );
+		$this->assertSame( array( $rev ), $GLOBALS['specflux_site_agent_test_restored_revisions'] );
 	}
 
 	// --- list-post-meta -------------------------------------------------------
@@ -807,7 +807,7 @@ final class PostToolsTest extends TestCase {
 	public function test_set_post_meta_uses_post_types_own_registration(): void {
 		$id = $this->makePost( 'page' );
 		$this->registerMeta( 'post', 'subtitle', 'string' );
-		$GLOBALS['senroflux_test_user_caps'] = $this->metaCaps( $id ) + array( 'edit_pages' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = $this->metaCaps( $id ) + array( 'edit_pages' => true );
 
 		$err = $this->runError(
 			'set-post-meta',
@@ -824,7 +824,7 @@ final class PostToolsTest extends TestCase {
 	public function test_set_post_meta_refuses_disallowed_post_type(): void {
 		$id = $this->makePost( 'attachment' );
 		$this->registerMeta( 'attachment', 'subtitle', 'string' );
-		$GLOBALS['senroflux_test_user_caps'] = $this->metaCaps( $id ) + array( 'edit_attachments' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = $this->metaCaps( $id ) + array( 'edit_attachments' => true );
 
 		$this->assertTrue(
 			$this->denied(

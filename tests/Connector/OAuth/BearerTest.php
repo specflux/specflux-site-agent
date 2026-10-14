@@ -2,19 +2,19 @@
 /**
  * Bearer tokens authenticate the MCP route and nothing else.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\Connections;
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Connector\OAuth\Bearer;
-use Specflux\SenroFlux\Connector\OAuth\Store;
-use SenroFlux_Test_Route_Request;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\Connections;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Connector\OAuth\Bearer;
+use Specflux\SiteAgent\Connector\OAuth\Store;
+use SpecfluxSiteAgent_Test_Route_Request;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -34,7 +34,7 @@ final class BearerTest extends OAuthTestCase {
 	public function test_bearer_token_is_ignored_on_any_other_route(): void {
 		$t = $this->tokens();
 
-		foreach ( array( '/wp-json/wp/v2/users', '/wp-json/senroflux/v1/runs', '/wp-json/senroflux/mcp/extra', '/wp-json/senroflux/mcpx', '/wp-admin/admin-ajax.php', '/', '/xmlrpc.php', '/wp-json/senroflux/oauth/token' ) as $path ) {
+		foreach ( array( '/wp-json/wp/v2/users', '/wp-json/specflux-site-agent/v1/runs', '/wp-json/specflux-site-agent/mcp/extra', '/wp-json/specflux-site-agent/mcpx', '/wp-admin/admin-ajax.php', '/', '/xmlrpc.php', '/wp-json/specflux-site-agent/oauth/token' ) as $path ) {
 			$this->asMcpRequest( $t['body']['access_token'], $path );
 
 			$this->assertSame( 0, Bearer::authenticate( 0 ), $path );
@@ -45,18 +45,18 @@ final class BearerTest extends OAuthTestCase {
 	public function test_rest_route_parameter_cannot_smuggle_the_token_onto_another_route(): void {
 		$t = $this->tokens();
 		// WordPress dispatches ?rest_route= over the URL path: this request is /wp/v2/users.
-		foreach ( array( '/wp/v2/users', '/wp/v2/users/me', '/senroflux/mcp/../v1/runs', '/senroflux/mcpx' ) as $route ) {
+		foreach ( array( '/wp/v2/users', '/wp/v2/users/me', '/specflux-site-agent/mcp/../v1/runs', '/specflux-site-agent/mcpx' ) as $route ) {
 			$this->asMcpRequest( $t['body']['access_token'] );
 			$_GET['rest_route'] = $route;
 
 			$this->assertSame( 0, Bearer::authenticate( 0 ), $route );
 		}
 		$this->asMcpRequest( $t['body']['access_token'] );
-		$_GET['rest_route'] = array( '/senroflux/mcp' );
+		$_GET['rest_route'] = array( '/specflux-site-agent/mcp' );
 		$this->assertSame( 0, Bearer::authenticate( 0 ), 'Array-valued rest_route is refused.' );
 
 		$this->asMcpRequest( $t['body']['access_token'], '/' );
-		$_GET['rest_route'] = '/senroflux/mcp';
+		$_GET['rest_route'] = '/specflux-site-agent/mcp';
 		$this->assertSame( self::USER, Bearer::authenticate( 0 ), 'The plain-permalink form of the MCP route works.' );
 	}
 
@@ -65,18 +65,18 @@ final class BearerTest extends OAuthTestCase {
 		$this->asMcpRequest( $t['body']['access_token'] );
 		Bearer::authenticate( 0 );
 
-		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/senroflux/mcp' ) ) );
-		$blocked = Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) );
+		$this->assertNull( Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/specflux-site-agent/mcp' ) ) );
+		$blocked = Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/wp/v2/users' ) );
 		$this->assertInstanceOf( \WP_Error::class, $blocked, 'A later sub-dispatch is refused.' );
 		$this->assertSame( 403, $blocked->get_error_data()['status'] ?? 0 );
-		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/batch/v1' ) ) );
-		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wc/v3/products' ) ) );
-		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/senroflux/mcp' ) ), 'Refusing a sub-dispatch does not break the in-flight MCP request.' );
+		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/batch/v1' ) ) );
+		$this->assertInstanceOf( \WP_Error::class, Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/wc/v3/products' ) ) );
+		$this->assertNull( Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/specflux-site-agent/mcp' ) ), 'Refusing a sub-dispatch does not break the in-flight MCP request.' );
 		$this->assertNotNull( $this->connectionFor( self::USER ), 'The token still yields its connection.' );
 	}
 
 	public function test_dispatch_guard_does_nothing_for_other_authentication(): void {
-		$this->assertNull( Bearer::guardDispatch( null, null, new SenroFlux_Test_Route_Request( '/wp/v2/users' ) ) );
+		$this->assertNull( Bearer::guardDispatch( null, null, new SpecfluxSiteAgent_Test_Route_Request( '/wp/v2/users' ) ) );
 	}
 
 	/** @return array<string,array{0:string,1:array<string,mixed>}> */
@@ -85,13 +85,13 @@ final class BearerTest extends OAuthTestCase {
 			'admin-ajax (is_admin true)' => array(
 				ABSPATH . 'wp-admin/admin-ajax.php',
 				array(
-					'senroflux_test_is_admin'   => true,
-					'senroflux_test_doing_ajax' => true,
+					'specflux_site_agent_test_is_admin'   => true,
+					'specflux_site_agent_test_doing_ajax' => true,
 				),
 			),
-			'is_admin only'              => array( ABSPATH . 'index.php', array( 'senroflux_test_is_admin' => true ) ),
-			'doing ajax only'            => array( ABSPATH . 'index.php', array( 'senroflux_test_doing_ajax' => true ) ),
-			'doing cron'                 => array( ABSPATH . 'index.php', array( 'senroflux_test_doing_cron' => true ) ),
+			'is_admin only'              => array( ABSPATH . 'index.php', array( 'specflux_site_agent_test_is_admin' => true ) ),
+			'doing ajax only'            => array( ABSPATH . 'index.php', array( 'specflux_site_agent_test_doing_ajax' => true ) ),
+			'doing cron'                 => array( ABSPATH . 'index.php', array( 'specflux_site_agent_test_doing_cron' => true ) ),
 			'wp-cron.php'                => array( ABSPATH . 'wp-cron.php', array() ),
 			'wp-login.php'               => array( ABSPATH . 'wp-login.php', array() ),
 			'admin-post.php'             => array( ABSPATH . 'wp-admin/admin-post.php', array() ),
@@ -109,11 +109,11 @@ final class BearerTest extends OAuthTestCase {
 	 * @param array<string,mixed> $globals
 	 */
 	public function test_token_is_refused_outside_the_front_controller( string $script, array $globals ): void {
-		foreach ( array( '/wp-json/senroflux/mcp', '/' ) as $uri ) {
+		foreach ( array( '/wp-json/specflux-site-agent/mcp', '/' ) as $uri ) {
 			$t = $this->tokens();
 			$this->asMcpRequest( $t['body']['access_token'], $uri );
 			if ( '/' === $uri ) {
-				$_GET['rest_route'] = '/senroflux/mcp';
+				$_GET['rest_route'] = '/specflux-site-agent/mcp';
 			}
 			$_SERVER['SCRIPT_FILENAME'] = $script;
 			foreach ( $globals as $key => $value ) {
@@ -131,12 +131,12 @@ final class BearerTest extends OAuthTestCase {
 		$this->assertSame( self::USER, Bearer::authenticate( 0 ), 'Pretty permalinks.' );
 
 		$this->asMcpRequest( $t['body']['access_token'], '/' );
-		$_GET['rest_route'] = '/senroflux/mcp';
+		$_GET['rest_route'] = '/specflux-site-agent/mcp';
 		$this->assertSame( self::USER, Bearer::authenticate( 0 ), '?rest_route= form.' );
 
 		$this->asMcpRequest( $t['body']['access_token'], '/' );
 		unset( $_GET['rest_route'] );
-		$_POST['rest_route'] = '/senroflux/mcp';
+		$_POST['rest_route'] = '/specflux-site-agent/mcp';
 		$user                = Bearer::authenticate( 0 );
 		unset( $_POST['rest_route'] );
 		$this->assertSame( self::USER, $user, 'POSTed rest_route on the front controller.' );
@@ -153,7 +153,7 @@ final class BearerTest extends OAuthTestCase {
 			'',
 		) as $header ) {
 			Bearer::reset();
-			$_SERVER['REQUEST_URI']        = '/wp-json/senroflux/mcp';
+			$_SERVER['REQUEST_URI']        = '/wp-json/specflux-site-agent/mcp';
 			$_SERVER['HTTP_AUTHORIZATION'] = $header;
 
 			$this->assertSame( 0, Bearer::authenticate( 0 ), $header );
@@ -212,7 +212,7 @@ final class BearerTest extends OAuthTestCase {
 
 	/** Resolve the request's connection the way Connections::current() does. */
 	private function connectionFor( int $user ): ?Connection {
-		$GLOBALS['senroflux_test_current_user_id'] = $user;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = $user;
 		$this->register();
 
 		return Connections::current();
@@ -242,7 +242,7 @@ final class BearerTest extends OAuthTestCase {
 
 	public function test_a_narrowed_access_token_is_read_only_even_on_a_write_grant(): void {
 		$t      = $this->tokens( 'write' );
-		$narrow = $this->refreshWith( $t['body']['refresh_token'], $t['client'], array( 'scope' => 'senroflux:read' ) );
+		$narrow = $this->refreshWith( $t['body']['refresh_token'], $t['client'], array( 'scope' => 'specflux:read' ) );
 		$this->asMcpRequest( $narrow['body']['access_token'] );
 		Bearer::authenticate( 0 );
 
@@ -254,11 +254,11 @@ final class BearerTest extends OAuthTestCase {
 		$this->asMcpRequest( $t['body']['access_token'] );
 		Bearer::authenticate( 0 );
 		$this->register();
-		$GLOBALS['senroflux_test_current_user_id'] = self::USER;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = self::USER;
 
 		$this->assertNotNull( Connector::authorise() );
 
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_options' => false );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 		$this->assertNull( Connector::authorise(), 'Losing the capability makes the token useless.' );
 	}
 
@@ -273,7 +273,7 @@ final class BearerTest extends OAuthTestCase {
 	public function test_application_password_connections_are_unchanged(): void {
 		$this->register();
 		Connections::add( self::USER, self::UUID, Connection::SCOPE_READ_WRITE );
-		$GLOBALS['senroflux_test_app_password'] = self::UUID;
+		$GLOBALS['specflux_site_agent_test_app_password'] = self::UUID;
 
 		$this->assertSame( self::UUID, Connections::current()->uuid );
 	}

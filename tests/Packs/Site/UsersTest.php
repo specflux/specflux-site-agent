@@ -2,16 +2,16 @@
 /**
  * Site\Users tests: list / read / set role.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use SenroFlux_Test_User;
-use Specflux\SenroFlux\Packs\Site\Users;
+use SpecfluxSiteAgent_Test_User;
+use Specflux\SiteAgent\Packs\Site\Users;
 use WP_Error;
 
 final class UsersTest extends TestCase {
@@ -20,19 +20,19 @@ final class UsersTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/comments-users.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_multisite']          = false;
-		$GLOBALS['senroflux_test_super_admins']       = array();
-		$GLOBALS['senroflux_test_roles']              = array( 'administrator', 'editor', 'subscriber' );
-		$GLOBALS['senroflux_test_editable_roles']     = array( 'administrator', 'editor', 'subscriber' );
-		$GLOBALS['senroflux_test_current_user_id']    = 1;
-		$GLOBALS['senroflux_test_users']              = array(
-			1 => new SenroFlux_Test_User( 1, 'admin', 'Admin', 'admin@example.test', array( 'administrator' ) ),
-			2 => new SenroFlux_Test_User( 2, 'sam', 'Sam', 'sam@example.test', array( 'subscriber' ), 'https://sam.test' ),
-			3 => new SenroFlux_Test_User( 3, 'root', 'Root', 'root@example.test', array( 'administrator' ) ),
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_multisite']          = false;
+		$GLOBALS['specflux_site_agent_test_super_admins']       = array();
+		$GLOBALS['specflux_site_agent_test_roles']              = array( 'administrator', 'editor', 'subscriber' );
+		$GLOBALS['specflux_site_agent_test_editable_roles']     = array( 'administrator', 'editor', 'subscriber' );
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 1;
+		$GLOBALS['specflux_site_agent_test_users']              = array(
+			1 => new SpecfluxSiteAgent_Test_User( 1, 'admin', 'Admin', 'admin@example.test', array( 'administrator' ) ),
+			2 => new SpecfluxSiteAgent_Test_User( 2, 'sam', 'Sam', 'sam@example.test', array( 'subscriber' ), 'https://sam.test' ),
+			3 => new SpecfluxSiteAgent_Test_User( 3, 'root', 'Root', 'root@example.test', array( 'administrator' ) ),
 		);
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array(
 			'list_users'     => true,
 			'edit_user'      => true,
 			'promote_users'  => true,
@@ -45,11 +45,11 @@ final class UsersTest extends TestCase {
 	}
 
 	private function ability( string $name ): object {
-		return $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $name ];
+		return $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $name ];
 	}
 
 	private function caps( array $caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = $caps;
+		$GLOBALS['specflux_site_agent_test_user_caps'] = $caps;
 	}
 
 	/** An editor-like caller: may promote, but is not an administrator. */
@@ -113,7 +113,7 @@ final class UsersTest extends TestCase {
 
 	public function test_read_self_always_allowed_with_email(): void {
 		$this->caps( array() );
-		$GLOBALS['senroflux_test_current_user_id'] = 2;
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 2;
 
 		$this->assertTrue( $this->ability( 'read-user' )->check_permissions( array( 'id' => 2 ) ) );
 		$out = $this->ability( 'read-user' )->execute( array( 'id' => 2 ) );
@@ -148,7 +148,7 @@ final class UsersTest extends TestCase {
 		);
 		$this->assertFalse( $this->ability( 'set-user-role' )->check_permissions( $in ) );
 		$this->assertSame( 'forbidden', $this->ability( 'set-user-role' )->execute( $in )->get_error_code() );
-		$this->assertSame( array( 'subscriber' ), $GLOBALS['senroflux_test_users'][2]->roles );
+		$this->assertSame( array( 'subscriber' ), $GLOBALS['specflux_site_agent_test_users'][2]->roles );
 	}
 
 	public function test_set_role_happy_path(): void {
@@ -167,7 +167,7 @@ final class UsersTest extends TestCase {
 			),
 			$out
 		);
-		$this->assertSame( array( 'editor' ), $GLOBALS['senroflux_test_users'][2]->roles );
+		$this->assertSame( array( 'editor' ), $GLOBALS['specflux_site_agent_test_users'][2]->roles );
 	}
 
 	public function test_set_role_refuses_own_role(): void {
@@ -178,7 +178,7 @@ final class UsersTest extends TestCase {
 			)
 		);
 		$this->assertSame( 'cannot_change_own_role', $out->get_error_code() );
-		$this->assertSame( array( 'administrator' ), $GLOBALS['senroflux_test_users'][1]->roles );
+		$this->assertSame( array( 'administrator' ), $GLOBALS['specflux_site_agent_test_users'][1]->roles );
 	}
 
 	public function test_set_role_refuses_nonexistent_and_non_editable_role(): void {
@@ -193,7 +193,7 @@ final class UsersTest extends TestCase {
 			)->get_error_code()
 		);
 
-		$GLOBALS['senroflux_test_editable_roles'] = array( 'subscriber' );
+		$GLOBALS['specflux_site_agent_test_editable_roles'] = array( 'subscriber' );
 		$this->assertSame(
 			'role_not_editable',
 			$ab->execute(
@@ -218,7 +218,7 @@ final class UsersTest extends TestCase {
 				)
 			)->get_error_code()
 		);
-		$this->assertSame( array( 'subscriber' ), $GLOBALS['senroflux_test_users'][2]->roles );
+		$this->assertSame( array( 'subscriber' ), $GLOBALS['specflux_site_agent_test_users'][2]->roles );
 	}
 
 	public function test_set_role_refuses_demoting_administrator_by_non_admin(): void {
@@ -231,7 +231,7 @@ final class UsersTest extends TestCase {
 			)
 		);
 		$this->assertSame( 'administrator_target', $out->get_error_code() );
-		$this->assertSame( array( 'administrator' ), $GLOBALS['senroflux_test_users'][3]->roles );
+		$this->assertSame( array( 'administrator' ), $GLOBALS['specflux_site_agent_test_users'][3]->roles );
 	}
 
 	public function test_set_role_admin_may_grant_administrator(): void {
@@ -245,8 +245,8 @@ final class UsersTest extends TestCase {
 	}
 
 	public function test_set_role_refuses_super_admin_on_multisite(): void {
-		$GLOBALS['senroflux_test_multisite']    = true;
-		$GLOBALS['senroflux_test_super_admins'] = array( 3 );
+		$GLOBALS['specflux_site_agent_test_multisite']    = true;
+		$GLOBALS['specflux_site_agent_test_super_admins'] = array( 3 );
 
 		$out = $this->ability( 'set-user-role' )->execute(
 			array(

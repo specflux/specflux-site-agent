@@ -24,7 +24,7 @@ const { ensureLocaleUser, loginAs } = require( '../support/locale-users' );
  * locale, via `wp user meta update <id> locale ar`), logged in with its own
  * storage state, so this spec cannot affect any other spec's site-wide
  * locale. `RunsScreen::assets()` must call
- * `wp_style_add_data( 'senroflux-runs', 'rtl', 'replace' )` for the
+ * `wp_style_add_data( 'specflux-site-agent-runs', 'rtl', 'replace' )` for the
  * `-rtl.css` build output to load at all — that registration is the one
  * product change this stage makes.
  *
@@ -54,8 +54,8 @@ test.describe( 'S22 RTL: dir, stylesheet and mirrored bubble alignment', () => {
 
 	/**
 	 * Drive fullTour() all the way to its terminal "All done" text step —
-	 * the run's goal renders as a `.senroflux-chat-bubble-user` bubble from
-	 * the moment the run exists, but `.senroflux-chat-bubble-bot` only
+	 * the run's goal renders as a `.specflux-site-agent-chat-bubble-user` bubble from
+	 * the moment the run exists, but `.specflux-site-agent-chat-bubble-bot` only
 	 * renders for a `model` step with text (`Chat.js`), which this
 	 * scenario produces only once approved and settled, not at any park.
 	 *
@@ -78,10 +78,10 @@ test.describe( 'S22 RTL: dir, stylesheet and mirrored bubble alignment', () => {
 		await waitForPark( page, 'approval', 'Approve this change?' );
 		await approveCall( page );
 		await waitSettled( page );
-		await page.locator( '.senroflux-chat-bubble-bot' ).first().waitFor( { state: 'visible', timeout: 30000 } );
+		await page.locator( '.specflux-site-agent-chat-bubble-bot' ).first().waitFor( { state: 'visible', timeout: 30000 } );
 
-		const userBubble = page.locator( '.senroflux-chat-bubble-user' ).first();
-		const botBubble = page.locator( '.senroflux-chat-bubble-bot' ).first();
+		const userBubble = page.locator( '.specflux-site-agent-chat-bubble-user' ).first();
+		const botBubble = page.locator( '.specflux-site-agent-chat-bubble-bot' ).first();
 		const userBox = await userBubble.boundingBox();
 		const botBox = await botBubble.boundingBox();
 		if ( ! userBox || ! botBox ) {
@@ -98,7 +98,7 @@ test.describe( 'S22 RTL: dir, stylesheet and mirrored bubble alignment', () => {
 		expect( result.dir ).toBe( 'rtl' );
 
 		const stylesheetHref = await page.evaluate( () => {
-			const link = document.querySelector( 'link[id="senroflux-runs-css"]' )
+			const link = document.querySelector( 'link[id="specflux-site-agent-runs-css"]' )
 				|| Array.from( document.querySelectorAll( 'link[rel="stylesheet"]' ) )
 					.find( ( el ) => /style-index(-rtl)?\.css/.test( el.getAttribute( 'href' ) || '' ) );
 			return link ? link.getAttribute( 'href' ) : null;
@@ -149,9 +149,9 @@ test.describe( 'S22 RTL: dir, stylesheet and mirrored bubble alignment', () => {
 
 		await driveToTerminalAndMeasure( page );
 
-		await expect( page.locator( '.senroflux-run-heading' ) ).toHaveAttribute( 'dir', 'auto' );
-		await expect( page.locator( '.senroflux-chat-bubble-bot' ).first() ).toHaveAttribute( 'dir', 'auto' );
-		await expect( page.locator( '.senroflux-pinned-plan-count' ) ).toHaveAttribute( 'dir', 'ltr' );
+		await expect( page.locator( '.specflux-site-agent-run-heading' ) ).toHaveAttribute( 'dir', 'auto' );
+		await expect( page.locator( '.specflux-site-agent-chat-bubble-bot' ).first() ).toHaveAttribute( 'dir', 'auto' );
+		await expect( page.locator( '.specflux-site-agent-pinned-plan-count' ) ).toHaveAttribute( 'dir', 'ltr' );
 
 		await context.close();
 	} );

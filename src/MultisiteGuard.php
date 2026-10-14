@@ -2,18 +2,18 @@
 /**
  * Multisite refusal (0.3 S2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux;
+namespace Specflux\SiteAgent;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * SenroFlux does not support multisite. Activation is refused whether it is
+ * Specflux Site Agent does not support multisite. Activation is refused whether it is
  * per site or network-wide, and a copy that is somehow active on a multisite
  * install (a site converted after activation) boots nothing.
  */
@@ -34,7 +34,7 @@ final class MultisiteGuard {
 	 * @return string
 	 */
 	public static function message(): string {
-		return __( 'SenroFlux does not support WordPress multisite. It was not activated.', 'senroflux' );
+		return __( 'Specflux Site Agent does not support WordPress multisite. It was not activated.', 'specflux-site-agent' );
 	}
 
 	/**
@@ -55,7 +55,7 @@ final class MultisiteGuard {
 
 		wp_die(
 			esc_html( self::message() ),
-			esc_html__( 'Plugin activation refused', 'senroflux' ),
+			esc_html__( 'Plugin activation refused', 'specflux-site-agent' ),
 			array( 'back_link' => true )
 		);
 	}
@@ -85,7 +85,7 @@ final class MultisiteGuard {
 	public static function render_notice(): void {
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',
-			esc_html__( 'SenroFlux is inactive: WordPress multisite is not supported. Deactivate it on this network.', 'senroflux' )
+			esc_html__( 'Specflux Site Agent is inactive: WordPress multisite is not supported. Deactivate it on this network.', 'specflux-site-agent' )
 		);
 	}
 }

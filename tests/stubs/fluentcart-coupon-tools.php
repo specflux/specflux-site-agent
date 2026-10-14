@@ -4,7 +4,7 @@
  * runs), so the coupon polyfills can be exercised without FluentCart.
  * Test-only; the namespace is FluentCart's own on purpose.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- FluentCart's real namespace, faked.
@@ -13,7 +13,7 @@ declare ( strict_types = 1 );
 
 namespace FluentCart\App\Modules\MCP\Tools;
 
-use Specflux\SenroFlux\Tests\Packs\Commerce\Platforms\FakeFluentCartCoupons;
+use Specflux\SiteAgent\Tests\Packs\Commerce\Platforms\FakeFluentCartCoupons;
 
 final class CouponTools {
 

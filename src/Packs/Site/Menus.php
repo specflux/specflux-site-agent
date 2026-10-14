@@ -1,18 +1,18 @@
 <?php
 /**
- * The classic-menu registrar: `senroflux/read-menus`, `senroflux/add-menu-item`,
- * `senroflux/remove-menu-item` and `senroflux/reorder-menu-items`.
+ * The classic-menu registrar: `specflux/read-menus`, `specflux/add-menu-item`,
+ * `specflux/remove-menu-item` and `specflux/reorder-menu-items`.
  *
  * CLASSIC menus only (nav_menu terms and nav_menu_item posts). Block themes
  * keep their menus in wp_navigation posts, handled by the Navigation
  * abilities. Every ability needs `edit_theme_options`, re-checked at execute.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
 use WP_Error;
 
@@ -70,13 +70,13 @@ final class Menus {
 		self::registerReorder();
 	}
 
-	/** senroflux/read-menus. */
+	/** specflux/read-menus. */
 	private static function registerRead(): void {
 		wp_register_ability(
-			'senroflux/read-menus',
+			'specflux/read-menus',
 			array(
-				'label'               => __( 'Read classic menus', 'senroflux' ),
-				'description'         => __( 'List the classic (non block-theme) navigation menus, or with menu_id the items of one menu. Block themes use the navigation abilities instead. Items pointing at content you cannot read are left out.', 'senroflux' ),
+				'label'               => __( 'Read classic menus', 'specflux-site-agent' ),
+				'description'         => __( 'List the classic (non block-theme) navigation menus, or with menu_id the items of one menu. Block themes use the navigation abilities instead. Items pointing at content you cannot read are left out.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -117,13 +117,13 @@ final class Menus {
 		);
 	}
 
-	/** senroflux/add-menu-item. */
+	/** specflux/add-menu-item. */
 	private static function registerAdd(): void {
 		wp_register_ability(
-			'senroflux/add-menu-item',
+			'specflux/add-menu-item',
 			array(
-				'label'               => __( 'Add a classic menu item', 'senroflux' ),
-				'description'         => __( 'Add one item to a classic (non block-theme) menu. type post_type links a published post or page (object_id), taxonomy links a term (object_id), custom needs a title and an http, https or relative url. The title is up to 200 characters. parent is a menu item id in the same menu (default 0). Block themes use the navigation abilities instead.', 'senroflux' ),
+				'label'               => __( 'Add a classic menu item', 'specflux-site-agent' ),
+				'description'         => __( 'Add one item to a classic (non block-theme) menu. type post_type links a published post or page (object_id), taxonomy links a term (object_id), custom needs a title and an http, https or relative url. The title is up to 200 characters. parent is a menu item id in the same menu (default 0). Block themes use the navigation abilities instead.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -171,13 +171,13 @@ final class Menus {
 		);
 	}
 
-	/** senroflux/remove-menu-item. */
+	/** specflux/remove-menu-item. */
 	private static function registerRemove(): void {
 		wp_register_ability(
-			'senroflux/remove-menu-item',
+			'specflux/remove-menu-item',
 			array(
-				'label'               => __( 'Remove a classic menu item', 'senroflux' ),
-				'description'         => __( 'Permanently delete one item from a classic (non block-theme) menu; menu items have no trash. Child items move up to the removed item\'s parent. The item must belong to menu_id.', 'senroflux' ),
+				'label'               => __( 'Remove a classic menu item', 'specflux-site-agent' ),
+				'description'         => __( 'Permanently delete one item from a classic (non block-theme) menu; menu items have no trash. Child items move up to the removed item\'s parent. The item must belong to menu_id.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -215,13 +215,13 @@ final class Menus {
 		);
 	}
 
-	/** senroflux/reorder-menu-items. */
+	/** specflux/reorder-menu-items. */
 	private static function registerReorder(): void {
 		wp_register_ability(
-			'senroflux/reorder-menu-items',
+			'specflux/reorder-menu-items',
 			array(
-				'label'               => __( 'Reorder classic menu items', 'senroflux' ),
-				'description'         => __( 'Set the order of the items in a classic (non block-theme) menu. order must list EVERY current item id of the menu exactly once. Titles, links and parents are left as they are; only positions change.', 'senroflux' ),
+				'label'               => __( 'Reorder classic menu items', 'specflux-site-agent' ),
+				'description'         => __( 'Set the order of the items in a classic (non block-theme) menu. order must list EVERY current item id of the menu exactly once. Titles, links and parents are left as they are; only positions change.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -370,17 +370,17 @@ final class Menus {
 
 		$type = (string) ( $input['type'] ?? '' );
 		if ( ! in_array( $type, array( 'post_type', 'custom', 'taxonomy' ), true ) ) {
-			return self::bad( 'invalid_type', __( 'type must be post_type, custom or taxonomy.', 'senroflux' ) );
+			return self::bad( 'invalid_type', __( 'type must be post_type, custom or taxonomy.', 'specflux-site-agent' ) );
 		}
 
 		$title = '';
 		if ( isset( $input['title'] ) ) {
 			if ( ! is_string( $input['title'] ) ) {
-				return self::bad( 'invalid_title', __( 'title must be a string.', 'senroflux' ) );
+				return self::bad( 'invalid_title', __( 'title must be a string.', 'specflux-site-agent' ) );
 			}
 			$title = sanitize_text_field( $input['title'] );
 			if ( mb_strlen( $title ) > self::MAX_TITLE ) {
-				return self::bad( 'invalid_title', __( 'title is too long (200 characters at most).', 'senroflux' ) );
+				return self::bad( 'invalid_title', __( 'title is too long (200 characters at most).', 'specflux-site-agent' ) );
 			}
 		}
 
@@ -392,18 +392,18 @@ final class Menus {
 
 		if ( 'custom' === $type ) {
 			if ( '' === $title ) {
-				return self::bad( 'invalid_title', __( 'A custom item needs a title.', 'senroflux' ) );
+				return self::bad( 'invalid_title', __( 'A custom item needs a title.', 'specflux-site-agent' ) );
 			}
 			$url = self::safeUrl( $input['url'] ?? null );
 			if ( null === $url ) {
-				return self::bad( 'invalid_url', __( 'url must be an http, https or relative URL.', 'senroflux' ) );
+				return self::bad( 'invalid_url', __( 'url must be an http, https or relative URL.', 'specflux-site-agent' ) );
 			}
 			$args['menu-item-url']    = $url;
 			$args['menu-item-object'] = 'custom';
 		} else {
 			$object_id = isset( $input['object_id'] ) && is_numeric( $input['object_id'] ) ? (int) $input['object_id'] : 0;
 			if ( $object_id <= 0 ) {
-				return self::bad( 'invalid_object', __( 'object_id is required for this type.', 'senroflux' ) );
+				return self::bad( 'invalid_object', __( 'object_id is required for this type.', 'specflux-site-agent' ) );
 			}
 			$object = 'post_type' === $type ? self::postObject( $object_id ) : self::termObject( $object_id );
 			if ( $object instanceof WP_Error ) {
@@ -415,16 +415,16 @@ final class Menus {
 
 		$parent = isset( $input['parent'] ) && is_numeric( $input['parent'] ) ? (int) $input['parent'] : 0;
 		if ( $parent < 0 ) {
-			return self::bad( 'invalid_parent', __( 'parent must be 0 or a menu item id.', 'senroflux' ) );
+			return self::bad( 'invalid_parent', __( 'parent must be 0 or a menu item id.', 'specflux-site-agent' ) );
 		}
 		if ( $parent > 0 && ! isset( self::itemsById( $menu_id )[ $parent ] ) ) {
-			return self::bad( 'invalid_parent', __( 'parent must be an item of the same menu.', 'senroflux' ) );
+			return self::bad( 'invalid_parent', __( 'parent must be an item of the same menu.', 'specflux-site-agent' ) );
 		}
 		$args['menu-item-parent-id'] = $parent;
 
 		if ( isset( $input['position'] ) ) {
 			if ( ! is_numeric( $input['position'] ) || (int) $input['position'] < 1 ) {
-				return self::bad( 'invalid_position', __( 'position must be a positive integer.', 'senroflux' ) );
+				return self::bad( 'invalid_position', __( 'position must be a positive integer.', 'specflux-site-agent' ) );
 			}
 			$args['menu-item-position'] = (int) $input['position'];
 		}
@@ -459,7 +459,7 @@ final class Menus {
 		if ( $item_id <= 0 || ! isset( self::itemsById( $menu_id )[ $item_id ] ) ) {
 			return new WP_Error(
 				'item_not_in_menu',
-				__( 'That item does not belong to this menu.', 'senroflux' ),
+				__( 'That item does not belong to this menu.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -469,7 +469,7 @@ final class Menus {
 		if ( ! wp_delete_post( $item_id, true ) ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'The menu item could not be removed.', 'senroflux' ),
+				__( 'The menu item could not be removed.', 'specflux-site-agent' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -498,27 +498,27 @@ final class Menus {
 
 		$raw = $input['order'] ?? null;
 		if ( ! is_array( $raw ) || array() === $raw || count( $raw ) > self::MAX_ITEMS ) {
-			return self::bad( 'invalid_order', __( 'order must list between 1 and 200 menu item ids.', 'senroflux' ) );
+			return self::bad( 'invalid_order', __( 'order must list between 1 and 200 menu item ids.', 'specflux-site-agent' ) );
 		}
 
 		$order = array();
 		foreach ( $raw as $id ) {
 			if ( ! is_int( $id ) && ! ( is_string( $id ) && ctype_digit( $id ) ) ) {
-				return self::bad( 'invalid_order', __( 'order must contain only integer menu item ids.', 'senroflux' ) );
+				return self::bad( 'invalid_order', __( 'order must contain only integer menu item ids.', 'specflux-site-agent' ) );
 			}
 			$order[] = (int) $id;
 		}
 
 		$items = self::itemsById( $menu_id );
 		if ( count( $order ) !== count( array_unique( $order ) ) ) {
-			return self::bad( 'invalid_order', __( 'order contains a duplicate id.', 'senroflux' ) );
+			return self::bad( 'invalid_order', __( 'order contains a duplicate id.', 'specflux-site-agent' ) );
 		}
 		$current = array_keys( $items );
 		sort( $current );
 		$wanted = $order;
 		sort( $wanted );
 		if ( $current !== $wanted ) {
-			return self::bad( 'invalid_order', __( 'order must contain exactly the current item ids of the menu, no more and no fewer.', 'senroflux' ) );
+			return self::bad( 'invalid_order', __( 'order must contain exactly the current item ids of the menu, no more and no fewer.', 'specflux-site-agent' ) );
 		}
 
 		foreach ( $order as $index => $id ) {
@@ -576,7 +576,7 @@ final class Menus {
 		if ( ! is_object( $menu ) ) {
 			return new WP_Error(
 				'menu_not_found',
-				__( 'Menu not found.', 'senroflux' ),
+				__( 'Menu not found.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -627,20 +627,20 @@ final class Menus {
 		if ( ! is_object( $post ) || ! current_user_can( 'read_post', $post_id ) ) {
 			return new WP_Error(
 				'object_not_found',
-				__( 'That content was not found.', 'senroflux' ),
+				__( 'That content was not found.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
 
 		$post_type = (string) $post->post_type;
 		if ( 'nav_menu_item' === $post_type || ! is_post_type_viewable( $post_type ) ) {
-			return self::bad( 'invalid_object', __( 'That content type cannot be linked from a menu.', 'senroflux' ) );
+			return self::bad( 'invalid_object', __( 'That content type cannot be linked from a menu.', 'specflux-site-agent' ) );
 		}
 
 		// Published, or private and readable (read_post was checked above).
 		$status = (string) $post->post_status;
 		if ( 'publish' !== $status && 'private' !== $status ) {
-			return self::bad( 'invalid_object', __( 'Only published content can be added to a menu.', 'senroflux' ) );
+			return self::bad( 'invalid_object', __( 'Only published content can be added to a menu.', 'specflux-site-agent' ) );
 		}
 
 		return $post_type;
@@ -657,14 +657,14 @@ final class Menus {
 		if ( ! is_object( $term ) || $term instanceof WP_Error || empty( $term->taxonomy ) ) {
 			return new WP_Error(
 				'object_not_found',
-				__( 'That term was not found.', 'senroflux' ),
+				__( 'That term was not found.', 'specflux-site-agent' ),
 				array( 'status' => 404 )
 			);
 		}
 
 		$taxonomy = get_taxonomy( (string) $term->taxonomy );
 		if ( ! is_object( $taxonomy ) || empty( $taxonomy->public ) || empty( $taxonomy->show_in_nav_menus ) ) {
-			return self::bad( 'invalid_object', __( 'That taxonomy cannot be linked from a menu.', 'senroflux' ) );
+			return self::bad( 'invalid_object', __( 'That taxonomy cannot be linked from a menu.', 'specflux-site-agent' ) );
 		}
 
 		return (string) $term->taxonomy;
@@ -706,7 +706,7 @@ final class Menus {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -718,7 +718,7 @@ final class Menus {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

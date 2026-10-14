@@ -1,19 +1,19 @@
 <?php
 /**
- * Tier a connector call from SenroFlux's own declarations (K1/K2).
+ * Tier a connector call from Specflux Site Agent's own declarations (K1/K2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Tools\VerbTier;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -86,7 +86,7 @@ final class Tiering {
 	 *
 	 * @param string $ability Ability name.
 	 */
-	public static function needsSenroGate( string $ability ): bool {
+	public static function needsGovernance( string $ability ): bool {
 		$pack = self::owner( $ability );
 
 		return null !== $pack && $pack->requiresAgentSafety();

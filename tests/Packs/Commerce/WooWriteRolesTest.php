@@ -2,21 +2,21 @@
 /**
  * C4-W: the WooCommerce write roles — order status, product trash, stock,
  * variation price, sale schedule. Platform rules (inputs, verbs, tiers, ids)
- * plus the three `senroflux/` polyfills against the CRUD fakes.
+ * plus the three `specflux/` polyfills against the CRUD fakes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 final class WooWriteRolesTest extends TestCase {
@@ -26,15 +26,15 @@ final class WooWriteRolesTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/media.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/commerce.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_products']           = array();
-		$GLOBALS['senroflux_test_orders']             = array();
-		$GLOBALS['senroflux_test_product_rows']       = array();
-		$GLOBALS['senroflux_test_product_saves']      = array();
-		$GLOBALS['senroflux_test_stock_calls']        = array();
-		$GLOBALS['senroflux_test_user_caps']          = array( 'manage_woocommerce' => true );
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_products']           = array();
+		$GLOBALS['specflux_site_agent_test_orders']             = array();
+		$GLOBALS['specflux_site_agent_test_product_rows']       = array();
+		$GLOBALS['specflux_site_agent_test_product_saves']      = array();
+		$GLOBALS['specflux_site_agent_test_stock_calls']        = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array( 'manage_woocommerce' => true );
 
 		Abilities::reset();
 		Abilities::registerCategory();
@@ -42,11 +42,11 @@ final class WooWriteRolesTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 	}
 
 	private function row( int $id, array $props ): void {
-		$GLOBALS['senroflux_test_product_rows'][ $id ] = (object) $props;
+		$GLOBALS['specflux_site_agent_test_product_rows'][ $id ] = (object) $props;
 	}
 
 	private function call( string $name, array $input ): mixed {
@@ -82,11 +82,11 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertSame( 'sale-schedule', $roles['sale-schedule'] );
 
 		foreach ( array( 'stock-adjust', 'variation-price-update', 'sale-schedule' ) as $name ) {
-			$this->assertNotNull( wp_get_ability( 'senroflux/' . $name ), $name );
+			$this->assertNotNull( wp_get_ability( 'specflux/' . $name ), $name );
 		}
 		// The two native roles are Woo's own: no polyfill is registered over them.
-		$this->assertNull( wp_get_ability( 'senroflux/order-update-status' ) );
-		$this->assertNull( wp_get_ability( 'senroflux/product-delete' ) );
+		$this->assertNull( wp_get_ability( 'specflux/order-update-status' ) );
+		$this->assertNull( wp_get_ability( 'specflux/product-delete' ) );
 	}
 
 	/** @return array<string,array{string,array<string,mixed>,int}> */
@@ -150,7 +150,7 @@ final class WooWriteRolesTest extends TestCase {
 				2,
 			),
 			'stock'             => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'set',
@@ -159,7 +159,7 @@ final class WooWriteRolesTest extends TestCase {
 				2,
 			),
 			'variation price'   => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 6,
@@ -168,7 +168,7 @@ final class WooWriteRolesTest extends TestCase {
 				2,
 			),
 			'sale schedule'     => array(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'         => 5,
 					'sale_price' => '4',
@@ -186,8 +186,8 @@ final class WooWriteRolesTest extends TestCase {
 
 	public function test_variation_price_and_sale_schedule_share_the_price_change_verb(): void {
 		$pack = new CommercePack();
-		$this->assertSame( 'commerce/price-change', $pack->verbFor( 'senroflux/variation-price-update', array() ) );
-		$this->assertSame( 'commerce/price-change', $pack->verbFor( 'senroflux/sale-schedule', array() ) );
+		$this->assertSame( 'commerce/price-change', $pack->verbFor( 'specflux/variation-price-update', array() ) );
+		$this->assertSame( 'commerce/price-change', $pack->verbFor( 'specflux/sale-schedule', array() ) );
 		$this->assertSame( array( 'commerce/price-change' ), $pack->roleVerbs()['variation-price'] );
 	}
 
@@ -259,9 +259,9 @@ final class WooWriteRolesTest extends TestCase {
 	/** @return array<string,array{string,array<string,mixed>,string}> */
 	public static function badCalls(): array {
 		return array(
-			'stock neither'           => array( 'senroflux/stock-adjust', array( 'id' => 5 ), 'invalid_input' ),
+			'stock neither'           => array( 'specflux/stock-adjust', array( 'id' => 5 ), 'invalid_input' ),
 			'stock both'              => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'           => 5,
 					'mode'         => 'set',
@@ -271,7 +271,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'stock bad mode'          => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'multiply',
@@ -280,7 +280,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'stock negative'          => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'set',
@@ -289,7 +289,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'stock fractional'        => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'set',
@@ -298,7 +298,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'stock bad status'        => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'           => 5,
 					'stock_status' => 'lots',
@@ -306,7 +306,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'stock no id'             => array(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'mode'     => 'set',
 					'quantity' => 1,
@@ -314,7 +314,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'variation no price'      => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'   => 5,
 					'variation_id' => 6,
@@ -322,7 +322,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'variation no parent'     => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'variation_id'  => 6,
 					'regular_price' => '1',
@@ -330,7 +330,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_input',
 			),
 			'variation bad price'     => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 6,
@@ -339,7 +339,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_price',
 			),
 			'variation negative'      => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 6,
@@ -348,7 +348,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_price',
 			),
 			'variation blank regular' => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 6,
@@ -357,7 +357,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_price',
 			),
 			'variation sale >= reg'   => array(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 6,
@@ -366,9 +366,9 @@ final class WooWriteRolesTest extends TestCase {
 				),
 				'sale_not_below_regular',
 			),
-			'sale no price'           => array( 'senroflux/sale-schedule', array( 'id' => 5 ), 'invalid_input' ),
+			'sale no price'           => array( 'specflux/sale-schedule', array( 'id' => 5 ), 'invalid_input' ),
 			'sale bad date'           => array(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'                => 5,
 					'sale_price'        => '4',
@@ -377,7 +377,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_date',
 			),
 			'sale impossible date'    => array(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'                => 5,
 					'sale_price'        => '4',
@@ -386,7 +386,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_date',
 			),
 			'sale ends before start'  => array(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'                => 5,
 					'sale_price'        => '4',
@@ -396,7 +396,7 @@ final class WooWriteRolesTest extends TestCase {
 				'invalid_date',
 			),
 			'sale clear with dates'   => array(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'              => 5,
 					'sale_price'      => '',
@@ -416,7 +416,7 @@ final class WooWriteRolesTest extends TestCase {
 	public function test_a_same_day_sale_window_is_valid(): void {
 		$this->assertNull(
 			( new CommercePack() )->validateCall(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'                => 5,
 					'sale_price'        => '4',
@@ -441,7 +441,7 @@ final class WooWriteRolesTest extends TestCase {
 		);
 
 		$up = $this->call(
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'       => 5,
 				'mode'     => 'increase',
@@ -453,7 +453,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertNull( $up['variation_id'] );
 
 		$down = $this->call(
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'       => 5,
 				'mode'     => 'decrease',
@@ -463,7 +463,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertSame( 12, $down['stock_quantity'] );
 
 		$set = $this->call(
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'       => 5,
 				'mode'     => 'set',
@@ -474,7 +474,7 @@ final class WooWriteRolesTest extends TestCase {
 
 		$this->assertSame(
 			array( array( 5, 'increase', 5 ), array( 5, 'decrease', 3 ), array( 5, 'set', 0 ) ),
-			$GLOBALS['senroflux_test_stock_calls']
+			$GLOBALS['specflux_site_agent_test_stock_calls']
 		);
 	}
 
@@ -490,7 +490,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'stock_below_zero',
 			$this->call(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'decrease',
@@ -498,8 +498,8 @@ final class WooWriteRolesTest extends TestCase {
 				)
 			)
 		);
-		$this->assertSame( array(), $GLOBALS['senroflux_test_stock_calls'] );
-		$this->assertSame( 2, $GLOBALS['senroflux_test_product_rows'][5]->stock_quantity );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_stock_calls'] );
+		$this->assertSame( 2, $GLOBALS['specflux_site_agent_test_product_rows'][5]->stock_quantity );
 	}
 
 	public function test_stock_quantity_is_refused_on_an_unmanaged_product_and_status_is_refused_on_a_managed_one(): void {
@@ -515,7 +515,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'stock_not_managed',
 			$this->call(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 5,
 					'mode'     => 'set',
@@ -526,7 +526,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'stock_managed',
 			$this->call(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'           => 6,
 					'stock_status' => 'outofstock',
@@ -539,7 +539,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->row( 5, array( 'manage_stock' => false ) );
 
 		$result = $this->call(
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'           => 5,
 				'stock_status' => 'outofstock',
@@ -547,7 +547,7 @@ final class WooWriteRolesTest extends TestCase {
 		);
 
 		$this->assertSame( 'outofstock', $result['stock_status'] );
-		$this->assertContains( array( 5, 'save' ), $GLOBALS['senroflux_test_product_saves'] );
+		$this->assertContains( array( 5, 'save' ), $GLOBALS['specflux_site_agent_test_product_saves'] );
 	}
 
 	public function test_stock_on_a_variation_reports_the_parent(): void {
@@ -563,7 +563,7 @@ final class WooWriteRolesTest extends TestCase {
 		);
 
 		$result = $this->call(
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'       => 6,
 				'mode'     => 'increase',
@@ -580,7 +580,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'not_found',
 			$this->call(
-				'senroflux/stock-adjust',
+				'specflux/stock-adjust',
 				array(
 					'id'       => 99,
 					'mode'     => 'set',
@@ -598,20 +598,20 @@ final class WooWriteRolesTest extends TestCase {
 			'sale-schedule'          => array( 'id' => 5 ),
 		);
 		foreach ( $inputs as $name => $input ) {
-			$ability                             = wp_get_ability( 'senroflux/' . $name );
-			$GLOBALS['senroflux_test_user_caps'] = array(
+			$ability                                       = wp_get_ability( 'specflux/' . $name );
+			$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 				'manage_woocommerce' => true,
 				'edit_post'          => true,
 			);
 			$this->assertTrue( $ability->check_permissions( $input ), $name );
 
 			// No store capability.
-			$GLOBALS['senroflux_test_user_caps'] = array( 'edit_post' => true );
+			$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'edit_post' => true );
 			$this->assertNotTrue( $ability->check_permissions( $input ), $name . ' without manage_woocommerce' );
 
 			// Store capability but no edit on the named object (each id in turn).
 			foreach ( array_filter( $input ) as $key => $id ) {
-				$GLOBALS['senroflux_test_user_caps'] = array(
+				$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 					'manage_woocommerce' => true,
 					'edit_post'          => true,
 					'edit_post:' . $id   => false,
@@ -620,13 +620,13 @@ final class WooWriteRolesTest extends TestCase {
 			}
 
 			// Store capability and edit, but no object named.
-			$GLOBALS['senroflux_test_user_caps'] = array(
+			$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 				'manage_woocommerce' => true,
 				'edit_post'          => true,
 			);
 			$this->assertNotTrue( $ability->check_permissions( array() ), $name . ' naming nothing' );
 		}
-		$GLOBALS['senroflux_test_user_caps'] = array( 'manage_woocommerce' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_woocommerce' => true );
 	}
 
 	// ------------------------------------------------------------------
@@ -646,7 +646,7 @@ final class WooWriteRolesTest extends TestCase {
 		);
 
 		$result = $this->call(
-			'senroflux/variation-price-update',
+			'specflux/variation-price-update',
 			array(
 				'product_id'    => 5,
 				'variation_id'  => 6,
@@ -664,7 +664,7 @@ final class WooWriteRolesTest extends TestCase {
 			),
 			$result
 		);
-		$this->assertContains( array( 6, 'save' ), $GLOBALS['senroflux_test_product_saves'] );
+		$this->assertContains( array( 6, 'save' ), $GLOBALS['specflux_site_agent_test_product_saves'] );
 		$this->assertSame(
 			'5',
 			( new CommercePack() )->objectIdForWrite(
@@ -699,7 +699,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'not_found',
 			$this->call(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 8,
 					'variation_id'  => 6,
@@ -710,7 +710,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'not_found',
 			$this->call(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'    => 5,
 					'variation_id'  => 7,
@@ -718,7 +718,7 @@ final class WooWriteRolesTest extends TestCase {
 				)
 			)
 		);
-		$this->assertSame( array(), $GLOBALS['senroflux_test_product_saves'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_product_saves'] );
 	}
 
 	public function test_variation_sale_must_stay_below_the_stored_regular_price(): void {
@@ -735,7 +735,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'sale_not_below_regular',
 			$this->call(
-				'senroflux/variation-price-update',
+				'specflux/variation-price-update',
 				array(
 					'product_id'   => 5,
 					'variation_id' => 6,
@@ -743,7 +743,7 @@ final class WooWriteRolesTest extends TestCase {
 				)
 			)
 		);
-		$this->assertSame( '10', $GLOBALS['senroflux_test_product_rows'][6]->regular_price );
+		$this->assertSame( '10', $GLOBALS['specflux_site_agent_test_product_rows'][6]->regular_price );
 	}
 
 	// ------------------------------------------------------------------
@@ -754,7 +754,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->row( 5, array( 'regular_price' => '20' ) );
 
 		$result = $this->call(
-			'senroflux/sale-schedule',
+			'specflux/sale-schedule',
 			array(
 				'id'                => 5,
 				'sale_price'        => '15',
@@ -766,7 +766,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertSame( '15', $result['sale_price'] );
 		$this->assertSame( '2026-12-05 00:00:00', $result['date_on_sale_from'] );
 		$this->assertSame( '2026-12-07 23:59:59', $result['date_on_sale_to'] );
-		$this->assertSame( '2026-12-07 23:59:59', $GLOBALS['senroflux_test_product_rows'][5]->date_on_sale_to );
+		$this->assertSame( '2026-12-07 23:59:59', $GLOBALS['specflux_site_agent_test_product_rows'][5]->date_on_sale_to );
 		$this->assertSame( 5, $result['product_id'] );
 	}
 
@@ -782,24 +782,24 @@ final class WooWriteRolesTest extends TestCase {
 		);
 
 		$open = $this->call(
-			'senroflux/sale-schedule',
+			'specflux/sale-schedule',
 			array(
 				'id'         => 5,
 				'sale_price' => '14',
 			)
 		);
 		$this->assertNull( $open['date_on_sale_from'] );
-		$this->assertNull( $GLOBALS['senroflux_test_product_rows'][5]->date_on_sale_to );
+		$this->assertNull( $GLOBALS['specflux_site_agent_test_product_rows'][5]->date_on_sale_to );
 
 		$ended = $this->call(
-			'senroflux/sale-schedule',
+			'specflux/sale-schedule',
 			array(
 				'id'         => 5,
 				'sale_price' => '',
 			)
 		);
 		$this->assertSame( '', $ended['sale_price'] );
-		$this->assertSame( '', $GLOBALS['senroflux_test_product_rows'][5]->sale_price );
+		$this->assertSame( '', $GLOBALS['specflux_site_agent_test_product_rows'][5]->sale_price );
 	}
 
 	public function test_sale_schedule_refuses_a_sale_at_or_above_regular_a_variable_parent_and_a_missing_product(): void {
@@ -809,7 +809,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'sale_not_below_regular',
 			$this->call(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'         => 5,
 					'sale_price' => '20',
@@ -819,7 +819,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'unsupported_type',
 			$this->call(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'         => 6,
 					'sale_price' => '1',
@@ -829,14 +829,14 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'not_found',
 			$this->call(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'         => 99,
 					'sale_price' => '1',
 				)
 			)
 		);
-		$this->assertSame( array(), $GLOBALS['senroflux_test_product_saves'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_product_saves'] );
 	}
 
 	public function test_polyfills_revalidate_when_called_without_the_pack_gate(): void {
@@ -845,7 +845,7 @@ final class WooWriteRolesTest extends TestCase {
 		$this->assertRefused(
 			'invalid_date',
 			$this->call(
-				'senroflux/sale-schedule',
+				'specflux/sale-schedule',
 				array(
 					'id'                => 5,
 					'sale_price'        => '4',
@@ -853,7 +853,7 @@ final class WooWriteRolesTest extends TestCase {
 				)
 			)
 		);
-		$this->assertRefused( 'invalid_input', $this->call( 'senroflux/stock-adjust', array( 'id' => 5 ) ) );
+		$this->assertRefused( 'invalid_input', $this->call( 'specflux/stock-adjust', array( 'id' => 5 ) ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -865,8 +865,8 @@ final class WooWriteRolesTest extends TestCase {
 
 		$this->assertSame( 'order:77', $pack->objectIdPrefix( 'commerce/order-status-notify' ) . $pack->objectIdForWrite( 'commerce/order-status-notify', array( 'id' => 77 ), array() ) );
 
-		$GLOBALS['senroflux_test_orders'][77] = (object) array( 'status' => 'processing' );
-		$card                                 = CommerceSummary::filter(
+		$GLOBALS['specflux_site_agent_test_orders'][77] = (object) array( 'status' => 'processing' );
+		$card = CommerceSummary::filter(
 			'fallback',
 			'woocommerce/order-update-status',
 			array(
@@ -904,7 +904,7 @@ final class WooWriteRolesTest extends TestCase {
 
 		$stock = CommerceSummary::filter(
 			'fallback',
-			'senroflux/stock-adjust',
+			'specflux/stock-adjust',
 			array(
 				'id'       => 5,
 				'mode'     => 'decrease',
@@ -916,7 +916,7 @@ final class WooWriteRolesTest extends TestCase {
 
 		$sale = CommerceSummary::filter(
 			'fallback',
-			'senroflux/sale-schedule',
+			'specflux/sale-schedule',
 			array(
 				'id'              => 5,
 				'sale_price'      => '15',
@@ -939,7 +939,7 @@ final class WooWriteRolesTest extends TestCase {
 
 		$card = CommerceSummary::filter(
 			'fallback',
-			'senroflux/variation-price-update',
+			'specflux/variation-price-update',
 			array(
 				'product_id'    => 5,
 				'variation_id'  => 6,

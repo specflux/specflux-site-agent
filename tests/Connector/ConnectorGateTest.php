@@ -1,26 +1,26 @@
 <?php
 /**
- * The connector gate (K2): built-in mode parks writes for approval, SenroGate
+ * The connector gate (K2): built-in mode parks writes for approval, Belayline Agent Governance
  * mode defers.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\Approvals;
-use Specflux\SenroFlux\Connector\ApprovalsScreen;
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\Gate;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Approvals;
+use Specflux\SiteAgent\Connector\ApprovalsScreen;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\Gate;
+use Specflux\SiteAgent\Run\Clock;
 use WP_Error;
 
 final class ConnectorGateTest extends ConnectorTestCase {
 
-	private const WRITE = 'senroflux/write-thing';
-	private const READ  = 'senroflux/read-thing';
+	private const WRITE = 'specflux/write-thing';
+	private const READ  = 'specflux/read-thing';
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -51,9 +51,9 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$result = $this->call( self::WRITE, array( 'title' => 'Hello' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_connector_awaiting_approval', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_awaiting_approval', $result->get_error_code() );
 		$this->assertStringContainsString( ApprovalsScreen::url(), $result->get_error_message() );
-		$this->assertStringContainsString( 'page=senroflux-runs&tab=ai-apps', $result->get_error_message() );
+		$this->assertStringContainsString( 'page=specflux-site-agent-runs&tab=ai-apps', $result->get_error_message() );
 		$this->assertStringContainsString( 'repeat exactly the same call', $result->get_error_message() );
 		$pending = Approvals::pending();
 		$this->assertArrayHasKey( $this->hash( array( 'title' => 'Hello' ) ), $pending );
@@ -92,7 +92,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 
 		$second = $this->call( self::WRITE, $repeat );
 		$this->assertInstanceOf( WP_Error::class, $second );
-		$this->assertSame( 'senroflux_connector_awaiting_approval', $second->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_awaiting_approval', $second->get_error_code() );
 	}
 
 	public function test_changed_arguments_park_again_and_are_not_covered_by_the_approval(): void {
@@ -167,7 +167,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$result = $this->call( 'shop/refund', array( 'order' => 9 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_connector_unavailable', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_unavailable', $result->get_error_code() );
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
@@ -187,7 +187,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$result = $this->call( 'shop/maybe', array( 'risky' => true ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_connector_needs_senrogate', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_needs_governance', $result->get_error_code() );
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
@@ -197,30 +197,30 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$result = $this->call(
 			self::WRITE,
 			array(
-				'option' => 'senroflux_connector_enabled',
+				'option' => 'specflux_site_agent_connector_enabled',
 				'value'  => '1',
 			)
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_connector_settings', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_settings', $result->get_error_code() );
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
 	public function test_a_post_that_merely_mentions_a_setting_name_is_not_refused(): void {
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 
-		$result = $this->call( self::WRITE, array( 'content' => 'How the senroflux_connector_enabled option works' ) );
+		$result = $this->call( self::WRITE, array( 'content' => 'How the specflux_site_agent_connector_enabled option works' ) );
 
-		$this->assertSame( 'senroflux_connector_awaiting_approval', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_awaiting_approval', $result->get_error_code() );
 	}
 
 	public function test_a_nested_setting_name_is_refused_whatever_its_case(): void {
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 
-		$result = $this->call( self::WRITE, array( 'meta' => array( array( 'key' => '  SenroFlux_Connections ' ) ) ) );
+		$result = $this->call( self::WRITE, array( 'meta' => array( array( 'key' => '  SpecfluxSiteAgent_Connections ' ) ) ) );
 
-		$this->assertSame( 'senroflux_connector_settings', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_settings', $result->get_error_code() );
 	}
 
 	public function test_a_grant_option_name_is_refused(): void {
@@ -228,7 +228,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 
 		$result = $this->call( self::WRITE, array( 'option' => Approvals::GRANT_PREFIX . str_repeat( 'a', 64 ) ) );
 
-		$this->assertSame( 'senroflux_connector_settings', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_settings', $result->get_error_code() );
 	}
 
 	public function test_a_second_spend_fails_even_if_the_list_entry_is_stale(): void {
@@ -273,12 +273,12 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$result = $this->call( self::WRITE, array( 'x' => 1 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertNotSame( 'senroflux_connector_awaiting_approval', $result->get_error_code() );
+		$this->assertNotSame( 'specflux_site_agent_connector_awaiting_approval', $result->get_error_code() );
 		$this->assertSame( array(), Approvals::pending() );
 	}
 
-	public function test_senrogate_mode_defers_and_parks_nothing(): void {
-		$this->senroGateMode();
+	public function test_agent_governance_mode_defers_and_parks_nothing(): void {
+		$this->governanceMode();
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
 
 		$this->assertSame( array( 'title' => 'Hello' ), $this->call( self::WRITE, array( 'title' => 'Hello' ) ) );

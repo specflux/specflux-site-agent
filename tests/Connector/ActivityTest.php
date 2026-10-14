@@ -2,32 +2,32 @@
 /**
  * The activity list, its daily prune, and the built-in rate limit (K4).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\ActivityLog;
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\ConnectScreen;
-use Specflux\SenroFlux\Connector\Gate;
-use Specflux\SenroFlux\Connector\OAuth\Store;
-use Specflux\SenroFlux\Connector\RateLimit;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Schema;
+use Specflux\SiteAgent\Connector\ActivityLog;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\ConnectScreen;
+use Specflux\SiteAgent\Connector\Gate;
+use Specflux\SiteAgent\Connector\OAuth\Store;
+use Specflux\SiteAgent\Connector\RateLimit;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Schema;
 use WP_Error;
 
 final class ActivityTest extends ConnectorTestCase {
 
-	private const WRITE = 'senroflux/write-thing';
-	private const READ  = 'senroflux/read-thing';
+	private const WRITE = 'specflux/write-thing';
+	private const READ  = 'specflux/read-thing';
 	private const NOW   = 1_800_000_000;
 
 	protected function setUp(): void {
 		parent::setUp();
-		$GLOBALS['senroflux_test_transients'] = array();
+		$GLOBALS['specflux_site_agent_test_transients'] = array();
 		$this->enableConnector();
 		$this->standardAbilities();
 		Clock::useFixed( self::NOW );
@@ -44,7 +44,7 @@ final class ActivityTest extends ConnectorTestCase {
 
 	/** @return list<array<string,mixed>> */
 	private function rows(): array {
-		return array_values( $GLOBALS['wpdb']->tables['wp_senroflux_connector_activity'] ?? array() );
+		return array_values( $GLOBALS['wpdb']->tables['wp_specflux_site_agent_connector_activity'] ?? array() );
 	}
 
 	public function test_each_outcome_is_recorded_with_connection_user_and_ability(): void {
@@ -101,7 +101,7 @@ final class ActivityTest extends ConnectorTestCase {
 		$refused = $this->call( self::READ );
 
 		$this->assertInstanceOf( WP_Error::class, $refused );
-		$this->assertSame( 'senroflux_connector_rate_limited', $refused->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_connector_rate_limited', $refused->get_error_code() );
 		$this->assertStringContainsString( 'Wait 40 seconds', $refused->get_error_message() );
 		$this->assertSame( array( ActivityLog::REFUSED ), array_column( $this->rows(), 'outcome' ), 'Allowed calls are recorded when they finish.' );
 	}
@@ -129,8 +129,8 @@ final class ActivityTest extends ConnectorTestCase {
 		$this->assertNotInstanceOf( WP_Error::class, $this->call( self::READ ) );
 	}
 
-	public function test_senrogate_mode_is_not_rate_limited(): void {
-		$this->senroGateMode();
+	public function test_agent_governance_mode_is_not_rate_limited(): void {
+		$this->governanceMode();
 		$this->connectAs( Connection::SCOPE_READ );
 
 		for ( $i = 0; $i < RateLimit::LIMIT + 5; ++$i ) {
@@ -172,7 +172,7 @@ final class ActivityTest extends ConnectorTestCase {
 		ActivityLog::schedule();
 
 		$this->assertNotFalse( $first );
-		$this->assertSame( 'daily', $GLOBALS['senroflux_test_cron'][ ActivityLog::CRON_HOOK ]['recurrence'] );
+		$this->assertSame( 'daily', $GLOBALS['specflux_site_agent_test_cron'][ ActivityLog::CRON_HOOK ]['recurrence'] );
 		$this->assertSame( $first, wp_next_scheduled( ActivityLog::CRON_HOOK ), 'A second call does not reschedule.' );
 
 		ActivityLog::unschedule();
@@ -197,7 +197,7 @@ final class ActivityTest extends ConnectorTestCase {
 	public function test_the_uuid_column_fits_an_oauth_connection_id(): void {
 		// OAuth connections are keyed 'oauth:<grant id>'; MySQL refuses a longer value, so the row is lost.
 		$this->assertSame( 1, preg_match( '/uuid VARCHAR\((\d+)\)/', Schema::activityColumns(), $m ) );
-		$grant = Store::createGrant( self::USER, 'client', 'senroflux:read', 'http://example.test/wp-json/senroflux/mcp', 'hash' );
+		$grant = Store::createGrant( self::USER, 'client', 'specflux:read', 'http://example.test/wp-json/specflux-site-agent/mcp', 'hash' );
 
 		$this->assertGreaterThanOrEqual( strlen( 'oauth:' . $grant ), (int) $m[1] );
 	}

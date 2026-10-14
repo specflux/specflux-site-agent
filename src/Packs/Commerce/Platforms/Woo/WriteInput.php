@@ -3,15 +3,15 @@
  * Input rules for the WooCommerce write roles C4-W adds (order status,
  * product trash, stock, variation price, sale schedule). One place, used twice:
  * by {@see WooPlatform::validateCall()} BEFORE a call reaches its ability, and
- * by the `senroflux/` polyfills themselves, so a call that skips the pack gate
+ * by the `specflux/` polyfills themselves, so a call that skips the pack gate
  * is refused the same way.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\Woo;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\Woo;
 
 use WP_Error;
 
@@ -32,7 +32,7 @@ final class WriteInput {
 	/**
 	 * Order statuses whose transition has customer-facing side effects
 	 * (emails, stock moves, money marked returned): irreversible, Tier 2.
-	 * Mirrors SenroGate's OrderFulfillmentElevationRule::IRREVERSIBLE_STATUSES.
+	 * Mirrors Belayline Agent Governance's OrderFulfillmentElevationRule::IRREVERSIBLE_STATUSES.
 	 */
 	public const NOTIFYING_ORDER_STATUSES = array( 'processing', 'completed', 'shipped', 'cancelled', 'refunded', 'on-hold', 'pending' );
 
@@ -58,7 +58,7 @@ final class WriteInput {
 	/**
 	 * A `force` flag counts as OFF only when clearly false (absent, false, 0,
 	 * '', '0', 'false'); any other shape is treated as a force delete —
-	 * SenroGate's ForceDeleteElevationRule reads it the same way.
+	 * Belayline Agent Governance's ForceDeleteElevationRule reads it the same way.
 	 *
 	 * @param array<string,mixed> $input Call input.
 	 */
@@ -82,7 +82,7 @@ final class WriteInput {
 	 */
 	public static function orderStatus( array $input ): ?WP_Error {
 		if ( null === self::normalizeOrderStatus( $input['status'] ?? null ) ) {
-			return self::invalid( 'invalid_input', __( 'An order status is required.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'An order status is required.', 'specflux-site-agent' ) );
 		}
 
 		return null;
@@ -96,50 +96,50 @@ final class WriteInput {
 	 */
 	public static function productTrash( array $input ): ?WP_Error {
 		if ( self::isForceDelete( $input ) ) {
-			return self::invalid( 'force_delete_refused', __( 'Permanent deletion is not allowed here. Trash the product instead (omit force) — a trashed product can be restored.', 'senroflux' ) );
+			return self::invalid( 'force_delete_refused', __( 'Permanent deletion is not allowed here. Trash the product instead (omit force) — a trashed product can be restored.', 'specflux-site-agent' ) );
 		}
 
 		return null;
 	}
 
 	/**
-	 * `senroflux/stock-adjust`: either a quantity change (`mode` + `quantity`)
+	 * `specflux/stock-adjust`: either a quantity change (`mode` + `quantity`)
 	 * or a `stock_status` for a product that does not manage a quantity, never both.
 	 *
 	 * @param array<string,mixed> $input Call input.
 	 */
 	public static function stock( array $input ): ?WP_Error {
 		if ( ! isset( $input['id'] ) || ! is_int( $input['id'] ) || $input['id'] <= 0 ) {
-			return self::invalid( 'invalid_input', __( 'A product or variation id is required.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'A product or variation id is required.', 'specflux-site-agent' ) );
 		}
 
 		$has_qty    = array_key_exists( 'quantity', $input ) || array_key_exists( 'mode', $input );
 		$has_status = array_key_exists( 'stock_status', $input );
 
 		if ( $has_qty === $has_status ) {
-			return self::invalid( 'invalid_input', __( 'Give either a mode and quantity, or a stock_status — not both, and not neither.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'Give either a mode and quantity, or a stock_status — not both, and not neither.', 'specflux-site-agent' ) );
 		}
 
 		if ( $has_status ) {
 			if ( ! is_string( $input['stock_status'] ) || ! in_array( $input['stock_status'], self::STOCK_STATUSES, true ) ) {
-				return self::invalid( 'invalid_input', __( 'stock_status must be instock, outofstock or onbackorder.', 'senroflux' ) );
+				return self::invalid( 'invalid_input', __( 'stock_status must be instock, outofstock or onbackorder.', 'specflux-site-agent' ) );
 			}
 
 			return null;
 		}
 
 		if ( ! is_string( $input['mode'] ?? null ) || ! in_array( $input['mode'], self::STOCK_MODES, true ) ) {
-			return self::invalid( 'invalid_input', __( 'mode must be set, increase or decrease.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'mode must be set, increase or decrease.', 'specflux-site-agent' ) );
 		}
 		if ( ! isset( $input['quantity'] ) || ! is_int( $input['quantity'] ) || $input['quantity'] < 0 ) {
-			return self::invalid( 'invalid_input', __( 'quantity must be a whole number, zero or more.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'quantity must be a whole number, zero or more.', 'specflux-site-agent' ) );
 		}
 
 		return null;
 	}
 
 	/**
-	 * `senroflux/variation-price-update`: the parent and the variation, and at
+	 * `specflux/variation-price-update`: the parent and the variation, and at
 	 * least one price.
 	 *
 	 * @param array<string,mixed> $input Call input.
@@ -147,28 +147,28 @@ final class WriteInput {
 	public static function variationPrice( array $input ): ?WP_Error {
 		foreach ( array( 'product_id', 'variation_id' ) as $key ) {
 			if ( ! isset( $input[ $key ] ) || ! is_int( $input[ $key ] ) || $input[ $key ] <= 0 ) {
-				return self::invalid( 'invalid_input', __( 'Both product_id (the parent) and variation_id are required.', 'senroflux' ) );
+				return self::invalid( 'invalid_input', __( 'Both product_id (the parent) and variation_id are required.', 'specflux-site-agent' ) );
 			}
 		}
 		if ( ! array_key_exists( 'regular_price', $input ) && ! array_key_exists( 'sale_price', $input ) ) {
-			return self::invalid( 'invalid_input', __( 'Give a regular_price, a sale_price, or both.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'Give a regular_price, a sale_price, or both.', 'specflux-site-agent' ) );
 		}
 
 		return self::prices( $input, true );
 	}
 
 	/**
-	 * `senroflux/sale-schedule`: a sale price with an optional window, or an
+	 * `specflux/sale-schedule`: a sale price with an optional window, or an
 	 * empty `sale_price` to clear the sale and its dates.
 	 *
 	 * @param array<string,mixed> $input Call input.
 	 */
 	public static function saleSchedule( array $input ): ?WP_Error {
 		if ( ! isset( $input['id'] ) || ! is_int( $input['id'] ) || $input['id'] <= 0 ) {
-			return self::invalid( 'invalid_input', __( 'A product or variation id is required.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'A product or variation id is required.', 'specflux-site-agent' ) );
 		}
 		if ( ! array_key_exists( 'sale_price', $input ) ) {
-			return self::invalid( 'invalid_input', __( 'sale_price is required (an empty string clears the sale).', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'sale_price is required (an empty string clears the sale).', 'specflux-site-agent' ) );
 		}
 
 		$error = self::prices( $input, false );
@@ -181,13 +181,13 @@ final class WriteInput {
 		$clear = '' === self::priceString( $input['sale_price'] );
 
 		if ( false === $from || false === $to ) {
-			return self::invalid( 'invalid_date', __( 'Sale dates must be YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, in the store\'s timezone.', 'senroflux' ) );
+			return self::invalid( 'invalid_date', __( 'Sale dates must be YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, in the store\'s timezone.', 'specflux-site-agent' ) );
 		}
 		if ( $clear && ( null !== $from || null !== $to ) ) {
-			return self::invalid( 'invalid_input', __( 'Clearing a sale takes no dates.', 'senroflux' ) );
+			return self::invalid( 'invalid_input', __( 'Clearing a sale takes no dates.', 'specflux-site-agent' ) );
 		}
 		if ( null !== $from && null !== $to && $to < $from ) {
-			return self::invalid( 'invalid_date', __( 'The sale cannot end before it starts.', 'senroflux' ) );
+			return self::invalid( 'invalid_date', __( 'The sale cannot end before it starts.', 'specflux-site-agent' ) );
 		}
 
 		return null;
@@ -226,7 +226,7 @@ final class WriteInput {
 			}
 			$value = self::priceString( $input[ $key ] );
 			if ( null === $value || ( '' !== $value && 1 !== preg_match( '/^\d+(\.\d+)?$/', $value ) ) ) {
-				return self::invalid( 'invalid_price', __( 'A price must be a plain non-negative number such as 19.99.', 'senroflux' ) );
+				return self::invalid( 'invalid_price', __( 'A price must be a plain non-negative number such as 19.99.', 'specflux-site-agent' ) );
 			}
 			if ( 'regular_price' === $key ) {
 				$regular = $value;
@@ -236,10 +236,10 @@ final class WriteInput {
 		}
 
 		if ( $refuse_blank_regular && '' === $regular ) {
-			return self::invalid( 'invalid_price', __( 'regular_price cannot be blank.', 'senroflux' ) );
+			return self::invalid( 'invalid_price', __( 'regular_price cannot be blank.', 'specflux-site-agent' ) );
 		}
 		if ( null !== $regular && null !== $sale && '' !== $sale && (float) $sale >= (float) $regular ) {
-			return self::invalid( 'sale_not_below_regular', __( 'The sale price must be below the regular price.', 'senroflux' ) );
+			return self::invalid( 'sale_not_below_regular', __( 'The sale price must be below the regular price.', 'specflux-site-agent' ) );
 		}
 
 		return null;

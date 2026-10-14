@@ -39,7 +39,7 @@ describe( 'ApprovalDiff', () => {
 
 	it( 'renders the word diff with removed and added words readable without colour', () => {
 		const { container } = render( <ApprovalDiff diff={ diff } /> );
-		const ops = container.querySelectorAll( '.senroflux-diff-ops' )[ 0 ];
+		const ops = container.querySelectorAll( '.specflux-site-agent-diff-ops' )[ 0 ];
 		expect( ops.querySelector( 'ins' ) ).toHaveTextContent( 'Added: brave new' );
 		expect( ops.querySelector( 'del' ) ).toHaveTextContent( 'Removed: old' );
 		expect( screen.getByText( 'Menu item labels' ) ).toBeInTheDocument();
@@ -87,15 +87,15 @@ describe( 'approve binds to the arguments, not the diff', () => {
 
 	it( 'still shows the arguments in full beneath the diff', () => {
 		const { container } = render( <ParkCard kind="approval" gateMode="built_in" payload={ payload( { diff } ) } /> );
-		const pre = container.querySelector( '.senroflux-args' );
+		const pre = container.querySelector( '.specflux-site-agent-args' );
 		expect( pre ).toHaveTextContent( '"regular_price": "12.50"' );
-		const section = container.querySelector( '.senroflux-approval-diff' );
+		const section = container.querySelector( '.specflux-site-agent-approval-diff' );
 		expect( section.compareDocumentPosition( pre ) & Node.DOCUMENT_POSITION_FOLLOWING ).toBeTruthy();
 	} );
 
 	it( 'an unknown ability (no diff) renders no section but keeps the arguments', () => {
 		const { container } = render( <ParkCard kind="approval" gateMode="built_in" payload={ payload() } /> );
-		expect( container.querySelector( '.senroflux-approval-diff' ) ).toBeNull();
-		expect( container.querySelector( '.senroflux-args' ) ).toBeInTheDocument();
+		expect( container.querySelector( '.specflux-site-agent-approval-diff' ) ).toBeNull();
+		expect( container.querySelector( '.specflux-site-agent-args' ) ).toBeInTheDocument();
 	} );
 } );

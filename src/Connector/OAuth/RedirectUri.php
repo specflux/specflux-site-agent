@@ -2,12 +2,12 @@
 /**
  * Redirect URI rules.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

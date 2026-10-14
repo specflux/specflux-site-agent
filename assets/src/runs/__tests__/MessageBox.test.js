@@ -1,7 +1,7 @@
 /**
  * Runs-pack fix: the message box's pack picker. A pack-less start deadlocks
  * every run (the Runs screen's own consumer has an empty verb map without
- * one — {@see \Specflux\SenroFlux\Tools\VerbTier}), so `MessageBox` must
+ * one — {@see \Specflux\SiteAgent\Tools\VerbTier}), so `MessageBox` must
  * never let `onSend` fire without a pack chosen whenever one is required.
  */
 
@@ -320,7 +320,7 @@ describe( 'MessageBox Start tooltip names the blocking setup step', () => {
 		);
 		type();
 
-		const reason = 'Finish step 1, Connect a model, in Set up SenroFlux to start a run.';
+		const reason = 'Finish step 1, Connect a model, in Set up Specflux Site Agent to start a run.';
 		expect( startButton() ).toBeDisabled();
 		expect( startButton() ).toHaveAttribute( 'title', reason );
 		expect( startButton().parentElement ).toHaveAttribute( 'title', reason );
@@ -341,7 +341,7 @@ describe( 'MessageBox Start tooltip names the blocking setup step', () => {
 
 		expect( startButton() ).toHaveAttribute(
 			'title',
-			'Finish step 3, Clear the old Agent Safety plugin, in Set up SenroFlux to start a run.'
+			'Finish step 3, Clear the old Agent Safety plugin, in Set up Specflux Site Agent to start a run.'
 		);
 	} );
 
@@ -351,7 +351,7 @@ describe( 'MessageBox Start tooltip names the blocking setup step', () => {
 				state="idle"
 				onSend={ jest.fn() }
 				packs={ [] }
-				blockingStep={ { number: 4, title: 'Allow SenroFlux for your role' } }
+				blockingStep={ { number: 4, title: 'Allow Specflux Site Agent for your role' } }
 			/>
 		);
 		type();
@@ -359,7 +359,7 @@ describe( 'MessageBox Start tooltip names the blocking setup step', () => {
 		expect( startButton() ).toBeDisabled();
 		expect( startButton() ).toHaveAttribute(
 			'title',
-			'Finish step 4, Allow SenroFlux for your role, in Set up SenroFlux to start a run.'
+			'Finish step 4, Allow Specflux Site Agent for your role, in Set up Specflux Site Agent to start a run.'
 		);
 	} );
 
@@ -424,7 +424,7 @@ describe( 'MessageBox starter goal prefill', () => {
 
 describe( 'MessageBox pack-unavailable notices name the fix', () => {
 	it( 'merges packs refused for the same reason into one line', () => {
-		const reason = 'Bind Administrator to SenroFlux content in SenroGate (Tools > Agent Capability Packs), then come back here.';
+		const reason = 'Bind Administrator to Specflux Site Agent content in Belayline Agent Governance (Tools > Agent Capability Packs), then come back here.';
 		render(
 			<MessageBox
 				state="idle"

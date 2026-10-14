@@ -2,23 +2,23 @@
 /**
  * Resolving the request's connection, and who may use the connector.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector;
+namespace Specflux\SiteAgent\Tests\Connector;
 
-use Specflux\SenroFlux\Connector\Connection;
-use Specflux\SenroFlux\Connector\Connections;
-use Specflux\SenroFlux\Connector\Connector;
+use Specflux\SiteAgent\Connector\Connection;
+use Specflux\SiteAgent\Connector\Connections;
+use Specflux\SiteAgent\Connector\Connector;
 
 final class ConnectionsTest extends ConnectorTestCase {
 
 	public function test_deleting_the_application_password_elsewhere_forgets_the_connection(): void {
-		$GLOBALS['senroflux_test_action_priorities'] = array();
+		$GLOBALS['specflux_site_agent_test_action_priorities'] = array();
 		Connector::register();
-		$hooked = array_column( $GLOBALS['senroflux_test_action_priorities']['wp_delete_application_password'] ?? array(), 0 );
+		$hooked = array_column( $GLOBALS['specflux_site_agent_test_action_priorities']['wp_delete_application_password'] ?? array(), 0 );
 		$this->assertContains( array( Connections::class, 'forgetDeleted' ), $hooked );
 
 		Connections::add( self::USER, self::UUID );
@@ -42,7 +42,7 @@ final class ConnectionsTest extends ConnectorTestCase {
 	public function test_a_cookie_session_is_never_a_connection(): void {
 		$this->enableConnector();
 		Connections::add( self::USER, self::UUID, Connection::SCOPE_READ_WRITE );
-		$GLOBALS['senroflux_test_app_password'] = null;
+		$GLOBALS['specflux_site_agent_test_app_password'] = null;
 
 		$this->assertNull( Connections::current() );
 		$this->assertNull( Connector::authorise() );
@@ -51,7 +51,7 @@ final class ConnectionsTest extends ConnectorTestCase {
 	public function test_an_application_password_outside_the_registry_is_refused(): void {
 		$this->enableConnector();
 		Connections::add( self::USER, self::UUID );
-		$GLOBALS['senroflux_test_app_password'] = 'aaaaaaaa-0000-0000-0000-000000000000';
+		$GLOBALS['specflux_site_agent_test_app_password'] = 'aaaaaaaa-0000-0000-0000-000000000000';
 
 		$this->assertNull( Connections::current() );
 		$this->assertNull( Connector::authorise() );
@@ -73,8 +73,8 @@ final class ConnectionsTest extends ConnectorTestCase {
 
 	public function test_a_garbled_stored_scope_is_sanitised_to_read_only(): void {
 		$this->enableConnector();
-		$GLOBALS['senroflux_test_user_meta'][ self::USER ][ Connections::META_KEY ] = array( self::UUID => array( 'scope' => 'root' ) );
-		$GLOBALS['senroflux_test_app_password']                                     = self::UUID;
+		$GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ][ Connections::META_KEY ] = array( self::UUID => array( 'scope' => 'root' ) );
+		$GLOBALS['specflux_site_agent_test_app_password']                                     = self::UUID;
 
 		$connection = Connections::current();
 
@@ -86,7 +86,7 @@ final class ConnectionsTest extends ConnectorTestCase {
 	public function test_a_user_without_the_capability_is_denied(): void {
 		$this->enableConnector();
 		$this->connectAs( Connection::SCOPE_READ_WRITE );
-		$GLOBALS['senroflux_test_user_caps'] = array();
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array();
 
 		$this->assertNull( Connector::authorise() );
 		$this->assertFalse( Connector::permission() );

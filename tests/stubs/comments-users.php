@@ -3,12 +3,12 @@
  * Test-only WordPress comment/user shims for the Comments and Users ability
  * tests. Every function is `function_exists`-guarded so real WordPress wins.
  *
- * Knobs: $GLOBALS['senroflux_test_comments'] (id => stdClass, comment_approved
- * as in core: '1', '0', 'spam', 'trash'), $GLOBALS['senroflux_test_users']
- * (id => SenroFlux_Test_User), $GLOBALS['senroflux_test_roles'],
- * $GLOBALS['senroflux_test_editable_roles'], $GLOBALS['senroflux_test_super_admins'].
+ * Knobs: $GLOBALS['specflux_site_agent_test_comments'] (id => stdClass, comment_approved
+ * as in core: '1', '0', 'spam', 'trash'), $GLOBALS['specflux_site_agent_test_users']
+ * (id => SpecfluxSiteAgent_Test_User), $GLOBALS['specflux_site_agent_test_roles'],
+ * $GLOBALS['specflux_site_agent_test_editable_roles'], $GLOBALS['specflux_site_agent_test_super_admins'].
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -17,9 +17,9 @@ if ( ! defined( 'EMPTY_TRASH_DAYS' ) ) {
 	define( 'EMPTY_TRASH_DAYS', 30 );
 }
 
-if ( ! class_exists( 'SenroFlux_Test_User', false ) ) {
+if ( ! class_exists( 'SpecfluxSiteAgent_Test_User', false ) ) {
 	/** Minimal WP_User stand-in; carries secret fields to prove they never leak. */
-	class SenroFlux_Test_User {
+	class SpecfluxSiteAgent_Test_User {
 
 		public string $user_pass           = '$P$hash';
 		public string $user_activation_key = 'activation-key';
@@ -62,15 +62,15 @@ if ( ! function_exists( 'wp_slash' ) ) {
 
 if ( ! function_exists( 'wp_get_current_user' ) ) {
 	function wp_get_current_user(): object {
-		$id = (int) ( $GLOBALS['senroflux_test_current_user_id'] ?? 0 );
+		$id = (int) ( $GLOBALS['specflux_site_agent_test_current_user_id'] ?? 0 );
 
-		return $GLOBALS['senroflux_test_users'][ $id ] ?? new SenroFlux_Test_User( $id );
+		return $GLOBALS['specflux_site_agent_test_users'][ $id ] ?? new SpecfluxSiteAgent_Test_User( $id );
 	}
 }
 
 if ( ! function_exists( 'get_comment' ) ) {
 	function get_comment( mixed $id ): ?object {
-		return $GLOBALS['senroflux_test_comments'][ (int) $id ] ?? null;
+		return $GLOBALS['specflux_site_agent_test_comments'][ (int) $id ] ?? null;
 	}
 }
 
@@ -83,7 +83,7 @@ if ( ! function_exists( 'get_comments' ) ) {
 	function get_comments( array $args = array() ): array|int {
 		$status  = (string) ( $args['status'] ?? 'all' );
 		$matches = array();
-		foreach ( (array) ( $GLOBALS['senroflux_test_comments'] ?? array() ) as $comment ) {
+		foreach ( (array) ( $GLOBALS['specflux_site_agent_test_comments'] ?? array() ) as $comment ) {
 			$a = (string) $comment->comment_approved;
 			if ( 'all' === $status && ! in_array( $a, array( '0', '1' ), true ) ) {
 				continue;
@@ -120,10 +120,10 @@ if ( ! function_exists( 'get_comments' ) ) {
 if ( ! function_exists( 'wp_set_comment_status' ) ) {
 	function wp_set_comment_status( int $id, string $status, bool $wp_error = false ): bool|WP_Error {
 		unset( $wp_error );
-		if ( ! isset( $GLOBALS['senroflux_test_comments'][ $id ] ) ) {
+		if ( ! isset( $GLOBALS['specflux_site_agent_test_comments'][ $id ] ) ) {
 			return false;
 		}
-		$GLOBALS['senroflux_test_comments'][ $id ]->comment_approved = 'approve' === $status ? '1' : '0';
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved = 'approve' === $status ? '1' : '0';
 
 		return true;
 	}
@@ -131,8 +131,8 @@ if ( ! function_exists( 'wp_set_comment_status' ) ) {
 
 if ( ! function_exists( 'wp_spam_comment' ) ) {
 	function wp_spam_comment( int $id ): bool {
-		$GLOBALS['senroflux_test_comment_prev'][ $id ]               = $GLOBALS['senroflux_test_comments'][ $id ]->comment_approved;
-		$GLOBALS['senroflux_test_comments'][ $id ]->comment_approved = 'spam';
+		$GLOBALS['specflux_site_agent_test_comment_prev'][ $id ]               = $GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved;
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved = 'spam';
 
 		return true;
 	}
@@ -140,8 +140,8 @@ if ( ! function_exists( 'wp_spam_comment' ) ) {
 
 if ( ! function_exists( 'wp_trash_comment' ) ) {
 	function wp_trash_comment( int $id ): bool {
-		$GLOBALS['senroflux_test_comment_prev'][ $id ]               = $GLOBALS['senroflux_test_comments'][ $id ]->comment_approved;
-		$GLOBALS['senroflux_test_comments'][ $id ]->comment_approved = 'trash';
+		$GLOBALS['specflux_site_agent_test_comment_prev'][ $id ]               = $GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved;
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved = 'trash';
 
 		return true;
 	}
@@ -149,7 +149,7 @@ if ( ! function_exists( 'wp_trash_comment' ) ) {
 
 if ( ! function_exists( 'wp_unspam_comment' ) ) {
 	function wp_unspam_comment( int $id ): bool {
-		$GLOBALS['senroflux_test_comments'][ $id ]->comment_approved = $GLOBALS['senroflux_test_comment_prev'][ $id ] ?? '0';
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved = $GLOBALS['specflux_site_agent_test_comment_prev'][ $id ] ?? '0';
 
 		return true;
 	}
@@ -157,7 +157,7 @@ if ( ! function_exists( 'wp_unspam_comment' ) ) {
 
 if ( ! function_exists( 'wp_untrash_comment' ) ) {
 	function wp_untrash_comment( int $id ): bool {
-		$GLOBALS['senroflux_test_comments'][ $id ]->comment_approved = $GLOBALS['senroflux_test_comment_prev'][ $id ] ?? '0';
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ]->comment_approved = $GLOBALS['specflux_site_agent_test_comment_prev'][ $id ] ?? '0';
 
 		return true;
 	}
@@ -171,20 +171,20 @@ if ( ! function_exists( 'wp_new_comment' ) ) {
 	 */
 	function wp_new_comment( array $data, bool $wp_error = false ): int|false|WP_Error {
 		unset( $wp_error );
-		$GLOBALS['senroflux_test_new_comment_data'] = $data;
-		$id                      = max( array_merge( array( 0 ), array_keys( $GLOBALS['senroflux_test_comments'] ?? array() ) ) ) + 1;
+		$GLOBALS['specflux_site_agent_test_new_comment_data'] = $data;
+		$id                      = max( array_merge( array( 0 ), array_keys( $GLOBALS['specflux_site_agent_test_comments'] ?? array() ) ) ) + 1;
 		$c                       = new stdClass();
 		$c->comment_ID           = $id;
 		$c->comment_post_ID      = $data['comment_post_ID'];
 		$c->comment_parent       = $data['comment_parent'];
 		$c->comment_content      = stripslashes( $data['comment_content'] );
-		$c->comment_approved     = $GLOBALS['senroflux_test_new_comment_approved'] ?? '1';
+		$c->comment_approved     = $GLOBALS['specflux_site_agent_test_new_comment_approved'] ?? '1';
 		$c->comment_author       = stripslashes( $data['comment_author'] );
 		$c->comment_author_email = $data['comment_author_email'];
 		$c->comment_author_url   = $data['comment_author_url'];
 		$c->comment_date_gmt     = '2026-05-06 07:08:09';
 		$c->comment_type         = 'comment';
-		$GLOBALS['senroflux_test_comments'][ $id ] = $c;
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ] = $c;
 
 		return $id;
 	}
@@ -192,7 +192,7 @@ if ( ! function_exists( 'wp_new_comment' ) ) {
 
 if ( ! function_exists( 'get_role' ) ) {
 	function get_role( string $role ): ?object {
-		return in_array( $role, $GLOBALS['senroflux_test_roles'] ?? array(), true ) ? (object) array( 'name' => $role ) : null;
+		return in_array( $role, $GLOBALS['specflux_site_agent_test_roles'] ?? array(), true ) ? (object) array( 'name' => $role ) : null;
 	}
 }
 
@@ -200,7 +200,7 @@ if ( ! function_exists( 'get_editable_roles' ) ) {
 	/** @return array<string,array<string,mixed>> */
 	function get_editable_roles(): array {
 		$out = array();
-		foreach ( $GLOBALS['senroflux_test_editable_roles'] ?? array() as $role ) {
+		foreach ( $GLOBALS['specflux_site_agent_test_editable_roles'] ?? array() as $role ) {
 			$out[ $role ] = array( 'name' => $role );
 		}
 
@@ -210,12 +210,12 @@ if ( ! function_exists( 'get_editable_roles' ) ) {
 
 if ( ! function_exists( 'is_super_admin' ) ) {
 	function is_super_admin( int $id = 0 ): bool {
-		return in_array( $id, $GLOBALS['senroflux_test_super_admins'] ?? array(), true );
+		return in_array( $id, $GLOBALS['specflux_site_agent_test_super_admins'] ?? array(), true );
 	}
 }
 
 if ( ! class_exists( 'WP_User_Query', false ) ) {
-	/** Supports search (*term*), role, number, paged over senroflux_test_users. */
+	/** Supports search (*term*), role, number, paged over specflux_site_agent_test_users. */
 	class WP_User_Query {
 
 		/** @var list<object> */
@@ -227,7 +227,7 @@ if ( ! class_exists( 'WP_User_Query', false ) ) {
 		public function __construct( array $args = array() ) {
 			$matches = array();
 			$needle  = isset( $args['search'] ) ? trim( (string) $args['search'], '*' ) : '';
-			foreach ( (array) ( $GLOBALS['senroflux_test_users'] ?? array() ) as $user ) {
+			foreach ( (array) ( $GLOBALS['specflux_site_agent_test_users'] ?? array() ) as $user ) {
 				if ( isset( $args['role'] ) && ! in_array( $args['role'], $user->roles, true ) ) {
 					continue;
 				}

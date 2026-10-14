@@ -2,15 +2,15 @@
 /**
  * What AI apps did through the connector, as a short rolling list (K4).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Schema;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Schema;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -38,7 +38,7 @@ final class ActivityLog {
 	public const RETENTION_DAYS = 30;
 
 	/** The cron hook that prunes. */
-	public const CRON_HOOK = 'senroflux_connector_prune_activity';
+	public const CRON_HOOK = 'specflux_site_agent_connector_prune_activity';
 
 	/** Hook the daily prune. */
 	public static function register(): void {

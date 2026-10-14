@@ -2,18 +2,18 @@
 /**
  * The ONE setup-check evaluator (0.3 S11).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Setup;
+namespace Specflux\SiteAgent\Tests\Setup;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Setup\SetupCheck;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Setup\SetupCheck;
 use WP_Error;
 
 final class ChecksTest extends TestCase {
@@ -26,9 +26,9 @@ final class ChecksTest extends TestCase {
 		// this one in the same process once `Plugin::start()` also asks this
 		// check (0.3 S11 follow-up).
 		Checks::setProviderProbe( true );
-		$GLOBALS['senroflux_test_user_caps']       = array();
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array();
-		$GLOBALS['senroflux_test_user_meta']       = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array();
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array();
+		$GLOBALS['specflux_site_agent_test_user_meta']       = array();
 	}
 
 	protected function tearDown(): void {
@@ -37,7 +37,7 @@ final class ChecksTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// senroflux/provider
+	// specflux/provider
 	//
 	// `wordpress/php-ai-client` is a REAL composer dev dependency (needed at
 	// runtime by AiClientGateway) — its classes are the genuine library, not
@@ -50,7 +50,7 @@ final class ChecksTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_provider_check_has_the_right_id(): void {
-		$this->assertSame( 'senroflux/provider', Checks::providerCheck()->id() );
+		$this->assertSame( 'specflux/provider', Checks::providerCheck()->id() );
 	}
 
 	public function test_the_probe_drives_provider_check_pass_and_fail(): void {
@@ -62,7 +62,7 @@ final class ChecksTest extends TestCase {
 
 		$check = Checks::providerCheck();
 		$this->assertFalse( $check->passed() );
-		$this->assertSame( 'senroflux_provider_unconfigured', $check->errorCode() );
+		$this->assertSame( 'specflux_site_agent_provider_unconfigured', $check->errorCode() );
 	}
 
 	// ------------------------------------------------------------------
@@ -72,14 +72,14 @@ final class ChecksTest extends TestCase {
 	public function test_for_pack_folds_in_the_packs_own_checks(): void {
 		Plugin::set_dependency_probe( false ); // built-in mode
 		Checks::setProviderProbe( true );
-		$GLOBALS['senroflux_test_user_caps_by_id'][7]['edit_pages'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'][7]['edit_pages'] = true;
 
 		$pack = $this->fixturePack( 'edit_pages' );
 
 		$checks = Checks::forPack( $pack, 7 );
 		$ids    = array_map( static fn ( SetupCheck $c ): string => $c->id(), $checks );
 
-		$this->assertContains( 'senroflux/provider', $ids );
+		$this->assertContains( 'specflux/provider', $ids );
 		$this->assertContains( 'fixture/capability', $ids );
 	}
 

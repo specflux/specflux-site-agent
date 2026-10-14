@@ -4,7 +4,7 @@
  *
  * TARGET REPO PATH: src/Packs/Pages/PublishSummary.php
  *
- * Hooks `agent_safety_approval_summary` (S14 AS-11): for the Tier-2 verbs
+ * Hooks `belayline_approval_summary` (S14 AS-11): for the Tier-2 verbs
  * `pages/publish` and `pages/update-live` it returns a rich HTML row — the
  * AS-11 side then renders it through `wp_kses($summary, ['a' => ['href' =>
  * true]])`, so ONLY `<a href>` survives; a `<script>` in an input is stripped
@@ -18,19 +18,19 @@
  * from the run row, handed over by the composition root for the current tick
  * ({@see useRunContext()}). Nothing here is read out of the tool-call
  * arguments except the post `id` the call is acting on. An earlier version
- * took the sequence and the goal from an `_senroflux` key inside the input —
+ * took the sequence and the goal from an `_specflux` key inside the input —
  * i.e. from fields the MODEL writes — and rendered them to the approving human
  * as provenance. That is precisely the sentence a human reads before clicking
  * publish, so it may never be agent-authored.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
-use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SiteAgent\Packs\Pack;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -43,7 +43,7 @@ final class PublishSummary {
 	/**
 	 * The Agent Safety approval-summary filter (AS-11).
 	 */
-	public const HOOK = 'agent_safety_approval_summary';
+	public const HOOK = 'belayline_approval_summary';
 
 	/**
 	 * The verbs this builder enriches.
@@ -95,7 +95,7 @@ final class PublishSummary {
 	 * through unchanged.
 	 *
 	 * Agent Safety's `$verb` is the ABILITY ID at the gate seam that governs
-	 * this plugin (see {@see \Specflux\SenroFlux\Packs\Pack}), so it is
+	 * this plugin (see {@see \Specflux\SiteAgent\Packs\Pack}), so it is
 	 * resolved through the pack's own predicate before the Tier-2 test — a
 	 * plain `'pages/publish' === $verb` comparison here would never match a
 	 * real approval row.
@@ -133,7 +133,7 @@ final class PublishSummary {
 
 		$id      = (int) $input['id'];
 		$title   = function_exists( 'get_the_title' ) ? (string) get_the_title( $id ) : '';
-		$title   = '' !== $title ? $title : __( 'Untitled', 'senroflux' );
+		$title   = '' !== $title ? $title : __( 'Untitled', 'specflux-site-agent' );
 		$preview = function_exists( 'get_preview_post_link' ) ? (string) get_preview_post_link( $id ) : '';
 		$edit    = function_exists( 'get_edit_post_link' ) ? (string) get_edit_post_link( $id, 'raw' ) : '';
 		$preview = '' !== $preview ? $preview : '';
@@ -167,7 +167,7 @@ final class PublishSummary {
 	 * The page's pattern sequence — `hero › pricing-table › faq › cta` — read
 	 * from the STORED post content, which is the markup this approval would
 	 * publish. Each top-level block carries the canonical `metadata.name` the
-	 * pack's Validator normalised on write (`senroflux/<slug>`); a block
+	 * pack's Validator normalised on write (`specflux/<slug>`); a block
 	 * without one is skipped rather than guessed at.
 	 *
 	 * @param int $id The post id.

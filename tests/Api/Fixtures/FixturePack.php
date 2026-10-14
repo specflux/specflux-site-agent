@@ -1,32 +1,32 @@
 <?php
 /**
- * A minimal third-party capability pack, built ONLY from `@api` SenroFlux
+ * A minimal third-party capability pack, built ONLY from `@api` Specflux Site Agent
  * symbols (S23). Exists to prove the declared extension surface is enough
  * to write a real pack outside the plugin's own source tree — see
  * `tests/Api/FixturePackTest.php`.
  *
- * DELIBERATE CONSTRAINT: every `use Specflux\SenroFlux\...` import below, and
- * every fully-qualified `Specflux\SenroFlux\...` reference in this file's
+ * DELIBERATE CONSTRAINT: every `use Specflux\SiteAgent\...` import below, and
+ * every fully-qualified `Specflux\SiteAgent\...` reference in this file's
  * body, must be one of Pack / Skill / SkillSource / SetupCheck (the declared
  * `@api` symbols a pack is written against) — `FixturePackStaticCheckTest`
  * enforces this mechanically, not just by convention.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Api\Fixtures;
+namespace Specflux\SiteAgent\Tests\Api\Fixtures;
 
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Setup\SetupCheck;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Setup\SetupCheck;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 /**
  * A trivial two-role, two-tier pack: a Tier-0 read and a Tier-1 write, both
- * resolved to the `senroflux/` polyfill namespace (the default
+ * resolved to the `specflux/` polyfill namespace (the default
  * `abilityNamespaces()` — never overridden here, since the default is
  * already `@api`-safe and needs no fixture ability to be registered for
  * `resolveAbilities()`/`allowList()` to work: the LAST namespace in the list
@@ -56,8 +56,8 @@ final class FixturePack extends Pack {
 	 */
 	public function verbMap(): array {
 		return array(
-			'senroflux/fixture-read'  => 0,
-			'senroflux/fixture-write' => 1,
+			'specflux/fixture-read'  => 0,
+			'specflux/fixture-write' => 1,
 		);
 	}
 

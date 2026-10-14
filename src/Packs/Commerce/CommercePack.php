@@ -6,37 +6,37 @@
  *
  * TARGET REPO PATH: src/Packs/Commerce/CommercePack.php
  *
- * `abilityNamespaces()` = `['woocommerce/', 'senroflux/']` (S19): a role
+ * `abilityNamespaces()` = `['woocommerce/', 'specflux/']` (S19): a role
  * resolves to Woo's own session ability when it is registered and
  * shape-compatible, else this pack's own polyfill — the pattern S9
  * generalised, applied here to a THIRD-PARTY namespace for the first time.
  *
  * `requiresAgentSafety()` is true (S19): the commerce pack is USELESS
- * without Agent Safety, because it governs only `senroflux/*`
+ * without Agent Safety, because it governs only `specflux/*`
  * ({@see governedNamespaces()}, unchanged base default) — Woo's own session
  * abilities are governed by Agent Safety's Woo integration module, which
  * does not exist in built-in-gate mode at all. Registered whenever
  * WooCommerce is active (composition root), independent of Agent Safety, so
  * its blocking setup check can still show and explain why Start is dead.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce;
+namespace Specflux\SiteAgent\Packs\Commerce;
 
-use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\Woo\WooPlatform;
-use Specflux\SenroFlux\Packs\Content\Media;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Setup\SetupCheck;
-use Specflux\SenroFlux\Skills\Skill;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\PlatformSelection;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\Woo\WooPlatform;
+use Specflux\SiteAgent\Packs\Content\Media;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Setup\SetupCheck;
+use Specflux\SiteAgent\Skills\Skill;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 // Bail on direct access.
@@ -104,7 +104,7 @@ final class CommercePack extends Pack {
 
 	/**
 	 * Apply a role's platform `shape` when the call resolved to the platform's
-	 * native ability (never to the `senroflux/` polyfill).
+	 * native ability (never to the `specflux/` polyfill).
 	 *
 	 * @param string              $ability The concrete ability id.
 	 * @param array<string,mixed> $input   The pack-shaped input.
@@ -138,7 +138,7 @@ final class CommercePack extends Pack {
 
 	/**
 	 * @return list<string> The selected platform's namespaces, ending in the
-	 *                       polyfill namespace (required by {@see \Specflux\SenroFlux\Packs\PackRegistry::register()}).
+	 *                       polyfill namespace (required by {@see \Specflux\SiteAgent\Packs\PackRegistry::register()}).
 	 */
 	public function abilityNamespaces(): array {
 		return $this->platform()->abilityNamespaces();
@@ -256,7 +256,7 @@ final class CommercePack extends Pack {
 	/**
 	 * Products keep their bare post id; every other kind a commerce run
 	 * writes is qualified so it cannot collide with a product, and so the
-	 * report can resolve it ({@see \Specflux\SenroFlux\Packs\ObjectLookup}).
+	 * report can resolve it ({@see \Specflux\SiteAgent\Packs\ObjectLookup}).
 	 * `order-read` carries the order prefix too, which is what makes an
 	 * order a verifiable write — nothing reads a coupon, zone, tax rate,
 	 * saved report page or generated image back.
@@ -289,7 +289,7 @@ final class CommercePack extends Pack {
 	 * (`order-add-note` also carries the private-note verb; `orders-refund`
 	 * has no grantable sibling but is still named here so the rule reads as
 	 * one list rather than one special case), and
-	 * {@see \Specflux\SenroFlux\Run\Runner::poisonedGateVerbs()} (S19 stage
+	 * {@see \Specflux\SiteAgent\Run\Runner::poisonedGateVerbs()} (S19 stage
 	 * 12 guard) already refuses to let a grant issued for the private-note
 	 * verb be spent on a customer-visible note instead — see that method's
 	 * docblock for why "no grant at all" is the only safe reading for a
@@ -380,7 +380,7 @@ final class CommercePack extends Pack {
 	 * unchanged.
 	 *
 	 * @param int $user_id The user the run would be started for.
-	 * @return list<\Specflux\SenroFlux\Setup\SetupCheck>
+	 * @return list<\Specflux\SiteAgent\Setup\SetupCheck>
 	 */
 	public function setupChecks( int $user_id ): array {
 		if ( GateMode::BuiltIn === Plugin::currentGateMode() ) {
@@ -397,30 +397,30 @@ final class CommercePack extends Pack {
 
 	/** The `commerce/platform` check: several governed platforms, none chosen. */
 	private function platformCheck(): SetupCheck {
-		$message = __( 'More than one store platform is active. Choose which one SenroFlux should use in SenroFlux > Settings.', 'senroflux' );
+		$message = __( 'More than one store platform is active. Choose which one Specflux Site Agent should use in Specflux Site Agent > Settings.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			'commerce/platform',
 			SetupCheck::BLOCKING,
 			false,
 			$message,
-			function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=senroflux-settings' ) : null,
+			function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=specflux-site-agent-settings' ) : null,
 			StorePlatforms::CAPABILITY,
-			__( 'More than one store platform is active. Ask a site administrator to choose which one SenroFlux should use.', 'senroflux' ),
+			__( 'More than one store platform is active. Ask a site administrator to choose which one Specflux Site Agent should use.', 'specflux-site-agent' ),
 			'store_platform_unselected'
 		);
 	}
 
 	/** The `commerce/agent-safety` setup check (S19). */
 	private function agentSafetyCheck(): SetupCheck {
-		$message = __( 'The commerce pack needs the SenroGate plugin active — without it, WooCommerce writes have no governance to run under.', 'senroflux' );
+		$message = __( 'The commerce pack needs the Belayline Agent Governance plugin active — without it, WooCommerce writes have no governance to run under.', 'specflux-site-agent' );
 
 		return new SetupCheck(
 			'commerce/agent-safety',
 			SetupCheck::BLOCKING,
 			false,
 			$message,
-			function_exists( 'admin_url' ) ? admin_url( 'plugin-install.php?s=agent-safety&tab=search&type=term' ) : null,
+			function_exists( 'admin_url' ) ? admin_url( 'plugin-install.php?s=belayline-agent-governance&tab=search&type=term' ) : null,
 			'install_plugins',
 			$message,
 			'pack_requires_agent_safety'
@@ -429,17 +429,17 @@ final class CommercePack extends Pack {
 
 	/**
 	 * The Agent Safety pack descriptor (S19), registered on
-	 * `agent_safety_pack_registry`. Same reading as the pages pack's own
-	 * (see {@see \Specflux\SenroFlux\Packs\Pages\PagesPack::agentSafetyPack()}
+	 * `belayline_pack_registry`. Same reading as the pages pack's own
+	 * (see {@see \Specflux\SiteAgent\Packs\Pages\PagesPack::agentSafetyPack()}
 	 * for the full rationale): `allow` is the RESOLVED ability list, and
 	 * every Tier-2 ability is approval-gated.
 	 */
 	public function agentSafetyPack(): ?object {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return null;
 		}
 
-		return new \Specflux\AgentSafety\Packs\Pack(
+		return new \Belayline\Packs\Pack(
 			name: 'commerce',
 			allow: $this->allowList(),
 			approvalByClass: array( 'tier2' => true ),
@@ -454,13 +454,13 @@ final class CommercePack extends Pack {
 	 * @return WP_Error|null null when bound, else pack_unbound.
 	 */
 	protected function agentSafetyBindingError( int $user_id ): ?WP_Error {
-		if ( ! function_exists( 'agent_safety' ) || null === agent_safety() ) {
+		if ( ! function_exists( 'belayline' ) || null === belayline() ) {
 			return $this->packUnboundError();
 		}
 
-		if ( ! class_exists( \Specflux\AgentSafety\Plugin\Support\PackResolver::class )
-			|| ! class_exists( \Specflux\AgentSafety\Packs\Pack::class )
-			|| ! class_exists( \Specflux\AgentSafety\Policy\Tier::class )
+		if ( ! class_exists( \Belayline\Plugin\Support\PackResolver::class )
+			|| ! class_exists( \Belayline\Packs\Pack::class )
+			|| ! class_exists( \Belayline\Policy\Tier::class )
 		) {
 			return $this->packUnboundError();
 		}
@@ -476,7 +476,7 @@ final class CommercePack extends Pack {
 			}
 		}
 
-		if ( ! $resolved->requiresApproval( \Specflux\AgentSafety\Policy\Tier::Irreversible ) ) {
+		if ( ! $resolved->requiresApproval( \Belayline\Policy\Tier::Irreversible ) ) {
 			return $this->packUnboundError();
 		}
 
@@ -488,10 +488,10 @@ final class CommercePack extends Pack {
 	 * (`user:N` then `role:<slug>`) resolves to a pack, else the registry
 	 * default (fail-closed `default-agent`).
 	 *
-	 * @return \Specflux\AgentSafety\Packs\Pack|null
+	 * @return \Belayline\Packs\Pack|null
 	 */
-	private function resolveAsPackForUser( int $user_id ): ?\Specflux\AgentSafety\Packs\Pack {
-		$resolver = new \Specflux\AgentSafety\Plugin\Support\PackResolver();
+	private function resolveAsPackForUser( int $user_id ): ?\Belayline\Packs\Pack {
+		$resolver = new \Belayline\Plugin\Support\PackResolver();
 		$registry = $resolver->registry();
 		$bindings = $registry->bindings();
 
@@ -533,7 +533,7 @@ final class CommercePack extends Pack {
 	private function packUnboundError(): WP_Error {
 		return new WP_Error(
 			'pack_unbound',
-			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the commerce pack.', 'senroflux' ),
+			__( 'This pack is not bound to your user. Ask an administrator to bind `user:N` or `role:administrator` to the commerce pack.', 'specflux-site-agent' ),
 			array( 'status' => 400 )
 		);
 	}

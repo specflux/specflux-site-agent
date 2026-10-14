@@ -61,7 +61,7 @@ describe( 'PreviewPane', () => {
 		expect( toggle ).toHaveAttribute( 'aria-expanded', 'true' );
 		fireEvent.click( toggle );
 		expect( screen.getByRole( 'button', { name: 'Show preview' } ) ).toHaveAttribute( 'aria-expanded', 'false' );
-		expect( document.getElementById( 'senroflux-preview-body' ) ).not.toBeVisible();
+		expect( document.getElementById( 'specflux-site-agent-preview-body' ) ).not.toBeVisible();
 		unmount();
 
 		// Same user, fresh mount: still collapsed. Another user: expanded.

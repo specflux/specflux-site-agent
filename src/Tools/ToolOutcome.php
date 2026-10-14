@@ -2,12 +2,12 @@
 /**
  * The outcome of one tool call, before any model turn.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -20,7 +20,7 @@ defined( 'ABSPATH' ) || exit;
  *   - denied            — the gate refused; carries code + message. execute()
  *                         was NEVER called.
  *   - unknown_tool      — no such ability; never executed either.
- *   - hold              — 0.4 S5: SenroGate refused the call for a TRANSIENT
+ *   - hold              — 0.4 S5: Belayline Agent Governance refused the call for a TRANSIENT
  *                         reason (`site_paused` or a `rate_limited_*` window).
  *                         Never executed; the run parks and retries the same
  *                         call later. `errorCode` carries the reason.
@@ -65,26 +65,26 @@ final class ToolOutcome {
 	}
 
 	/**
-	 * A transient SenroGate refusal (pause / rate-limit window) — never
+	 * A transient Belayline Agent Governance refusal (pause / rate-limit window) — never
 	 * executed; the call is retried when the hold lifts.
 	 *
 	 * @param string $reason  `site_paused` or `rate_limited_<rule>`.
-	 * @param string $message SenroGate's own denial text (kept for audit).
+	 * @param string $message Belayline Agent Governance's own denial text (kept for audit).
 	 */
 	public static function hold( string $reason, string $message ): self {
 		return new self( 'hold', errorCode: $reason, errorMessage: $message );
 	}
 
 	/**
-	 * The transient reason inside a SenroGate `agent_safety_denied` error, or
-	 * null when it is any other denial. SenroGate puts the machine reason in
+	 * The transient reason inside a Belayline Agent Governance `belayline_denied` error, or
+	 * null when it is any other denial. Belayline Agent Governance puts the machine reason in
 	 * the error data (`reason`); older builds carried it only in the message
-	 * ("Blocked by SenroGate (<pack>): <reason>"), so that stays as a fallback.
+	 * ("Blocked by Belayline Agent Governance (<pack>): <reason>"), so that stays as a fallback.
 	 *
 	 * @param array<mixed>|mixed $data The WP_Error data, when there is any.
 	 */
 	public static function transientReason( string $code, string $message, mixed $data = null ): ?string {
-		if ( 'agent_safety_denied' !== $code ) {
+		if ( 'belayline_denied' !== $code ) {
 			return null;
 		}
 		if ( is_array( $data ) && is_string( $data['reason'] ?? null ) && '' !== $data['reason'] ) {
@@ -105,13 +105,13 @@ final class ToolOutcome {
 	public static function unknownTool( string $name, array $suggestions = array() ): self {
 		$message = sprintf(
 			/* translators: %s: the tool name the model called. */
-			__( 'Unknown tool "%s". Call one of the tools you were given, by its exact name.', 'senroflux' ),
+			__( 'Unknown tool "%s". Call one of the tools you were given, by its exact name.', 'specflux-site-agent' ),
 			$name
 		);
 		if ( array() !== $suggestions ) {
 			$message .= ' ' . sprintf(
 				/* translators: %s: comma-separated exact tool names. */
-				__( 'Closest matches: %s.', 'senroflux' ),
+				__( 'Closest matches: %s.', 'specflux-site-agent' ),
 				implode( ', ', $suggestions )
 			);
 		}

@@ -1,16 +1,16 @@
 <?php
 /**
- * Test-only stand-ins for SenroGate's Capability Pack surface (Pack value
+ * Test-only stand-ins for Belayline Agent Governance's Capability Pack surface (Pack value
  * object, Tier enum, PackResolver/registry): only the shape the harness reads.
  *
  * LOAD ONLY FROM A SEPARATE-PROCESS TEST: defining these flips every
  * `class_exists( ...\Packs\Pack::class )` probe in the harness, which other
  * tests assume is false.
  *
- * Knobs: $GLOBALS['senroflux_test_as_packs'] (name => Pack) and
- * $GLOBALS['senroflux_test_as_bindings'] (token => pack name).
+ * Knobs: $GLOBALS['specflux_site_agent_test_as_packs'] (name => Pack) and
+ * $GLOBALS['specflux_site_agent_test_as_bindings'] (token => pack name).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );

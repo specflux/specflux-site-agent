@@ -1,9 +1,9 @@
 /**
  * Scripted turn builders fed to the fake provider's option-backed queue
- * (`senroflux_e2e_script`, consumed one step per model turn — S9). Every
+ * (`specflux_site_agent_e2e_script`, consumed one step per model turn — S9). Every
  * ability call uses the real `wpab__<namespace>__<name>` tool-name shape a
  * live model would receive from ToolRegistry (mirrors the raw
- * `wpab__senroflux__create-post` regression finding), never a shortcut form.
+ * `wpab__specflux__create-post` regression finding), never a shortcut form.
  */
 
 const call = ( name, args = {} ) => ( { type: 'calls', calls: [ { name, args } ] } );
@@ -19,26 +19,26 @@ const PLAN_GOAL = 'Build the launch page';
  */
 function fullTour() {
 	return [
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal: PLAN_GOAL,
 			steps: [
-				{ text: 'Create the launch post', verbs: [ 'senroflux-e2e/create-thing' ] },
+				{ text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] },
 			],
 			assumptions: [ 'Draft only, never published by this run.' ],
 		} ),
-		call( 'senroflux__ask-user', {
+		call( 'specflux__ask-user', {
 			text: 'What should the launch post be titled?',
 			choices: [ 'Launch Day', 'Big Launch' ],
 			rationale: 'Need a title before drafting.',
 		} ),
-		call( 'wpab__senroflux-e2e__read-thing', { id: 'thing-1' } ),
-		call( 'wpab__senroflux-e2e__list-things', {} ),
-		call( 'wpab__senroflux-e2e__search-things', { query: 'launch' } ),
-		call( 'wpab__senroflux-e2e__create-thing', { title: 'Launch Day' } ),
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-1' } ),
+		call( 'wpab__specflux-e2e__list-things', {} ),
+		call( 'wpab__specflux-e2e__search-things', { query: 'launch' } ),
+		call( 'wpab__specflux-e2e__create-thing', { title: 'Launch Day' } ),
 		// Stage 22b: re-read the new thing (the fixture's first created id is
 		// `thing-3`), so the report's row is "verified".
-		call( 'wpab__senroflux-e2e__read-thing', { id: 'thing-3' } ),
-		call( 'senroflux__suggest-brief-addition', {
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-3' } ),
+		call( 'specflux__suggest-brief-addition', {
 			text: 'Mention the launch post in the weekly newsletter.',
 		} ),
 		text( 'All done — created the launch post and left a suggestion for your site brief.' ),
@@ -58,19 +58,19 @@ function fullTour() {
  */
 function keyboardTour() {
 	return [
-		call( 'senroflux__ask-user', {
+		call( 'specflux__ask-user', {
 			text: 'Which section should this go under?',
 			choices: [ 'News', 'Announcements' ],
 			rationale: 'Need a section before drafting.',
 		} ),
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal: PLAN_GOAL,
 			steps: [
-				{ text: 'Create the launch post', verbs: [ 'senroflux-e2e/create-thing' ] },
+				{ text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] },
 			],
 			assumptions: [],
 		} ),
-		call( 'wpab__senroflux-e2e__create-thing', { title: 'Launch Day' } ),
+		call( 'wpab__specflux-e2e__create-thing', { title: 'Launch Day' } ),
 		text( 'Done.' ),
 	];
 }
@@ -83,12 +83,12 @@ function keyboardTour() {
  */
 function unverifiedWrite() {
 	return [
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal: PLAN_GOAL,
-			steps: [ { text: 'Create the launch post', verbs: [ 'senroflux-e2e/create-thing' ] } ],
+			steps: [ { text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] } ],
 			assumptions: [],
 		} ),
-		call( 'wpab__senroflux-e2e__create-thing', { title: 'Launch Day' } ),
+		call( 'wpab__specflux-e2e__create-thing', { title: 'Launch Day' } ),
 		text( 'Created the launch post.' ),
 		text( 'Done.' ),
 	];
@@ -101,13 +101,13 @@ function unverifiedWrite() {
  */
 function writeThenQuestion() {
 	return [
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal: PLAN_GOAL,
-			steps: [ { text: 'Create the launch post', verbs: [ 'senroflux-e2e/create-thing' ] } ],
+			steps: [ { text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] } ],
 			assumptions: [],
 		} ),
-		call( 'wpab__senroflux-e2e__create-thing', { title: 'Launch Day' } ),
-		call( 'senroflux__ask-user', {
+		call( 'wpab__specflux-e2e__create-thing', { title: 'Launch Day' } ),
+		call( 'specflux__ask-user', {
 			text: 'Which section next?',
 			choices: [ 'News', 'Announcements' ],
 			rationale: 'Need a section.',
@@ -124,9 +124,9 @@ function quickComplete() {
 /** A run that parks on its very first turn (a plan) and nothing else. */
 function planOnly( goal = PLAN_GOAL ) {
 	return [
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal,
-			steps: [ { text: 'Create the launch post', verbs: [ 'senroflux-e2e/create-thing' ] } ],
+			steps: [ { text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] } ],
 			assumptions: [],
 		} ),
 	];
@@ -141,7 +141,7 @@ function planOnly( goal = PLAN_GOAL ) {
  */
 function readBeforeAnyPlan() {
 	return [
-		call( 'wpab__senroflux-e2e__read-thing', { id: 'thing-1' } ),
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-1' } ),
 		text( 'Read thing-1. Nothing else to do.' ),
 	];
 }
@@ -154,18 +154,18 @@ function readBeforeAnyPlan() {
  */
 function publishTwice() {
 	return [
-		call( 'senroflux__propose-plan', {
+		call( 'specflux__propose-plan', {
 			goal: PLAN_GOAL,
 			steps: [
-				{ text: 'Publish the first thing', verbs: [ 'senroflux-e2e/publish-thing' ] },
-				{ text: 'Publish the second thing', verbs: [ 'senroflux-e2e/publish-thing' ] },
+				{ text: 'Publish the first thing', verbs: [ 'specflux-e2e/publish-thing' ] },
+				{ text: 'Publish the second thing', verbs: [ 'specflux-e2e/publish-thing' ] },
 			],
 			assumptions: [],
 		} ),
-		call( 'wpab__senroflux-e2e__publish-thing', { title: 'First' } ),
-		call( 'wpab__senroflux-e2e__publish-thing', { title: 'Second' } ),
-		call( 'wpab__senroflux-e2e__read-thing', { id: 'thing-3' } ),
-		call( 'wpab__senroflux-e2e__read-thing', { id: 'thing-4' } ),
+		call( 'wpab__specflux-e2e__publish-thing', { title: 'First' } ),
+		call( 'wpab__specflux-e2e__publish-thing', { title: 'Second' } ),
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-3' } ),
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-4' } ),
 		text( 'Published both.' ),
 		text( 'Done.' ),
 	];

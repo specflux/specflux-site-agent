@@ -8,8 +8,8 @@
  * verification at all, forged or replayed.
  *
  *  - `check_admin_referer()` (every admin-post approval/plan/answer/cancel/
- *    suggestion handler in {@see \Specflux\SenroFlux\Admin\RunsScreen} and
- *    {@see \Specflux\SenroFlux\Admin\SettingsScreen}) is a hard no-op that
+ *    suggestion handler in {@see \Specflux\SiteAgent\Admin\RunsScreen} and
+ *    {@see \Specflux\SiteAgent\Admin\SettingsScreen}) is a hard no-op that
  *    unconditionally returns true — see tests/bootstrap.php's
  *    `check_admin_referer()` shim.
  *  - `check_ajax_referer()` (every `Ajax::handle*()` method) is likewise a
@@ -35,17 +35,17 @@
  * owns and could still prove — that every mutating admin-post/admin-ajax
  * handler CALLS a referer check before acting — is already asserted
  * structurally by reading the handler bodies (see the docblocks on
- * {@see \Specflux\SenroFlux\Admin\RunsScreen::handleApprovalDecision()} and
- * {@see \Specflux\SenroFlux\Http\Ajax::handleTick()}), not by a PHPUnit
+ * {@see \Specflux\SiteAgent\Admin\RunsScreen::handleApprovalDecision()} and
+ * {@see \Specflux\SiteAgent\Http\Ajax::handleTick()}), not by a PHPUnit
  * assertion, since the call site itself is unconditional and syntactic,
  * not data-driven.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Adversarial;
+namespace Specflux\SiteAgent\Tests\Adversarial;
 
 use PHPUnit\Framework\TestCase;
 
@@ -77,7 +77,7 @@ final class ApprovalNonceTest extends TestCase {
 			'tests/e2e/specs/adversarial-nonce.spec.js ("a replayed decision request ' .
 			'(stale step_count) does not execute twice") — that spec\'s replay case is ' .
 			'refused by Runner::tick()\'s step_count staleness check ' .
-			'(senroflux_conflict), not by nonce single-use semantics, since a WordPress ' .
+			'(specflux_site_agent_conflict), not by nonce single-use semantics, since a WordPress ' .
 			'nonce stays valid for its whole ~24h window and is not one-time-use. Still ' .
 			'incomplete here for the same no-seam reason as the forged case.'
 		);

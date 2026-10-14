@@ -7,7 +7,7 @@
 import { startRun, fetchSetupState, tickRun, saveSetupBrief } from '../api';
 
 describe( 'startRun', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
 
 	beforeEach( () => {
 		global.fetch = jest.fn().mockResolvedValue( {
@@ -22,8 +22,8 @@ describe( 'startRun', () => {
 		const [ , options ] = global.fetch.mock.calls[ 0 ];
 		const body = new URLSearchParams( options.body.toString() );
 
-		expect( body.get( 'action' ) ).toBe( 'senroflux_start' );
-		expect( body.get( 'consumer' ) ).toBe( 'senroflux-admin' );
+		expect( body.get( 'action' ) ).toBe( 'specflux_site_agent_start' );
+		expect( body.get( 'consumer' ) ).toBe( 'specflux-site-agent-admin' );
 		expect( body.get( 'goal' ) ).toBe( 'Publish the spring page' );
 		expect( body.get( 'pack' ) ).toBe( 'pages' );
 	} );
@@ -45,7 +45,7 @@ describe( 'startRun', () => {
  * sent before the model picker existed.
  */
 describe( 'startRun model params', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'abc', ajaxUrl: 'http://example.test/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc', ajaxUrl: 'http://example.test/admin-ajax.php' };
 
 	beforeEach( () => {
 		global.fetch = jest.fn().mockResolvedValue( {
@@ -82,7 +82,7 @@ describe( 'startRun model params', () => {
 } );
 
 describe( 'startRun follow-up (stage 22b)', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
 
 	beforeEach( () => {
 		global.fetch = jest.fn().mockResolvedValue( {
@@ -106,28 +106,28 @@ describe( 'startRun follow-up (stage 22b)', () => {
 } );
 
 describe( 'fetchSetupState (stage 22b, J1)', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
 
 	it( 'posts the setup-panel action and returns the state', async () => {
 		global.fetch = jest.fn().mockResolvedValue( {
 			json: () =>
 				Promise.resolve( {
 					success: true,
-					data: { html: '<div id="senroflux-setup-panel"></div>', start_enabled: true, packs: [], unavailable_packs: [] },
+					data: { html: '<div id="specflux-site-agent-setup-panel"></div>', start_enabled: true, packs: [], unavailable_packs: [] },
 				} ),
 		} );
 
 		const state = await fetchSetupState( config );
 
 		const body = new URLSearchParams( global.fetch.mock.calls[ 0 ][ 1 ].body.toString() );
-		expect( body.get( 'action' ) ).toBe( 'senroflux_setup_panel' );
+		expect( body.get( 'action' ) ).toBe( 'specflux_site_agent_setup_panel' );
 		expect( body.get( 'nonce' ) ).toBe( 'abc123' );
 		expect( state.start_enabled ).toBe( true );
 	} );
 } );
 
 describe( 'saveSetupBrief (guided setup)', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
 
 	it( 'posts the save action with the brief and returns the refreshed steps', async () => {
 		global.fetch = jest.fn().mockResolvedValue( { json: () => Promise.resolve( { success: true, data: { steps: [ { id: 'provider' } ] } } ) } );
@@ -135,7 +135,7 @@ describe( 'saveSetupBrief (guided setup)', () => {
 		const result = await saveSetupBrief( 'save', 'We sell bicycles.', config );
 
 		const body = new URLSearchParams( global.fetch.mock.calls[ 0 ][ 1 ].body.toString() );
-		expect( body.get( 'action' ) ).toBe( 'senroflux_setup_brief' );
+		expect( body.get( 'action' ) ).toBe( 'specflux_site_agent_setup_brief' );
 		expect( body.get( 'brief_action' ) ).toBe( 'save' );
 		expect( body.get( 'brief' ) ).toBe( 'We sell bicycles.' );
 		expect( result.steps ).toHaveLength( 1 );
@@ -152,7 +152,7 @@ describe( 'saveSetupBrief (guided setup)', () => {
 } );
 
 describe( 'an expired session', () => {
-	const config = { consumer: 'senroflux-admin', nonce: 'stale', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
+	const config = { consumer: 'specflux-site-agent-admin', nonce: 'stale', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
 
 	it( 'turns admin-ajax\'s bare "-1" 403 into a reload instruction', async () => {
 		// Live J5 (simulated 24h gap): a tab left open past its nonce clicked
@@ -164,7 +164,7 @@ describe( 'an expired session', () => {
 		} );
 
 		await expect( tickRun( 7, 12, { action: 'approve' }, config ) ).rejects.toMatchObject( {
-			code: 'senroflux_session_expired',
+			code: 'specflux_site_agent_session_expired',
 			message: 'This page has expired. Reload it to continue.',
 		} );
 	} );
@@ -172,11 +172,11 @@ describe( 'an expired session', () => {
 	it( 'keeps the server\'s own message for an ordinary refusal', async () => {
 		global.fetch = jest.fn().mockResolvedValue( {
 			status: 409,
-			json: () => Promise.resolve( { success: false, data: { code: 'senroflux_conflict', message: 'The run advanced.' } } ),
+			json: () => Promise.resolve( { success: false, data: { code: 'specflux_site_agent_conflict', message: 'The run advanced.' } } ),
 		} );
 
 		await expect( tickRun( 7, 12, null, config ) ).rejects.toMatchObject( {
-			code: 'senroflux_conflict',
+			code: 'specflux_site_agent_conflict',
 			message: 'The run advanced.',
 		} );
 	} );

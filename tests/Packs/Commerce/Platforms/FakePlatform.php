@@ -2,14 +2,14 @@
 /**
  * A test store platform with mutable detection.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatform;
 use WP_Error;
 
 final class FakePlatform implements StorePlatform {
@@ -24,7 +24,7 @@ final class FakePlatform implements StorePlatform {
 	public function __construct(
 		private readonly string $id,
 		bool $governed = true,
-		private readonly array $namespaces = array( 'fake/', 'senroflux/' ),
+		private readonly array $namespaces = array( 'fake/', 'specflux/' ),
 		private readonly string $capability = 'manage_fake'
 	) {
 		$this->governed = $governed;

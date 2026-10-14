@@ -2,23 +2,23 @@
 /**
  * Shared fixtures for the OAuth suites.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Connector\OAuth\Authorize;
-use Specflux\SenroFlux\Connector\OAuth\Bearer;
-use Specflux\SenroFlux\Connector\OAuth\OAuth;
-use Specflux\SenroFlux\Connector\OAuth\Page;
-use Specflux\SenroFlux\Connector\OAuth\Registration;
-use Specflux\SenroFlux\Connector\OAuth\Ssrf;
-use Specflux\SenroFlux\Connector\OAuth\Token;
-use Specflux\SenroFlux\Run\Clock;
-use Specflux\SenroFlux\Tests\Connector\ConnectorTestCase;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Connector\OAuth\Authorize;
+use Specflux\SiteAgent\Connector\OAuth\Bearer;
+use Specflux\SiteAgent\Connector\OAuth\OAuth;
+use Specflux\SiteAgent\Connector\OAuth\Page;
+use Specflux\SiteAgent\Connector\OAuth\Registration;
+use Specflux\SiteAgent\Connector\OAuth\Ssrf;
+use Specflux\SiteAgent\Connector\OAuth\Token;
+use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Tests\Connector\ConnectorTestCase;
 
 require_once dirname( __DIR__, 2 ) . '/stubs/oauth.php';
 
@@ -29,10 +29,10 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$GLOBALS['senroflux_test_transients']           = array();
-		$GLOBALS['senroflux_test_logged_in']            = true;
-		$GLOBALS['senroflux_test_remote_get_calls']     = array();
-		$GLOBALS['senroflux_test_remote_get_responses'] = array();
+		$GLOBALS['specflux_site_agent_test_transients']           = array();
+		$GLOBALS['specflux_site_agent_test_logged_in']            = true;
+		$GLOBALS['specflux_site_agent_test_remote_get_calls']     = array();
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'] = array();
 		$_GET = array();
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['REQUEST_URI'] );
 		$this->asFrontController();
@@ -47,8 +47,8 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 		Bearer::reset();
 		$_GET = array();
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REQUEST_URI'] );
-		$GLOBALS['senroflux_test_logged_in'] = true;
-		unset( $GLOBALS['senroflux_test_is_admin'], $GLOBALS['senroflux_test_doing_ajax'], $GLOBALS['senroflux_test_doing_cron'], $GLOBALS['pagenow'], $_SERVER['SCRIPT_FILENAME'] );
+		$GLOBALS['specflux_site_agent_test_logged_in'] = true;
+		unset( $GLOBALS['specflux_site_agent_test_is_admin'], $GLOBALS['specflux_site_agent_test_doing_ajax'], $GLOBALS['specflux_site_agent_test_doing_cron'], $GLOBALS['pagenow'], $_SERVER['SCRIPT_FILENAME'] );
 		parent::tearDown();
 	}
 
@@ -84,7 +84,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 				'code_challenge_method' => 'S256',
 				'state'                 => 'xyz',
 				'resource'              => OAuth::serverUrl(),
-				'scope'                 => 'senroflux:read senroflux:write',
+				'scope'                 => 'specflux:read specflux:write',
 			),
 			$override
 		);
@@ -92,7 +92,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 
 	/** POST the consent form for these params. */
 	protected function decide( array $params, string $decision = 'approve', string $grant = 'read', ?string $nonce = null ): Page {
-		$action = 'senroflux_oauth_consent_' . substr( OAuth::hash( $params['client_id'] . '|' . $params['code_challenge'] ), 0, 24 );
+		$action = 'specflux_site_agent_oauth_consent_' . substr( OAuth::hash( $params['client_id'] . '|' . $params['code_challenge'] ), 0, 24 );
 
 		return Authorize::run(
 			'POST',
@@ -171,10 +171,10 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 	protected function asFrontController(): void {
 		$GLOBALS['pagenow']         = 'index.php';
 		$_SERVER['SCRIPT_FILENAME'] = ABSPATH . 'index.php';
-		unset( $GLOBALS['senroflux_test_is_admin'], $GLOBALS['senroflux_test_doing_ajax'], $GLOBALS['senroflux_test_doing_cron'] );
+		unset( $GLOBALS['specflux_site_agent_test_is_admin'], $GLOBALS['specflux_site_agent_test_doing_ajax'], $GLOBALS['specflux_site_agent_test_doing_cron'] );
 	}
 
-	protected function asMcpRequest( ?string $token, string $path = '/wp-json/senroflux/mcp' ): void {
+	protected function asMcpRequest( ?string $token, string $path = '/wp-json/specflux-site-agent/mcp' ): void {
 		Bearer::reset();
 		$_SERVER['REQUEST_URI'] = $path;
 		unset( $_SERVER['HTTP_AUTHORIZATION'] );

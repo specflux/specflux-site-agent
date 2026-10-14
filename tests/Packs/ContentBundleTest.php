@@ -1,27 +1,27 @@
 <?php
 /**
- * The combined `senroflux-content` SenroGate pack (onboarding O3): one role
+ * The combined `specflux-content` Belayline Agent Governance pack (onboarding O3): one role
  * binding unlocks the pages, posts and site packs, and nothing more.
  *
- * Separate-process on purpose: the SenroGate pack stand-ins flip the
+ * Separate-process on purpose: the Belayline Agent Governance pack stand-ins flip the
  * `class_exists` probes other tests rely on being false.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
-use Specflux\AgentSafety\Packs\Pack as AsPack;
-use Specflux\SenroFlux\Packs\ContentBundle;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Plugin;
+use Belayline\Packs\Pack as AsPack;
+use Specflux\SiteAgent\Packs\ContentBundle;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Plugin;
 
 final class ContentBundleTest extends TestCase {
 
@@ -29,12 +29,12 @@ final class ContentBundleTest extends TestCase {
 		require_once dirname( __DIR__ ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__ ) . '/stubs/agent-safety-pack.php';
 		Plugin::reset();
-		$GLOBALS['senroflux_test_agent_safety'] = new \SenroFlux_Test_AgentSafety();
-		$GLOBALS['senroflux_test_users']        = array(
+		$GLOBALS['specflux_site_agent_test_agent_safety'] = new \SpecfluxSiteAgent_Test_AgentSafety();
+		$GLOBALS['specflux_site_agent_test_users']        = array(
 			7 => (object) array( 'roles' => array( 'administrator' ) ),
 		);
-		$GLOBALS['senroflux_test_as_bindings']  = array();
-		$GLOBALS['senroflux_test_as_packs']     = array();
+		$GLOBALS['specflux_site_agent_test_as_bindings']  = array();
+		$GLOBALS['specflux_site_agent_test_as_packs']     = array();
 	}
 
 	/** @return list<string> */
@@ -51,8 +51,8 @@ final class ContentBundleTest extends TestCase {
 	}
 
 	private function bind( AsPack $pack ): void {
-		$GLOBALS['senroflux_test_as_packs']    = array( $pack->name => $pack );
-		$GLOBALS['senroflux_test_as_bindings'] = array( 'role:administrator' => $pack->name );
+		$GLOBALS['specflux_site_agent_test_as_packs']    = array( $pack->name => $pack );
+		$GLOBALS['specflux_site_agent_test_as_bindings'] = array( 'role:administrator' => $pack->name );
 	}
 
 	private function binding_error( object $pack ): ?\WP_Error {
@@ -67,8 +67,8 @@ final class ContentBundleTest extends TestCase {
 	public function test_the_bundle_is_named_for_the_deep_link(): void {
 		$bundle = ContentBundle::agentSafetyPack( new PagesPack(), new PostsPack(), new SitePack() );
 
-		$this->assertSame( 'senroflux-content', $bundle->name );
-		$this->assertSame( 'senroflux-content', ContentBundle::NAME );
+		$this->assertSame( 'specflux-content', $bundle->name );
+		$this->assertSame( 'specflux-content', ContentBundle::NAME );
 	}
 
 	#[RunInSeparateProcess]
@@ -96,7 +96,7 @@ final class ContentBundleTest extends TestCase {
 	#[PreserveGlobalState( false )]
 	public function test_a_bundle_missing_one_packs_abilities_fails_that_packs_check(): void {
 		$without_site = new AsPack(
-			'senroflux-content',
+			'specflux-content',
 			ContentBundle::allowList( new PagesPack(), new PostsPack() ),
 			array(),
 			array( 'tier2' => true )
@@ -113,13 +113,13 @@ final class ContentBundleTest extends TestCase {
 		$bundle = ContentBundle::agentSafetyPack( new PagesPack(), new PostsPack(), new SitePack() );
 
 		$this->assertSame( array( 'tier2' => true ), $bundle->approvalByClass );
-		$this->assertTrue( $bundle->requiresApproval( \Specflux\AgentSafety\Policy\Tier::Irreversible ) );
+		$this->assertTrue( $bundle->requiresApproval( \Belayline\Policy\Tier::Irreversible ) );
 	}
 
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
 	public function test_a_bundle_without_tier_2_approval_is_refused(): void {
-		$this->bind( new AsPack( 'senroflux-content', $this->union(), array(), array() ) );
+		$this->bind( new AsPack( 'specflux-content', $this->union(), array(), array() ) );
 
 		$this->assertSame( 'pack_unbound', $this->binding_error( new PagesPack() )->get_error_code() );
 	}
@@ -160,7 +160,7 @@ final class ContentBundleTest extends TestCase {
 		foreach ( array( 'pages', 'posts', 'site' ) as $name ) {
 			$this->assertTrue( ContentBundle::covers( $name ), $name );
 		}
-		foreach ( array( 'commerce', 'senroflux-content', '' ) as $name ) {
+		foreach ( array( 'commerce', 'specflux-content', '' ) as $name ) {
 			$this->assertFalse( ContentBundle::covers( $name ), $name );
 		}
 	}

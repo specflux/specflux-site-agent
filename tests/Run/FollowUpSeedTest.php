@@ -3,15 +3,15 @@
  * FollowUpSeed tests (0.3 S20): renders the source report's change rows,
  * omits the notice when there are none.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\FollowUpSeed;
+use Specflux\SiteAgent\Run\FollowUpSeed;
 
 final class FollowUpSeedTest extends TestCase {
 

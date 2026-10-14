@@ -2,15 +2,15 @@
 /**
  * Site\Inventory tests: list-plugins / list-themes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Site;
+namespace Specflux\SiteAgent\Tests\Packs\Site;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Site\Inventory;
+use Specflux\SiteAgent\Packs\Site\Inventory;
 use WP_Error;
 
 final class InventoryTest extends TestCase {
@@ -18,9 +18,9 @@ final class InventoryTest extends TestCase {
 	protected function setUp(): void {
 		require_once dirname( __DIR__, 2 ) . '/stubs/site-tools.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_plugins']            = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_plugins']            = array(
 			'akismet/akismet.php' => array(
 				'Name'        => 'Akismet',
 				'Version'     => '5.3',
@@ -37,18 +37,18 @@ final class InventoryTest extends TestCase {
 				'Version' => '2.0',
 			),
 		);
-		$GLOBALS['senroflux_test_active_plugins']     = array( 'akismet/akismet.php' );
-		$GLOBALS['senroflux_test_network_plugins']    = array( 'netwide/netwide.php' );
-		$GLOBALS['senroflux_test_site_transients']    = array(
+		$GLOBALS['specflux_site_agent_test_active_plugins']     = array( 'akismet/akismet.php' );
+		$GLOBALS['specflux_site_agent_test_network_plugins']    = array( 'netwide/netwide.php' );
+		$GLOBALS['specflux_site_agent_test_site_transients']    = array(
 			'update_plugins' => (object) array( 'response' => array( 'hello.php' => (object) array( 'new_version' => '1.8' ) ) ),
 			'update_themes'  => (object) array( 'response' => array( 'child' => array( 'new_version' => '2' ) ) ),
 		);
-		$GLOBALS['senroflux_test_stylesheet']         = 'child';
-		$GLOBALS['senroflux_test_themes']             = array(
-			'parent' => new \SenroFlux_Test_Fake_Theme( 'parent', 'Parent', '1.0', 'parent', false ),
-			'child'  => new \SenroFlux_Test_Fake_Theme( 'child', 'Child', '2.0', 'parent', true ),
+		$GLOBALS['specflux_site_agent_test_stylesheet']         = 'child';
+		$GLOBALS['specflux_site_agent_test_themes']             = array(
+			'parent' => new \SpecfluxSiteAgent_Test_Fake_Theme( 'parent', 'Parent', '1.0', 'parent', false ),
+			'child'  => new \SpecfluxSiteAgent_Test_Fake_Theme( 'child', 'Child', '2.0', 'parent', true ),
 		);
-		$GLOBALS['senroflux_test_user_caps']          = array(
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array(
 			'activate_plugins' => true,
 			'switch_themes'    => true,
 		);
@@ -58,19 +58,19 @@ final class InventoryTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['senroflux_test_stylesheet'] );
+		unset( $GLOBALS['specflux_site_agent_test_stylesheet'] );
 	}
 
 	private function ability( string $name ): object {
-		return $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $name ];
+		return $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $name ];
 	}
 
 	public function test_both_refuse_without_their_capability(): void {
-		$GLOBALS['senroflux_test_user_caps'] = array( 'switch_themes' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'switch_themes' => true );
 		$this->assertFalse( $this->ability( 'list-plugins' )->check_permissions( array() ) );
 		$this->assertInstanceOf( WP_Error::class, $this->ability( 'list-plugins' )->execute( array() ) );
 
-		$GLOBALS['senroflux_test_user_caps'] = array( 'activate_plugins' => true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'activate_plugins' => true );
 		$this->assertFalse( $this->ability( 'list-themes' )->check_permissions( array() ) );
 		$this->assertInstanceOf( WP_Error::class, $this->ability( 'list-themes' )->execute( array() ) );
 	}

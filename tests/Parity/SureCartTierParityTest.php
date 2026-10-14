@@ -1,39 +1,39 @@
 <?php
 /**
- * SureCart tier parity (C4-S): SenroFlux's SureCart platform against
- * SenroGate's own SureCart catalog, which is the source of truth for tiers.
+ * SureCart tier parity (C4-S): Specflux Site Agent's SureCart platform against
+ * Belayline Agent Governance's own SureCart catalog, which is the source of truth for tiers.
  *
- * Reads two SenroGate source files by regex (this repo cannot load them: they
+ * Reads two Belayline Agent Governance source files by regex (this repo cannot load them: they
  * are another plugin's classes):
  * `plugin/src/Integrations/SureCart/SureCartVerbCatalog.php` and
  * `DiscountElevationRule.php`.
  *
- * LOCATING THEM: set SENROFLUX_SURECART_SENROGATE_DIR to SenroGate's
+ * LOCATING THEM: set SPECFLUX_SITE_AGENT_SURECART_AGENT_GOVERNANCE_DIR to Belayline Agent Governance's
  * `plugin/src/Integrations/SureCart` directory, e.g.
  *
- *     SENROFLUX_SURECART_SENROGATE_DIR=/path/to/senrogate/plugin/src/Integrations/SureCart composer test
+ *     SPECFLUX_SITE_AGENT_SURECART_AGENT_GOVERNANCE_DIR=/path/to/belayline-agent-governance/plugin/src/Integrations/SureCart composer test
  *
- * With it unset the tests skip (a normal state for a SenroFlux-only
+ * With it unset the tests skip (a normal state for a Specflux Site Agent-only
  * checkout); under CI=true an unset or unreadable path fails instead, because
  * a skipped parity check proves nothing.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Parity;
+namespace Specflux\SiteAgent\Tests\Parity;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartPlatform;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart\SureCartPlatform;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Tools\VerbTier;
 
 final class SureCartTierParityTest extends TestCase {
 
-	private const ENV = 'SENROFLUX_SURECART_SENROGATE_DIR';
+	private const ENV = 'SPECFLUX_SITE_AGENT_SURECART_AGENT_GOVERNANCE_DIR';
 
 	private const TIERS = array(
 		'Reversible'    => 0,
@@ -54,19 +54,19 @@ final class SureCartTierParityTest extends TestCase {
 	);
 
 	protected function setUp(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
 		Plugin::reset();
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
 		Plugin::reset();
 	}
 
 	private function dir(): string {
 		$dir = getenv( self::ENV );
 		if ( false === $dir || '' === $dir || ! is_readable( $dir . '/SureCartVerbCatalog.php' ) ) {
-			$message = self::ENV . ' does not point at SenroGate\'s plugin/src/Integrations/SureCart directory.';
+			$message = self::ENV . ' does not point at AgentGovernance\'s plugin/src/Integrations/SureCart directory.';
 			if ( 'true' === getenv( 'CI' ) ) {
 				$this->fail( 'CI=true but ' . $message );
 			}
@@ -80,7 +80,7 @@ final class SureCartTierParityTest extends TestCase {
 		return (string) file_get_contents( $this->dir() . '/' . $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local sibling-repo source file, not a remote URL.
 	}
 
-	/** @return array<string,int> ability id => SenroGate tier */
+	/** @return array<string,int> ability id => Belayline Agent Governance tier */
 	private function catalog(): array {
 		preg_match_all( "/'(surecart\/[a-z-]+)'\s*=>\s*Tier::(\w+)/", $this->read( 'SureCartVerbCatalog.php' ), $m, PREG_SET_ORDER );
 		$map = array();
@@ -101,7 +101,7 @@ final class SureCartTierParityTest extends TestCase {
 
 	private function pack(): CommercePack {
 		$platform = new SureCartPlatform( static fn (): array => array( 'gated' => true ) );
-		add_filter( 'senroflux_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
+		add_filter( 'specflux_site_agent_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
 		$pack = new CommercePack();
 		$pack->useRunPlatform( 'surecart' );
 
@@ -124,11 +124,11 @@ final class SureCartTierParityTest extends TestCase {
 	public function test_the_catalog_was_read(): void {
 		$catalog = $this->catalog();
 
-		$this->assertGreaterThanOrEqual( 50, count( $catalog ), 'SenroGate lists every one of SureCart\'s 54 abilities' );
+		$this->assertGreaterThanOrEqual( 50, count( $catalog ), 'Belayline Agent Governance lists every one of SureCart\'s 54 abilities' );
 		$this->assertNotEmpty( $this->ungrantable() );
 	}
 
-	public function test_every_native_ability_the_platform_maps_is_in_senrogates_catalog_at_the_same_base_tier(): void {
+	public function test_every_native_ability_the_platform_maps_is_in_governances_catalog_at_the_same_base_tier(): void {
 		$catalog  = $this->catalog();
 		$pack     = $this->pack();
 		$verbMap  = $pack->verbMap();
@@ -136,7 +136,7 @@ final class SureCartTierParityTest extends TestCase {
 
 		foreach ( $this->nativeAbilities() as $name ) {
 			$id = 'surecart/' . $name;
-			$this->assertArrayHasKey( $id, $catalog, "SenroGate does not govern $id" );
+			$this->assertArrayHasKey( $id, $catalog, "Belayline Agent Governance does not govern $id" );
 
 			$verb = $pack->verbFor( $id, self::BASE_INPUT[ $name ] ?? array() );
 			$this->assertSame( $catalog[ $id ], VerbTier::tierFor( $verb, $verbMap ), "$id: base tier ($verb)" );
@@ -154,7 +154,7 @@ final class SureCartTierParityTest extends TestCase {
 			if ( ! in_array( $name, $this->nativeAbilities(), true ) ) {
 				continue; // Not a role here, so the allow-list never offers it.
 			}
-			$this->assertContains( $pack->verbFor( $id, array() ), $pack->ungrantableVerbs(), "$id is ungrantable in SenroGate" );
+			$this->assertContains( $pack->verbFor( $id, array() ), $pack->ungrantableVerbs(), "$id is ungrantable in Belayline Agent Governance" );
 		}
 
 		$this->assertContains( 'surecart/create-refund', $this->ungrantable() );
@@ -177,12 +177,12 @@ final class SureCartTierParityTest extends TestCase {
 		$this->assertStringContainsString( "'archived'", $price );
 	}
 
-	public function test_the_elevated_inputs_land_on_the_tier_senrogate_assigns(): void {
+	public function test_the_elevated_inputs_land_on_the_tier_agent_governance_assigns(): void {
 		$pack = $this->pack();
 		$map  = $pack->verbMap();
 		$tier = static fn ( string $ability, array $input ): int => VerbTier::tierFor( $pack->verbFor( $ability, $input ), $map );
 
-		// Tier 2 when SenroGate's rules elevate...
+		// Tier 2 when Belayline Agent Governance's rules elevate...
 		$this->assertSame( 2, $tier( 'surecart/update-price', array( 'amount' => 1 ) ) );
 		$this->assertSame( 2, $tier( 'surecart/update-price', array( 'archived' => true ) ) );
 		$this->assertSame( 2, $tier( 'surecart/create-coupon', array( 'percent_off' => SureCartPlatform::PERCENT_THRESHOLD ) ) );

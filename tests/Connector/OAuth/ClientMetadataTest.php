@@ -2,15 +2,15 @@
 /**
  * Client ID Metadata Documents and the SSRF guard.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\OAuth\Clients;
-use Specflux\SenroFlux\Connector\OAuth\Ssrf;
+use Specflux\SiteAgent\Connector\OAuth\Clients;
+use Specflux\SiteAgent\Connector\OAuth\Ssrf;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -19,7 +19,7 @@ final class ClientMetadataTest extends OAuthTestCase {
 	private const URL = 'https://app.example/oauth/client.json';
 
 	private function queue( array $doc, int $code = 200 ): void {
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => $code ),
 			'body'     => wp_json_encode( $doc ),
 		);
@@ -44,7 +44,7 @@ final class ClientMetadataTest extends OAuthTestCase {
 		$this->assertNotNull( $client );
 		$this->assertSame( 'Example App', $client->name );
 		$this->assertTrue( $client->allowsRedirect( 'https://app.example/cb' ) );
-		$args = $GLOBALS['senroflux_test_remote_get_calls'][0]['args'];
+		$args = $GLOBALS['specflux_site_agent_test_remote_get_calls'][0]['args'];
 		$this->assertSame( 0, $args['redirection'], 'Redirects are not followed.' );
 		$this->assertTrue( $args['reject_unsafe_urls'] );
 		$this->assertLessThanOrEqual( 5, $args['timeout'] );
@@ -55,12 +55,12 @@ final class ClientMetadataTest extends OAuthTestCase {
 		$this->queue( $this->doc() );
 		Clients::resolve( self::URL );
 		Clients::resolve( self::URL );
-		$this->assertCount( 1, $GLOBALS['senroflux_test_remote_get_calls'] );
+		$this->assertCount( 1, $GLOBALS['specflux_site_agent_test_remote_get_calls'] );
 
 		$other = 'https://other.example/c.json';
 		$this->assertNull( Clients::resolve( $other ) ); // Nothing queued: the fetch fails.
 		$this->assertNull( Clients::resolve( $other ) );
-		$this->assertCount( 2, $GLOBALS['senroflux_test_remote_get_calls'], 'A failed fetch is not retried on every request.' );
+		$this->assertCount( 2, $GLOBALS['specflux_site_agent_test_remote_get_calls'], 'A failed fetch is not retried on every request.' );
 	}
 
 	public function test_document_client_id_must_equal_the_url(): void {
@@ -112,13 +112,13 @@ final class ClientMetadataTest extends OAuthTestCase {
 		$this->queue( $this->doc(), 404 );
 		$this->assertNull( Clients::resolve( 'https://a.example/x.json' ) );
 
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => 'not json',
 		);
 		$this->assertNull( Clients::resolve( 'https://b.example/x.json' ) );
 
-		$GLOBALS['senroflux_test_remote_get_responses'][] = array(
+		$GLOBALS['specflux_site_agent_test_remote_get_responses'][] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => str_repeat( ' ', Clients::CIMD_MAX_BYTES ) . wp_json_encode( $this->doc( array( 'client_id' => 'https://c.example/x.json' ) ) ),
 		);
@@ -151,7 +151,7 @@ final class ClientMetadataTest extends OAuthTestCase {
 
 		$this->assertFalse( Ssrf::allowed( $url ) );
 		$this->assertNull( Clients::resolve( $url ) );
-		$this->assertSame( array(), $GLOBALS['senroflux_test_remote_get_calls'], 'No request was made.' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_remote_get_calls'], 'No request was made.' );
 	}
 
 	public function test_hostname_resolving_to_a_private_address_is_refused(): void {
@@ -169,16 +169,16 @@ final class ClientMetadataTest extends OAuthTestCase {
 		foreach ( array( 'https://app.example', 'https://app.example/', 'https://app.example/a/../b.json', 'https://app.example/a/./b.json' ) as $url ) {
 			$this->assertNull( Clients::resolve( $url ), $url );
 		}
-		$this->assertSame( array(), $GLOBALS['senroflux_test_remote_get_calls'] );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_remote_get_calls'] );
 	}
 
 	public function test_fetches_have_a_global_hourly_budget(): void {
 		for ( $i = 0; $i < Clients::CIMD_FETCHES_HOUR; $i++ ) {
 			Clients::resolve( "https://h{$i}.example/c.json" );
 		}
-		$before = count( $GLOBALS['senroflux_test_remote_get_calls'] );
+		$before = count( $GLOBALS['specflux_site_agent_test_remote_get_calls'] );
 		Clients::resolve( 'https://one-more.example/c.json' );
 
-		$this->assertSame( $before, count( $GLOBALS['senroflux_test_remote_get_calls'] ) );
+		$this->assertSame( $before, count( $GLOBALS['specflux_site_agent_test_remote_get_calls'] ) );
 	}
 }

@@ -2,12 +2,12 @@
 /**
  * Media-generation gateway contract (S5's `generate-image` / `generate-alt-text`).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Model;
+namespace Specflux\SiteAgent\Model;
 
 use WP_Error;
 

@@ -4,22 +4,22 @@
  * all. A run whose models are text-only must never be offered, or asked to
  * approve, a generate-image call that can only fail.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Model;
+namespace Specflux\SiteAgent\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ImageCapability;
+use Specflux\SiteAgent\Model\ImageCapability;
 
 final class ImageCapabilityTest extends TestCase {
 
 	protected function tearDown(): void {
 		ImageCapability::setProbe( null );
 		ImageCapability::setProviderIds( null );
-		$GLOBALS['senroflux_test_transients'] = array();
+		$GLOBALS['specflux_site_agent_test_transients'] = array();
 	}
 
 	public function test_the_probe_decides_when_set(): void {
@@ -44,7 +44,7 @@ final class ImageCapabilityTest extends TestCase {
 		ImageCapability::markUnavailable();
 
 		$this->assertFalse( ImageCapability::available() );
-		$this->assertSame( 12 * HOUR_IN_SECONDS, $GLOBALS['senroflux_test_transient_ttls']['senroflux_image_generation_unavailable'] );
+		$this->assertSame( 12 * HOUR_IN_SECONDS, $GLOBALS['specflux_site_agent_test_transient_ttls']['specflux_site_agent_image_generation_unavailable'] );
 	}
 
 	public function test_changing_the_configured_providers_invalidates_the_record(): void {

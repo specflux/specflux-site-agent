@@ -2,14 +2,14 @@
 /**
  * A fixed-window counter.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -25,7 +25,7 @@ final class RateLimit {
 	 * @param int    $window Window length in seconds.
 	 */
 	public static function hit( string $key, int $limit, int $window ): bool {
-		$name  = 'senroflux_oauth_rl_' . md5( $key );
+		$name  = 'specflux_site_agent_oauth_rl_' . md5( $key );
 		$now   = Clock::now();
 		$state = get_transient( $name );
 		if ( ! is_array( $state ) || (int) ( $state['until'] ?? 0 ) <= $now ) {

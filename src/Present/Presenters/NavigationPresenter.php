@@ -2,19 +2,19 @@
 /**
  * Navigation card — the item list.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 final class NavigationPresenter implements Presenter {
 
@@ -38,7 +38,7 @@ final class NavigationPresenter implements Presenter {
 
 		return array(
 			'type'  => 'list',
-			'title' => __( 'Navigation', 'senroflux' ),
+			'title' => __( 'Navigation', 'specflux-site-agent' ),
 			'count' => count( $rows ),
 			'items' => $items,
 			'more'  => max( 0, count( $rows ) - self::MAX_ITEMS ),

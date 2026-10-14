@@ -3,29 +3,29 @@
  * Pack base-class tests: the gate-mode-aware preflight and
  * `requiresAgentSafety()` (0.3 S3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
 use WP_Error;
 
 final class PackTest extends TestCase {
 
 	protected function setUp(): void {
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'senroflux_run_skills' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
 		Plugin::reset();
 	}
 
 	protected function tearDown(): void {
 		Plugin::reset();
-		unset( $GLOBALS['senroflux_test_user_caps_by_id'] );
+		unset( $GLOBALS['specflux_site_agent_test_user_caps_by_id'] );
 	}
 
 	/** A pack that never refuses AS binding — the base's built-in path is what's tested. */
@@ -150,12 +150,12 @@ final class PackTest extends TestCase {
 			}
 		};
 
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_others_posts' => false ) );
-		$refused                                   = $pack->preflight( 9 );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_others_posts' => false ) );
+		$refused = $pack->preflight( 9 );
 		$this->assertInstanceOf( WP_Error::class, $refused );
 		$this->assertSame( 'pack_unbound', $refused->get_error_code() );
 
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_others_posts' => true ) );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_others_posts' => true ) );
 		$this->assertTrue( $pack->preflight( 9 ) );
 	}
 
@@ -192,8 +192,8 @@ final class PackTest extends TestCase {
 	public function test_agent_safety_mode_refuses_when_bound_but_lacking_the_run_capability(): void {
 		Plugin::set_dependency_probe( true ); // AS mode.
 
-		$pack                                      = $this->packRequiringCapability( null ); // Bound.
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => false ) );
+		$pack = $this->packRequiringCapability( null ); // Bound.
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => false ) );
 
 		$refused = $pack->preflight( 9 );
 
@@ -204,10 +204,10 @@ final class PackTest extends TestCase {
 	public function test_agent_safety_mode_refuses_when_capable_but_unbound(): void {
 		Plugin::set_dependency_probe( true ); // AS mode.
 
-		$pack                                      = $this->packRequiringCapability(
+		$pack = $this->packRequiringCapability(
 			new WP_Error( 'pack_unbound', 'Not bound.', array( 'status' => 400 ) )
 		);
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
 
 		$refused = $pack->preflight( 9 );
 
@@ -225,33 +225,33 @@ final class PackTest extends TestCase {
 			new WP_Error( 'pack_unbound', 'Bind `user:N` to the pack.', array( 'status' => 400 ) )
 		);
 
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array(
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array(
 			9 => array(
 				'edit_posts'     => true,
 				'manage_options' => true,
 			),
 		);
-		$admin                                     = $pack->preflight( 9 );
+		$admin = $pack->preflight( 9 );
 		$this->assertInstanceOf( WP_Error::class, $admin );
 		$this->assertSame( 'pack_unbound', $admin->get_error_code() );
 		$this->assertStringContainsString( 'Tools > Agent Capability Packs', $admin->get_error_message() );
-		$this->assertStringContainsString( 'in SenroGate', $admin->get_error_message() );
+		$this->assertStringContainsString( 'in Belayline Agent Governance', $admin->get_error_message() );
 		$this->assertStringNotContainsString( '`', $admin->get_error_message() );
 
-		$GLOBALS['senroflux_test_user_caps']       = array(); // No fallback to a leaked current-user knob.
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
-		$author                                    = $pack->preflight( 9 );
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array(); // No fallback to a leaked current-user knob.
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
+		$author = $pack->preflight( 9 );
 		$this->assertInstanceOf( WP_Error::class, $author );
 		$this->assertStringContainsString( 'Ask an administrator to turn on the', $author->get_error_message() );
-		$this->assertStringContainsString( 'in SenroGate', $author->get_error_message() );
+		$this->assertStringContainsString( 'in Belayline Agent Governance', $author->get_error_message() );
 		$this->assertStringNotContainsString( '`', $author->get_error_message() );
 	}
 
 	public function test_agent_safety_mode_passes_when_both_capable_and_bound(): void {
 		Plugin::set_dependency_probe( true ); // AS mode.
 
-		$pack                                      = $this->packRequiringCapability( null ); // Bound.
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
+		$pack = $this->packRequiringCapability( null ); // Bound.
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
 
 		$this->assertTrue( $pack->preflight( 9 ) );
 	}
@@ -261,10 +261,10 @@ final class PackTest extends TestCase {
 
 		// A binding error that WOULD refuse in AS mode — proves built-in mode
 		// never asks the binding question at all (S3/S11).
-		$pack                                      = $this->packRequiringCapability(
+		$pack = $this->packRequiringCapability(
 			new WP_Error( 'pack_unbound', 'Not bound.', array( 'status' => 400 ) )
 		);
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 9 => array( 'edit_posts' => true ) );
 
 		$this->assertTrue( $pack->preflight( 9 ) );
 	}

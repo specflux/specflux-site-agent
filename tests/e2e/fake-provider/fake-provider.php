@@ -1,37 +1,37 @@
 <?php
 /**
- * Plugin Name: SenroFlux E2E Fake Provider
+ * Plugin Name: Specflux Site Agent E2E Fake Provider
  * Description: E2E/CI-ONLY. A scripted, deterministic AI Client provider
- *              (no API key, no network) plus a synthetic "senroflux-e2e"
+ *              (no API key, no network) plus a synthetic "specflux-e2e"
  *              governed namespace with a handful of fixture abilities, so
  *              the Playwright suite (0.3 S10/S12/S22) can drive real
  *              multi-turn runs over real HTTP against a real WordPress
  *              install without ever calling a live model. Modelled directly
- *              on dev/smoke/senroflux-spike-fixture.php and
+ *              on dev/smoke/specflux-site-agent-spike-fixture.php and
  *              dev/smoke/agsafe-smoke-fixture.php (same shapes, same
  *              filters). The abilities themselves are plain
  *              `wp_register_ability()` calls, not routed through any real
- *              content pack's validators; `SenroFlux_E2E_Pack` below (runs-
+ *              content pack's validators; `SpecfluxSiteAgent_E2E_Pack` below (runs-
  *              pack fix, 0.3) is a THIN capability pack over the same
  *              namespace so a run started from the React screen can actually
  *              carry a pack (see that class's own docblock) — its allow-list
- *              is additionally unioned into `senroflux-admin`'s via
+ *              is additionally unioned into `specflux-site-agent-admin`'s via
  *              `RunsScreen::registerAdminConsumer()`, and the
- *              `senroflux_http_consumers` filter below still appends the
+ *              `specflux_site_agent_http_consumers` filter below still appends the
  *              same namespace directly, for the two specs that start a run
- *              with no pack at all (a direct `senroflux()->start()` `wp eval`
+ *              with no pack at all (a direct `specflux_site_agent()->start()` `wp eval`
  *              call, never through this screen).
  *
  * Excluded from the shipped zip: `tests/` is already fully excluded by
  * .distignore. Mounted ONLY in this worktree's own wp-env
  * (.wp-env.json here), never in the shared instance on :8888.
  *
- * Script protocol: `wp option update senroflux_e2e_script '<json>'` (a JSON
+ * Script protocol: `wp option update specflux_site_agent_e2e_script '<json>'` (a JSON
  * list of steps: {"type":"text","text":"..."} or
  * {"type":"calls","calls":[{"name":"...","args":{...}}]}), consumed ONE
  * step per generateTextResult() call (S9: a tick never makes more than one
  * model turn). Every consumed step is also appended to
- * `senroflux_e2e_calls` so a test can assert how many turns a scenario
+ * `specflux_site_agent_e2e_calls` so a test can assert how many turns a scenario
  * actually took. Never never ship.
  */
 
@@ -65,18 +65,18 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 // Scripted AI provider.
 // ---------------------------------------------------------------------------
 
-class SenroFlux_E2E_Provider_Availability implements ProviderAvailabilityInterface {
+class SpecfluxSiteAgent_E2E_Provider_Availability implements ProviderAvailabilityInterface {
 	public function isConfigured(): bool {
 		return true;
 	}
 }
 
-class SenroFlux_E2E_Model_Metadata_Directory implements ModelMetadataDirectoryInterface {
+class SpecfluxSiteAgent_E2E_Model_Metadata_Directory implements ModelMetadataDirectoryInterface {
 	public function listModelMetadata(): array {
 		return array(
 			new ModelMetadata(
-				'senroflux-e2e-model',
-				'SenroFlux E2E Fake Model',
+				'specflux-e2e-model',
+				'Specflux Site Agent E2E Fake Model',
 				array(
 					CapabilityEnum::textGeneration(),
 					CapabilityEnum::chatHistory(),
@@ -93,7 +93,7 @@ class SenroFlux_E2E_Model_Metadata_Directory implements ModelMetadataDirectoryIn
 	}
 
 	public function hasModelMetadata( string $model_id ): bool {
-		return 'senroflux-e2e-model' === $model_id;
+		return 'specflux-e2e-model' === $model_id;
 	}
 
 	public function getModelMetadata( string $model_id ): ModelMetadata {
@@ -104,7 +104,7 @@ class SenroFlux_E2E_Model_Metadata_Directory implements ModelMetadataDirectoryIn
 	}
 }
 
-class SenroFlux_E2E_Model implements ModelInterface, TextGenerationModelInterface {
+class SpecfluxSiteAgent_E2E_Model implements ModelInterface, TextGenerationModelInterface {
 
 	private ModelConfig $config;
 
@@ -138,16 +138,16 @@ class SenroFlux_E2E_Model implements ModelInterface, TextGenerationModelInterfac
 		// The queue is stored as a JSON STRING end-to-end (a lesson already
 		// recorded in the spike fixture): re-storing the decoded array would
 		// cast it to "Array" on the next read and silently drain the script.
-		$script = json_decode( (string) get_option( 'senroflux_e2e_script', '[]' ), true );
+		$script = json_decode( (string) get_option( 'specflux_site_agent_e2e_script', '[]' ), true );
 		if ( ! is_array( $script ) ) {
 			$script = array();
 		}
 		$step = array_shift( $script );
-		update_option( 'senroflux_e2e_script', (string) wp_json_encode( $script ), false );
+		update_option( 'specflux_site_agent_e2e_script', (string) wp_json_encode( $script ), false );
 
-		$consumed   = (array) get_option( 'senroflux_e2e_calls', array() );
+		$consumed   = (array) get_option( 'specflux_site_agent_e2e_calls', array() );
 		$consumed[] = $step ?? array( 'type' => 'empty' );
-		update_option( 'senroflux_e2e_calls', $consumed, false );
+		update_option( 'specflux_site_agent_e2e_calls', $consumed, false );
 
 		// Stage 22b: the text of the FIRST message of every prompt, so a spec can
 		// prove a follow-up run's seed (the source run's object list) reached the
@@ -160,9 +160,9 @@ class SenroFlux_E2E_Model implements ModelInterface, TextGenerationModelInterfac
 				}
 			}
 		}
-		$prompts   = (array) get_option( 'senroflux_e2e_prompts', array() );
+		$prompts   = (array) get_option( 'specflux_site_agent_e2e_prompts', array() );
 		$prompts[] = $first_text;
-		update_option( 'senroflux_e2e_prompts', $prompts, false );
+		update_option( 'specflux_site_agent_e2e_prompts', $prompts, false );
 
 		if ( null === $step || 'text' === ( $step['type'] ?? '' ) ) {
 			$parts = array( new MessagePart( (string) ( $step['text'] ?? 'No scripted response left.' ) ) );
@@ -189,12 +189,12 @@ class SenroFlux_E2E_Model implements ModelInterface, TextGenerationModelInterfac
 	}
 }
 
-class SenroFlux_E2E_Provider extends AbstractProvider {
+class SpecfluxSiteAgent_E2E_Provider extends AbstractProvider {
 
 	protected static function createProviderMetadata(): ProviderMetadata {
 		return new ProviderMetadata(
-			'senroflux-e2e',
-			'SenroFlux E2E Fake Provider',
+			'specflux-e2e',
+			'Specflux Site Agent E2E Fake Provider',
 			ProviderTypeEnum::cloud(),
 			null,
 			RequestAuthenticationMethod::apiKey()
@@ -202,18 +202,18 @@ class SenroFlux_E2E_Provider extends AbstractProvider {
 	}
 
 	protected static function createProviderAvailability(): ProviderAvailabilityInterface {
-		return new SenroFlux_E2E_Provider_Availability();
+		return new SpecfluxSiteAgent_E2E_Provider_Availability();
 	}
 
 	protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface {
-		return new SenroFlux_E2E_Model_Metadata_Directory();
+		return new SpecfluxSiteAgent_E2E_Model_Metadata_Directory();
 	}
 
 	protected static function createModel(
 		ModelMetadata $model_metadata,
 		ProviderMetadata $provider_metadata
 	): ModelInterface {
-		return new SenroFlux_E2E_Model( $provider_metadata, $model_metadata );
+		return new SpecfluxSiteAgent_E2E_Model( $provider_metadata, $model_metadata );
 	}
 }
 
@@ -221,15 +221,15 @@ add_action(
 	'init',
 	static function (): void {
 		$registry = AiClient::defaultRegistry();
-		if ( ! $registry->hasProvider( 'senroflux-e2e' ) ) {
-			$registry->registerProvider( SenroFlux_E2E_Provider::class );
+		if ( ! $registry->hasProvider( 'specflux-e2e' ) ) {
+			$registry->registerProvider( SpecfluxSiteAgent_E2E_Provider::class );
 		}
 	},
 	-20
 );
 
 // ---------------------------------------------------------------------------
-// Fixture abilities: a synthetic "senroflux-e2e" namespace with three Tier-0
+// Fixture abilities: a synthetic "specflux-e2e" namespace with three Tier-0
 // reads and one Tier-1 write, so a scripted scenario can exercise the real
 // ledger/tier-badge/park machinery without depending on any real content
 // pack's validators.
@@ -239,9 +239,9 @@ add_action(
 	'wp_abilities_api_categories_init',
 	static function (): void {
 		wp_register_ability_category(
-			'senroflux-e2e',
+			'specflux-e2e',
 			array(
-				'label'       => 'SenroFlux E2E',
+				'label'       => 'Specflux Site Agent E2E',
 				'description' => 'Synthetic abilities for the Playwright suite.',
 			)
 		);
@@ -252,11 +252,11 @@ add_action(
 	'wp_abilities_api_init',
 	static function (): void {
 		wp_register_ability(
-			'senroflux-e2e/read-thing',
+			'specflux-e2e/read-thing',
 			array(
 				'label'               => 'Read thing',
 				'description'         => 'Fixture: reads a synthetic record.',
-				'category'            => 'senroflux-e2e',
+				'category'            => 'specflux-e2e',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array( 'id' => array( 'type' => 'string' ) ),
@@ -275,11 +275,11 @@ add_action(
 		);
 
 		wp_register_ability(
-			'senroflux-e2e/list-things',
+			'specflux-e2e/list-things',
 			array(
 				'label'               => 'List things',
 				'description'         => 'Fixture: lists synthetic records.',
-				'category'            => 'senroflux-e2e',
+				'category'            => 'specflux-e2e',
 				'input_schema'        => array( 'type' => 'object' ),
 				'output_schema'       => array( 'type' => 'object' ),
 				'execute_callback'    => static fn (): array => array(
@@ -292,11 +292,11 @@ add_action(
 		);
 
 		wp_register_ability(
-			'senroflux-e2e/search-things',
+			'specflux-e2e/search-things',
 			array(
 				'label'               => 'Search things',
 				'description'         => 'Fixture: searches synthetic records.',
-				'category'            => 'senroflux-e2e',
+				'category'            => 'specflux-e2e',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array( 'query' => array( 'type' => 'string' ) ),
@@ -312,19 +312,19 @@ add_action(
 		);
 
 		wp_register_ability(
-			'senroflux-e2e/create-thing',
+			'specflux-e2e/create-thing',
 			array(
 				'label'               => 'Create thing',
 				'description'         => 'Fixture: creates a synthetic record. Tier 1 (side-effecting) so it exercises the plan fence and the approval park in BOTH gate modes.',
-				'category'            => 'senroflux-e2e',
+				'category'            => 'specflux-e2e',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array( 'title' => array( 'type' => 'string' ) ),
 				),
 				'output_schema'       => array( 'type' => 'object' ),
 				'execute_callback'    => static function ( $input = array() ): array {
-					$n = (int) get_option( 'senroflux_e2e_things_created', 0 );
-					update_option( 'senroflux_e2e_things_created', $n + 1, false );
+					$n = (int) get_option( 'specflux_site_agent_e2e_things_created', 0 );
+					update_option( 'specflux_site_agent_e2e_things_created', $n + 1, false );
 					return array(
 						'ok'    => true,
 						'id'    => 'thing-' . ( $n + 3 ),
@@ -341,19 +341,19 @@ add_action(
 		);
 
 		wp_register_ability(
-			'senroflux-e2e/publish-thing',
+			'specflux-e2e/publish-thing',
 			array(
 				'label'               => 'Publish thing',
 				'description'         => 'Fixture: publishes a synthetic record. Tier 2 (the only tier a pre-approval grant covers), so it exercises "Accept and pre-approve".',
-				'category'            => 'senroflux-e2e',
+				'category'            => 'specflux-e2e',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array( 'title' => array( 'type' => 'string' ) ),
 				),
 				'output_schema'       => array( 'type' => 'object' ),
 				'execute_callback'    => static function ( $input = array() ): array {
-					$n = (int) get_option( 'senroflux_e2e_things_created', 0 );
-					update_option( 'senroflux_e2e_things_created', $n + 1, false );
+					$n = (int) get_option( 'specflux_site_agent_e2e_things_created', 0 );
+					update_option( 'specflux_site_agent_e2e_things_created', $n + 1, false );
 					return array(
 						'ok'    => true,
 						'id'    => 'thing-' . ( $n + 3 ),
@@ -373,31 +373,31 @@ add_action(
 
 // Pre-approval switches for the "Accept and pre-approve" spec: off unless a
 // spec sets the option, so every other spec keeps seeing Accept / Veto only.
-if ( '1' === get_option( 'senroflux_e2e_preapproval', '0' ) ) {
-	add_filter( 'senroflux_enable_preapproval', '__return_true' );
-	add_filter( 'agent_safety_enable_grants', '__return_true' );
+if ( '1' === get_option( 'specflux_site_agent_e2e_preapproval', '0' ) ) {
+	add_filter( 'specflux_site_agent_enable_preapproval', '__return_true' );
+	add_filter( 'belayline_enable_grants', '__return_true' );
 }
 
-// SenroFlux's OWN tier map (used for the tier badge AND the built-in gate,
-// in BOTH gate modes — {@see \Specflux\SenroFlux\Tools\VerbTier}). This is
+// Specflux Site Agent's OWN tier map (used for the tier badge AND the built-in gate,
+// in BOTH gate modes — {@see \Specflux\SiteAgent\Tools\VerbTier}). This is
 // the SITE-WIDE fallback consulted only for a PACK-LESS (direct-allow) run
-// (the two `wp eval` direct-`senroflux()->start()` calls in
+// (the two `wp eval` direct-`specflux_site_agent()->start()` calls in
 // deep-link.spec.js/tabs.spec.js never name a pack). Runs-pack fix
-// (0.3, `SenroFlux_E2E_Pack` below): every run started from the Runs
+// (0.3, `SpecfluxSiteAgent_E2E_Pack` below): every run started from the Runs
 // screen's own message box now carries a real pack, so it never reaches this
-// fallback at all — `senroflux_e2e_no_global_verb_map` lets a spec prove
+// fallback at all — `specflux_site_agent_e2e_no_global_verb_map` lets a spec prove
 // that independence directly, by removing this filter and confirming a
 // pack-driven run still resolves its Tier-0 reads from the PACK's own
 // verbMap(), never this one.
-if ( '1' !== get_option( 'senroflux_e2e_no_global_verb_map', '0' ) ) {
+if ( '1' !== get_option( 'specflux_site_agent_e2e_no_global_verb_map', '0' ) ) {
 	add_filter(
-		'senroflux_verb_map',
+		'specflux_site_agent_verb_map',
 		static function ( array $map ): array {
-			$map['senroflux-e2e/read-thing']    = 0;
-			$map['senroflux-e2e/list-things']   = 0;
-			$map['senroflux-e2e/search-things'] = 0;
-			$map['senroflux-e2e/create-thing']  = 1;
-			$map['senroflux-e2e/publish-thing'] = 2;
+			$map['specflux-e2e/read-thing']    = 0;
+			$map['specflux-e2e/list-things']   = 0;
+			$map['specflux-e2e/search-things'] = 0;
+			$map['specflux-e2e/create-thing']  = 1;
+			$map['specflux-e2e/publish-thing'] = 2;
 			return $map;
 		}
 	);
@@ -414,20 +414,20 @@ if ( '1' !== get_option( 'senroflux_e2e_no_global_verb_map', '0' ) ) {
 // completely unchanged, now genuinely pack-driven instead of accidentally
 // working via the global filter above. Tiers here are byte-for-byte the same
 // as that filter's, so ticking behaviour is unaffected either way.
-// mu-plugins load before SenroFlux, so its Pack class exists only from here.
+// mu-plugins load before Specflux Site Agent, so its Pack class exists only from here.
 add_action(
 	'plugins_loaded',
 	static function (): void {
-		if ( ! class_exists( \Specflux\SenroFlux\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Specflux\SiteAgent\Packs\Pack::class ) ) {
 			return;
 		}
 
-		final class SenroFlux_E2E_Pack extends \Specflux\SenroFlux\Packs\Pack {
+		final class SpecfluxSiteAgent_E2E_Pack extends \Specflux\SiteAgent\Packs\Pack {
 			public function name(): string {
-				return 'senroflux-e2e';
+				return 'specflux-e2e';
 			}
 
-			/** @return string 'edit_posts' — matches the `senroflux_runs_capability` pin below. */
+			/** @return string 'edit_posts' — matches the `specflux_site_agent_runs_capability` pin below. */
 			public function runCapability(): string {
 				return 'edit_posts';
 			}
@@ -435,11 +435,11 @@ add_action(
 			/** @return list<string> */
 			public function allowList(): array {
 				return array(
-					'senroflux-e2e/read-thing',
-					'senroflux-e2e/list-things',
-					'senroflux-e2e/search-things',
-					'senroflux-e2e/create-thing',
-					'senroflux-e2e/publish-thing',
+					'specflux-e2e/read-thing',
+					'specflux-e2e/list-things',
+					'specflux-e2e/search-things',
+					'specflux-e2e/create-thing',
+					'specflux-e2e/publish-thing',
 				);
 			}
 
@@ -455,11 +455,11 @@ add_action(
 			/** @return array<string,int> */
 			public function verbMap(): array {
 				return array(
-					'senroflux-e2e/read-thing'    => 0,
-					'senroflux-e2e/list-things'   => 0,
-					'senroflux-e2e/search-things' => 0,
-					'senroflux-e2e/create-thing'  => 1,
-					'senroflux-e2e/publish-thing' => 2,
+					'specflux-e2e/read-thing'    => 0,
+					'specflux-e2e/list-things'   => 0,
+					'specflux-e2e/search-things' => 0,
+					'specflux-e2e/create-thing'  => 1,
+					'specflux-e2e/publish-thing' => 2,
 				);
 			}
 
@@ -478,13 +478,13 @@ add_action(
 		}
 
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
 				// Only this pack: the shipped pages/posts/site packs would make
 				// the message box ask which pack to use, and no spec picks one.
 				unset( $packs );
 
-				return array( 'senroflux-e2e' => new SenroFlux_E2E_Pack() );
+				return array( 'specflux-e2e' => new SpecfluxSiteAgent_E2E_Pack() );
 			},
 			PHP_INT_MAX
 		);
@@ -493,35 +493,35 @@ add_action(
 
 // Agent Safety's OWN gate, only consulted when it is the active gate mode.
 add_filter(
-	'agent_safety_governed_namespaces',
+	'belayline_governed_namespaces',
 	static function ( array $namespaces ): array {
-		$namespaces[] = 'senroflux-e2e/';
+		$namespaces[] = 'specflux-e2e/';
 		return $namespaces;
 	}
 );
 
 add_filter(
-	'agent_safety_verb_map',
+	'belayline_verb_map',
 	static function ( array $map ): array {
-		$map['senroflux-e2e/read-thing']    = 0;
-		$map['senroflux-e2e/list-things']   = 0;
-		$map['senroflux-e2e/search-things'] = 0;
-		$map['senroflux-e2e/create-thing']  = 1;
-		$map['senroflux-e2e/publish-thing'] = 2;
+		$map['specflux-e2e/read-thing']    = 0;
+		$map['specflux-e2e/list-things']   = 0;
+		$map['specflux-e2e/search-things'] = 0;
+		$map['specflux-e2e/create-thing']  = 1;
+		$map['specflux-e2e/publish-thing'] = 2;
 		return $map;
 	}
 );
 
 add_filter(
-	'agent_safety_pack_registry',
+	'belayline_pack_registry',
 	static function ( $registry ) {
-		if ( ! class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( ! class_exists( \Belayline\Packs\Pack::class ) ) {
 			return $registry;
 		}
 		$registry->register(
-			new \Specflux\AgentSafety\Packs\Pack(
-				name: 'senroflux-e2e-pack',
-				allow: array( 'senroflux-e2e/*' ),
+			new \Belayline\Packs\Pack(
+				name: 'specflux-e2e-pack',
+				allow: array( 'specflux-e2e/*' ),
 				approvalByClass: array(
 					'tier1' => true,
 					'tier2' => true,
@@ -541,22 +541,22 @@ add_filter(
 // capability to `edit_posts` so an Editor can reach it; `manage_options`
 // (site-brief authority, `canManageSiteBrief`) is unaffected and still
 // checked separately.
-add_filter( 'senroflux_runs_capability', static fn (): string => 'edit_posts' );
+add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'edit_posts' );
 
 // Append the fixture namespace to whatever allow-list
-// RunsScreen::registerAdminConsumer() already built for 'senroflux-admin'
+// RunsScreen::registerAdminConsumer() already built for 'specflux-site-agent-admin'
 // (priority 20, so it runs AFTER the plugin's own filter at the default 10)
 // — appended, never replacing, so every real pack's abilities stay reachable
 // too.
 add_filter(
-	'senroflux_http_consumers',
+	'specflux_site_agent_http_consumers',
 	static function ( array $consumers ): array {
-		if ( ! isset( $consumers['senroflux-admin'] ) || ! is_array( $consumers['senroflux-admin'] ) ) {
-			$consumers['senroflux-admin'] = array( 'allow' => array() );
+		if ( ! isset( $consumers['specflux-site-agent-admin'] ) || ! is_array( $consumers['specflux-site-agent-admin'] ) ) {
+			$consumers['specflux-site-agent-admin'] = array( 'allow' => array() );
 		}
-		$allow   = is_array( $consumers['senroflux-admin']['allow'] ?? null ) ? $consumers['senroflux-admin']['allow'] : array();
-		$allow[] = 'senroflux-e2e/*';
-		$consumers['senroflux-admin']['allow'] = array_values( array_unique( $allow ) );
+		$allow   = is_array( $consumers['specflux-site-agent-admin']['allow'] ?? null ) ? $consumers['specflux-site-agent-admin']['allow'] : array();
+		$allow[] = 'specflux-e2e/*';
+		$consumers['specflux-site-agent-admin']['allow'] = array_values( array_unique( $allow ) );
 		return $consumers;
 	},
 	20

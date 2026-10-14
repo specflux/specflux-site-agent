@@ -2,12 +2,12 @@
 /**
  * The site owner's standing notes (0.3 S20).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
 use WP_Error;
 
@@ -15,7 +15,7 @@ use WP_Error;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Owns the `senroflux_site_brief` option: plain text, autoload off, capped
+ * Owns the `specflux_site_agent_site_brief` option: plain text, autoload off, capped
  * at {@see self::MAX_CHARS} characters (`mb_strlen`). The harness treats the
  * brief as opaque text — it never inspects or rewrites its content, only
  * bounds its length. Refused writes NEVER truncate: the caller keeps the
@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
 final class SiteBrief {
 
 	/** The option name (autoload off — read only when a run is instructed). */
-	public const OPTION = 'senroflux_site_brief';
+	public const OPTION = 'specflux_site_agent_site_brief';
 
 	/** S20: over 2,000 characters (`mb_strlen`) is refused, never truncated. */
 	public const MAX_CHARS = 2000;
@@ -54,7 +54,7 @@ final class SiteBrief {
 				self::ERROR_TOO_LONG,
 				sprintf(
 					/* translators: %d is the character cap. */
-					__( 'The site brief may be at most %d characters.', 'senroflux' ),
+					__( 'The site brief may be at most %d characters.', 'specflux-site-agent' ),
 					self::MAX_CHARS
 				),
 				array( 'status' => 400 )

@@ -1,16 +1,16 @@
 <?php
 /**
- * The read-only inventory registrar: `senroflux/list-plugins` and
- * `senroflux/list-themes`. Nothing here activates, installs, updates or
+ * The read-only inventory registrar: `specflux/list-plugins` and
+ * `specflux/list-themes`. Nothing here activates, installs, updates or
  * switches anything, and update availability comes from the cached update
  * transients only (no network call).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
 use WP_Error;
 
@@ -51,10 +51,10 @@ final class Inventory {
 		}
 
 		wp_register_ability(
-			'senroflux/list-plugins',
+			'specflux/list-plugins',
 			array(
-				'label'               => __( 'List installed plugins', 'senroflux' ),
-				'description'         => __( 'List the installed plugins with name, version, active status and whether an update is available. Read-only: it cannot activate, deactivate, install or update anything.', 'senroflux' ),
+				'label'               => __( 'List installed plugins', 'specflux-site-agent' ),
+				'description'         => __( 'List the installed plugins with name, version, active status and whether an update is available. Read-only: it cannot activate, deactivate, install or update anything.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -90,10 +90,10 @@ final class Inventory {
 		);
 
 		wp_register_ability(
-			'senroflux/list-themes',
+			'specflux/list-themes',
 			array(
-				'label'               => __( 'List installed themes', 'senroflux' ),
-				'description'         => __( 'List the installed themes with name, version, whether each is active, its parent, whether it is a block theme and whether an update is available. Read-only: it cannot switch, install or update themes.', 'senroflux' ),
+				'label'               => __( 'List installed themes', 'specflux-site-agent' ),
+				'description'         => __( 'List the installed themes with name, version, whether each is active, its parent, whether it is a block theme and whether an update is available. Read-only: it cannot switch, install or update themes.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -136,7 +136,7 @@ final class Inventory {
 		if ( ! in_array( $filter, array( 'all', 'active', 'inactive' ), true ) ) {
 			return new WP_Error(
 				'invalid_status',
-				__( 'status must be all, active or inactive.', 'senroflux' ),
+				__( 'status must be all, active or inactive.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -220,7 +220,7 @@ final class Inventory {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -233,7 +233,7 @@ final class Inventory {
 				'destructive' => false,
 				'idempotent'  => true,
 			),
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

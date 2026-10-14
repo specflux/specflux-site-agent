@@ -2,21 +2,21 @@
 /**
  * Dynamic Client Registration endpoint (RFC 7591).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * `POST /wp-json/senroflux/oauth/register`. Open by design (RFC 7591 open
+ * `POST /wp-json/specflux-site-agent/oauth/register`. Open by design (RFC 7591 open
  * registration is what lets Claude and ChatGPT connect with no setup), so it
  * is contained instead: behind the connector switch, rate limited per IP,
  * strict redirect URI validation, a hard cap on stored clients, and a client

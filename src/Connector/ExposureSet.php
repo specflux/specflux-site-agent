@@ -2,30 +2,30 @@
 /**
  * What the connector exposes (K1).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Tools\HarnessTools;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\SuggestBriefTool;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Tools\HarnessTools;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\SuggestBriefTool;
+use Specflux\SiteAgent\Tools\VerbTier;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The exposure set: SenroFlux's own abilities, every ability a registered
+ * The exposure set: Specflux Site Agent's own abilities, every ability a registered
  * pack resolves (commerce only while a store platform is active, because only
  * then is its pack registered), and the abilities enabled on the "Abilities
  * from other plugins" screen. The harness-only tools and anything marked
- * `senroflux.hidden` never leave wp-admin.
+ * `specflux.hidden` never leave wp-admin.
  *
  * {@see names()} is the broadest set, fixed when the server is created;
  * {@see visibleTo()} is the narrowing for one connection, applied to the tool
@@ -33,7 +33,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ExposureSet {
 
-	private const NAMESPACE = 'senroflux/';
+	private const NAMESPACE = 'specflux/';
 
 	/** @var array<string,list<string>> Request-scoped memo of {@see names()}, per gate mode. */
 	private static array $memo = array();
@@ -97,8 +97,8 @@ final class ExposureSet {
 			return false;
 		}
 
-		// Without SenroGate, a pack that refuses the built-in gate offers reads only.
-		return ! ( GateMode::BuiltIn === $mode && $ceiling > VerbTier::TIER_0 && Tiering::needsSenroGate( $ability ) );
+		// Without Belayline Agent Governance, a pack that refuses the built-in gate offers reads only.
+		return ! ( GateMode::BuiltIn === $mode && $ceiling > VerbTier::TIER_0 && Tiering::needsGovernance( $ability ) );
 	}
 
 	/** Harness-only tools never leave the harness. */
@@ -106,10 +106,10 @@ final class ExposureSet {
 		return in_array( $name, array( HarnessTools::TOOL_NAME, PlanTools::TOOL_NAME, SuggestBriefTool::TOOL_NAME ), true );
 	}
 
-	/** Is the ability marked `senroflux.hidden` by whoever registered it? */
+	/** Is the ability marked `specflux.hidden` by whoever registered it? */
 	private static function isHidden( object $ability ): bool {
 		$meta = method_exists( $ability, 'get_meta' ) ? $ability->get_meta() : array();
-		$ours = is_array( $meta ) && is_array( $meta['senroflux'] ?? null ) ? $meta['senroflux'] : array();
+		$ours = is_array( $meta ) && is_array( $meta['specflux'] ?? null ) ? $meta['specflux'] : array();
 
 		return true === ( $ours['hidden'] ?? false );
 	}

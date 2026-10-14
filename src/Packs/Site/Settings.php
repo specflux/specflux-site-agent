@@ -1,19 +1,19 @@
 <?php
 /**
- * The site-settings registrar: `senroflux/read-settings` (read-only) and
- * `senroflux/update-settings` (allow-listed, atomic, before/after reported).
+ * The site-settings registrar: `specflux/read-settings` (read-only) and
+ * `specflux/update-settings` (allow-listed, atomic, before/after reported).
  *
  * Only the options in {@see ALLOWED} are ever writable. Identity, routing and
  * access options (`siteurl`, `home`, `admin_email`, `users_can_register`,
  * `default_role`, `blog_public`, ...) are never writable here; the first four
  * plus `users_can_register` and `default_role` are readable (read_only block).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
 use WP_Error;
 
@@ -214,13 +214,13 @@ final class Settings {
 		self::registerUpdate();
 	}
 
-	/** senroflux/read-settings. */
+	/** specflux/read-settings. */
 	private static function registerRead(): void {
 		wp_register_ability(
-			'senroflux/read-settings',
+			'specflux/read-settings',
 			array(
-				'label'               => __( 'Read site settings', 'senroflux' ),
-				'description'         => __( 'Read the current value of the site settings this plugin may change (general, reading and discussion groups), plus a read_only block (siteurl, home, admin_email, users_can_register, default_role) that can be seen but never changed.', 'senroflux' ),
+				'label'               => __( 'Read site settings', 'specflux-site-agent' ),
+				'description'         => __( 'Read the current value of the site settings this plugin may change (general, reading and discussion groups), plus a read_only block (siteurl, home, admin_email, users_can_register, default_role) that can be seen but never changed.', 'specflux-site-agent' ),
 				'category'            => Navigation::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -260,15 +260,15 @@ final class Settings {
 		);
 	}
 
-	/** senroflux/update-settings. */
+	/** specflux/update-settings. */
 	private static function registerUpdate(): void {
 		wp_register_ability(
-			'senroflux/update-settings',
+			'specflux/update-settings',
 			array(
-				'label'               => __( 'Update site settings', 'senroflux' ),
+				'label'               => __( 'Update site settings', 'specflux-site-agent' ),
 				'description'         => sprintf(
 					/* translators: %s: comma-separated list of option names. */
-					__( 'Change one or more allow-listed site settings in one atomic call: if any entry is invalid or not allowed, nothing is written. Allowed options: %s. Text limits: blogname up to 200 characters, blogdescription up to 500, date_format and time_format up to 50. Integer and enum ranges are enforced; page_on_front and page_for_posts must be 0 or a published page you can edit. Identity and access options (siteurl, home, admin_email, users_can_register, default_role, blog_public) can never be changed. Each call returns the before and after value of every option so a change can be reverted by calling this again with the before values.', 'senroflux' ),
+					__( 'Change one or more allow-listed site settings in one atomic call: if any entry is invalid or not allowed, nothing is written. Allowed options: %s. Text limits: blogname up to 200 characters, blogdescription up to 500, date_format and time_format up to 50. Integer and enum ranges are enforced; page_on_front and page_for_posts must be 0 or a published page you can edit. Identity and access options (siteurl, home, admin_email, users_can_register, default_role, blog_public) can never be changed. Each call returns the before and after value of every option so a change can be reverted by calling this again with the before values.', 'specflux-site-agent' ),
 					implode( ', ', array_keys( self::ALLOWED ) )
 				),
 				'category'            => Navigation::CATEGORY,
@@ -279,7 +279,7 @@ final class Settings {
 					'properties'           => array(
 						'settings' => array(
 							'type'                 => 'object',
-							'description'          => __( 'Map of option name to new value.', 'senroflux' ),
+							'description'          => __( 'Map of option name to new value.', 'specflux-site-agent' ),
 							'additionalProperties' => true,
 						),
 					),
@@ -354,7 +354,7 @@ final class Settings {
 		if ( ! in_array( $group, array( 'general', 'reading', 'discussion', 'all' ), true ) ) {
 			return new WP_Error(
 				'invalid_group',
-				__( 'group must be one of general, reading, discussion or all.', 'senroflux' ),
+				__( 'group must be one of general, reading, discussion or all.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -392,7 +392,7 @@ final class Settings {
 		if ( ! is_array( $requested ) || array() === $requested || array_is_list( $requested ) ) {
 			return new WP_Error(
 				'invalid_settings',
-				__( 'settings must be a non-empty object mapping option names to values.', 'senroflux' ),
+				__( 'settings must be a non-empty object mapping option names to values.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -406,7 +406,7 @@ final class Settings {
 					'setting_not_allowed',
 					sprintf(
 						/* translators: %s: option name. */
-						__( 'The setting "%s" cannot be changed here.', 'senroflux' ),
+						__( 'The setting "%s" cannot be changed here.', 'specflux-site-agent' ),
 						$key
 					),
 					array(
@@ -430,7 +430,7 @@ final class Settings {
 			if ( $front > 0 && $front === $posts ) {
 				$key = isset( $normalised['page_for_posts'] ) ? 'page_for_posts' : 'page_on_front';
 
-				return self::invalid( $key, __( 'page_on_front and page_for_posts must be different pages.', 'senroflux' ) );
+				return self::invalid( $key, __( 'page_on_front and page_for_posts must be different pages.', 'specflux-site-agent' ) );
 			}
 		}
 
@@ -461,24 +461,24 @@ final class Settings {
 		switch ( $rule['type'] ) {
 			case 'text':
 				if ( ! is_string( $value ) ) {
-					return self::invalid( $key, __( 'must be a string.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must be a string.', 'specflux-site-agent' ) );
 				}
 				$text = sanitize_text_field( $value );
 				if ( '' === $text && empty( $rule['empty'] ) ) {
-					return self::invalid( $key, __( 'must not be empty.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must not be empty.', 'specflux-site-agent' ) );
 				}
 				if ( mb_strlen( $text ) > (int) $rule['max'] ) {
-					return self::invalid( $key, __( 'is too long.', 'senroflux' ) );
+					return self::invalid( $key, __( 'is too long.', 'specflux-site-agent' ) );
 				}
 
 				return $text;
 
 			case 'timezone':
 				if ( ! is_string( $value ) ) {
-					return self::invalid( $key, __( 'must be a string.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must be a string.', 'specflux-site-agent' ) );
 				}
 				if ( '' !== $value && ! in_array( $value, timezone_identifiers_list(), true ) ) {
-					return self::invalid( $key, __( 'must be a valid timezone identifier or empty.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must be a valid timezone identifier or empty.', 'specflux-site-agent' ) );
 				}
 
 				return $value;
@@ -486,7 +486,7 @@ final class Settings {
 			case 'int':
 				$number = self::intOrNull( $value );
 				if ( null === $number || $number < (int) $rule['min'] || $number > (int) $rule['max'] ) {
-					return self::invalid( $key, __( 'is out of range.', 'senroflux' ) );
+					return self::invalid( $key, __( 'is out of range.', 'specflux-site-agent' ) );
 				}
 
 				return $number;
@@ -499,11 +499,11 @@ final class Settings {
 					return 0;
 				}
 
-				return self::invalid( $key, __( 'must be 0 or 1.', 'senroflux' ) );
+				return self::invalid( $key, __( 'must be 0 or 1.', 'specflux-site-agent' ) );
 
 			case 'enum':
 				if ( ! is_string( $value ) || ! in_array( $value, $rule['enum'] ?? array(), true ) ) {
-					return self::invalid( $key, __( 'is not an allowed value.', 'senroflux' ) );
+					return self::invalid( $key, __( 'is not an allowed value.', 'specflux-site-agent' ) );
 				}
 
 				return $value;
@@ -511,14 +511,14 @@ final class Settings {
 			case 'page':
 				$id = self::intOrNull( $value );
 				if ( null === $id || $id < 0 ) {
-					return self::invalid( $key, __( 'must be 0 or a page ID.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must be 0 or a page ID.', 'specflux-site-agent' ) );
 				}
 				if ( 0 === $id ) {
 					return 0;
 				}
 				$post = get_post( $id );
 				if ( ! is_object( $post ) || 'page' !== $post->post_type || 'publish' !== $post->post_status ) {
-					return self::invalid( $key, __( 'must be 0 or the ID of a published page.', 'senroflux' ) );
+					return self::invalid( $key, __( 'must be 0 or the ID of a published page.', 'specflux-site-agent' ) );
 				}
 				if ( ! current_user_can( 'edit_post', $id ) ) {
 					return self::forbidden();
@@ -577,7 +577,7 @@ final class Settings {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -589,7 +589,7 @@ final class Settings {
 	private static function meta( array $annotations ): array {
 		return array(
 			'annotations' => $annotations,
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

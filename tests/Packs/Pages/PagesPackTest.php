@@ -8,18 +8,18 @@
  * three pack skills, and the S13 fail-closed preflight (when Agent Safety is
  * absent the pack returns `pack_unbound`, never a gated pass).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Pages;
+namespace Specflux\SiteAgent\Tests\Packs\Pages;
 
-use Specflux\SenroFlux\Tests\Packs\BreadthFilter;
+use Specflux\SiteAgent\Tests\Packs\BreadthFilter;
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Skills\SkillSource;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Skills\SkillSource;
 use WP_Error;
 
 final class PagesPackTest extends TestCase {
@@ -30,14 +30,14 @@ final class PagesPackTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->loadShims();
-		remove_all_filters( 'senroflux_skills_max_tokens' );
-		remove_all_filters( 'senroflux_run_skills' );
+		remove_all_filters( 'specflux_site_agent_skills_max_tokens' );
+		remove_all_filters( 'specflux_site_agent_run_skills' );
 		Plugin::reset();
 	}
 
 	protected function tearDown(): void {
 		Plugin::reset();
-		unset( $GLOBALS['senroflux_test_user_caps_by_id'] );
+		unset( $GLOBALS['specflux_site_agent_test_user_caps_by_id'] );
 	}
 
 	public function test_name_is_pages(): void {
@@ -117,10 +117,10 @@ final class PagesPackTest extends TestCase {
 	public function test_verb_for_maps_abilities_to_s10_verbs(): void {
 		$pack = new PagesPack();
 
-		$this->assertSame( 'pages/read', $pack->verbFor( 'senroflux/read-content', array( 'id' => 1 ) ) );
-		$this->assertSame( 'pages/list-patterns', $pack->verbFor( 'senroflux/list-patterns', array() ) );
-		$this->assertSame( 'pages/preview', $pack->verbFor( 'senroflux/get-preview-url', array( 'id' => 1 ) ) );
-		$this->assertSame( 'pages/create-draft', $pack->verbFor( 'senroflux/create-post', array( 'status' => 'draft' ) ) );
+		$this->assertSame( 'pages/read', $pack->verbFor( 'specflux/read-content', array( 'id' => 1 ) ) );
+		$this->assertSame( 'pages/list-patterns', $pack->verbFor( 'specflux/list-patterns', array() ) );
+		$this->assertSame( 'pages/preview', $pack->verbFor( 'specflux/get-preview-url', array( 'id' => 1 ) ) );
+		$this->assertSame( 'pages/create-draft', $pack->verbFor( 'specflux/create-post', array( 'status' => 'draft' ) ) );
 
 		// 0.3 S4: update-post is draft-state edits only, so it is ALWAYS
 		// pages/update-draft regardless of args — the split moved every
@@ -128,7 +128,7 @@ final class PagesPackTest extends TestCase {
 		$this->assertSame(
 			'pages/update-draft',
 			$pack->verbFor(
-				'senroflux/update-post',
+				'specflux/update-post',
 				array(
 					'id'     => 1,
 					'status' => 'draft',
@@ -140,7 +140,7 @@ final class PagesPackTest extends TestCase {
 		$this->assertSame(
 			'pages/publish',
 			$pack->verbFor(
-				'senroflux/publish-post',
+				'specflux/publish-post',
 				array(
 					'id'     => 1,
 					'status' => 'publish',
@@ -156,8 +156,8 @@ final class PagesPackTest extends TestCase {
 	public function test_stock_image_verbs_are_tiered_and_gated_like_the_other_media_writes(): void {
 		$pack = new PagesPack();
 
-		$this->assertSame( 'pages/media-stock-search', $pack->verbFor( 'senroflux/stock-image-search', array() ) );
-		$this->assertSame( 'pages/media-stock-import', $pack->verbFor( 'senroflux/stock-image-import', array() ) );
+		$this->assertSame( 'pages/media-stock-search', $pack->verbFor( 'specflux/stock-image-search', array() ) );
+		$this->assertSame( 'pages/media-stock-import', $pack->verbFor( 'specflux/stock-image-import', array() ) );
 
 		$map = $pack->verbMap();
 		$this->assertSame( 0, $map['pages/media-stock-search'] );
@@ -172,21 +172,21 @@ final class PagesPackTest extends TestCase {
 	}
 
 	public function test_verb_for_publish_unchanged_is_update_live(): void {
-		$post                               = new \stdClass();
-		$post->ID                           = 9;
-		$post->post_type                    = 'page';
-		$post->post_title                   = 'Live';
-		$post->post_status                  = 'publish';
-		$post->post_name                    = '';
-		$post->post_parent                  = 0;
-		$post->post_excerpt                 = '';
-		$GLOBALS['senroflux_test_posts'][9] = $post;
+		$post               = new \stdClass();
+		$post->ID           = 9;
+		$post->post_type    = 'page';
+		$post->post_title   = 'Live';
+		$post->post_status  = 'publish';
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$GLOBALS['specflux_site_agent_test_posts'][9] = $post;
 
 		$pack = new PagesPack();
 		$this->assertSame(
 			'pages/update-live',
 			$pack->verbFor(
-				'senroflux/publish-post',
+				'specflux/publish-post',
 				array(
 					'id'     => 9,
 					'status' => 'publish',
@@ -197,20 +197,20 @@ final class PagesPackTest extends TestCase {
 
 	/** Editing an already-public post through publish-post with NO status change is also update-live. */
 	public function test_verb_for_publish_post_editing_a_public_post_with_no_status_is_update_live(): void {
-		$post                                = new \stdClass();
-		$post->ID                            = 10;
-		$post->post_type                     = 'page';
-		$post->post_title                    = 'Live';
-		$post->post_status                   = 'publish';
-		$post->post_name                     = '';
-		$post->post_parent                   = 0;
-		$post->post_excerpt                  = '';
-		$GLOBALS['senroflux_test_posts'][10] = $post;
+		$post               = new \stdClass();
+		$post->ID           = 10;
+		$post->post_type    = 'page';
+		$post->post_title   = 'Live';
+		$post->post_status  = 'publish';
+		$post->post_name    = '';
+		$post->post_parent  = 0;
+		$post->post_excerpt = '';
+		$GLOBALS['specflux_site_agent_test_posts'][10] = $post;
 
 		$pack = new PagesPack();
 		$this->assertSame(
 			'pages/update-live',
-			$pack->verbFor( 'senroflux/publish-post', array( 'id' => 10 ) )
+			$pack->verbFor( 'specflux/publish-post', array( 'id' => 10 ) )
 		);
 	}
 
@@ -252,14 +252,14 @@ final class PagesPackTest extends TestCase {
 	public function test_verb_for_maps_media_verbs(): void {
 		$pack = new PagesPack();
 
-		$this->assertSame( 'pages/media-search', $pack->verbFor( 'senroflux/media-search', array() ) );
-		$this->assertSame( 'pages/list-missing-alt', $pack->verbFor( 'senroflux/list-missing-alt', array() ) );
-		$this->assertSame( 'pages/media-upload', $pack->verbFor( 'senroflux/media-upload', array() ) );
-		$this->assertSame( 'pages/media-generate', $pack->verbFor( 'senroflux/generate-image', array() ) );
-		$this->assertSame( 'pages/generate-alt-text', $pack->verbFor( 'senroflux/generate-alt-text', array() ) );
-		$this->assertSame( 'pages/set-featured-image', $pack->verbFor( 'senroflux/set-featured-image', array() ) );
-		$this->assertSame( 'pages/update-alt', $pack->verbFor( 'senroflux/update-alt', array() ) );
-		$this->assertSame( 'pages/read-media', $pack->verbFor( 'senroflux/read-media', array() ) );
+		$this->assertSame( 'pages/media-search', $pack->verbFor( 'specflux/media-search', array() ) );
+		$this->assertSame( 'pages/list-missing-alt', $pack->verbFor( 'specflux/list-missing-alt', array() ) );
+		$this->assertSame( 'pages/media-upload', $pack->verbFor( 'specflux/media-upload', array() ) );
+		$this->assertSame( 'pages/media-generate', $pack->verbFor( 'specflux/generate-image', array() ) );
+		$this->assertSame( 'pages/generate-alt-text', $pack->verbFor( 'specflux/generate-alt-text', array() ) );
+		$this->assertSame( 'pages/set-featured-image', $pack->verbFor( 'specflux/set-featured-image', array() ) );
+		$this->assertSame( 'pages/update-alt', $pack->verbFor( 'specflux/update-alt', array() ) );
+		$this->assertSame( 'pages/read-media', $pack->verbFor( 'specflux/read-media', array() ) );
 	}
 
 	public function test_role_capabilities_require_upload_files_for_every_image_role(): void {
@@ -305,7 +305,7 @@ final class PagesPackTest extends TestCase {
 
 	public function test_preflight_passes_in_built_in_mode_when_edit_pages_is_held(): void {
 		Plugin::set_dependency_probe( false ); // Agent Safety absent => built-in mode.
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 7 => array( 'edit_pages' => true ) );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 7 => array( 'edit_pages' => true ) );
 
 		$result = ( new PagesPack() )->preflight( 7 );
 
@@ -314,7 +314,7 @@ final class PagesPackTest extends TestCase {
 
 	public function test_preflight_still_refuses_in_built_in_mode_without_edit_pages(): void {
 		Plugin::set_dependency_probe( false );
-		$GLOBALS['senroflux_test_user_caps_by_id'] = array( 7 => array( 'edit_pages' => false ) );
+		$GLOBALS['specflux_site_agent_test_user_caps_by_id'] = array( 7 => array( 'edit_pages' => false ) );
 
 		$result = ( new PagesPack() )->preflight( 7 );
 
@@ -323,7 +323,7 @@ final class PagesPackTest extends TestCase {
 	}
 
 	public function test_agent_safety_pack_is_null_when_class_absent(): void {
-		if ( class_exists( \Specflux\AgentSafety\Packs\Pack::class ) ) {
+		if ( class_exists( \Belayline\Packs\Pack::class ) ) {
 			$this->markTestSkipped( 'Agent Safety core is loaded in this environment.' );
 		}
 
@@ -360,16 +360,16 @@ final class PagesPackTest extends TestCase {
 	public function test_gate_verb_maps_a_pack_verb_onto_its_resolved_ability(): void {
 		$pack = new PagesPack();
 
-		$this->assertSame( 'senroflux/publish-post', $pack->gateVerbFor( 'pages/publish' ) );
-		$this->assertSame( 'senroflux/publish-post', $pack->gateVerbFor( 'pages/update-live' ) );
-		$this->assertSame( 'senroflux/update-post', $pack->gateVerbFor( 'pages/update-draft' ) );
-		$this->assertSame( 'senroflux/create-post', $pack->gateVerbFor( 'pages/create-draft' ) );
-		$this->assertSame( 'senroflux/read-content', $pack->gateVerbFor( 'pages/read' ) );
+		$this->assertSame( 'specflux/publish-post', $pack->gateVerbFor( 'pages/publish' ) );
+		$this->assertSame( 'specflux/publish-post', $pack->gateVerbFor( 'pages/update-live' ) );
+		$this->assertSame( 'specflux/update-post', $pack->gateVerbFor( 'pages/update-draft' ) );
+		$this->assertSame( 'specflux/create-post', $pack->gateVerbFor( 'pages/create-draft' ) );
+		$this->assertSame( 'specflux/read-content', $pack->gateVerbFor( 'pages/read' ) );
 		$this->assertNull( $pack->gateVerbFor( 'pages/not-a-verb' ) );
 	}
 
-	public function test_pack_governs_the_senroflux_namespace(): void {
-		$this->assertSame( array( 'senroflux/' ), ( new PagesPack() )->governedNamespaces() );
+	public function test_pack_governs_the_specflux_site_agent_namespace(): void {
+		$this->assertSame( array( 'specflux/' ), ( new PagesPack() )->governedNamespaces() );
 	}
 
 	/**
@@ -382,22 +382,22 @@ final class PagesPackTest extends TestCase {
 	public function test_agent_safety_verb_map_is_ability_ids_at_the_highest_reachable_tier(): void {
 		$this->assertSame(
 			array(
-				'senroflux/read-content'       => 0,
-				'senroflux/create-post'        => 1,
-				'senroflux/update-post'        => 1,
-				'senroflux/publish-post'       => 2,
-				'senroflux/get-preview-url'    => 0,
-				'senroflux/list-patterns'      => 0,
-				'senroflux/media-search'       => 0,
-				'senroflux/list-missing-alt'   => 0,
-				'senroflux/media-upload'       => 1,
-				'senroflux/generate-image'     => 1,
-				'senroflux/generate-alt-text'  => 0,
-				'senroflux/set-featured-image' => 1,
-				'senroflux/update-alt'         => 1,
-				'senroflux/read-media'         => 0,
-				'senroflux/stock-image-search' => 0,
-				'senroflux/stock-image-import' => 1,
+				'specflux/read-content'       => 0,
+				'specflux/create-post'        => 1,
+				'specflux/update-post'        => 1,
+				'specflux/publish-post'       => 2,
+				'specflux/get-preview-url'    => 0,
+				'specflux/list-patterns'      => 0,
+				'specflux/media-search'       => 0,
+				'specflux/list-missing-alt'   => 0,
+				'specflux/media-upload'       => 1,
+				'specflux/generate-image'     => 1,
+				'specflux/generate-alt-text'  => 0,
+				'specflux/set-featured-image' => 1,
+				'specflux/update-alt'         => 1,
+				'specflux/read-media'         => 0,
+				'specflux/stock-image-search' => 0,
+				'specflux/stock-image-import' => 1,
 			),
 			BreadthFilter::strip( ( new PagesPack() )->agentSafetyVerbMap() )
 		);

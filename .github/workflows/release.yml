@@ -7,7 +7,7 @@ name: Release
 # build zip -> re-run ci.yml against that exact zip -> release job gated on
 # both. Differences from agent-safety, both deliberate:
 #   - the GitHub Release this creates is a DRAFT (agent-safety's is not) —
-#     SenroFlux 1.0 wants a human look at release notes before they go
+#     Specflux Site Agent 1.0 wants a human look at release notes before they go
 #     public, not an auto-published release the moment a tag lands.
 #   - a sha256 checksum file is generated and attached alongside the zip.
 
@@ -45,7 +45,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          HEADER_VERSION=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' senroflux.php)
+          HEADER_VERSION=$(awk '/^[[:space:]]*\*[[:space:]]*Version:/ {print $NF; exit}' specflux-site-agent.php)
           echo "tag=$TAG_VERSION header=$HEADER_VERSION"
           if [ "$TAG_VERSION" != "$HEADER_VERSION" ]; then
             echo "::error::Tag v$TAG_VERSION does not match plugin header Version $HEADER_VERSION — bump the header and re-tag."
@@ -58,7 +58,7 @@ jobs:
       - name: Checksum the zip
         id: zip
         run: |
-          ZIP_PATH=$(find . -maxdepth 1 -name 'senroflux-*.zip' | head -1)
+          ZIP_PATH=$(find . -maxdepth 1 -name 'specflux-site-agent-*.zip' | head -1)
           NAME=$(basename "$ZIP_PATH" .zip)
           if command -v sha256sum >/dev/null 2>&1; then
             sha256sum "$ZIP_PATH" > "${ZIP_PATH}.sha256"

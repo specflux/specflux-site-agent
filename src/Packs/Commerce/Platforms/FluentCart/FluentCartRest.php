@@ -2,12 +2,12 @@
 /**
  * An in-process call to FluentCart's own REST routes (C4-F).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart;
 
 use WP_Error;
 
@@ -55,7 +55,7 @@ final class FluentCartRest {
 		}
 
 		if ( ! function_exists( 'rest_do_request' ) || ! class_exists( '\WP_REST_Request' ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'FluentCart is not reachable.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'FluentCart is not reachable.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$request = new \WP_REST_Request( strtoupper( $method ), self::NAMESPACE . $route );
@@ -73,7 +73,7 @@ final class FluentCartRest {
 			$code    = is_array( $data ) && is_string( $data['code'] ?? null ) ? $data['code'] : 'fluentcart_rest_error';
 			$message = is_array( $data ) && is_string( $data['message'] ?? null ) && '' !== $data['message']
 				? $data['message']
-				: __( 'FluentCart refused the request.', 'senroflux' );
+				: __( 'FluentCart refused the request.', 'specflux-site-agent' );
 
 			return new WP_Error( $code, $message, array( 'status' => $status ) );
 		}

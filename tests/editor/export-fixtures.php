@@ -6,7 +6,7 @@
  *
  * Run by `tests/editor/editor-parity.test.cjs`; not part of the PHPUnit suite.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
@@ -14,52 +14,52 @@ declare ( strict_types = 1 );
 require dirname( __DIR__ ) . '/bootstrap.php';
 require_once dirname( __DIR__ ) . '/stubs/blocks.php';
 
-use Specflux\SenroFlux\Packs\Pages\Layouts;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Packs\Pages\Validator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary;
-use Specflux\SenroFlux\Tests\Packs\Pages\LayoutsTest;
+use Specflux\SiteAgent\Packs\Pages\Layouts;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Packs\Pages\Validator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary;
+use Specflux\SiteAgent\Tests\Packs\Pages\LayoutsTest;
 
-$senroflux_vocabulary = new Vocabulary();
-$senroflux_patterns   = array();
-foreach ( $senroflux_vocabulary->all() as $senroflux_pattern ) {
-	$senroflux_patterns[ (string) $senroflux_pattern['slug'] ] = (string) $senroflux_pattern['markup'];
+$specflux_site_agent_vocabulary = new Vocabulary();
+$specflux_site_agent_patterns   = array();
+foreach ( $specflux_site_agent_vocabulary->all() as $specflux_site_agent_pattern ) {
+	$specflux_site_agent_patterns[ (string) $specflux_site_agent_pattern['slug'] ] = (string) $specflux_site_agent_pattern['markup'];
 }
 
-$senroflux_page  = implode(
+$specflux_site_agent_page  = implode(
 	"\n\n",
 	array_map(
-		static fn ( string $slug ): string => $senroflux_patterns[ $slug ],
+		static fn ( string $slug ): string => $specflux_site_agent_patterns[ $slug ],
 		array( 'hero', 'text-section', 'feature-grid', 'pricing-table', 'faq', 'testimonials', 'cta' )
 	)
 );
-$senroflux_clean = ( new Validator( $senroflux_vocabulary ) )->clean( $senroflux_page );
-if ( ! $senroflux_clean['ok'] ) {
-	throw new RuntimeException( 'The full shipped page was refused: ' . esc_html( (string) $senroflux_clean['wp_error']?->get_error_code() ) );
+$specflux_site_agent_clean = ( new Validator( $specflux_site_agent_vocabulary ) )->clean( $specflux_site_agent_page );
+if ( ! $specflux_site_agent_clean['ok'] ) {
+	throw new RuntimeException( 'The full shipped page was refused: ' . esc_html( (string) $specflux_site_agent_clean['wp_error']?->get_error_code() ) );
 }
 
 require_once dirname( __DIR__ ) . '/Packs/Pages/LayoutsTest.php';
 LayoutsTest::registerThemeFixtures();
-$senroflux_layout_parts = array();
-foreach ( LayoutsTest::outline() as $senroflux_index => $senroflux_section ) {
-	$senroflux_built = Layouts::render( $senroflux_section, $senroflux_index, $senroflux_vocabulary );
-	if ( ! is_string( $senroflux_built ) ) {
-		throw new RuntimeException( 'A layout was refused: ' . esc_html( $senroflux_built->get_error_message() ) );
+$specflux_site_agent_layout_parts = array();
+foreach ( LayoutsTest::outline() as $specflux_site_agent_index => $specflux_site_agent_section ) {
+	$specflux_site_agent_built = Layouts::render( $specflux_site_agent_section, $specflux_site_agent_index, $specflux_site_agent_vocabulary );
+	if ( ! is_string( $specflux_site_agent_built ) ) {
+		throw new RuntimeException( 'A layout was refused: ' . esc_html( $specflux_site_agent_built->get_error_message() ) );
 	}
-	$senroflux_layout_parts[] = $senroflux_built;
+	$specflux_site_agent_layout_parts[] = $specflux_site_agent_built;
 }
-$senroflux_layouts = ( new Validator( $senroflux_vocabulary ) )->clean( implode( "\n\n", $senroflux_layout_parts ) );
-if ( ! $senroflux_layouts['ok'] ) {
-	throw new RuntimeException( 'The layouts page was refused: ' . esc_html( (string) $senroflux_layouts['wp_error']?->get_error_message() ) );
+$specflux_site_agent_layouts = ( new Validator( $specflux_site_agent_vocabulary ) )->clean( implode( "\n\n", $specflux_site_agent_layout_parts ) );
+if ( ! $specflux_site_agent_layouts['ok'] ) {
+	throw new RuntimeException( 'The layouts page was refused: ' . esc_html( (string) $specflux_site_agent_layouts['wp_error']?->get_error_message() ) );
 }
 
 // D3b (S6): curated sections wearing a tone (an image-less hero defaults to
 // `contrast`; the text section takes `accent`), built with Twenty
 // Twenty-Five's real palette and no theme patterns so every layout is the
 // curated one, then cleaned by the Validator like any write.
-$senroflux_theme_patterns                  = $GLOBALS['senroflux_test_theme_patterns'] ?? array();
-$GLOBALS['senroflux_test_theme_patterns']  = array();
-$GLOBALS['senroflux_test_global_settings'] = array(
+$specflux_site_agent_theme_patterns                  = $GLOBALS['specflux_site_agent_test_theme_patterns'] ?? array();
+$GLOBALS['specflux_site_agent_test_theme_patterns']  = array();
+$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 	'color' => array(
 		'palette' => array(
 			array(
@@ -86,27 +86,27 @@ $GLOBALS['senroflux_test_global_settings'] = array(
 	),
 );
 ThemePatterns::resetCache();
-$senroflux_toned_outline  = LayoutsTest::outline();
-$senroflux_toned_services = $senroflux_toned_outline[2];
-foreach ( $senroflux_toned_services['items'] as $senroflux_toned_key => $senroflux_toned_item ) {
-	unset( $senroflux_toned_services['items'][ $senroflux_toned_key ]['image'] );
+$specflux_site_agent_toned_outline  = LayoutsTest::outline();
+$specflux_site_agent_toned_services = $specflux_site_agent_toned_outline[2];
+foreach ( $specflux_site_agent_toned_services['items'] as $specflux_site_agent_toned_key => $specflux_site_agent_toned_item ) {
+	unset( $specflux_site_agent_toned_services['items'][ $specflux_site_agent_toned_key ]['image'] );
 }
-$senroflux_toned_hero = $senroflux_toned_outline[0];
-unset( $senroflux_toned_hero['image'] );
-$senroflux_toned_parts = array();
-foreach ( array( $senroflux_toned_hero, array( 'tone' => 'accent' ) + $senroflux_toned_outline[1], $senroflux_toned_services, $senroflux_toned_outline[5] ) as $senroflux_toned_index => $senroflux_toned_section ) {
-	$senroflux_toned_built = Layouts::render( $senroflux_toned_section, $senroflux_toned_index, $senroflux_vocabulary );
-	if ( ! is_string( $senroflux_toned_built ) ) {
-		throw new RuntimeException( 'A toned layout was refused: ' . esc_html( $senroflux_toned_built->get_error_message() ) );
+$specflux_site_agent_toned_hero = $specflux_site_agent_toned_outline[0];
+unset( $specflux_site_agent_toned_hero['image'] );
+$specflux_site_agent_toned_parts = array();
+foreach ( array( $specflux_site_agent_toned_hero, array( 'tone' => 'accent' ) + $specflux_site_agent_toned_outline[1], $specflux_site_agent_toned_services, $specflux_site_agent_toned_outline[5] ) as $specflux_site_agent_toned_index => $specflux_site_agent_toned_section ) {
+	$specflux_site_agent_toned_built = Layouts::render( $specflux_site_agent_toned_section, $specflux_site_agent_toned_index, $specflux_site_agent_vocabulary );
+	if ( ! is_string( $specflux_site_agent_toned_built ) ) {
+		throw new RuntimeException( 'A toned layout was refused: ' . esc_html( $specflux_site_agent_toned_built->get_error_message() ) );
 	}
-	$senroflux_toned_parts[] = $senroflux_toned_built;
+	$specflux_site_agent_toned_parts[] = $specflux_site_agent_toned_built;
 }
-$senroflux_toned = ( new Validator( $senroflux_vocabulary ) )->clean( implode( "\n\n", $senroflux_toned_parts ) );
-if ( ! $senroflux_toned['ok'] ) {
-	throw new RuntimeException( 'The toned page was refused: ' . esc_html( $senroflux_toned['wp_error']?->get_error_message() ?? '' ) );
+$specflux_site_agent_toned = ( new Validator( $specflux_site_agent_vocabulary ) )->clean( implode( "\n\n", $specflux_site_agent_toned_parts ) );
+if ( ! $specflux_site_agent_toned['ok'] ) {
+	throw new RuntimeException( 'The toned page was refused: ' . esc_html( $specflux_site_agent_toned['wp_error']?->get_error_message() ?? '' ) );
 }
-$GLOBALS['senroflux_test_theme_patterns'] = $senroflux_theme_patterns;
-unset( $GLOBALS['senroflux_test_global_settings'] );
+$GLOBALS['specflux_site_agent_test_theme_patterns'] = $specflux_site_agent_theme_patterns;
+unset( $GLOBALS['specflux_site_agent_test_global_settings'] );
 ThemePatterns::resetCache();
 
 // D3a (S4): a real Ollie pattern (`tests/ThemePatterns/ollie/numbers-stacked.php`,
@@ -116,24 +116,24 @@ ThemePatterns::resetCache();
 // `textColor` still exactly as the theme shipped them.
 require_once dirname( __DIR__ ) . '/stubs/theme-patterns.php';
 
-$senroflux_ollie_path = dirname( __DIR__ ) . '/ThemePatterns/ollie/numbers-stacked.php';
+$specflux_site_agent_ollie_path = dirname( __DIR__ ) . '/ThemePatterns/ollie/numbers-stacked.php';
 ob_start();
-require $senroflux_ollie_path;
-$senroflux_ollie_content = trim( (string) ob_get_clean() );
+require $specflux_site_agent_ollie_path;
+$specflux_site_agent_ollie_content = trim( (string) ob_get_clean() );
 
-$GLOBALS['senroflux_test_theme_patterns']  = array(
+$GLOBALS['specflux_site_agent_test_theme_patterns']  = array(
 	array(
 		'name'        => 'ollie/numbers-stacked',
 		'title'       => 'Numbers Stacked',
 		'description' => 'Display impressive numbers with a short description',
-		'content'     => $senroflux_ollie_content,
-		'filePath'    => $senroflux_ollie_path,
+		'content'     => $specflux_site_agent_ollie_content,
+		'filePath'    => $specflux_site_agent_ollie_path,
 		'categories'  => array( 'ollie/features' ),
 	),
 );
-$GLOBALS['senroflux_test_stylesheet_dir']  = dirname( __DIR__ ) . '/ThemePatterns/ollie';
-$GLOBALS['senroflux_test_template_dir']    = dirname( __DIR__ ) . '/ThemePatterns/ollie';
-$GLOBALS['senroflux_test_global_settings'] = array(
+$GLOBALS['specflux_site_agent_test_stylesheet_dir']  = dirname( __DIR__ ) . '/ThemePatterns/ollie';
+$GLOBALS['specflux_site_agent_test_template_dir']    = dirname( __DIR__ ) . '/ThemePatterns/ollie';
+$GLOBALS['specflux_site_agent_test_global_settings'] = array(
 	'color' => array(
 		'palette'   => array(
 			array( 'slug' => 'primary' ),
@@ -153,23 +153,23 @@ $GLOBALS['senroflux_test_global_settings'] = array(
 );
 ThemePatterns::resetCache();
 
-$senroflux_ollie_vocabulary = new Vocabulary();
-$senroflux_ollie_slots      = ThemePatterns::textSlots( $senroflux_ollie_content );
-$senroflux_ollie_values     = array();
-foreach ( $senroflux_ollie_slots as $senroflux_ollie_slot ) {
-	$senroflux_ollie_values[ $senroflux_ollie_slot['index'] ] = 'New short copy';
+$specflux_site_agent_ollie_vocabulary = new Vocabulary();
+$specflux_site_agent_ollie_slots      = ThemePatterns::textSlots( $specflux_site_agent_ollie_content );
+$specflux_site_agent_ollie_values     = array();
+foreach ( $specflux_site_agent_ollie_slots as $specflux_site_agent_ollie_slot ) {
+	$specflux_site_agent_ollie_values[ $specflux_site_agent_ollie_slot['index'] ] = 'New short copy';
 }
 
-$senroflux_ollie_filled = ThemePatterns::fill( $senroflux_ollie_content, $senroflux_ollie_values );
-if ( ! $senroflux_ollie_filled['ok'] ) {
-	throw new RuntimeException( 'The Ollie pattern fill was refused: ' . esc_html( (string) $senroflux_ollie_filled['wp_error']?->get_error_code() ) );
+$specflux_site_agent_ollie_filled = ThemePatterns::fill( $specflux_site_agent_ollie_content, $specflux_site_agent_ollie_values );
+if ( ! $specflux_site_agent_ollie_filled['ok'] ) {
+	throw new RuntimeException( 'The Ollie pattern fill was refused: ' . esc_html( (string) $specflux_site_agent_ollie_filled['wp_error']?->get_error_code() ) );
 }
 
-$senroflux_ollie_page = ( new Validator( $senroflux_ollie_vocabulary ) )->clean(
-	$senroflux_patterns['hero'] . "\n\n" . $senroflux_ollie_filled['content']
+$specflux_site_agent_ollie_page = ( new Validator( $specflux_site_agent_ollie_vocabulary ) )->clean(
+	$specflux_site_agent_patterns['hero'] . "\n\n" . $specflux_site_agent_ollie_filled['content']
 );
-if ( ! $senroflux_ollie_page['ok'] ) {
-	throw new RuntimeException( 'The Ollie pattern page was refused: ' . esc_html( (string) $senroflux_ollie_page['wp_error']?->get_error_code() ) );
+if ( ! $specflux_site_agent_ollie_page['ok'] ) {
+	throw new RuntimeException( 'The Ollie pattern page was refused: ' . esc_html( (string) $specflux_site_agent_ollie_page['wp_error']?->get_error_code() ) );
 }
 
 // D1 amendment (S5b): a real Ollie pattern (`features-with-emojis`) adapted by
@@ -177,47 +177,47 @@ if ( ! $senroflux_ollie_page['ok'] ) {
 // paragraph dropped, four cards trimmed to three, the layout's heading
 // inserted at the top), then cleaned by the Validator, must open in the
 // editor without recovery.
-$senroflux_adapted_path = dirname( __DIR__ ) . '/ThemePatterns/ollie/features-with-emojis.php';
+$specflux_site_agent_adapted_path = dirname( __DIR__ ) . '/ThemePatterns/ollie/features-with-emojis.php';
 ob_start();
-require $senroflux_adapted_path;
-$senroflux_adapted_content = trim( (string) ob_get_clean() );
+require $specflux_site_agent_adapted_path;
+$specflux_site_agent_adapted_content = trim( (string) ob_get_clean() );
 
-$GLOBALS['senroflux_test_theme_patterns'] = array(
+$GLOBALS['specflux_site_agent_test_theme_patterns'] = array(
 	array(
 		'name'        => 'ollie/features-with-emojis',
 		'title'       => 'Features With Emojis',
 		'description' => '',
-		'content'     => $senroflux_adapted_content,
-		'filePath'    => $senroflux_adapted_path,
+		'content'     => $specflux_site_agent_adapted_content,
+		'filePath'    => $specflux_site_agent_adapted_path,
 		'categories'  => array( 'ollie/features' ),
 	),
 );
-$GLOBALS['senroflux_test_stylesheet']     = 'ollie';
+$GLOBALS['specflux_site_agent_test_stylesheet']     = 'ollie';
 ThemePatterns::resetCache();
 
-$senroflux_adapted_section = LayoutsTest::outline()[2];
-foreach ( array_keys( $senroflux_adapted_section['items'] ) as $senroflux_adapted_key ) {
-	unset( $senroflux_adapted_section['items'][ $senroflux_adapted_key ]['image'] );
+$specflux_site_agent_adapted_section = LayoutsTest::outline()[2];
+foreach ( array_keys( $specflux_site_agent_adapted_section['items'] ) as $specflux_site_agent_adapted_key ) {
+	unset( $specflux_site_agent_adapted_section['items'][ $specflux_site_agent_adapted_key ]['image'] );
 }
-$senroflux_adapted_vocabulary = new Vocabulary();
-$senroflux_adapted_built      = Layouts::render( $senroflux_adapted_section, 0, $senroflux_adapted_vocabulary );
-if ( ! is_string( $senroflux_adapted_built ) ) {
-	throw new RuntimeException( 'The adapted Ollie section was refused: ' . esc_html( $senroflux_adapted_built->get_error_message() ) );
+$specflux_site_agent_adapted_vocabulary = new Vocabulary();
+$specflux_site_agent_adapted_built      = Layouts::render( $specflux_site_agent_adapted_section, 0, $specflux_site_agent_adapted_vocabulary );
+if ( ! is_string( $specflux_site_agent_adapted_built ) ) {
+	throw new RuntimeException( 'The adapted Ollie section was refused: ' . esc_html( $specflux_site_agent_adapted_built->get_error_message() ) );
 }
-$senroflux_adapted_page = ( new Validator( $senroflux_adapted_vocabulary ) )->clean(
-	$senroflux_patterns['hero'] . "\n\n" . $senroflux_adapted_built
+$specflux_site_agent_adapted_page = ( new Validator( $specflux_site_agent_adapted_vocabulary ) )->clean(
+	$specflux_site_agent_patterns['hero'] . "\n\n" . $specflux_site_agent_adapted_built
 );
-if ( ! $senroflux_adapted_page['ok'] ) {
-	throw new RuntimeException( 'The adapted Ollie page was refused: ' . esc_html( (string) $senroflux_adapted_page['wp_error']?->get_error_code() ) );
+if ( ! $specflux_site_agent_adapted_page['ok'] ) {
+	throw new RuntimeException( 'The adapted Ollie page was refused: ' . esc_html( (string) $specflux_site_agent_adapted_page['wp_error']?->get_error_code() ) );
 }
 
 echo wp_json_encode(
 	array(
-		'patterns' => $senroflux_patterns,
-		'page'     => $senroflux_clean['content'],
-		'layouts'  => $senroflux_layouts['content'],
-		'toned'    => $senroflux_toned['content'],
-		'ollie'    => $senroflux_ollie_page['content'],
-		'adapted'  => $senroflux_adapted_page['content'],
+		'patterns' => $specflux_site_agent_patterns,
+		'page'     => $specflux_site_agent_clean['content'],
+		'layouts'  => $specflux_site_agent_layouts['content'],
+		'toned'    => $specflux_site_agent_toned['content'],
+		'ollie'    => $specflux_site_agent_ollie_page['content'],
+		'adapted'  => $specflux_site_agent_adapted_page['content'],
 	)
 );

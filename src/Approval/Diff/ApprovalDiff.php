@@ -2,12 +2,12 @@
 /**
  * The "What changes" payload for an approval card.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Approval\Diff;
+namespace Specflux\SiteAgent\Approval\Diff;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -55,7 +55,7 @@ final class ApprovalDiff {
 	/**
 	 * Build the diff for one pending call.
 	 *
-	 * @param string              $ability Ability name, e.g. `senroflux/update-post`.
+	 * @param string              $ability Ability name, e.g. `specflux/update-post`.
 	 * @param array<string,mixed> $args    The call's arguments.
 	 * @return array<string,mixed>|null Null when there is nothing to compare.
 	 */

@@ -2,12 +2,12 @@
 /**
  * Links built from WordPress URL helpers (no database reads).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present;
+namespace Specflux\SiteAgent\Present;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;

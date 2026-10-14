@@ -4,7 +4,7 @@
  *
  * TARGET REPO PATH: src/Packs/Site/Validator.php
  *
- * Extends {@see \Specflux\SenroFlux\Packs\Pages\Validator} rather than
+ * Extends {@see \Specflux\SiteAgent\Packs\Pages\Validator} rather than
  * re-implementing ~1000 lines of generic block-shape / markup-safety /
  * decorative-colour / editor-parity checking (`matchPatternSchema()` and
  * `BlockShells` already dispatch through `$this->vocabulary->all()`, so the
@@ -17,15 +17,15 @@
  *     inherited "at most one cta" rule to a small ONCE-per-page set
  *     (`cta`, `page-links`), instead of hardcoding `cta` alone.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Site;
+namespace Specflux\SiteAgent\Packs\Site;
 
-use Specflux\SenroFlux\Packs\Pages\Validator as PagesValidator;
-use Specflux\SenroFlux\Packs\Pages\Vocabulary as PagesVocabulary;
+use Specflux\SiteAgent\Packs\Pages\Validator as PagesValidator;
+use Specflux\SiteAgent\Packs\Pages\Vocabulary as PagesVocabulary;
 use WP_Error;
 
 // Bail on direct access.
@@ -78,7 +78,7 @@ final class Validator extends PagesValidator {
 				'page_shape',
 				sprintf(
 					/* translators: 1: minimum pattern count, 2: maximum pattern count. */
-					__( 'A page must contain between %1$d and %2$d patterns.', 'senroflux' ),
+					__( 'A page must contain between %1$d and %2$d patterns.', 'specflux-site-agent' ),
 					PagesVocabulary::RULES_MIN_PATTERNS,
 					PagesVocabulary::RULES_MAX_PATTERNS
 				),
@@ -93,7 +93,7 @@ final class Validator extends PagesValidator {
 		if ( ! $this->isHeroSlug( $slugs[0] ?? '' ) ) {
 			return new WP_Error(
 				'page_shape',
-				__( 'The first pattern on a page must be the hero.', 'senroflux' ),
+				__( 'The first pattern on a page must be the hero.', 'specflux-site-agent' ),
 				array(
 					'status' => 400,
 					'rule'   => 'hero_first',
@@ -113,7 +113,7 @@ final class Validator extends PagesValidator {
 					'page_shape',
 					sprintf(
 						/* translators: %s: the pattern slug (e.g. "cta", "page-links"). */
-						__( 'A page may contain at most one %s.', 'senroflux' ),
+						__( 'A page may contain at most one %s.', 'specflux-site-agent' ),
 						$once_slug
 					),
 					array(
@@ -139,7 +139,7 @@ final class Validator extends PagesValidator {
 					'page_shape',
 					sprintf(
 						/* translators: 1: the pattern slug, 2: the maximum repeat count. */
-						__( '%1$s may appear at most %2$d times.', 'senroflux' ),
+						__( '%1$s may appear at most %2$d times.', 'specflux-site-agent' ),
 						$slug,
 						PagesVocabulary::RULES_MAX_REPEAT
 					),

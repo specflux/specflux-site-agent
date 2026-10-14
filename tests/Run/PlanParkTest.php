@@ -3,28 +3,28 @@
  * Runner::tick() tests for the S7 plan park, the plan fence, against a mocked
  * gateway (stage-4 check).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Run;
+namespace Specflux\SiteAgent\Tests\Run;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Run\StepKind;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Tools\PlanTools;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use Specflux\SenroFlux\Tools\VerbTier;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Run\StepKind;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Tools\PlanTools;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use Specflux\SiteAgent\Tools\VerbTier;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 use WP_Error;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -52,15 +52,15 @@ final class PlanParkTest extends TestCase {
 		$this->bridge          = new RecordingBridge();
 		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
-		$GLOBALS['senroflux_test_abilities']       = array(
-			'agsafe-smoke/read'  => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_abilities']       = array(
+			'agsafe-smoke/read'  => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/read',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
-			'agsafe-smoke/write' => new SenroFlux_Test_Fake_Ability(
+			'agsafe-smoke/write' => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'agsafe-smoke/write',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
@@ -70,7 +70,7 @@ final class PlanParkTest extends TestCase {
 		// Stage-4 verb map (the stage-6 seam): read is free (tier 0), write is
 		// fenced (tier 1). Unknown verbs fail closed to tier 2 (VerbTier).
 		add_filter(
-			'senroflux_verb_map',
+			'specflux_site_agent_verb_map',
 			static fn ( array $map ): array => $map + array(
 				'agsafe-smoke/read'  => VerbTier::TIER_0,
 				'agsafe-smoke/write' => VerbTier::TIER_1,
@@ -81,9 +81,9 @@ final class PlanParkTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		remove_all_filters( 'senroflux_verb_map' );
-		remove_all_filters( 'senroflux_enable_preapproval' );
-		unset( $GLOBALS['senroflux_test_posts'], $GLOBALS['senroflux_test_user_caps']['read_post'], $GLOBALS['senroflux_test_user_caps']['read_post:4'] );
+		remove_all_filters( 'specflux_site_agent_verb_map' );
+		remove_all_filters( 'specflux_site_agent_enable_preapproval' );
+		unset( $GLOBALS['specflux_site_agent_test_posts'], $GLOBALS['specflux_site_agent_test_user_caps']['read_post'], $GLOBALS['specflux_site_agent_test_user_caps']['read_post:4'] );
 	}
 
 	/**
@@ -251,7 +251,7 @@ final class PlanParkTest extends TestCase {
 		$this->assertSame( array( 'The draft is reviewed.' ), $ui['assumptions'] ?? null );
 		$this->assertSame( 2, $ui['remaining_plans'] ?? -1, 'remaining = max_plans(3) − count(plan steps)(1)' );
 		$this->assertFalse( $ui['preapprove_available'] ?? true, 'preapprove is hidden in stage 4 (grants absent)' );
-		$this->assertStringContainsString( 'senroflux-runs', (string) ( $ui['review_url'] ?? '' ) );
+		$this->assertStringContainsString( 'specflux-site-agent-runs', (string) ( $ui['review_url'] ?? '' ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -403,32 +403,32 @@ final class PlanParkTest extends TestCase {
 		// draft out of its plan, so the human approved without seeing it. The
 		// card now lists the site's pages itself, whatever the model wrote.
 		require_once dirname( __DIR__ ) . '/stubs/navigation.php';
-		$GLOBALS['senroflux_test_posts'][2]                 = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][2]                 = (object) array(
 			'ID'          => 2,
 			'post_type'   => 'page',
 			'post_status' => 'publish',
 			'post_title'  => 'Sample Page',
 		);
-		$GLOBALS['senroflux_test_posts'][3]                 = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][3]                 = (object) array(
 			'ID'          => 3,
 			'post_type'   => 'page',
 			'post_status' => 'draft',
 			'post_title'  => 'Privacy Policy',
 		);
-		$GLOBALS['senroflux_test_posts'][4]                 = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][4]                 = (object) array(
 			'ID'          => 4,
 			'post_type'   => 'page',
 			'post_status' => 'private',
 			'post_title'  => 'Owner Notes',
 		);
-		$GLOBALS['senroflux_test_posts'][5]                 = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][5]                 = (object) array(
 			'ID'          => 5,
 			'post_type'   => 'post',
 			'post_status' => 'publish',
 			'post_title'  => 'Hello world!',
 		);
-		$GLOBALS['senroflux_test_user_caps']['read_post']   = true;
-		$GLOBALS['senroflux_test_user_caps']['read_post:4'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post']   = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post:4'] = false;
 
 		$run_id = $this->store->createRun( 1, 'test-consumer', 'Build a site skeleton', array( 'agsafe-smoke/*' ), Budget::defaults(), 'site' );
 
@@ -456,13 +456,13 @@ final class PlanParkTest extends TestCase {
 	}
 
 	public function test_a_non_site_plan_card_carries_no_site_pages(): void {
-		$GLOBALS['senroflux_test_posts'][2]               = (object) array(
+		$GLOBALS['specflux_site_agent_test_posts'][2]               = (object) array(
 			'ID'          => 2,
 			'post_type'   => 'page',
 			'post_status' => 'publish',
 			'post_title'  => 'Sample Page',
 		);
-		$GLOBALS['senroflux_test_user_caps']['read_post'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['read_post'] = true;
 
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::planTurn( 'call_p', self::planNaming( array() ) );
@@ -1048,10 +1048,10 @@ final class PlanParkTest extends TestCase {
 		$this->runner->tick( $run_id, 0, null );
 		$this->gateway->script = array( $this->textTurn( 'Thanks!' ), $this->textTurn( 'Thanks!' ) );
 
-		// A delegated admin (user 2) accepts; senroflux_can_tick must allow it.
-		$GLOBALS['senroflux_test_current_user_id'] = 2;
+		// A delegated admin (user 2) accepts; specflux_site_agent_can_tick must allow it.
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 2;
 		add_filter(
-			'senroflux_can_tick',
+			'specflux_site_agent_can_tick',
 			static fn (): bool => true,
 			10,
 			0
@@ -1060,7 +1060,7 @@ final class PlanParkTest extends TestCase {
 		$before = $this->store->getRun( $run_id )->stepCount;
 		$result = $this->runner->tick( $run_id, $before, array( 'plan' => array( 'action' => 'accept' ) ) );
 
-		remove_all_filters( 'senroflux_can_tick' );
+		remove_all_filters( 'specflux_site_agent_can_tick' );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'completed', $result['run']['status'] );
@@ -1112,19 +1112,19 @@ final class PlanParkTest extends TestCase {
 	}
 
 	private function seedPagesAbilities(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'senroflux/read-content' => new SenroFlux_Test_Fake_Ability(
-				'senroflux/read-content',
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'specflux/read-content' => new SpecfluxSiteAgent_Test_Fake_Ability(
+				'specflux/read-content',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
-			'senroflux/update-post'  => new SenroFlux_Test_Fake_Ability(
-				'senroflux/update-post',
+			'specflux/update-post'  => new SpecfluxSiteAgent_Test_Fake_Ability(
+				'specflux/update-post',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
-			'senroflux/publish-post' => new SenroFlux_Test_Fake_Ability(
-				'senroflux/publish-post',
+			'specflux/publish-post' => new SpecfluxSiteAgent_Test_Fake_Ability(
+				'specflux/publish-post',
 				permission_result: true,
 				execute_result: array( 'ok' => true )
 			),
@@ -1136,7 +1136,7 @@ final class PlanParkTest extends TestCase {
 			1,
 			'test-consumer',
 			'Design a pricing page',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			array_merge( Budget::defaults(), $budget_overrides )
 		);
 	}
@@ -1146,7 +1146,7 @@ final class PlanParkTest extends TestCase {
 			1,
 			'test-consumer',
 			'Design a pricing page',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults()
 		);
 	}
@@ -1157,7 +1157,7 @@ final class PlanParkTest extends TestCase {
 
 		$this->gateway->script[] = self::turn(
 			new MessagePart( 'Reading.' ),
-			new MessagePart( new FunctionCall( 'call_r', 'wpab__senroflux__read-content', array( 'id' => 7 ) ) )
+			new MessagePart( new FunctionCall( 'call_r', 'wpab__specflux__read-content', array( 'id' => 7 ) ) )
 		);
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 
@@ -1167,7 +1167,7 @@ final class PlanParkTest extends TestCase {
 		// pages/read is tier 0: free before any plan, so the call EXECUTES.
 		$read = $result['new_steps'][2];
 		$this->assertSame( 'ok', $read['status'] );
-		$this->assertSame( 'wpab__senroflux__read-content', $read['tool_name'] );
+		$this->assertSame( 'wpab__specflux__read-content', $read['tool_name'] );
 	}
 
 	public function test_fence_tiers_a_publish_transition_as_tier2_through_the_pack_verb(): void {
@@ -1179,7 +1179,7 @@ final class PlanParkTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_p',
-					'wpab__senroflux__publish-post',
+					'wpab__specflux__publish-post',
 					array(
 						'id'     => 7,
 						'status' => 'publish',
@@ -1233,7 +1233,7 @@ final class PlanParkTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_pub',
-					'wpab__senroflux__publish-post',
+					'wpab__specflux__publish-post',
 					array(
 						'id'     => 7,
 						'status' => 'publish',
@@ -1243,7 +1243,7 @@ final class PlanParkTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_draft',
-					'wpab__senroflux__update-post',
+					'wpab__specflux__update-post',
 					array(
 						'id'     => 7,
 						'status' => 'draft',
@@ -1282,8 +1282,8 @@ final class PlanParkTest extends TestCase {
 	 */
 	public function test_a_plan_that_may_generate_an_image_may_import_a_stock_one( array $plan_verbs, string $expected ): void {
 		$this->seedPagesAbilities();
-		$GLOBALS['senroflux_test_abilities']['senroflux/stock-image-import'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/stock-image-import',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/stock-image-import'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/stock-image-import',
 			permission_result: true,
 			execute_result: array( 'ok' => true )
 		);
@@ -1309,7 +1309,7 @@ final class PlanParkTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_i',
-					'wpab__senroflux__stock-image-import',
+					'wpab__specflux__stock-image-import',
 					array(
 						'id'  => '0241be49-4a09-47a4-97d4-3cbcd8f4149b',
 						'alt' => 'A clinic',
@@ -1352,12 +1352,12 @@ final class PlanParkTest extends TestCase {
 			1,
 			'test-consumer',
 			'Design a pricing page',
-			array( 'senroflux/*' ),
+			array( 'specflux/*' ),
 			Budget::defaults(),
 			null,
 			null,
 			null,
-			\Specflux\SenroFlux\Run\GateMode::BuiltIn
+			\Specflux\SiteAgent\Run\GateMode::BuiltIn
 		);
 
 		$runner = new Runner(
@@ -1378,9 +1378,9 @@ final class PlanParkTest extends TestCase {
 			},
 			null,
 			null,
-			new \Specflux\SenroFlux\Approval\GrantBridge(),
+			new \Specflux\SiteAgent\Approval\GrantBridge(),
 			null,
-			static fn (): \Specflux\SenroFlux\Run\GateMode => \Specflux\SenroFlux\Run\GateMode::BuiltIn
+			static fn (): \Specflux\SiteAgent\Run\GateMode => \Specflux\SiteAgent\Run\GateMode::BuiltIn
 		);
 
 		$this->gateway->script[] = self::planTurn(
@@ -1404,7 +1404,7 @@ final class PlanParkTest extends TestCase {
 			new MessagePart(
 				new FunctionCall(
 					'call_draft',
-					'wpab__senroflux__update-post',
+					'wpab__specflux__update-post',
 					array(
 						'id'     => 7,
 						'status' => 'draft',
@@ -1486,7 +1486,7 @@ final class PlanParkTest extends TestCase {
 				'text'      => 'Which color?',
 				'rationale' => 'Need it.',
 			),
-			'senroflux/ask-user',
+			'specflux/ask-user',
 			null,
 			'parked'
 		);
@@ -1724,10 +1724,10 @@ final class PlanParkTest extends TestCase {
 		$this->assertSame( 'awaiting_plan', $result['run']['status'] );
 	}
 
-	/** `senroflux_require_page_image` off disables the plan-time check too. */
+	/** `specflux_site_agent_require_page_image` off disables the plan-time check too. */
 	public function test_the_page_image_filter_off_disables_the_plan_time_check(): void {
 		$this->seedPagesAbilities();
-		add_filter( 'senroflux_require_page_image', static fn () => false );
+		add_filter( 'specflux_site_agent_require_page_image', static fn () => false );
 		$run_id                  = $this->createPagesRun();
 		$this->gateway->script[] = self::planTurn(
 			'call_p',
@@ -1743,7 +1743,7 @@ final class PlanParkTest extends TestCase {
 		);
 
 		$result = $this->packRunner()->tick( $run_id, 0, null );
-		remove_all_filters( 'senroflux_require_page_image' );
+		remove_all_filters( 'specflux_site_agent_require_page_image' );
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 'awaiting_plan', $result['run']['status'] );

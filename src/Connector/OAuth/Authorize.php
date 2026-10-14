@@ -2,21 +2,21 @@
 /**
  * The authorization endpoint and consent screen.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * `GET|POST /wp-admin/admin-post.php?action=senroflux_oauth_authorize`.
+ * `GET|POST /wp-admin/admin-post.php?action=specflux_site_agent_oauth_authorize`.
  *
  * Why admin-post and not REST: a REST request only sees the browser's WordPress
  * login cookie when it carries a REST nonce, which an OAuth redirect cannot. admin-post
@@ -55,26 +55,26 @@ final class Authorize {
 	 */
 	public static function run( string $method, array $in ): Page {
 		if ( ! Connector::enabled() ) {
-			return self::error( __( 'This site is not accepting app connections.', 'senroflux' ), 404 );
+			return self::error( __( 'This site is not accepting app connections.', 'specflux-site-agent' ), 404 );
 		}
 		if ( ! is_user_logged_in() ) {
 			// Not a redirect to the client: this goes to WordPress's own login and comes straight back.
 			return 'POST' === $method
-				? self::error( __( 'Your session expired. Start the connection again from the app.', 'senroflux' ), 403 )
+				? self::error( __( 'Your session expired. Start the connection again from the app.', 'specflux-site-agent' ), 403 )
 				: new Page( 302, '', wp_login_url( self::returnUrl( $in ) ) );
 		}
 		if ( ! current_user_can( Connector::capability() ) ) {
-			return self::error( __( 'Your account is not allowed to connect apps to this site. Ask a site administrator.', 'senroflux' ), 403 );
+			return self::error( __( 'Your account is not allowed to connect apps to this site. Ask a site administrator.', 'specflux-site-agent' ), 403 );
 		}
 
 		// 1. Who is asking, and where may we send the browser? Failures here never redirect.
 		$client = Clients::resolve( self::str( $in, 'client_id' ) );
 		if ( null === $client ) {
-			return self::error( __( 'This app is not recognised. Start the connection again from the app.', 'senroflux' ), 400 );
+			return self::error( __( 'This app is not recognised. Start the connection again from the app.', 'specflux-site-agent' ), 400 );
 		}
 		$redirect = self::str( $in, 'redirect_uri' );
 		if ( '' === $redirect || ! $client->allowsRedirect( $redirect ) ) {
-			return self::error( __( 'The app asked to return to an address it has not registered, so the request was stopped.', 'senroflux' ), 400 );
+			return self::error( __( 'The app asked to return to an address it has not registered, so the request was stopped.', 'specflux-site-agent' ), 400 );
 		}
 
 		// 2. The redirect target is now trusted: further errors go back to the client (RFC 6749 §4.1.2.1).
@@ -109,7 +109,7 @@ final class Authorize {
 		// 3. The decision. Without a valid nonce this is a forged cross-site POST: refuse, do not redirect.
 		$nonce = self::str( $in, '_wpnonce' );
 		if ( '' === $nonce || false === wp_verify_nonce( $nonce, $nonce_action ) ) {
-			return self::error( __( 'This request could not be verified. Start the connection again from the app.', 'senroflux' ), 403 );
+			return self::error( __( 'This request could not be verified. Start the connection again from the app.', 'specflux-site-agent' ), 403 );
 		}
 		if ( 'approve' !== self::str( $in, 'decision' ) ) {
 			return self::fail( $redirect, 'access_denied', $state );
@@ -137,7 +137,7 @@ final class Authorize {
 
 	/** The nonce is bound to the client and the PKCE challenge, so it cannot be replayed for another request. */
 	private static function nonceAction( string $client_id, string $challenge ): string {
-		return 'senroflux_oauth_consent_' . substr( OAuth::hash( $client_id . '|' . $challenge ), 0, 24 );
+		return 'specflux_site_agent_oauth_consent_' . substr( OAuth::hash( $client_id . '|' . $challenge ), 0, 24 );
 	}
 
 	/**
@@ -186,7 +186,7 @@ final class Authorize {
 	private static function error( string $message, int $status ): Page {
 		return new Page(
 			$status,
-			self::document( __( 'Cannot connect', 'senroflux' ), '<h1>' . esc_html__( 'Cannot connect this app', 'senroflux' ) . '</h1><p>' . esc_html( $message ) . '</p>' ),
+			self::document( __( 'Cannot connect', 'specflux-site-agent' ), '<h1>' . esc_html__( 'Cannot connect this app', 'specflux-site-agent' ) . '</h1><p>' . esc_html( $message ) . '</p>' ),
 			null,
 			self::securityHeaders()
 		);
@@ -212,32 +212,32 @@ final class Authorize {
 
 		$notes = '';
 		if ( RedirectUri::isLoopback( $redirect ) ) {
-			$notes .= '<p class="warn">' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'senroflux' ) . '</p>';
+			$notes .= '<p class="warn">' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'specflux-site-agent' ) . '</p>';
 		}
-		$write = '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'senroflux' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'senroflux' ) . '</label>';
+		$write = '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'specflux-site-agent' ) . '</label>';
 
 		// A dynamically registered client picks its own name, so the name proves nothing: say so, and
 		// make the redirect host (which the client cannot choose freely) the dominant line.
 		$identity = $client->document
-			? '<p class="meta">' . esc_html( sprintf( /* translators: %s: host name of the app's verified client metadata document. */ __( 'Verified by %s', 'senroflux' ), (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) ) . '</p>'
-			: '<p class="meta unverified">' . esc_html__( 'Not verified. This name was chosen by the app itself.', 'senroflux' ) . '</p>';
+			? '<p class="meta">' . esc_html( sprintf( /* translators: %s: host name of the app's verified client metadata document. */ __( 'Verified by %s', 'specflux-site-agent' ), (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) ) . '</p>'
+			: '<p class="meta unverified">' . esc_html__( 'Not verified. This name was chosen by the app itself.', 'specflux-site-agent' ) . '</p>';
 
-		$body = '<h1>' . esc_html( sprintf( /* translators: %s: name of the app asking to connect. */ __( 'Connect %s?', 'senroflux' ), $client->name ) ) . '</h1>'
+		$body = '<h1>' . esc_html( sprintf( /* translators: %s: name of the app asking to connect. */ __( 'Connect %s?', 'specflux-site-agent' ), $client->name ) ) . '</h1>'
 			. $identity
-			. '<div class="host">' . esc_html__( 'After you approve, you\'ll be sent to', 'senroflux' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
-			. '<p>' . esc_html__( 'This app is asking to use SenroFlux on this site.', 'senroflux' ) . '</p>'
+			. '<div class="host">' . esc_html__( 'After you approve, you\'ll be sent to', 'specflux-site-agent' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
+			. '<p>' . esc_html__( 'This app is asking to use Specflux Site Agent on this site.', 'specflux-site-agent' ) . '</p>'
 			. $notes
 			. '<form method="post" action="' . esc_url( OAuth::authorizeUrl() ) . '">'
 			. $hidden
-			. '<fieldset><legend>' . esc_html__( 'What may it do?', 'senroflux' ) . '</legend>'
-			. '<label><input type="radio" name="grant" value="read" checked> <strong>' . esc_html__( 'Read only', 'senroflux' ) . '</strong> ' . esc_html__( 'It can look at pages, posts, media and settings.', 'senroflux' ) . '</label>'
+			. '<fieldset><legend>' . esc_html__( 'What may it do?', 'specflux-site-agent' ) . '</legend>'
+			. '<label><input type="radio" name="grant" value="read" checked> <strong>' . esc_html__( 'Read only', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can look at pages, posts, media and settings.', 'specflux-site-agent' ) . '</label>'
 			. $write
 			. '</fieldset>'
-			. '<p><button type="submit" name="decision" value="approve" class="primary">' . esc_html__( 'Approve', 'senroflux' ) . '</button> '
-			. '<button type="submit" name="decision" value="deny">' . esc_html__( 'Deny', 'senroflux' ) . '</button></p>'
+			. '<p><button type="submit" name="decision" value="approve" class="primary">' . esc_html__( 'Approve', 'specflux-site-agent' ) . '</button> '
+			. '<button type="submit" name="decision" value="deny">' . esc_html__( 'Deny', 'specflux-site-agent' ) . '</button></p>'
 			. '</form>';
 
-		return new Page( 200, self::document( __( 'Connect an app', 'senroflux' ), $body ), null, self::securityHeaders() );
+		return new Page( 200, self::document( __( 'Connect an app', 'specflux-site-agent' ), $body ), null, self::securityHeaders() );
 	}
 
 	/**

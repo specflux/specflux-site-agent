@@ -2,15 +2,15 @@
 /**
  * Content\Comments tests: list / moderate / approve / reply.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Content;
+namespace Specflux\SiteAgent\Tests\Packs\Content;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Content\Comments;
+use Specflux\SiteAgent\Packs\Content\Comments;
 use stdClass;
 use WP_Error;
 
@@ -20,33 +20,33 @@ final class CommentsTest extends TestCase {
 		require_once dirname( __DIR__, 2 ) . '/stubs/blocks.php';
 		require_once dirname( __DIR__, 2 ) . '/stubs/comments-users.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_comments']           = array();
-		$GLOBALS['senroflux_test_comment_prev']       = array();
-		$GLOBALS['senroflux_test_users']              = array();
-		$GLOBALS['senroflux_test_current_user_id']    = 7;
-		unset( $GLOBALS['senroflux_test_new_comment_approved'], $GLOBALS['senroflux_test_new_comment_data'] );
-		$GLOBALS['senroflux_test_user_caps'] = array(
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_comments']           = array();
+		$GLOBALS['specflux_site_agent_test_comment_prev']       = array();
+		$GLOBALS['specflux_site_agent_test_users']              = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id']    = 7;
+		unset( $GLOBALS['specflux_site_agent_test_new_comment_approved'], $GLOBALS['specflux_site_agent_test_new_comment_data'] );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array(
 			'edit_posts'        => true,
 			'moderate_comments' => true,
 		);
 
-		$post                                = new stdClass();
-		$post->ID                            = 10;
-		$post->post_status                   = 'publish';
-		$post->comment_status                = 'open';
-		$GLOBALS['senroflux_test_posts'][10] = $post;
+		$post                 = new stdClass();
+		$post->ID             = 10;
+		$post->post_status    = 'publish';
+		$post->comment_status = 'open';
+		$GLOBALS['specflux_site_agent_test_posts'][10] = $post;
 
-		$GLOBALS['senroflux_test_users'][7] = new \SenroFlux_Test_User( 7, 'mod', 'Mod "Ann"', 'mod@example.test', array( 'editor' ), 'https://mod.test' );
+		$GLOBALS['specflux_site_agent_test_users'][7] = new \SpecfluxSiteAgent_Test_User( 7, 'mod', 'Mod "Ann"', 'mod@example.test', array( 'editor' ), 'https://mod.test' );
 
 		Comments::reset();
 		Comments::register();
 	}
 
 	private function ability( string $name ): object {
-		return $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $name ];
+		return $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $name ];
 	}
 
 	private function addComment( int $id, string $approved, int $post = 10, int $parent_id = 0 ): void {
@@ -65,11 +65,11 @@ final class CommentsTest extends TestCase {
 		$c->comment_content      = 'Hello ' . $id;
 		$c->comment_type         = 'comment';
 
-		$GLOBALS['senroflux_test_comments'][ $id ] = $c;
+		$GLOBALS['specflux_site_agent_test_comments'][ $id ] = $c;
 	}
 
 	private function caps( array $caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = $caps;
+		$GLOBALS['specflux_site_agent_test_user_caps'] = $caps;
 	}
 
 	// --- list-comments ---------------------------------------------------
@@ -178,7 +178,7 @@ final class CommentsTest extends TestCase {
 
 		$this->assertFalse( $this->ability( 'moderate-comment' )->check_permissions( $in ) );
 		$this->assertSame( 'forbidden', $this->ability( 'moderate-comment' )->execute( $in )->get_error_code() );
-		$this->assertSame( '1', $GLOBALS['senroflux_test_comments'][1]->comment_approved );
+		$this->assertSame( '1', $GLOBALS['specflux_site_agent_test_comments'][1]->comment_approved );
 	}
 
 	public function test_moderate_spam_then_restore_returns_previous_status(): void {
@@ -330,7 +330,7 @@ final class CommentsTest extends TestCase {
 		$this->assertSame( 'bad_transition', $ab->execute( array( 'id' => 2 ) )->get_error_code() );
 		$this->assertStringContainsString( 'Restore', $ab->execute( array( 'id' => 3 ) )->get_error_message() );
 		$this->assertSame( 'already_approved', $ab->execute( array( 'id' => 4 ) )->get_error_code() );
-		$this->assertSame( 'spam', $GLOBALS['senroflux_test_comments'][2]->comment_approved );
+		$this->assertSame( 'spam', $GLOBALS['specflux_site_agent_test_comments'][2]->comment_approved );
 	}
 
 	// --- reply-to-comment ------------------------------------------------
@@ -379,7 +379,7 @@ final class CommentsTest extends TestCase {
 		);
 		$this->assertFalse( $ab->check_permissions( $in ) );
 		$this->assertSame( 'forbidden', $ab->execute( $in )->get_error_code() );
-		$this->assertArrayNotHasKey( 'senroflux_test_new_comment_data', $GLOBALS );
+		$this->assertArrayNotHasKey( 'specflux_site_agent_test_new_comment_data', $GLOBALS );
 	}
 
 	public function test_reply_happy_path_slashes_and_uses_current_user(): void {
@@ -396,7 +396,7 @@ final class CommentsTest extends TestCase {
 		$this->assertSame( 'approved', $out['status'] );
 		$this->assertSame( 10, $out['post_id'] );
 		$this->assertSame( 1, $out['parent'] );
-		$data = $GLOBALS['senroflux_test_new_comment_data'];
+		$data = $GLOBALS['specflux_site_agent_test_new_comment_data'];
 		$this->assertSame( 7, $data['user_id'] );
 		$this->assertSame( 'Thanks \"friend\"', $data['comment_content'] );
 		$this->assertSame( 1, $data['comment_parent'] );
@@ -447,7 +447,7 @@ final class CommentsTest extends TestCase {
 
 	public function test_reply_refused_on_unpublished_post(): void {
 		$this->addComment( 1, '1' );
-		$GLOBALS['senroflux_test_posts'][10]->post_status = 'draft';
+		$GLOBALS['specflux_site_agent_test_posts'][10]->post_status = 'draft';
 		$this->replyCaps();
 
 		$this->assertSame(

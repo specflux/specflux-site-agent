@@ -2,19 +2,19 @@
 /**
  * The built-in gate's classification of one call (0.3 S3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Carries everything {@see ToolExecutor::call()} needs to park a call BEFORE
- * `check_permissions` runs, in {@see \Specflux\SenroFlux\Run\GateMode::BuiltIn}.
+ * `check_permissions` runs, in {@see \Specflux\SiteAgent\Run\GateMode::BuiltIn}.
  * Computed by the Runner (which knows the pack verb map) so ToolExecutor
  * itself stays ignorant of packs, tiers and verbs — it only reads the
  * decision it is handed.

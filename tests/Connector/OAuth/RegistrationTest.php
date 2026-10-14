@@ -2,18 +2,18 @@
 /**
  * Dynamic Client Registration.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Connector\OAuth;
+namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Connector\OAuth\Clients;
-use Specflux\SenroFlux\Connector\OAuth\RedirectUri;
-use Specflux\SenroFlux\Connector\OAuth\Registration;
-use Specflux\SenroFlux\Connector\OAuth\Store;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Connector\OAuth\Clients;
+use Specflux\SiteAgent\Connector\OAuth\RedirectUri;
+use Specflux\SiteAgent\Connector\OAuth\Registration;
+use Specflux\SiteAgent\Connector\OAuth\Store;
 
 require_once __DIR__ . '/OAuthTestCase.php';
 
@@ -104,7 +104,7 @@ final class RegistrationTest extends OAuthTestCase {
 		$this->assertSame( 429, $blocked['status'] );
 		$this->assertSame( 201, Registration::handle( array( 'redirect_uris' => array( self::CALLBACK ) ), '198.51.100.8' )['status'], 'Another address is unaffected.' );
 
-		\Specflux\SenroFlux\Run\Clock::useFixed( self::T0 + 3601 );
+		\Specflux\SiteAgent\Run\Clock::useFixed( self::T0 + 3601 );
 		$this->assertSame( 201, Registration::handle( array( 'redirect_uris' => array( self::CALLBACK ) ), '198.51.100.7' )['status'], 'The window ends.' );
 	}
 
@@ -165,7 +165,7 @@ final class RegistrationTest extends OAuthTestCase {
 					'created'       => self::T0 + $i,
 				)
 			);
-			Store::createGrant( 1, $id, 'senroflux:read', 'r', 'h' );
+			Store::createGrant( 1, $id, 'specflux:read', 'r', 'h' );
 		}
 		$this->assertSame( 503, Registration::handle( array( 'redirect_uris' => array( self::CALLBACK ) ), '203.0.113.11' )['status'] );
 		$this->assertNotNull( Store::client( 'seed0000_x' ) );

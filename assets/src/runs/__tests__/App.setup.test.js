@@ -19,18 +19,18 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 		listRuns.mockResolvedValue( [] );
 		document.body.insertAdjacentHTML(
 			'afterbegin',
-			'<div id="senroflux-setup-panel"><div class="notice">Configure a model provider in Settings → Connectors.</div></div>'
+			'<div id="specflux-site-agent-setup-panel"><div class="notice">Configure a model provider in Settings → Connectors.</div></div>'
 		);
 	} );
 
 	afterEach( () => {
-		const panel = document.getElementById( 'senroflux-setup-panel' );
+		const panel = document.getElementById( 'specflux-site-agent-setup-panel' );
 		if ( panel ) {
 			panel.remove();
 		}
 	} );
 
-	const config = { nonce: 'n', consumer: 'senroflux-admin', gateMode: 'built_in', packs, startBlocked: true, examples: [] };
+	const config = { nonce: 'n', consumer: 'specflux-site-agent-admin', gateMode: 'built_in', packs, startBlocked: true, examples: [] };
 
 	it( 'keeps Start disabled while the blocking check fails', async () => {
 		render( <App config={ config } /> );
@@ -43,7 +43,7 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 
 	it( 're-enables Start after a window focus that finds the check passing, and refreshes the panel', async () => {
 		fetchSetupState.mockResolvedValue( {
-			html: '<div id="senroflux-setup-panel"></div>',
+			html: '<div id="specflux-site-agent-setup-panel"></div>',
 			start_enabled: true,
 			packs,
 			unavailable_packs: [],
@@ -61,7 +61,7 @@ describe( 'Start is blocked by a blocking setup check and refreshed on focus (J1
 			expect( screen.getByRole( 'button', { name: 'Start run' } ) ).not.toBeDisabled();
 		} );
 		expect( fetchSetupState ).toHaveBeenCalledTimes( 1 );
-		expect( document.getElementById( 'senroflux-setup-panel' ).textContent ).toBe( '' );
+		expect( document.getElementById( 'specflux-site-agent-setup-panel' ).textContent ).toBe( '' );
 	} );
 
 	it( 'also refreshes when the tab becomes visible again', async () => {
@@ -125,7 +125,7 @@ describe( 'a follow-up run from the screen (S20)', () => {
 		tickRun.mockResolvedValue( { run: { id: 5, status: 'completed', step_count: 2 }, new_steps: [] } );
 	} );
 
-	const config = { initialRunId: '4', nonce: 'n', consumer: 'senroflux-admin', gateMode: 'built_in', packs, examples: [] };
+	const config = { initialRunId: '4', nonce: 'n', consumer: 'specflux-site-agent-admin', gateMode: 'built_in', packs, examples: [] };
 
 	it( 'starts the follow-up from a cancelled run with follow_up_of and an empty goal box', async () => {
 		render( <App config={ config } /> );
@@ -168,7 +168,7 @@ describe( 'the report arrives with the terminal tick', () => {
 		listRuns.mockResolvedValue( [ parked ] );
 		getRun.mockResolvedValue( {
 			run: parked,
-			steps: [ { seq: 1, kind: 'approval', status: 'parked', message: { verb: 'senroflux/publish-post', tier: 2, args: {} } } ],
+			steps: [ { seq: 1, kind: 'approval', status: 'parked', message: { verb: 'specflux/publish-post', tier: 2, args: {} } } ],
 		} );
 		const report = {
 			summary: 'Done',
@@ -189,7 +189,7 @@ describe( 'the report arrives with the terminal tick', () => {
 		expect( await screen.findByText( '1 change, 1 not checked' ) ).toBeInTheDocument();
 		expect( screen.getByText( 'Not checked after the change' ) ).toBeInTheDocument();
 		// The fields the thin ajax row lacks survive the merge.
-		expect( document.querySelector( '.senroflux-withheld-roles' ) ).toHaveTextContent( /Images are off/ );
+		expect( document.querySelector( '.specflux-site-agent-withheld-roles' ) ).toHaveTextContent( /Images are off/ );
 		expect( screen.getByRole( 'button', { name: 'Start a follow-up' } ) ).toBeInTheDocument();
 	} );
 } );

@@ -10,11 +10,11 @@ import App from './components/App';
 import './style.css';
 
 domReady( () => {
-	const root = document.getElementById( 'senroflux-runs-root' );
+	const root = document.getElementById( 'specflux-site-agent-runs-root' );
 	if ( ! root ) {
 		return;
 	}
 
-	const config = window.senrofluxRunsConfig || {};
+	const config = window.specfluxSiteAgentRunsConfig || {};
 	render( <App config={ config } />, root );
 } );

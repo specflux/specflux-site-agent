@@ -30,19 +30,19 @@ const SCRIPT_PATH = path.join( __dirname, '..', '..', 'assets', 'runs.js' );
 async function pollToTerminal( pollResponse ) {
 	const dom = new JSDOM(
 		`<!doctype html><html><body>
-			<div id="senroflux-run-detail" data-run-id="1" data-step-count="1" data-status="running">
-				<div id="senroflux-live-status"></div>
-				<span id="senroflux-status-badge" class="senroflux-badge senroflux-badge-running"></span>
-				<ol class="senroflux-steps"></ol>
+			<div id="specflux-site-agent-run-detail" data-run-id="1" data-step-count="1" data-status="running">
+				<div id="specflux-site-agent-live-status"></div>
+				<span id="specflux-site-agent-status-badge" class="specflux-site-agent-badge specflux-site-agent-badge-running"></span>
+				<ol class="specflux-site-agent-steps"></ol>
 			</div>
-			<p class="senroflux-refresh"><a href="#">Refresh</a></p>
-			<p class="senroflux-cancel-run"><a class="button button-secondary" href="admin-post.php?action=senroflux_cancel_run&amp;run_id=1">Cancel run</a></p>
+			<p class="specflux-site-agent-refresh"><a href="#">Refresh</a></p>
+			<p class="specflux-site-agent-cancel-run"><a class="button button-secondary" href="admin-post.php?action=specflux_site_agent_cancel_run&amp;run_id=1">Cancel run</a></p>
 		</body></html>`,
-		{ url: 'https://senroflux.invalid/', virtualConsole: new VirtualConsole(), runScripts: 'outside-only' }
+		{ url: 'https://specflux-site-agent.invalid/', virtualConsole: new VirtualConsole(), runScripts: 'outside-only' }
 	);
 
-	dom.window.senrofluxRuns = {
-		ajaxUrl: 'https://senroflux.invalid/wp-admin/admin-ajax.php',
+	dom.window.specfluxSiteAgentRuns = {
+		ajaxUrl: 'https://specflux-site-agent.invalid/wp-admin/admin-ajax.php',
 		nonce: 'test-nonce',
 		pollInterval: 5,
 		parkAnnounceMs: 5,
@@ -68,7 +68,7 @@ async function pollToTerminal( pollResponse ) {
 	// promise chain resolves on the next microtask/macrotask turns.
 	await new Promise( ( resolve ) => dom.window.setTimeout( resolve, 60 ) );
 
-	const cancelLinkPresent = null !== dom.window.document.querySelector( '.senroflux-cancel-run' );
+	const cancelLinkPresent = null !== dom.window.document.querySelector( '.specflux-site-agent-cancel-run' );
 	dom.window.close();
 
 	return cancelLinkPresent;

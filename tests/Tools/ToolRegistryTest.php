@@ -2,32 +2,32 @@
 /**
  * ToolRegistry tests: the allow-list ∩ abilities intersection (stage 5).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Tools;
+namespace Specflux\SiteAgent\Tests\Tools;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Run;
-use Specflux\SenroFlux\Run\RunStatus;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use SenroFlux_Test_Fake_Ability;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Run;
+use Specflux\SiteAgent\Run\RunStatus;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use SpecfluxSiteAgent_Test_Fake_Ability;
 
 final class ToolRegistryTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['senroflux_test_abilities'] = array(
-			'agsafe-smoke/spend'   => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/spend', description: 'Spend an amount' ),
-			'agsafe-smoke/blocked' => new SenroFlux_Test_Fake_Ability( 'agsafe-smoke/blocked', description: 'Blocked verb' ),
-			'core/get-site-info'   => new SenroFlux_Test_Fake_Ability( 'core/get-site-info' ),
-			'secret/hidden-tool'   => new SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities'] = array(
+			'agsafe-smoke/spend'   => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/spend', description: 'Spend an amount' ),
+			'agsafe-smoke/blocked' => new SpecfluxSiteAgent_Test_Fake_Ability( 'agsafe-smoke/blocked', description: 'Blocked verb' ),
+			'core/get-site-info'   => new SpecfluxSiteAgent_Test_Fake_Ability( 'core/get-site-info' ),
+			'secret/hidden-tool'   => new SpecfluxSiteAgent_Test_Fake_Ability(
 				'secret/hidden-tool',
-				meta: array( 'senroflux' => array( 'hidden' => true ) )
+				meta: array( 'specflux' => array( 'hidden' => true ) )
 			),
-			'secret/open-tool'     => new SenroFlux_Test_Fake_Ability( 'secret/open-tool' ),
+			'secret/open-tool'     => new SpecfluxSiteAgent_Test_Fake_Ability( 'secret/open-tool' ),
 		);
 	}
 
@@ -87,22 +87,22 @@ final class ToolRegistryTest extends TestCase {
 	}
 
 	public function test_a_harness_declaration_never_silently_shadows_a_same_named_ability(): void {
-		$GLOBALS['senroflux_test_abilities']['senroflux/ask-user'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/ask-user',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/ask-user'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/ask-user',
 			description: 'An ability wearing the harness tool\'s name'
 		);
 
 		$registry = ToolRegistry::forRun( $this->runWithAllow( array( '*' ) ) );
-		$this->assertTrue( $registry->admits( 'senroflux/ask-user' ), 'the ability is admitted before the merge' );
+		$this->assertTrue( $registry->admits( 'specflux/ask-user' ), 'the ability is admitted before the merge' );
 
-		$merged = $registry->withDeclarations( array( 'senroflux/ask-user' => array( 'name' => 'senroflux__ask-user' ) ) );
+		$merged = $registry->withDeclarations( array( 'specflux/ask-user' => array( 'name' => 'specflux__ask-user' ) ) );
 
 		// The harness declaration wins AND the colliding ability leaves the
 		// admitted set: the model can never be shown the harness description
 		// while calls under that name reach the executor.
 		$declarations = $merged->declarations();
-		$this->assertSame( 'senroflux__ask-user', $declarations['senroflux/ask-user']['name'] ?? null );
-		$this->assertFalse( $merged->admits( 'senroflux/ask-user' ), 'the shadowed ability is dropped, not silently kept' );
+		$this->assertSame( 'specflux__ask-user', $declarations['specflux/ask-user']['name'] ?? null );
+		$this->assertFalse( $merged->admits( 'specflux/ask-user' ), 'the shadowed ability is dropped, not silently kept' );
 		$this->assertTrue( $merged->admits( 'agsafe-smoke/spend' ), 'unrelated abilities are untouched' );
 	}
 
@@ -127,8 +127,8 @@ final class ToolRegistryTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	public function test_generate_image_is_withheld_when_images_budget_is_zero(): void {
-		$GLOBALS['senroflux_test_abilities']['senroflux/generate-image'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/generate-image',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/generate-image'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/generate-image',
 			description: 'Generate an image'
 		);
 
@@ -136,13 +136,13 @@ final class ToolRegistryTest extends TestCase {
 			$this->runWithAllowAndBudget( array( '*' ), array( Budget::IMAGES => 0 ) )
 		);
 
-		$this->assertFalse( $registry->admits( 'senroflux/generate-image' ) );
-		$this->assertNotContains( 'senroflux/generate-image', $registry->names() );
+		$this->assertFalse( $registry->admits( 'specflux/generate-image' ) );
+		$this->assertNotContains( 'specflux/generate-image', $registry->names() );
 	}
 
 	public function test_generate_image_is_admitted_when_images_budget_is_positive(): void {
-		$GLOBALS['senroflux_test_abilities']['senroflux/generate-image'] = new SenroFlux_Test_Fake_Ability(
-			'senroflux/generate-image',
+		$GLOBALS['specflux_site_agent_test_abilities']['specflux/generate-image'] = new SpecfluxSiteAgent_Test_Fake_Ability(
+			'specflux/generate-image',
 			description: 'Generate an image'
 		);
 
@@ -150,7 +150,7 @@ final class ToolRegistryTest extends TestCase {
 			$this->runWithAllowAndBudget( array( '*' ), array( Budget::IMAGES => 6 ) )
 		);
 
-		$this->assertTrue( $registry->admits( 'senroflux/generate-image' ) );
-		$this->assertContains( 'senroflux/generate-image', $registry->names() );
+		$this->assertTrue( $registry->admits( 'specflux/generate-image' ) );
+		$this->assertContains( 'specflux/generate-image', $registry->names() );
 	}
 }

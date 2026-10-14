@@ -2,18 +2,18 @@
 /**
  * One resolved connector connection (K1).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Who is calling and with what reach: the user, the SenroFlux-created
+ * Who is calling and with what reach: the user, the Specflux Site Agent-created
  * application password's UUID, and its scope. Immutable.
  */
 final class Connection {

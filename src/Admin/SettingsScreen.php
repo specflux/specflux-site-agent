@@ -1,10 +1,10 @@
 <?php
 /**
- * SenroFlux → Settings: the site brief (0.3 S20).
+ * Specflux Site Agent → Settings: the site brief (0.3 S20).
  *
  * TARGET REPO PATH: src/Admin/SettingsScreen.php
  *
- * A submenu page under the existing top-level "SenroFlux" menu
+ * A submenu page under the existing top-level "Specflux Site Agent" menu
  * ({@see RunsScreen}), capability `manage_options`. `[assumed]` (S20): a
  * plain admin-post form with a nonce, matching every other mutation on the
  * Runs screen, rather than the full `register_setting()`/`options.php`
@@ -14,22 +14,22 @@
  * mutation pattern across the plugin. _Overturn: move to `register_setting()`
  * if a stranger walkthrough expects the native Settings UI chrome._
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Admin;
+namespace Specflux\SiteAgent\Admin;
 
-use Specflux\SenroFlux\Connector\Connector;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\PlatformSelection;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Pages\ThemePatterns;
-use Specflux\SenroFlux\Passthrough\AbilityReviewProbe;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\SiteBrief;
+use Specflux\SiteAgent\Connector\Connector;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\PlatformSelection;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
+use Specflux\SiteAgent\Passthrough\AbilityReviewProbe;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\SiteBrief;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -39,19 +39,19 @@ defined( 'ABSPATH' ) || exit;
  */
 class SettingsScreen {
 
-	private const SLUG = 'senroflux-settings';
+	private const SLUG = 'specflux-site-agent-settings';
 
 	/** Transient holding a REFUSED submission's text, keyed by user id (never truncated, never lost). */
-	private const PENDING_TRANSIENT_PREFIX = 'senroflux_brief_pending_';
+	private const PENDING_TRANSIENT_PREFIX = 'specflux_site_agent_brief_pending_';
 
 	/** Register on admin_menu + admin_post. */
 	public function register(): void {
 		add_action( 'init', array( $this, 'registerSettings' ) );
 		add_action( 'admin_menu', array( $this, 'menu' ) );
-		add_action( 'admin_post_senroflux_save_brief', array( $this, 'handleSave' ) );
-		add_action( 'admin_post_senroflux_save_passthrough', array( $this, 'handleSavePassthrough' ) );
-		add_action( 'admin_post_senroflux_save_store_platform', array( $this, 'handleSaveStorePlatform' ) );
-		add_action( 'admin_post_senroflux_save_connector', array( $this, 'handleSaveConnector' ) );
+		add_action( 'admin_post_specflux_site_agent_save_brief', array( $this, 'handleSave' ) );
+		add_action( 'admin_post_specflux_site_agent_save_passthrough', array( $this, 'handleSavePassthrough' ) );
+		add_action( 'admin_post_specflux_site_agent_save_store_platform', array( $this, 'handleSaveStorePlatform' ) );
+		add_action( 'admin_post_specflux_site_agent_save_connector', array( $this, 'handleSaveConnector' ) );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class SettingsScreen {
 	 */
 	public function registerSettings(): void {
 		register_setting(
-			'senroflux',
+			'specflux-site-agent',
 			ThemePatterns::OPTION,
 			array(
 				'type'              => 'boolean',
@@ -71,7 +71,7 @@ class SettingsScreen {
 			)
 		);
 		register_setting(
-			'senroflux',
+			'specflux-site-agent',
 			StorePlatforms::OPTION,
 			array(
 				'type'              => 'string',
@@ -84,10 +84,10 @@ class SettingsScreen {
 
 	/** admin-post handler: choose the store platform commerce runs use (C4-0). */
 	public function handleSaveStorePlatform(): void {
-		check_admin_referer( 'senroflux_save_store_platform' );
+		check_admin_referer( 'specflux_site_agent_save_store_platform' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		$posted = isset( $_POST[ StorePlatforms::OPTION ] ) && is_string( $_POST[ StorePlatforms::OPTION ] )
@@ -105,16 +105,16 @@ class SettingsScreen {
 			return;
 		}
 
-		echo '<hr><h2>' . esc_html__( 'Store platform', 'senroflux' ) . '</h2>';
+		echo '<hr><h2>' . esc_html__( 'Store platform', 'specflux-site-agent' ) . '</h2>';
 		if ( PlatformSelection::AMBIGUOUS === $selection->status ) {
-			echo '<div data-senroflux-notice class="notice notice-warning"><p>' . esc_html__( 'More than one store platform is active. Commerce runs will not start until you choose one.', 'senroflux' ) . '</p></div>';
+			echo '<div data-specflux-site-agent-notice class="notice notice-warning"><p>' . esc_html__( 'More than one store platform is active. Commerce runs will not start until you choose one.', 'specflux-site-agent' ) . '</p></div>';
 		}
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="senroflux_save_store_platform">';
-		wp_nonce_field( 'senroflux_save_store_platform' );
-		echo '<p><label for="senroflux-store-platform">' . esc_html__( 'Use this store platform for commerce runs', 'senroflux' ) . '</label> ';
-		echo '<select id="senroflux-store-platform" name="' . esc_attr( StorePlatforms::OPTION ) . '">';
-		echo '<option value="">' . esc_html__( 'Choose one...', 'senroflux' ) . '</option>';
+		echo '<input type="hidden" name="action" value="specflux_site_agent_save_store_platform">';
+		wp_nonce_field( 'specflux_site_agent_save_store_platform' );
+		echo '<p><label for="specflux-site-agent-store-platform">' . esc_html__( 'Use this store platform for commerce runs', 'specflux-site-agent' ) . '</label> ';
+		echo '<select id="specflux-site-agent-store-platform" name="' . esc_attr( StorePlatforms::OPTION ) . '">';
+		echo '<option value="">' . esc_html__( 'Choose one...', 'specflux-site-agent' ) . '</option>';
 		foreach ( $selection->candidates as $candidate ) {
 			printf(
 				'<option value="%1$s"%2$s>%3$s</option>',
@@ -124,7 +124,7 @@ class SettingsScreen {
 			);
 		}
 		echo '</select></p>';
-		printf( '<p><button type="submit" class="button button-primary">%s</button></p>', esc_html__( 'Save', 'senroflux' ) );
+		printf( '<p><button type="submit" class="button button-primary">%s</button></p>', esc_html__( 'Save', 'specflux-site-agent' ) );
 		echo '</form>';
 	}
 
@@ -133,12 +133,12 @@ class SettingsScreen {
 		return 'manage_options';
 	}
 
-	/** The "Settings" submenu under the existing top-level "SenroFlux" menu. */
+	/** The "Settings" submenu under the existing top-level "Specflux Site Agent" menu. */
 	public function menu(): void {
 		add_submenu_page(
-			'senroflux-runs',
-			__( 'SenroFlux Settings', 'senroflux' ),
-			__( 'Settings', 'senroflux' ),
+			'specflux-site-agent-runs',
+			__( 'Specflux Site Agent Settings', 'specflux-site-agent' ),
+			__( 'Settings', 'specflux-site-agent' ),
 			$this->capability(),
 			self::SLUG,
 			array( $this, 'render' )
@@ -147,15 +147,15 @@ class SettingsScreen {
 
 	/** admin-post handler: save (or clear) the site brief. */
 	public function handleSave(): void {
-		check_admin_referer( 'senroflux_save_brief' );
+		check_admin_referer( 'specflux_site_agent_save_brief' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		// Plain text (S20): stripped of markup, but newlines kept — a
 		// textarea field, not a single-line input.
-		$text = sanitize_textarea_field( wp_unslash( $_POST['senroflux_site_brief'] ?? '' ) );
+		$text = sanitize_textarea_field( wp_unslash( $_POST['specflux_site_agent_site_brief'] ?? '' ) );
 
 		$saved = SiteBrief::set( $text );
 		$user  = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
@@ -171,7 +171,7 @@ class SettingsScreen {
 		// D2: an unticked checkbox is absent from the POST, so the form carries
 		// a marker saying the switch was on the page. A refused brief saves
 		// nothing, switch included.
-		if ( isset( $_POST['senroflux_theme_patterns_present'] ) ) {
+		if ( isset( $_POST['specflux_site_agent_theme_patterns_present'] ) ) {
 			$use_theme_patterns = isset( $_POST[ ThemePatterns::OPTION ] ) && is_string( $_POST[ ThemePatterns::OPTION ] )
 				? sanitize_text_field( wp_unslash( $_POST[ ThemePatterns::OPTION ] ) )
 				: false;
@@ -184,15 +184,15 @@ class SettingsScreen {
 
 	/** admin-post handler: save the "Abilities from other plugins" switches (0.4 S6). */
 	public function handleSavePassthrough(): void {
-		check_admin_referer( 'senroflux_save_passthrough' );
+		check_admin_referer( 'specflux_site_agent_save_passthrough' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		$enabled = array();
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every element is sanitize_text_field()'d in the loop below.
-		$posted_enabled = isset( $_POST['senroflux_pt_enabled'] ) ? wp_unslash( $_POST['senroflux_pt_enabled'] ) : null;
+		$posted_enabled = isset( $_POST['specflux_site_agent_pt_enabled'] ) ? wp_unslash( $_POST['specflux_site_agent_pt_enabled'] ) : null;
 		if ( is_array( $posted_enabled ) ) {
 			foreach ( $posted_enabled as $name ) {
 				if ( is_string( $name ) ) {
@@ -203,7 +203,7 @@ class SettingsScreen {
 
 		$read = array();
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every key and value is sanitized in the loop below.
-		$posted_mode = isset( $_POST['senroflux_pt_mode'] ) ? wp_unslash( $_POST['senroflux_pt_mode'] ) : null;
+		$posted_mode = isset( $_POST['specflux_site_agent_pt_mode'] ) ? wp_unslash( $_POST['specflux_site_agent_pt_mode'] ) : null;
 		if ( is_array( $posted_mode ) ) {
 			foreach ( $posted_mode as $name => $mode ) {
 				if ( is_string( $name ) && is_string( $mode ) ) {
@@ -223,10 +223,10 @@ class SettingsScreen {
 
 	/** admin-post handler: save the "Allow AI apps to connect" switch (K1). */
 	public function handleSaveConnector(): void {
-		check_admin_referer( 'senroflux_save_connector' );
+		check_admin_referer( 'specflux_site_agent_save_connector' );
 
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		$posted = isset( $_POST[ Connector::OPTION ] ) && is_string( $_POST[ Connector::OPTION ] )
@@ -241,8 +241,8 @@ class SettingsScreen {
 	protected function redirectPassthrough( ?string $error_code ): void {
 		$url = admin_url( 'admin.php?page=' . self::SLUG );
 		$url = null !== $error_code
-			? add_query_arg( array( 'senroflux_pt_error' => $error_code ), $url )
-			: add_query_arg( array( 'senroflux_pt_saved' => '1' ), $url );
+			? add_query_arg( array( 'specflux_site_agent_pt_error' => $error_code ), $url )
+			: add_query_arg( array( 'specflux_site_agent_pt_saved' => '1' ), $url );
 		wp_safe_redirect( $url );
 		exit;
 	}
@@ -251,9 +251,9 @@ class SettingsScreen {
 	protected function redirect( ?string $error_code ): void {
 		$url = admin_url( 'admin.php?page=' . self::SLUG );
 		if ( null !== $error_code ) {
-			$url = add_query_arg( array( 'senroflux_brief_error' => $error_code ), $url );
+			$url = add_query_arg( array( 'specflux_site_agent_brief_error' => $error_code ), $url );
 		} else {
-			$url = add_query_arg( array( 'senroflux_brief_saved' => '1' ), $url );
+			$url = add_query_arg( array( 'specflux_site_agent_brief_saved' => '1' ), $url );
 		}
 		wp_safe_redirect( $url );
 		exit;
@@ -270,57 +270,57 @@ class SettingsScreen {
 	/** Render the settings page. */
 	public function render(): void {
 		if ( ! current_user_can( $this->capability() ) ) {
-			wp_die( esc_html__( 'Insufficient permissions.', 'senroflux' ) );
+			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
-		echo '<div class="wrap"><h1>' . esc_html__( 'SenroFlux Settings', 'senroflux' ) . '</h1>';
+		echo '<div class="wrap"><h1>' . esc_html__( 'Specflux Site Agent Settings', 'specflux-site-agent' ) . '</h1>';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
-		$error = isset( $_GET['senroflux_brief_error'] ) ? sanitize_text_field( wp_unslash( $_GET['senroflux_brief_error'] ) ) : '';
+		$error = isset( $_GET['specflux_site_agent_brief_error'] ) ? sanitize_text_field( wp_unslash( $_GET['specflux_site_agent_brief_error'] ) ) : '';
 		if ( SiteBrief::ERROR_TOO_LONG === $error ) {
 			printf(
-				'<div data-senroflux-notice class="notice notice-error"><p>%s</p></div>',
+				'<div data-specflux-site-agent-notice class="notice notice-error"><p>%s</p></div>',
 				esc_html(
 					sprintf(
 						/* translators: %d is the character cap. */
-						__( 'The site brief may be at most %d characters. Nothing was saved — shorten it and try again.', 'senroflux' ),
+						__( 'The site brief may be at most %d characters. Nothing was saved — shorten it and try again.', 'specflux-site-agent' ),
 						SiteBrief::MAX_CHARS
 					)
 				)
 			);
 		} elseif ( '' !== $error ) {
-			echo '<div data-senroflux-notice class="notice notice-error"><p>' . esc_html__( 'The site brief could not be saved.', 'senroflux' ) . '</p></div>';
+			echo '<div data-specflux-site-agent-notice class="notice notice-error"><p>' . esc_html__( 'The site brief could not be saved.', 'specflux-site-agent' ) . '</p></div>';
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
-		if ( isset( $_GET['senroflux_brief_saved'] ) ) {
-			echo '<div data-senroflux-notice class="notice notice-success"><p>' . esc_html__( 'Settings saved.', 'senroflux' ) . '</p></div>';
+		if ( isset( $_GET['specflux_site_agent_brief_saved'] ) ) {
+			echo '<div data-specflux-site-agent-notice class="notice notice-success"><p>' . esc_html__( 'Settings saved.', 'specflux-site-agent' ) . '</p></div>';
 		}
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="senroflux_save_brief">';
-		wp_nonce_field( 'senroflux_save_brief' );
+		echo '<input type="hidden" name="action" value="specflux_site_agent_save_brief">';
+		wp_nonce_field( 'specflux_site_agent_save_brief' );
 
-		echo '<p>' . esc_html__( 'The site owner\'s standing notes for SenroFlux: tone and content guidance every run reads. It never changes what needs approval, budgets or the plan.', 'senroflux' ) . '</p>';
-		echo '<p><label for="senroflux-site-brief" class="screen-reader-text">' . esc_html__( 'Site brief', 'senroflux' ) . '</label>';
+		echo '<p>' . esc_html__( 'The site owner\'s standing notes for Specflux Site Agent: tone and content guidance every run reads. It never changes what needs approval, budgets or the plan.', 'specflux-site-agent' ) . '</p>';
+		echo '<p><label for="specflux-site-agent-site-brief" class="screen-reader-text">' . esc_html__( 'Site brief', 'specflux-site-agent' ) . '</label>';
 		printf(
-			'<textarea id="senroflux-site-brief" name="senroflux_site_brief" rows="10" class="large-text code" maxlength="%d">%s</textarea></p>',
+			'<textarea id="specflux-site-agent-site-brief" name="specflux_site_agent_site_brief" rows="10" class="large-text code" maxlength="%d">%s</textarea></p>',
 			esc_attr( (string) ( SiteBrief::MAX_CHARS * 4 ) ), // A generous client-side ceiling; the server refusal is authoritative (multi-byte chars).
 			esc_textarea( $this->formText() )
 		);
 
-		echo '<input type="hidden" name="senroflux_theme_patterns_present" value="1">';
+		echo '<input type="hidden" name="specflux_site_agent_theme_patterns_present" value="1">';
 		printf(
-			'<p><label for="senroflux-use-theme-patterns"><input type="checkbox" id="senroflux-use-theme-patterns" name="%s" value="1"%s> %s</label><br><span class="description">%s</span></p>',
+			'<p><label for="specflux-site-agent-use-theme-patterns"><input type="checkbox" id="specflux-site-agent-use-theme-patterns" name="%s" value="1"%s> %s</label><br><span class="description">%s</span></p>',
 			esc_attr( ThemePatterns::OPTION ),
 			checked( ThemePatterns::enabled(), true, false ),
-			esc_html__( 'Use my theme\'s block patterns', 'senroflux' ),
-			esc_html__( 'Build pages from the active theme\'s own patterns where they fit. Untick to build every page from SenroFlux\'s own layouts.', 'senroflux' )
+			esc_html__( 'Use my theme\'s block patterns', 'specflux-site-agent' ),
+			esc_html__( 'Build pages from the active theme\'s own patterns where they fit. Untick to build every page from Specflux Site Agent\'s own layouts.', 'specflux-site-agent' )
 		);
 
 		printf(
 			'<p><button type="submit" class="button button-primary">%s</button></p>',
-			esc_html__( 'Save settings', 'senroflux' )
+			esc_html__( 'Save settings', 'specflux-site-agent' )
 		);
 
 		echo '</form>';
@@ -337,29 +337,29 @@ class SettingsScreen {
 		$version = Connector::adapterVersion();
 		$ready   = Connector::adapterReady();
 
-		echo '<hr><h2>' . esc_html__( 'AI apps', 'senroflux' ) . '</h2>';
+		echo '<hr><h2>' . esc_html__( 'AI apps', 'specflux-site-agent' ) . '</h2>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="senroflux_save_connector">';
-		wp_nonce_field( 'senroflux_save_connector' );
+		echo '<input type="hidden" name="action" value="specflux_site_agent_save_connector">';
+		wp_nonce_field( 'specflux_site_agent_save_connector' );
 		printf(
 			'<p><label><input type="checkbox" name="%1$s" value="1"%2$s%3$s> %4$s</label></p>',
 			esc_attr( Connector::OPTION ),
 			checked( Connector::stored(), true, false ),
 			disabled( $ready, false, false ),
-			esc_html__( 'Allow AI apps to connect', 'senroflux' )
+			esc_html__( 'Allow AI apps to connect', 'specflux-site-agent' )
 		);
-		echo '<p class="description">' . esc_html__( 'Lets apps such as Claude, ChatGPT or Cursor use SenroFlux\'s tools, each through an application password you create here. Off until you turn it on.', 'senroflux' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Lets apps such as Claude, ChatGPT or Cursor use Specflux Site Agent\'s tools, each through an application password you create here. Off until you turn it on.', 'specflux-site-agent' ) . '</p>';
 		if ( ! $ready ) {
 			echo '<p class="description">' . esc_html(
 				null === $version
 					? sprintf(
 						/* translators: %s: the minimum MCP Adapter version. */
-						__( 'This needs the MCP Adapter plugin (version %s or newer) from WordPress.org. Install and activate it to turn this on.', 'senroflux' ),
+						__( 'This needs the MCP Adapter plugin (version %s or newer) from WordPress.org. Install and activate it to turn this on.', 'specflux-site-agent' ),
 						Connector::MIN_ADAPTER_VERSION
 					)
 					: sprintf(
 						/* translators: 1: installed MCP Adapter version, 2: minimum version. */
-						__( 'The MCP Adapter plugin is version %1$s; SenroFlux needs %2$s or newer. Update it to turn this on.', 'senroflux' ),
+						__( 'The MCP Adapter plugin is version %1$s; Specflux Site Agent needs %2$s or newer. Update it to turn this on.', 'specflux-site-agent' ),
 						$version,
 						Connector::MIN_ADAPTER_VERSION
 					)
@@ -367,13 +367,13 @@ class SettingsScreen {
 		} else {
 			printf(
 				'<p class="description">%s <code>%s</code></p>',
-				esc_html__( 'Server address:', 'senroflux' ),
+				esc_html__( 'Server address:', 'specflux-site-agent' ),
 				esc_html( rest_url( Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE ) )
 			);
 		}
 		printf(
 			'<p><button type="submit" class="button button-primary"%2$s>%1$s</button></p>',
-			esc_html__( 'Save', 'senroflux' ),
+			esc_html__( 'Save', 'specflux-site-agent' ),
 			disabled( $ready, false, false )
 		);
 		echo '</form>';
@@ -381,49 +381,49 @@ class SettingsScreen {
 
 	/** The "Abilities from other plugins" section (0.4 S6). */
 	private function renderPassthrough(): void {
-		echo '<hr><h2>' . esc_html__( 'Abilities from other plugins', 'senroflux' ) . '</h2>';
+		echo '<hr><h2>' . esc_html__( 'Abilities from other plugins', 'specflux-site-agent' ) . '</h2>';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
-		$error = isset( $_GET['senroflux_pt_error'] ) ? sanitize_text_field( wp_unslash( $_GET['senroflux_pt_error'] ) ) : '';
+		$error = isset( $_GET['specflux_site_agent_pt_error'] ) ? sanitize_text_field( wp_unslash( $_GET['specflux_site_agent_pt_error'] ) ) : '';
 		if ( Passthrough::ERROR_TOO_MANY === $error ) {
 			printf(
-				'<div data-senroflux-notice class="notice notice-error"><p>%s</p></div>',
+				'<div data-specflux-site-agent-notice class="notice notice-error"><p>%s</p></div>',
 				esc_html(
 					sprintf(
 						/* translators: %d is the cap. */
-						__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'senroflux' ),
+						__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'specflux-site-agent' ),
 						Passthrough::MAX_ENABLED
 					)
 				)
 			);
 		} elseif ( '' !== $error ) {
-			echo '<div data-senroflux-notice class="notice notice-error"><p>' . esc_html__( 'The abilities could not be saved.', 'senroflux' ) . '</p></div>';
+			echo '<div data-specflux-site-agent-notice class="notice notice-error"><p>' . esc_html__( 'The abilities could not be saved.', 'specflux-site-agent' ) . '</p></div>';
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash.
-		if ( isset( $_GET['senroflux_pt_saved'] ) ) {
-			echo '<div data-senroflux-notice class="notice notice-success"><p>' . esc_html__( 'Abilities saved.', 'senroflux' ) . '</p></div>';
+		if ( isset( $_GET['specflux_site_agent_pt_saved'] ) ) {
+			echo '<div data-specflux-site-agent-notice class="notice notice-success"><p>' . esc_html__( 'Abilities saved.', 'specflux-site-agent' ) . '</p></div>';
 		}
 
 		echo '<p>' . esc_html(
 			sprintf(
 				/* translators: %d is the cap. */
-				__( 'Other plugins register abilities SenroFlux can use. All are off until you turn them on (at most %d). Descriptions come from the plugin that registered each ability and are untrusted text. Each ability\'s own permission check still runs as the person running the task.', 'senroflux' ),
+				__( 'Other plugins register abilities Specflux Site Agent can use. All are off until you turn them on (at most %d). Descriptions come from the plugin that registered each ability and are untrusted text. Each ability\'s own permission check still runs as the person running the task.', 'specflux-site-agent' ),
 				Passthrough::MAX_ENABLED
 			)
 		) . '</p>';
 
 		$candidates = Passthrough::candidates();
 		if ( array() === $candidates ) {
-			echo '<p>' . esc_html__( 'No abilities from other plugins are registered on this site.', 'senroflux' ) . '</p>';
+			echo '<p>' . esc_html__( 'No abilities from other plugins are registered on this site.', 'specflux-site-agent' ) . '</p>';
 			return;
 		}
 
 		$config = Passthrough::config();
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="senroflux_save_passthrough">';
-		wp_nonce_field( 'senroflux_save_passthrough' );
+		echo '<input type="hidden" name="action" value="specflux_site_agent_save_passthrough">';
+		wp_nonce_field( 'specflux_site_agent_save_passthrough' );
 
 		$current = '';
 		foreach ( $candidates as $name => $ability ) {
@@ -434,7 +434,7 @@ class SettingsScreen {
 				}
 				$current = $namespace;
 				printf( '<h3>%s</h3>', esc_html( $namespace . '/' ) );
-				echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'On', 'senroflux' ) . '</th><th>' . esc_html__( 'Ability', 'senroflux' ) . '</th><th>' . esc_html__( 'Treat as', 'senroflux' ) . '</th></tr></thead><tbody>';
+				echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'On', 'specflux-site-agent' ) . '</th><th>' . esc_html__( 'Ability', 'specflux-site-agent' ) . '</th><th>' . esc_html__( 'Treat as', 'specflux-site-agent' ) . '</th></tr></thead><tbody>';
 			}
 
 			$entry   = $config[ $name ] ?? array(
@@ -456,14 +456,14 @@ class SettingsScreen {
 
 			echo '<tr><td>';
 			printf(
-				'<input type="checkbox" name="senroflux_pt_enabled[]" value="%1$s" id="senroflux-pt-%2$s"%3$s>',
+				'<input type="checkbox" name="specflux_site_agent_pt_enabled[]" value="%1$s" id="specflux-site-agent-pt-%2$s"%3$s>',
 				esc_attr( $name ),
 				esc_attr( md5( $name ) ),
 				checked( $on, true, false )
 			);
 			echo '</td><td>';
 			printf(
-				'<label for="senroflux-pt-%s"><strong>%s</strong></label> <code>%s</code>',
+				'<label for="specflux-site-agent-pt-%s"><strong>%s</strong></label> <code>%s</code>',
 				esc_attr( md5( $name ) ),
 				esc_html( '' !== $label ? $label : $name ),
 				esc_html( $name )
@@ -472,34 +472,34 @@ class SettingsScreen {
 				echo '<br><span class="description">' . esc_html( $desc ) . '</span>';
 			}
 			if ( array() !== $flags ) {
-				echo '<br><span class="description">' . esc_html__( 'Annotations:', 'senroflux' ) . ' ' . esc_html( implode( ', ', $flags ) ) . '</span>';
+				echo '<br><span class="description">' . esc_html__( 'Annotations:', 'specflux-site-agent' ) . ' ' . esc_html( implode( ', ', $flags ) ) . '</span>';
 			}
 			if ( 'changed' === $problem ) {
-				echo '<br><strong class="senroflux-pt-drift">' . esc_html__( 'Off: this ability\'s inputs changed since you enabled it. Tick it again to re-enable.', 'senroflux' ) . '</strong>';
+				echo '<br><strong class="specflux-site-agent-pt-drift">' . esc_html__( 'Off: this ability\'s inputs changed since you enabled it. Tick it again to re-enable.', 'specflux-site-agent' ) . '</strong>';
 			}
 			if ( $on && Passthrough::isDestructive( $ability ) ) {
-				echo '<br><span class="description">' . esc_html__( 'Marked destructive by its plugin: always asks for approval, whatever you choose.', 'senroflux' ) . '</span>';
+				echo '<br><span class="description">' . esc_html__( 'Marked destructive by its plugin: always asks for approval, whatever you choose.', 'specflux-site-agent' ) . '</span>';
 			}
 			if ( $on && GateMode::AgentSafety === Plugin::currentGateMode() && ! AbilityReviewProbe::isReviewed( $name ) ) {
-				echo '<br><span class="description">' . esc_html__( 'Hidden from runs until reviewed in SenroGate.', 'senroflux' ) . '</span>';
+				echo '<br><span class="description">' . esc_html__( 'Hidden from runs until reviewed in Belayline Agent Governance.', 'specflux-site-agent' ) . '</span>';
 			}
 			echo '</td><td>';
 			printf(
-				'<select name="senroflux_pt_mode[%1$s]"><option value="changes"%2$s>%3$s</option><option value="read"%4$s>%5$s</option></select>',
+				'<select name="specflux_site_agent_pt_mode[%1$s]"><option value="changes"%2$s>%3$s</option><option value="read"%4$s>%5$s</option></select>',
 				esc_attr( $name ),
 				selected( $entry['read'], false, false ),
-				esc_html__( 'Changes things', 'senroflux' ),
+				esc_html__( 'Changes things', 'specflux-site-agent' ),
 				selected( $entry['read'], true, false ),
-				esc_html__( 'Read', 'senroflux' )
+				esc_html__( 'Read', 'specflux-site-agent' )
 			);
 			echo '</td></tr>';
 		}
 		echo '</tbody></table>';
 
-		echo '<p class="description">' . esc_html__( '"Read" only applies when SenroFlux\'s own approvals are in use; with SenroGate, its review decides.', 'senroflux' ) . '</p>';
+		echo '<p class="description">' . esc_html__( '"Read" only applies when Specflux Site Agent\'s own approvals are in use; with Belayline Agent Governance, its review decides.', 'specflux-site-agent' ) . '</p>';
 		printf(
 			'<p><button type="submit" class="button button-primary">%s</button></p>',
-			esc_html__( 'Save abilities', 'senroflux' )
+			esc_html__( 'Save abilities', 'specflux-site-agent' )
 		);
 		echo '</form>';
 	}

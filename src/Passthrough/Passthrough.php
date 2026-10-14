@@ -2,17 +2,17 @@
 /**
  * Abilities from other plugins: governed passthrough (0.4 S6).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Passthrough;
+namespace Specflux\SiteAgent\Passthrough;
 
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 // Bail on direct access.
@@ -23,14 +23,14 @@ defined( 'ABSPATH' ) || exit;
  *
  * Everything here fails closed: nothing is on by default, an enabled ability
  * is exposed only while it is still registered, its input schema still hashes
- * to what the admin enabled, it is outside every namespace SenroFlux or a
- * pack owns, and (in SenroGate mode) SenroGate reports it reviewed. Nothing an
+ * to what the admin enabled, it is outside every namespace Specflux Site Agent or a
+ * pack owns, and (in Belayline Agent Governance mode) Belayline Agent Governance reports it reviewed. Nothing an
  * ability reports about itself loosens a decision: annotations only tighten.
  */
 final class Passthrough {
 
 	/** Option holding name => array{enabled:bool,read:bool,hash:string}. */
-	public const OPTION = 'senroflux_passthrough';
+	public const OPTION = 'specflux_site_agent_passthrough';
 
 	/** The most abilities that may be enabled site-wide. */
 	public const MAX_ENABLED = 40;
@@ -39,7 +39,7 @@ final class Passthrough {
 	public const ERROR_TOO_MANY = 'passthrough_too_many';
 
 	/** Namespaces that never pass through, whatever a pack says. */
-	private const ALWAYS_EXCLUDED = array( 'senroflux/', 'agent-safety/' );
+	private const ALWAYS_EXCLUDED = array( 'specflux/', 'belayline/' );
 
 	/**
 	 * The saved configuration, sanitised: only well-formed entries survive.
@@ -73,7 +73,7 @@ final class Passthrough {
 	}
 
 	/**
-	 * Namespace prefixes a passthrough ability must NOT be in: SenroFlux's,
+	 * Namespace prefixes a passthrough ability must NOT be in: Specflux Site Agent's,
 	 * Agent Safety's and every namespace any registered pack resolves.
 	 *
 	 * @return list<string>
@@ -181,7 +181,7 @@ final class Passthrough {
 				continue;
 			}
 			$meta = method_exists( $ability, 'get_meta' ) ? $ability->get_meta() : array();
-			$ours = is_array( $meta ) && is_array( $meta['senroflux'] ?? null ) ? $meta['senroflux'] : array();
+			$ours = is_array( $meta ) && is_array( $meta['specflux'] ?? null ) ? $meta['specflux'] : array();
 			if ( true === ( $ours['hidden'] ?? false ) ) {
 				continue;
 			}
@@ -192,8 +192,8 @@ final class Passthrough {
 	}
 
 	/**
-	 * Exact ability names to append to a run's allow-list. In SenroGate mode
-	 * only abilities SenroGate reports reviewed; built-in mode needs no review.
+	 * Exact ability names to append to a run's allow-list. In Belayline Agent Governance mode
+	 * only abilities Belayline Agent Governance reports reviewed; built-in mode needs no review.
 	 *
 	 * @return list<string>
 	 */
@@ -209,7 +209,7 @@ final class Passthrough {
 	}
 
 	/**
-	 * Enabled, unchanged abilities SenroGate mode is withholding for want of a
+	 * Enabled, unchanged abilities Belayline Agent Governance mode is withholding for want of a
 	 * review (feeds the setup check).
 	 *
 	 * @return list<string>
@@ -245,7 +245,7 @@ final class Passthrough {
 	}
 
 	/**
-	 * `senroflux_verb_map` callback for runs without a pack: the passthrough
+	 * `specflux_site_agent_verb_map` callback for runs without a pack: the passthrough
 	 * tiers are merged LAST, so no other callback can loosen them.
 	 *
 	 * @param mixed $map The map so far.
@@ -282,7 +282,7 @@ final class Passthrough {
 				self::ERROR_TOO_MANY,
 				sprintf(
 					/* translators: %d: the cap. */
-					__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'senroflux' ),
+					__( 'At most %d abilities from other plugins can be enabled. Nothing was saved; untick some and try again.', 'specflux-site-agent' ),
 					self::MAX_ENABLED
 				)
 			);

@@ -2,19 +2,19 @@
 /**
  * Post / page card.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 /**
  * create-post, update-post and publish-post answer `{id, status}` only, and
@@ -24,7 +24,7 @@ use Specflux\SenroFlux\Present\Presenter;
  */
 final class PostPresenter implements Presenter {
 
-	private const WRITE_ABILITIES = array( 'senroflux/create-post', 'senroflux/update-post', 'senroflux/publish-post' );
+	private const WRITE_ABILITIES = array( 'specflux/create-post', 'specflux/update-post', 'specflux/publish-post' );
 
 	/** {@inheritDoc} */
 	public function supports( string $ability, array $response ): bool {
@@ -49,7 +49,7 @@ final class PostPresenter implements Presenter {
 		}
 		if ( '' === $title ) {
 			/* translators: 1: Post or Page, 2: object id. */
-			$title = sprintf( __( '%1$s #%2$d', 'senroflux' ), $is_page ? __( 'Page', 'senroflux' ) : __( 'Post', 'senroflux' ), $id );
+			$title = sprintf( __( '%1$s #%2$d', 'specflux-site-agent' ), $is_page ? __( 'Page', 'specflux-site-agent' ) : __( 'Post', 'specflux-site-agent' ), $id );
 		}
 
 		return array(
@@ -58,10 +58,10 @@ final class PostPresenter implements Presenter {
 			'status' => $status,
 			'links'  => Fmt::links(
 				array(
-					Fmt::link( __( 'Edit', 'senroflux' ), $links->edit( $id ), 'edit' ),
+					Fmt::link( __( 'Edit', 'specflux-site-agent' ), $links->edit( $id ), 'edit' ),
 					$published
-						? Fmt::link( __( 'View', 'senroflux' ), '' !== $link ? $link : $links->view( $id, true ), 'view' )
-						: Fmt::link( __( 'Preview', 'senroflux' ), $links->view( $id, false ), 'preview' ),
+						? Fmt::link( __( 'View', 'specflux-site-agent' ), '' !== $link ? $link : $links->view( $id, true ), 'view' )
+						: Fmt::link( __( 'Preview', 'specflux-site-agent' ), $links->view( $id, false ), 'preview' ),
 				)
 			),
 		);

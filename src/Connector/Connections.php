@@ -1,27 +1,27 @@
 <?php
 /**
- * The SenroFlux-owned registry of connections (K1).
+ * The Specflux Site Agent-owned registry of connections (K1).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Which application passwords may open the connector, per user, with a scope
- * each. A connection is an application password SenroFlux created and
+ * each. A connection is an application password Specflux Site Agent created and
  * registered here; one made anywhere else opens nothing. The Connect screen
  * (K3) writes this registry; K1/K2 only read it.
  */
 final class Connections {
 
 	/** User meta: uuid => array{scope:string}. */
-	public const META_KEY = 'senroflux_connections';
+	public const META_KEY = 'specflux_site_agent_connections';
 
 	/**
 	 * The current request's connection, or null.
@@ -39,7 +39,7 @@ final class Connections {
 		$uuid    = rest_get_authenticated_app_password();
 		if ( $user_id <= 0 || ! is_string( $uuid ) || '' === $uuid ) {
 			// Not an application password: an OAuth bearer token may still have signed this request in.
-			$oauth = apply_filters( 'senroflux_connector_connection', null );
+			$oauth = apply_filters( 'specflux_site_agent_connector_connection', null );
 
 			return $oauth instanceof Connection ? $oauth : null;
 		}

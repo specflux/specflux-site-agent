@@ -6,13 +6,13 @@
  *
  * Seven abilities, all in the shared content category:
  *
- *  - `senroflux/list-posts`      (read-only, never returns content)
- *  - `senroflux/trash-post`      (reversible: wp_trash_post only, never a force delete)
- *  - `senroflux/restore-post`    (wp_untrash_post)
- *  - `senroflux/list-revisions`  (read-only, no content)
- *  - `senroflux/restore-revision`
- *  - `senroflux/list-post-meta`  (read-only, REGISTERED REST-visible scalar keys only)
- *  - `senroflux/set-post-meta`
+ *  - `specflux/list-posts`      (read-only, never returns content)
+ *  - `specflux/trash-post`      (reversible: wp_trash_post only, never a force delete)
+ *  - `specflux/restore-post`    (wp_untrash_post)
+ *  - `specflux/list-revisions`  (read-only, no content)
+ *  - `specflux/restore-revision`
+ *  - `specflux/list-post-meta`  (read-only, REGISTERED REST-visible scalar keys only)
+ *  - `specflux/set-post-meta`
  *
  * Every permission_callback checks a REAL capability (the post type's own
  * `edit_posts` / `delete_posts`) AND the per-object meta capability
@@ -22,12 +22,12 @@
  * API, not by this class. A refusal is always one generic `forbidden` error,
  * so a missing object and an unreadable one look the same.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Content;
+namespace Specflux\SiteAgent\Packs\Content;
 
 use WP_Error;
 
@@ -110,12 +110,12 @@ final class PostTools {
 	/**
 	 * Days WordPress keeps trashed posts (EMPTY_TRASH_DAYS). Zero or less
 	 * means wp_trash_post() would delete permanently. A seam: tests override
-	 * it through a `senroflux_test_*` global because a constant can only be
+	 * it through a `specflux_site_agent_test_*` global because a constant can only be
 	 * defined once per PHP process.
 	 */
 	public static function trashDays(): int {
-		if ( isset( $GLOBALS['senroflux_test_empty_trash_days'] ) ) {
-			return (int) $GLOBALS['senroflux_test_empty_trash_days'];
+		if ( isset( $GLOBALS['specflux_site_agent_test_empty_trash_days'] ) ) {
+			return (int) $GLOBALS['specflux_site_agent_test_empty_trash_days'];
 		}
 
 		return defined( 'EMPTY_TRASH_DAYS' ) ? (int) constant( 'EMPTY_TRASH_DAYS' ) : 0;
@@ -123,13 +123,13 @@ final class PostTools {
 
 	// --- Registration -------------------------------------------------------
 
-	/** Register senroflux/list-posts. */
+	/** Register specflux/list-posts. */
 	private static function registerListPosts(): void {
 		wp_register_ability(
-			'senroflux/list-posts',
+			'specflux/list-posts',
 			array(
-				'label'               => __( 'List posts', 'senroflux' ),
-				'description'         => __( 'List posts or pages (or another REST-visible post type) with filters: search text (up to 200 characters), status, author, date range, ordering and paging. Returns metadata only, never content. Set count_only to get just the totals.', 'senroflux' ),
+				'label'               => __( 'List posts', 'specflux-site-agent' ),
+				'description'         => __( 'List posts or pages (or another REST-visible post type) with filters: search text (up to 200 characters), status, author, date range, ordering and paging. Returns metadata only, never content. Set count_only to get just the totals.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -216,13 +216,13 @@ final class PostTools {
 		);
 	}
 
-	/** Register senroflux/trash-post. */
+	/** Register specflux/trash-post. */
 	private static function registerTrashPost(): void {
 		wp_register_ability(
-			'senroflux/trash-post',
+			'specflux/trash-post',
 			array(
-				'label'               => __( 'Trash a post', 'senroflux' ),
-				'description'         => __( 'Move a post or page to the trash. Reversible with restore-post; refused when the site does not keep a trash. Never deletes permanently.', 'senroflux' ),
+				'label'               => __( 'Trash a post', 'specflux-site-agent' ),
+				'description'         => __( 'Move a post or page to the trash. Reversible with restore-post; refused when the site does not keep a trash. Never deletes permanently.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => self::idSchema( 'id' ),
 				'output_schema'       => array(
@@ -245,19 +245,19 @@ final class PostTools {
 					return self::mayDelete( self::inputInt( self::arr( $input ), 'id' ) );
 				},
 				// NOT destructive: the post lands in the trash and restore-post
-				// brings it back. SenroGate parks destructive=true as irreversible.
+				// brings it back. Belayline Agent Governance parks destructive=true as irreversible.
 				'meta'                => self::meta( false, false, false ),
 			)
 		);
 	}
 
-	/** Register senroflux/restore-post. */
+	/** Register specflux/restore-post. */
 	private static function registerRestorePost(): void {
 		wp_register_ability(
-			'senroflux/restore-post',
+			'specflux/restore-post',
 			array(
-				'label'               => __( 'Restore a trashed post', 'senroflux' ),
-				'description'         => __( 'Restore a trashed post or page. WordPress puts it back as a draft by default.', 'senroflux' ),
+				'label'               => __( 'Restore a trashed post', 'specflux-site-agent' ),
+				'description'         => __( 'Restore a trashed post or page. WordPress puts it back as a draft by default.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => self::idSchema( 'id' ),
 				'output_schema'       => array(
@@ -280,13 +280,13 @@ final class PostTools {
 		);
 	}
 
-	/** Register senroflux/list-revisions. */
+	/** Register specflux/list-revisions. */
 	private static function registerListRevisions(): void {
 		wp_register_ability(
-			'senroflux/list-revisions',
+			'specflux/list-revisions',
 			array(
-				'label'               => __( 'List revisions', 'senroflux' ),
-				'description'         => __( 'List a post\'s revisions, newest first: id, date, author, title and whether it is an autosave. Content is not returned.', 'senroflux' ),
+				'label'               => __( 'List revisions', 'specflux-site-agent' ),
+				'description'         => __( 'List a post\'s revisions, newest first: id, date, author, title and whether it is an autosave. Content is not returned.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -334,13 +334,13 @@ final class PostTools {
 		);
 	}
 
-	/** Register senroflux/restore-revision. */
+	/** Register specflux/restore-revision. */
 	private static function registerRestoreRevision(): void {
 		wp_register_ability(
-			'senroflux/restore-revision',
+			'specflux/restore-revision',
 			array(
-				'label'               => __( 'Restore a revision', 'senroflux' ),
-				'description'         => __( 'Restore a post to one of its revisions. WordPress records the current state as a new revision first, so this can be undone.', 'senroflux' ),
+				'label'               => __( 'Restore a revision', 'specflux-site-agent' ),
+				'description'         => __( 'Restore a post to one of its revisions. WordPress records the current state as a new revision first, so this can be undone.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => self::idSchema( 'revision_id' ),
 				'output_schema'       => array(
@@ -364,13 +364,13 @@ final class PostTools {
 		);
 	}
 
-	/** Register senroflux/list-post-meta. */
+	/** Register specflux/list-post-meta. */
 	private static function registerListPostMeta(): void {
 		wp_register_ability(
-			'senroflux/list-post-meta',
+			'specflux/list-post-meta',
 			array(
-				'label'               => __( 'List post meta', 'senroflux' ),
-				'description'         => __( 'List the custom fields a post exposes: only keys registered for its post type as REST-visible single scalar values. Other keys are never returned.', 'senroflux' ),
+				'label'               => __( 'List post meta', 'specflux-site-agent' ),
+				'description'         => __( 'List the custom fields a post exposes: only keys registered for its post type as REST-visible single scalar values. Other keys are never returned.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => self::idSchema( 'post_id' ),
 				'output_schema'       => array(
@@ -404,13 +404,13 @@ final class PostTools {
 		);
 	}
 
-	/** Register senroflux/set-post-meta. */
+	/** Register specflux/set-post-meta. */
 	private static function registerSetPostMeta(): void {
 		wp_register_ability(
-			'senroflux/set-post-meta',
+			'specflux/set-post-meta',
 			array(
-				'label'               => __( 'Set post meta', 'senroflux' ),
-				'description'         => __( 'Set one custom field on a post. Only keys registered for the post type as REST-visible single scalar values can be set, and the value must match the registered type. String values are limited to 10000 characters.', 'senroflux' ),
+				'label'               => __( 'Set post meta', 'specflux-site-agent' ),
+				'description'         => __( 'Set one custom field on a post. Only keys registered for the post type as REST-visible single scalar values can be set, and the value must match the registered type. String values are limited to 10000 characters.', 'specflux-site-agent' ),
 				'category'            => Abilities::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -458,7 +458,7 @@ final class PostTools {
 		}
 
 		if ( ! class_exists( '\WP_Query' ) ) {
-			return new WP_Error( 'query_unavailable', __( 'Query unavailable.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'query_unavailable', __( 'Query unavailable.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		$statuses = self::DEFAULT_STATUSES;
@@ -513,7 +513,7 @@ final class PostTools {
 				return new WP_Error(
 					'invalid_date',
 					/* translators: %s: input property name. */
-					sprintf( __( '%s must be an ISO 8601 date or Y-m-d.', 'senroflux' ), $key ),
+					sprintf( __( '%s must be an ISO 8601 date or Y-m-d.', 'specflux-site-agent' ), $key ),
 					array( 'status' => 400 )
 				);
 			}
@@ -581,7 +581,7 @@ final class PostTools {
 		}
 
 		if ( 'trash' === $post->post_status ) {
-			return new WP_Error( 'already_trashed', __( 'That post is already in the trash.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'already_trashed', __( 'That post is already in the trash.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		// wp_trash_post() force-deletes when the trash is disabled; refuse
@@ -589,14 +589,14 @@ final class PostTools {
 		if ( self::trashDays() <= 0 ) {
 			return new WP_Error(
 				'trash_disabled',
-				__( 'This site has the trash disabled (EMPTY_TRASH_DAYS is 0), so trashing would delete the post permanently. Nothing was changed.', 'senroflux' ),
+				__( 'This site has the trash disabled (EMPTY_TRASH_DAYS is 0), so trashing would delete the post permanently. Nothing was changed.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		$previous = (string) $post->post_status;
 		if ( ! wp_trash_post( $id ) ) {
-			return new WP_Error( 'trash_failed', __( 'The post could not be moved to the trash.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'trash_failed', __( 'The post could not be moved to the trash.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -622,11 +622,11 @@ final class PostTools {
 		}
 
 		if ( 'trash' !== $post->post_status ) {
-			return new WP_Error( 'not_trashed', __( 'That post is not in the trash.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_trashed', __( 'That post is not in the trash.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! wp_untrash_post( $id ) ) {
-			return new WP_Error( 'restore_failed', __( 'The post could not be restored.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'restore_failed', __( 'The post could not be restored.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -691,7 +691,7 @@ final class PostTools {
 
 		$restored = wp_restore_post_revision( $revision_id );
 		if ( ! $restored ) {
-			return new WP_Error( 'restore_failed', __( 'The revision could not be restored.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'restore_failed', __( 'The revision could not be restored.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -753,7 +753,7 @@ final class PostTools {
 		// scalar" and "not single": never reveal which keys exist.
 		$exposed = self::exposedMetaKeys( (string) $post->post_type );
 		if ( ! isset( $exposed[ $key ] ) ) {
-			return new WP_Error( 'meta_not_registered', __( 'That meta key cannot be set here.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'meta_not_registered', __( 'That meta key cannot be set here.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$type    = $exposed[ $key ];
@@ -762,7 +762,7 @@ final class PostTools {
 			return new WP_Error(
 				'meta_invalid_value',
 				/* translators: %s: registered meta type. */
-				sprintf( __( 'The value does not match the registered type (%s).', 'senroflux' ), $type ),
+				sprintf( __( 'The value does not match the registered type (%s).', 'specflux-site-agent' ), $type ),
 				array( 'status' => 400 )
 			);
 		}
@@ -775,7 +775,7 @@ final class PostTools {
 		// update_post_meta() also returns false when the value is unchanged,
 		// so a false is only a failure if the stored value is not the new one.
 		if ( false === update_post_meta( $id, $key, $stored ) && self::readMetaValue( $id, $key, $type ) !== $value ) {
-			return new WP_Error( 'meta_update_failed', __( 'The meta value could not be saved.', 'senroflux' ), array( 'status' => 500 ) );
+			return new WP_Error( 'meta_update_failed', __( 'The meta value could not be saved.', 'specflux-site-agent' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -1054,7 +1054,7 @@ final class PostTools {
 	private static function forbidden(): WP_Error {
 		return new WP_Error(
 			'forbidden',
-			__( 'You are not allowed to do that.', 'senroflux' ),
+			__( 'You are not allowed to do that.', 'specflux-site-agent' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -1063,7 +1063,7 @@ final class PostTools {
 	 * Ability meta with the shared annotation shape.
 	 *
 	 * @param bool $read_only   Read-only.
-	 * @param bool $destructive Irreversible (SenroGate parks these).
+	 * @param bool $destructive Irreversible (Belayline Agent Governance parks these).
 	 * @param bool $idempotent  Idempotent.
 	 * @return array<string,mixed>
 	 */
@@ -1074,7 +1074,7 @@ final class PostTools {
 				'destructive' => $destructive,
 				'idempotent'  => $idempotent,
 			),
-			'senroflux'   => array( 'hidden' => false ),
+			'specflux'    => array( 'hidden' => false ),
 		);
 	}
 }

@@ -3,12 +3,12 @@
  * Recorded calls and canned answer for the stand-in FluentCart `CouponTools`
  * (tests/stubs/fluentcart-coupon-tools.php). Test-only.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms;
 
 final class FakeFluentCartCoupons {
 

@@ -2,14 +2,14 @@
 /**
  * Approvals for connector calls in built-in mode (K2).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -24,10 +24,10 @@ defined( 'ABSPATH' ) || exit;
 final class Approvals {
 
 	/** Option holding hash => entry. */
-	public const OPTION = 'senroflux_connector_approvals';
+	public const OPTION = 'specflux_site_agent_connector_approvals';
 
 	/** Prefix of the per-approval grant option; the suffix is the call's hash. */
-	public const GRANT_PREFIX = 'senroflux_cxa_';
+	public const GRANT_PREFIX = 'specflux_site_agent_cxa_';
 
 	/** An approval can be spent within this many seconds of being granted. */
 	public const APPROVAL_TTL = 900;

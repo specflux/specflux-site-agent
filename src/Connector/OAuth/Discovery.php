@@ -2,14 +2,14 @@
 /**
  * Discovery documents and the 401 challenge.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Connector\Connector;
+use Specflux\SiteAgent\Connector\Connector;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -58,7 +58,7 @@ final class Discovery {
 		return rest_url( OAuth::REST_NAMESPACE . '/protected-resource' );
 	}
 
-	/** The server URL's path, e.g. `/wp-json/senroflux/mcp`. */
+	/** The server URL's path, e.g. `/wp-json/specflux-site-agent/mcp`. */
 	public static function resourcePath(): string {
 		return (string) wp_parse_url( OAuth::serverUrl(), PHP_URL_PATH );
 	}
@@ -74,7 +74,7 @@ final class Discovery {
 			'authorization_servers'    => array( self::issuer() ),
 			'scopes_supported'         => OAuth::supportedScopes(),
 			'bearer_methods_supported' => array( 'header' ),
-			'resource_name'            => 'SenroFlux',
+			'resource_name'            => 'Specflux Site Agent',
 		);
 	}
 

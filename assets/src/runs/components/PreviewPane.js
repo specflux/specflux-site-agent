@@ -38,33 +38,33 @@ export default function PreviewPane( { steps, userId, iframe = PREVIEW_IFRAME_EN
 
 	return (
 		<aside
-			className={ 'senroflux-preview-pane' + ( collapsed ? ' is-collapsed' : '' ) }
-			aria-label={ __( 'Preview', 'senroflux' ) }
+			className={ 'specflux-site-agent-preview-pane' + ( collapsed ? ' is-collapsed' : '' ) }
+			aria-label={ __( 'Preview', 'specflux-site-agent' ) }
 		>
 			<button
 				type="button"
-				className="senroflux-preview-toggle button"
+				className="specflux-site-agent-preview-toggle button"
 				aria-expanded={ ! collapsed }
-				aria-controls="senroflux-preview-body"
+				aria-controls="specflux-site-agent-preview-body"
 				onClick={ toggle }
 			>
-				{ collapsed ? __( 'Show preview', 'senroflux' ) : __( 'Hide preview', 'senroflux' ) }
+				{ collapsed ? __( 'Show preview', 'specflux-site-agent' ) : __( 'Hide preview', 'specflux-site-agent' ) }
 			</button>
-			<div id="senroflux-preview-body" className="senroflux-preview-body" hidden={ collapsed }>
+			<div id="specflux-site-agent-preview-body" className="specflux-site-agent-preview-body" hidden={ collapsed }>
 				<ResultCard display={ display } raw="" />
 				{ url && (
-					<p className="senroflux-preview-open">
+					<p className="specflux-site-agent-preview-open">
 						<a href={ url } target="_blank" rel="noopener noreferrer">
-							{ __( 'Open preview in a new tab', 'senroflux' ) }
-							<span className="screen-reader-text">{ ' ' + __( '(opens in a new tab)', 'senroflux' ) }</span>
+							{ __( 'Open preview in a new tab', 'specflux-site-agent' ) }
+							<span className="screen-reader-text">{ ' ' + __( '(opens in a new tab)', 'specflux-site-agent' ) }</span>
 						</a>
 					</p>
 				) }
 				{ iframe && url && (
 					<iframe
 						key={ `${ url }#${ seq }` }
-						className="senroflux-preview-frame"
-						title={ __( 'Preview of the latest draft', 'senroflux' ) }
+						className="specflux-site-agent-preview-frame"
+						title={ __( 'Preview of the latest draft', 'specflux-site-agent' ) }
 						src={ url }
 						sandbox={ PREVIEW_SANDBOX }
 						referrerPolicy="no-referrer"

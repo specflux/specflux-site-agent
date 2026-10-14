@@ -17,31 +17,31 @@ import { stepLabel, stepResult, stepVerb, stepTier, ledgerLabels } from '../util
 export default function LedgerGroup( { calls, gateMode } ) {
 	const [ open, setOpen ] = useState( false );
 	const count = calls.length;
-	const toolCallFallback = __( 'Tool call', 'senroflux' );
+	const toolCallFallback = __( 'Tool call', 'specflux-site-agent' );
 	const summaryLabels = ledgerLabels( calls, toolCallFallback ).join( ', ' );
 
 	return (
-		<details className="senroflux-ledger-group" open={ open } onToggle={ ( e ) => setOpen( e.target.open ) }>
+		<details className="specflux-site-agent-ledger-group" open={ open } onToggle={ ( e ) => setOpen( e.target.open ) }>
 			<summary>
-				{ /* translators: %d: number of actions in this ledger group. */ sprintf( _n( '%d action', '%d actions', count, 'senroflux' ), count ) }
+				{ /* translators: %d: number of actions in this ledger group. */ sprintf( _n( '%d action', '%d actions', count, 'specflux-site-agent' ), count ) }
 				{ /* S22 pseudo-locale: the labels are mechanically derived from
 				 * the raw ability id (stepLabel()), not translatable UI
-				 * chrome — data-senroflux-content marks it as data. */ }
-				{ summaryLabels && <span data-senroflux-content>{ `: ${ summaryLabels }` }</span> }
+				 * chrome — data-specflux-site-agent-content marks it as data. */ }
+				{ summaryLabels && <span data-specflux-site-agent-content>{ `: ${ summaryLabels }` }</span> }
 			</summary>
-			<ol className="senroflux-ledger">
+			<ol className="specflux-site-agent-ledger">
 				{ calls.map( ( call, index ) => (
-					<li key={ index } className="senroflux-ledger-row">
-						<span className="senroflux-ledger-status">{ 'rejected' === call.step.status ? '✕' : '✓' }</span>
-						<span className="senroflux-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
-						<span className="senroflux-ledger-verb">{ stepVerb( call.step ) }</span>
+					<li key={ index } className="specflux-site-agent-ledger-row">
+						<span className="specflux-site-agent-ledger-status">{ 'rejected' === call.step.status ? '✕' : '✓' }</span>
+						<span className="specflux-site-agent-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
+						<span className="specflux-site-agent-ledger-verb">{ stepVerb( call.step ) }</span>
 						<TierBadge gateMode={ gateMode } tier={ stepTier( call.step ) } />
 						{ call.approvedByViewer && (
-							<span className="senroflux-ledger-you">{ __( 'Approved by you', 'senroflux' ) }</span>
+							<span className="specflux-site-agent-ledger-you">{ __( 'Approved by you', 'specflux-site-agent' ) }</span>
 						) }
-						<span className="senroflux-ledger-result">
+						<span className="specflux-site-agent-ledger-result">
 							{ 'rejected' === call.step.status ? (
-								<span className="senroflux-ledger-you">{ __( 'Rejected by you, not done', 'senroflux' ) }</span>
+								<span className="specflux-site-agent-ledger-you">{ __( 'Rejected by you, not done', 'specflux-site-agent' ) }</span>
 							) : (
 								/* S22 pseudo-locale: raw tool-result data (often
 								 * a JSON dump), never chrome. */

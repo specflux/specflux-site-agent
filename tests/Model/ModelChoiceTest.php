@@ -2,15 +2,15 @@
 /**
  * ModelChoice tests: the run-model picker's UI-agnostic surface.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Model;
+namespace Specflux\SiteAgent\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelChoice;
+use Specflux\SiteAgent\Model\ModelChoice;
 use WP_Error;
 
 final class ModelChoiceTest extends TestCase {

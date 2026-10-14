@@ -1,15 +1,15 @@
 <?php
 /**
- * Test-only SenroGate stand-in; see ../agent-safety-pack.php.
+ * Test-only Belayline Agent Governance stand-in; see ../agent-safety-pack.php.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\AgentSafety\Packs;
+namespace Belayline\Packs;
 
-use Specflux\AgentSafety\Policy\Tier;
+use Belayline\Policy\Tier;
 
 final class Pack {
 

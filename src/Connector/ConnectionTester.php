@@ -2,12 +2,12 @@
 /**
  * The "Test connection" loopback check (K3).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector;
+namespace Specflux\SiteAgent\Connector;
 
 use WP_Error;
 
@@ -56,7 +56,7 @@ final class ConnectionTester {
 					'protocolVersion' => self::PROTOCOL_VERSION,
 					'capabilities'    => new \stdClass(),
 					'clientInfo'      => array(
-						'name'    => 'senroflux-connection-test',
+						'name'    => 'specflux-site-agent-connection-test',
 						'version' => '1',
 					),
 				),
@@ -105,7 +105,7 @@ final class ConnectionTester {
 				self::CONNECTION,
 				sprintf(
 				/* translators: %s: the HTTP error text. */
-					__( 'This site could not reach its own address (%s). A firewall, a loopback block or a wrong site URL can cause this.', 'senroflux' ),
+					__( 'This site could not reach its own address (%s). A firewall, a loopback block or a wrong site URL can cause this.', 'specflux-site-agent' ),
 					$response->get_error_message()
 				)
 			);
@@ -113,17 +113,17 @@ final class ConnectionTester {
 
 		$code = wp_remote_retrieve_response_code( $response );
 		if ( 401 === $code || 403 === $code ) {
-			return self::result( self::AUTH, __( 'The site refused the credential (401/403). The connector may be switched off, the application password may have been removed, or the account may lack permission.', 'senroflux' ) );
+			return self::result( self::AUTH, __( 'The site refused the credential (401/403). The connector may be switched off, the application password may have been removed, or the account may lack permission.', 'specflux-site-agent' ) );
 		}
 		if ( 404 === $code ) {
-			return self::result( self::NOT_FOUND, __( 'The connector address was not found (404). Check that permalinks are not set to Plain and that the MCP Adapter plugin is active.', 'senroflux' ) );
+			return self::result( self::NOT_FOUND, __( 'The connector address was not found (404). Check that permalinks are not set to Plain and that the MCP Adapter plugin is active.', 'specflux-site-agent' ) );
 		}
 		if ( $code < 200 || $code >= 300 ) {
 			return self::result(
 				self::PROTOCOL,
 				sprintf(
 				/* translators: %d: HTTP status. */
-					__( 'The server answered with HTTP %d.', 'senroflux' ),
+					__( 'The server answered with HTTP %d.', 'specflux-site-agent' ),
 					$code
 				)
 			);
@@ -131,7 +131,7 @@ final class ConnectionTester {
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $body ) || isset( $body['error'] ) || ! is_array( $body['result'] ?? null ) ) {
-			return self::result( self::PROTOCOL, __( 'The server answered, but not with a valid MCP reply.', 'senroflux' ) );
+			return self::result( self::PROTOCOL, __( 'The server answered, but not with a valid MCP reply.', 'specflux-site-agent' ) );
 		}
 
 		if ( ! $count_tools ) {
@@ -145,7 +145,7 @@ final class ConnectionTester {
 			'category' => self::OK,
 			'message'  => sprintf(
 				/* translators: %d: number of tools. */
-				_n( 'Connected. %d tool is available to this connection.', 'Connected. %d tools are available to this connection.', $tools, 'senroflux' ),
+				_n( 'Connected. %d tool is available to this connection.', 'Connected. %d tools are available to this connection.', $tools, 'specflux-site-agent' ),
 				$tools
 			),
 			'tools'    => $tools,

@@ -2,8 +2,8 @@
 /**
  * Holds every registered capability pack for one request.
  *
- * Registration (S9): SenroFlux itself registers the pages pack (stage 8
- * provides it) through the `senroflux_packs` filter; the registry boots empty
+ * Registration (S9): Specflux Site Agent itself registers the pages pack (stage 8
+ * provides it) through the `specflux_site_agent_packs` filter; the registry boots empty
  * here so the no-pack path keeps working untouched. `start(?string $pack)`
  * resolves a pack by name here; an unknown name is `pack_unknown`.
  *
@@ -13,15 +13,15 @@
  *
  * It is also where every registered pack's GOVERNANCE data is collected and
  * handed to Agent Safety ({@see contributeToAgentSafety()}). Without that,
- * Agent Safety's gate returns early for `senroflux/*` ability names and the
+ * Agent Safety's gate returns early for `specflux/*` ability names and the
  * whole verdict / approval / audit chain is a no-op for pack writes.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs;
+namespace Specflux\SiteAgent\Packs;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -55,13 +55,13 @@ final class PackRegistry {
 	 * @return list<string>
 	 */
 	private static function asGovernedNamespaces(): array {
-		return array_merge( self::AS_GOVERNED_NAMESPACES, \Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms::governedNamespaces() );
+		return array_merge( self::AS_GOVERNED_NAMESPACES, \Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms::governedNamespaces() );
 	}
 
 	/**
-	 * Build the registry from the `senroflux_packs` filter: name => Pack. Every
+	 * Build the registry from the `specflux_site_agent_packs` filter: name => Pack. Every
 	 * registered entry must satisfy the Pack contract; anything not a Pack is
-	 * dropped (fail-closed, never a half-registered pack). SenroFlux's own pages
+	 * dropped (fail-closed, never a half-registered pack). Specflux Site Agent's own pages
 	 * pack registers through this filter (stage 8).
 	 */
 	public static function fromFilters(): self {
@@ -70,13 +70,13 @@ final class PackRegistry {
 		/**
 		 * Filters the registered capability packs. `@api` (S23) — the extension
 		 * point a third-party pack registers through, e.g.
-		 * `add_filter( 'senroflux_packs', fn( $packs ) => $packs + [ 'my-pack' => new MyPack() ] )`.
+		 * `add_filter( 'specflux_site_agent_packs', fn( $packs ) => $packs + [ 'my-pack' => new MyPack() ] )`.
 		 * Any value keyed by a string with a {@see Pack} instance is registered;
 		 * anything else is silently dropped.
 		 *
 		 * @param array<string,Pack> $packs Name => Pack instance. Starts empty.
 		 */
-		$filtered = apply_filters( 'senroflux_packs', array() );
+		$filtered = apply_filters( 'specflux_site_agent_packs', array() );
 
 		if ( is_array( $filtered ) ) {
 			foreach ( $filtered as $name => $pack ) {
@@ -125,7 +125,7 @@ final class PackRegistry {
 					esc_html(
 						sprintf(
 							/* translators: 1: pack name, 2: required namespace */
-							__( 'The pack "%1$s" was refused: abilityNamespaces() must end with "%2$s".', 'senroflux' ),
+							__( 'The pack "%1$s" was refused: abilityNamespaces() must end with "%2$s".', 'specflux-site-agent' ),
 							$pack->name(),
 							Pack::POLYFILL_NAMESPACE
 						)
@@ -155,7 +155,7 @@ final class PackRegistry {
 					esc_html(
 						sprintf(
 							/* translators: 1: pack name, 2: ungoverned namespace */
-							__( 'The pack "%1$s" was refused: abilityNamespaces() lists "%2$s" before its last entry, but SenroGate does not govern it and the pack does not declare it in governedNamespaces().', 'senroflux' ),
+							__( 'The pack "%1$s" was refused: abilityNamespaces() lists "%2$s" before its last entry, but Belayline Agent Governance does not govern it and the pack does not declare it in governedNamespaces().', 'specflux-site-agent' ),
 							$pack->name(),
 							$namespace
 						)
@@ -240,7 +240,7 @@ final class PackRegistry {
 	 * `plugins_loaded` priority-0 bootstrap (agent-safety plugin/agent-safety.php:119,
 	 * :171, :186), so these callbacks must be ADDED before that. The callbacks
 	 * themselves read the registry lazily, so a pack registered on
-	 * `senroflux_packs` any time before priority 0 is governed too.
+	 * `specflux_site_agent_packs` any time before priority 0 is governed too.
 	 */
 	public static function contributeToAgentSafety(): void {
 		if ( ! function_exists( 'add_filter' ) ) {
@@ -248,7 +248,7 @@ final class PackRegistry {
 		}
 
 		add_filter(
-			'agent_safety_governed_namespaces',
+			'belayline_governed_namespaces',
 			static function ( $namespaces ): array {
 				$namespaces = is_array( $namespaces ) ? $namespaces : array();
 
@@ -259,7 +259,7 @@ final class PackRegistry {
 		);
 
 		add_filter(
-			'agent_safety_verb_map',
+			'belayline_verb_map',
 			static function ( $map ): array {
 				$map = is_array( $map ) ? $map : array();
 

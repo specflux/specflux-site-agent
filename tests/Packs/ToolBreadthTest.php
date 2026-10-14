@@ -2,29 +2,29 @@
 /**
  * Tool breadth (0.5 K5): every new ability is carried by the right packs, with
  * the tier the precedent demands, and the three content packs hand the SAME
- * classification to SenroGate through `agent_safety_verb_map`.
+ * classification to Belayline Agent Governance through `belayline_verb_map`.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs;
+namespace Specflux\SiteAgent\Tests\Packs;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Content\Comments;
-use Specflux\SenroFlux\Packs\Content\PostTools;
-use Specflux\SenroFlux\Packs\ContentBundle;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Packs\Pages\PagesPack;
-use Specflux\SenroFlux\Packs\Posts\PostsPack;
-use Specflux\SenroFlux\Packs\Site\Inventory;
-use Specflux\SenroFlux\Packs\Site\Menus;
-use Specflux\SenroFlux\Packs\Site\SitePack;
-use Specflux\SenroFlux\Packs\Site\Settings;
-use Specflux\SenroFlux\Packs\Site\Users;
-use Specflux\SenroFlux\Packs\ToolBreadth;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Content\Comments;
+use Specflux\SiteAgent\Packs\Content\PostTools;
+use Specflux\SiteAgent\Packs\ContentBundle;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Packs\Pages\PagesPack;
+use Specflux\SiteAgent\Packs\Posts\PostsPack;
+use Specflux\SiteAgent\Packs\Site\Inventory;
+use Specflux\SiteAgent\Packs\Site\Menus;
+use Specflux\SiteAgent\Packs\Site\SitePack;
+use Specflux\SiteAgent\Packs\Site\Settings;
+use Specflux\SiteAgent\Packs\Site\Users;
+use Specflux\SiteAgent\Packs\ToolBreadth;
+use Specflux\SiteAgent\Tools\VerbTier;
 
 final class ToolBreadthTest extends TestCase {
 
@@ -57,8 +57,8 @@ final class ToolBreadthTest extends TestCase {
 	protected function setUp(): void {
 		require_once dirname( __DIR__ ) . '/stubs/blocks.php';
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
 	}
 
 	/** @return array<string,Pack> */
@@ -89,14 +89,14 @@ final class ToolBreadthTest extends TestCase {
 		foreach ( $this->packs() as $name => $pack ) {
 			$allow = $pack->allowList();
 			foreach ( $this->expected( $name ) as $template ) {
-				$this->assertContains( 'senroflux/' . $template, $allow, "$name carries $template" );
+				$this->assertContains( 'specflux/' . $template, $allow, "$name carries $template" );
 			}
 		}
 
 		$pages = $this->packs()['pages']->allowList();
-		$this->assertNotContains( 'senroflux/set-user-role', $pages );
-		$this->assertNotContains( 'senroflux/update-settings', $pages );
-		$this->assertNotContains( 'senroflux/approve-comment', $pages );
+		$this->assertNotContains( 'specflux/set-user-role', $pages );
+		$this->assertNotContains( 'specflux/update-settings', $pages );
+		$this->assertNotContains( 'specflux/approve-comment', $pages );
 	}
 
 	public function test_every_pack_verb_is_tiered_as_specified_and_roleverbs_matches_the_verb_map(): void {
@@ -109,7 +109,7 @@ final class ToolBreadthTest extends TestCase {
 			}
 
 			foreach ( $this->expected( $name ) as $template ) {
-				$verb = $pack->verbFor( 'senroflux/' . $template, array() );
+				$verb = $pack->verbFor( 'specflux/' . $template, array() );
 				$this->assertSame( $name . '/' . $template, $verb, 'verb is <pack>/<ability>' );
 				$this->assertSame( self::TIERS[ $template ], VerbTier::tierFor( $verb, $map ), "$verb tier" );
 			}
@@ -122,19 +122,19 @@ final class ToolBreadthTest extends TestCase {
 			$map  = $pack->verbMap();
 			$this->assertSame( 2, VerbTier::tierFor( $name . '/trash-post', $map ), "$name/trash-post is Tier 2" );
 			$this->assertSame( 1, VerbTier::tierFor( $name . '/restore-post', $map ), "$name/restore-post stays Tier 1" );
-			$this->assertSame( 2, $pack->agentSafetyVerbMap()['senroflux/trash-post'] ?? null, "$name SenroGate classification" );
+			$this->assertSame( 2, $pack->agentSafetyVerbMap()['specflux/trash-post'] ?? null, "$name Belayline Agent Governance classification" );
 		}
 	}
 
-	public function test_senrogate_gets_the_same_verb_and_tier_from_every_pack_that_carries_an_ability(): void {
+	public function test_agent_governance_gets_the_same_verb_and_tier_from_every_pack_that_carries_an_ability(): void {
 		$maps = array();
 		foreach ( $this->packs() as $name => $pack ) {
 			$maps[ $name ] = $pack->agentSafetyVerbMap();
 			foreach ( $this->expected( $name ) as $template ) {
 				$this->assertSame(
 					self::TIERS[ $template ],
-					$maps[ $name ][ 'senroflux/' . $template ] ?? null,
-					"agent_safety_verb_map: $name / senroflux/$template"
+					$maps[ $name ][ 'specflux/' . $template ] ?? null,
+					"belayline_verb_map: $name / specflux/$template"
 				);
 			}
 		}
@@ -149,7 +149,7 @@ final class ToolBreadthTest extends TestCase {
 	public function test_the_content_bundle_unions_every_new_ability(): void {
 		$union = ContentBundle::allowList( ...array_values( $this->packs() ) );
 		foreach ( ToolBreadth::allTemplates() as $template ) {
-			$this->assertContains( 'senroflux/' . $template, $union, $template );
+			$this->assertContains( 'specflux/' . $template, $union, $template );
 		}
 	}
 
@@ -204,8 +204,8 @@ final class ToolBreadthTest extends TestCase {
 		$ref->setAccessible( true );
 
 		foreach ( ToolBreadth::allTemplates() as $template ) {
-			$this->assertArrayHasKey( 'senroflux/' . $template, $GLOBALS['senroflux_test_abilities'], "$template is registered" );
-			$ability = $GLOBALS['senroflux_test_abilities'][ 'senroflux/' . $template ];
+			$this->assertArrayHasKey( 'specflux/' . $template, $GLOBALS['specflux_site_agent_test_abilities'], "$template is registered" );
+			$ability = $GLOBALS['specflux_site_agent_test_abilities'][ 'specflux/' . $template ];
 			$schema  = $ability->get_input_schema();
 			$props   = array_keys( is_array( $schema ) ? ( $schema['properties'] ?? array() ) : array() );
 

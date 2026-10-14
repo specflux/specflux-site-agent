@@ -1,27 +1,27 @@
 <?php
 /**
- * The guided-setup steps behind the Runs screen's "Set up SenroFlux" panel.
+ * The guided-setup steps behind the Runs screen's "Set up Specflux Site Agent" panel.
  *
- * SenroFlux NEVER writes SenroGate's settings. Step 4 only builds a link into
- * SenroGate's own Capability Packs page with the change pre-filled; a human
- * with SenroGate's capability clicks Save there.
+ * Specflux Site Agent NEVER writes Belayline Agent Governance's settings. Step 4 only builds a link into
+ * Belayline Agent Governance's own Capability Packs page with the change pre-filled; a human
+ * with Belayline Agent Governance's capability clicks Save there.
  *
  * Pure computation: every step is plain data (status, why, one action) so the
  * React panel renders it and the Start button's tooltip can name the step that
  * blocks it.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Setup;
+namespace Specflux\SiteAgent\Setup;
 
-use Specflux\SenroFlux\Packs\ContentBundle;
-use Specflux\SenroFlux\Packs\PackRegistry;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\GateMode;
-use Specflux\SenroFlux\Run\SiteBrief;
+use Specflux\SiteAgent\Packs\ContentBundle;
+use Specflux\SiteAgent\Packs\PackRegistry;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\GateMode;
+use Specflux\SiteAgent\Run\SiteBrief;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -32,16 +32,16 @@ defined( 'ABSPATH' ) || exit;
 final class Onboarding {
 
 	/** Site option: 1 once an administrator skipped the site-brief step. */
-	public const BRIEF_SKIPPED_OPTION = 'senroflux_setup_brief_skipped';
+	public const BRIEF_SKIPPED_OPTION = 'specflux_site_agent_setup_brief_skipped';
 
-	/** SenroGate's plugin file. */
-	public const SENROGATE_FILE = 'senrogate/senrogate.php';
+	/** Belayline Agent Governance's plugin file. */
+	public const AGENT_GOVERNANCE_FILE = 'belayline-agent-governance/belayline-agent-governance.php';
 
-	/** The old Agent Safety plugin file SenroGate replaces. */
+	/** The old Agent Safety plugin file Belayline Agent Governance replaces. */
 	public const AGENT_SAFETY_FILE = 'agent-safety/agent-safety.php';
 
-	/** SenroGate's Capability Packs page (under Tools). */
-	public const PACKS_PAGE = 'agent-safety-packs';
+	/** Belayline Agent Governance's Capability Packs page (under Tools). */
+	public const PACKS_PAGE = 'belayline-packs';
 
 	/**
 	 * Test seam: which plugins are installed and active. Null restores reality.
@@ -101,7 +101,7 @@ final class Onboarding {
 		return $steps;
 	}
 
-	/** Is the old Agent Safety plugin active beside an installed SenroGate? */
+	/** Is the old Agent Safety plugin active beside an installed Belayline Agent Governance? */
 	public static function oldPluginBlocks( int $user_id ): bool {
 		$step = self::oldPluginStep( $user_id );
 
@@ -129,7 +129,7 @@ final class Onboarding {
 	// ------------------------------------------------------------------
 
 	/**
-	 * Step "Connect a model": the existing `senroflux/provider` check.
+	 * Step "Connect a model": the existing `specflux/provider` check.
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -142,9 +142,9 @@ final class Onboarding {
 		if ( ! $passed ) {
 			if ( $check->fixVisibleFor( $user_id ) && null !== $check->fixUrl() ) {
 				$action = array(
-					'label' => 'update_core' === $check->fixCapability() || 'senroflux_wordpress_outdated' === $check->errorCode()
-						? __( 'Update WordPress', 'senroflux' )
-						: __( 'Open Connectors', 'senroflux' ),
+					'label' => 'update_core' === $check->fixCapability() || 'specflux_site_agent_wordpress_outdated' === $check->errorCode()
+						? __( 'Update WordPress', 'specflux-site-agent' )
+						: __( 'Open Connectors', 'specflux-site-agent' ),
 					'url'   => $check->fixUrl(),
 				);
 			} else {
@@ -154,8 +154,8 @@ final class Onboarding {
 
 		return array(
 			'id'       => 'provider',
-			'title'    => __( 'Connect a model', 'senroflux' ),
-			'why'      => __( 'SenroFlux needs an AI model to plan and write for you.', 'senroflux' ),
+			'title'    => __( 'Connect a model', 'specflux-site-agent' ),
+			'why'      => __( 'Specflux Site Agent needs an AI model to plan and write for you.', 'specflux-site-agent' ),
 			'status'   => $passed ? 'pass' : 'fail',
 			'blocking' => true,
 			'detail'   => $passed ? null : $check->messageFor( $user_id ),
@@ -175,42 +175,42 @@ final class Onboarding {
 
 		if ( GateMode::AgentSafety === $mode ) {
 			$state = 'active';
-		} elseif ( self::isInstalled( self::SENROGATE_FILE ) ) {
+		} elseif ( self::isInstalled( self::AGENT_GOVERNANCE_FILE ) ) {
 			$state = 'installed';
 		}
 
 		if ( 'installed' === $state && function_exists( 'wp_nonce_url' ) && function_exists( 'admin_url' ) ) {
 			$action = array(
-				'label' => __( 'Activate SenroGate', 'senroflux' ),
+				'label' => __( 'Activate Belayline Agent Governance', 'specflux-site-agent' ),
 				'url'   => wp_nonce_url(
-					admin_url( 'plugins.php?action=activate&plugin=' . rawurlencode( self::SENROGATE_FILE ) ),
-					'activate-plugin_' . self::SENROGATE_FILE
+					admin_url( 'plugins.php?action=activate&plugin=' . rawurlencode( self::AGENT_GOVERNANCE_FILE ) ),
+					'activate-plugin_' . self::AGENT_GOVERNANCE_FILE
 				),
 			);
 		} elseif ( 'missing' === $state && function_exists( 'admin_url' ) ) {
 			$action = array(
-				'label' => __( 'Install SenroGate', 'senroflux' ),
-				'url'   => admin_url( 'plugin-install.php?tab=plugin-information&plugin=senrogate' ),
+				'label' => __( 'Install Belayline Agent Governance', 'specflux-site-agent' ),
+				'url'   => admin_url( 'plugin-install.php?tab=plugin-information&plugin=belayline-agent-governance' ),
 			);
 		}
 
 		return array(
 			'id'       => 'approval',
-			'title'    => __( 'Choose how changes are approved', 'senroflux' ),
-			'why'      => __( 'Decide who signs off before SenroFlux changes your site.', 'senroflux' ),
+			'title'    => __( 'Choose how changes are approved', 'specflux-site-agent' ),
+			'why'      => __( 'Decide who signs off before Specflux Site Agent changes your site.', 'specflux-site-agent' ),
 			'status'   => 'pass',
 			'blocking' => false,
-			'mode'     => GateMode::AgentSafety === $mode ? 'senrogate' : 'built_in',
+			'mode'     => GateMode::AgentSafety === $mode ? 'belayline-agent-governance' : 'built_in',
 			'options'  => array(
 				array(
 					'id'          => 'built_in',
-					'title'       => __( 'Approve every change here', 'senroflux' ),
-					'description' => __( 'SenroFlux asks you on this screen before each change.', 'senroflux' ),
+					'title'       => __( 'Approve every change here', 'specflux-site-agent' ),
+					'description' => __( 'Specflux Site Agent asks you on this screen before each change.', 'specflux-site-agent' ),
 				),
 				array(
-					'id'          => 'senrogate',
-					'title'       => __( 'Use SenroGate rules', 'senroflux' ),
-					'description' => __( 'SenroGate decides what needs approval by role and keeps an audit log.', 'senroflux' ),
+					'id'          => 'belayline-agent-governance',
+					'title'       => __( 'Use Belayline Agent Governance rules', 'specflux-site-agent' ),
+					'description' => __( 'Belayline Agent Governance decides what needs approval by role and keeps an audit log.', 'specflux-site-agent' ),
 					'state'       => $state,
 					'action'      => $action,
 				),
@@ -221,12 +221,12 @@ final class Onboarding {
 
 	/**
 	 * Step "Clear the old Agent Safety plugin": hidden unless both it and
-	 * SenroGate are installed.
+	 * Belayline Agent Governance are installed.
 	 *
 	 * @return array<string,mixed>|null
 	 */
 	private static function oldPluginStep( int $user_id ): ?array {
-		if ( ! self::isInstalled( self::AGENT_SAFETY_FILE ) || ! self::isInstalled( self::SENROGATE_FILE ) ) {
+		if ( ! self::isInstalled( self::AGENT_SAFETY_FILE ) || ! self::isInstalled( self::AGENT_GOVERNANCE_FILE ) ) {
 			return null;
 		}
 
@@ -237,21 +237,21 @@ final class Onboarding {
 		if ( ! $passed ) {
 			if ( function_exists( 'user_can' ) && user_can( $user_id, 'activate_plugins' ) && function_exists( 'wp_nonce_url' ) && function_exists( 'admin_url' ) ) {
 				$action = array(
-					'label' => __( 'Deactivate Agent Safety', 'senroflux' ),
+					'label' => __( 'Deactivate Agent Safety', 'specflux-site-agent' ),
 					'url'   => wp_nonce_url(
 						admin_url( 'plugins.php?action=deactivate&plugin=' . rawurlencode( self::AGENT_SAFETY_FILE ) ),
 						'deactivate-plugin_' . self::AGENT_SAFETY_FILE
 					),
 				);
 			} else {
-				$ask = __( 'Ask an administrator to deactivate the Agent Safety plugin.', 'senroflux' );
+				$ask = __( 'Ask an administrator to deactivate the Agent Safety plugin.', 'specflux-site-agent' );
 			}
 		}
 
 		return array(
 			'id'       => 'old-plugin',
-			'title'    => __( 'Clear the old Agent Safety plugin', 'senroflux' ),
-			'why'      => __( 'SenroGate replaces Agent Safety and keeps its data, but the two cannot be active together.', 'senroflux' ),
+			'title'    => __( 'Clear the old Agent Safety plugin', 'specflux-site-agent' ),
+			'why'      => __( 'Belayline Agent Governance replaces Agent Safety and keeps its data, but the two cannot be active together.', 'specflux-site-agent' ),
 			'status'   => $passed ? 'pass' : 'fail',
 			'blocking' => true,
 			'action'   => $action,
@@ -260,7 +260,7 @@ final class Onboarding {
 	}
 
 	/**
-	 * Step "Allow SenroFlux for your role" (SenroGate mode only): passes when
+	 * Step "Allow Specflux Site Agent for your role" (Belayline Agent Governance mode only): passes when
 	 * at least one content pack is runnable for the viewer.
 	 *
 	 * @return array<string,mixed>
@@ -269,8 +269,8 @@ final class Onboarding {
 		$role = self::roleLabel( $user_id );
 		$step = array(
 			'id'       => 'role-binding',
-			'title'    => __( 'Allow SenroFlux for your role', 'senroflux' ),
-			'why'      => __( 'SenroGate only lets a role use SenroFlux once someone binds that role to a pack.', 'senroflux' ),
+			'title'    => __( 'Allow Specflux Site Agent for your role', 'specflux-site-agent' ),
+			'why'      => __( 'Belayline Agent Governance only lets a role use Specflux Site Agent once someone binds that role to a pack.', 'specflux-site-agent' ),
 			'status'   => $passed ? 'pass' : 'fail',
 			'blocking' => true,
 			'role'     => $role,
@@ -284,7 +284,7 @@ final class Onboarding {
 
 		if ( function_exists( 'user_can' ) && user_can( $user_id, 'manage_options' ) ) {
 			$step['action'] = array(
-				'label' => __( 'Turn on in SenroGate', 'senroflux' ),
+				'label' => __( 'Turn on in Belayline Agent Governance', 'specflux-site-agent' ),
 				'url'   => self::bindUrl( $user_id ),
 			);
 		} else {
@@ -295,7 +295,7 @@ final class Onboarding {
 	}
 
 	/**
-	 * Step "Tell SenroFlux about your site" (optional): the site brief.
+	 * Step "Tell Specflux Site Agent about your site" (optional): the site brief.
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -307,14 +307,14 @@ final class Onboarding {
 
 		return array(
 			'id'       => 'site-brief',
-			'title'    => __( 'Tell SenroFlux about your site', 'senroflux' ),
-			'why'      => __( 'A short note about your business and tone makes every run sound like you.', 'senroflux' ),
+			'title'    => __( 'Tell Specflux Site Agent about your site', 'specflux-site-agent' ),
+			'why'      => __( 'A short note about your business and tone makes every run sound like you.', 'specflux-site-agent' ),
 			'status'   => $passed ? 'pass' : 'todo',
 			'blocking' => false,
 			'brief'    => $brief,
 			'maxChars' => SiteBrief::MAX_CHARS,
 			'canEdit'  => $can,
-			'ask'      => $can ? null : __( 'Ask an administrator to write the site brief.', 'senroflux' ),
+			'ask'      => $can ? null : __( 'Ask an administrator to write the site brief.', 'specflux-site-agent' ),
 			'action'   => null,
 		);
 	}
@@ -335,8 +335,8 @@ final class Onboarding {
 
 		return array(
 			'id'       => 'first-run',
-			'title'    => __( 'Try a first run', 'senroflux' ),
-			'why'      => __( 'Pick a starter goal to fill the goal box, then press Start run.', 'senroflux' ),
+			'title'    => __( 'Try a first run', 'specflux-site-agent' ),
+			'why'      => __( 'Pick a starter goal to fill the goal box, then press Start run.', 'specflux-site-agent' ),
 			'status'   => $started ? 'pass' : 'todo',
 			'blocking' => false,
 			'goals'    => array(),
@@ -358,24 +358,24 @@ final class Onboarding {
 	public static function starterGoals( array $pack_names ): array {
 		$catalog = array(
 			'pages'    => array(
-				__( 'Write an About page for my business', 'senroflux' ),
-				__( 'Build a Contact page with a short intro and my opening hours', 'senroflux' ),
-				__( 'Add a Services page that lists what I offer', 'senroflux' ),
+				__( 'Write an About page for my business', 'specflux-site-agent' ),
+				__( 'Build a Contact page with a short intro and my opening hours', 'specflux-site-agent' ),
+				__( 'Add a Services page that lists what I offer', 'specflux-site-agent' ),
 			),
 			'posts'    => array(
-				__( 'Draft a blog post announcing what is new this month', 'senroflux' ),
-				__( 'Write three post ideas for my blog, then draft the best one', 'senroflux' ),
-				__( 'Tidy my categories and tags so related posts group together', 'senroflux' ),
+				__( 'Draft a blog post announcing what is new this month', 'specflux-site-agent' ),
+				__( 'Write three post ideas for my blog, then draft the best one', 'specflux-site-agent' ),
+				__( 'Tidy my categories and tags so related posts group together', 'specflux-site-agent' ),
 			),
 			'site'     => array(
-				__( 'Set up a simple site menu with my main pages', 'senroflux' ),
-				__( 'Choose a front page that shows who I am and what I do', 'senroflux' ),
-				__( 'Suggest a calmer color style for my site and show me before changing it', 'senroflux' ),
+				__( 'Set up a simple site menu with my main pages', 'specflux-site-agent' ),
+				__( 'Choose a front page that shows who I am and what I do', 'specflux-site-agent' ),
+				__( 'Suggest a calmer color style for my site and show me before changing it', 'specflux-site-agent' ),
 			),
 			'commerce' => array(
-				__( 'Show me which products are out of stock', 'senroflux' ),
-				__( 'Write a clearer description for my best-selling product', 'senroflux' ),
-				__( 'Summarize my orders from the last week', 'senroflux' ),
+				__( 'Show me which products are out of stock', 'specflux-site-agent' ),
+				__( 'Write a clearer description for my best-selling product', 'specflux-site-agent' ),
+				__( 'Summarize my orders from the last week', 'specflux-site-agent' ),
 			),
 		);
 
@@ -406,7 +406,7 @@ final class Onboarding {
 	// ------------------------------------------------------------------
 
 	/**
-	 * The SenroGate binding token for this viewer: their role, preferring
+	 * The Belayline Agent Governance binding token for this viewer: their role, preferring
 	 * administrator, else their user id when they have no role.
 	 */
 	public static function bindToken( int $user_id ): string {
@@ -416,16 +416,16 @@ final class Onboarding {
 	}
 
 	/**
-	 * The deep link into SenroGate's Capability Packs page with the viewer's
+	 * The deep link into Belayline Agent Governance's Capability Packs page with the viewer's
 	 * token and the combined content pack pre-selected. Nothing is saved by
 	 * following it.
 	 */
 	public static function bindUrl( int $user_id ): string {
 		$query = http_build_query(
 			array(
-				'page'                 => self::PACKS_PAGE,
-				'senrogate_bind_token' => self::bindToken( $user_id ),
-				'senrogate_bind_pack'  => ContentBundle::NAME,
+				'page'                        => self::PACKS_PAGE,
+				'agent_governance_bind_token' => self::bindToken( $user_id ),
+				'agent_governance_bind_pack'  => ContentBundle::NAME,
 			),
 			'',
 			'&',
@@ -439,7 +439,7 @@ final class Onboarding {
 	public static function roleLabel( int $user_id ): string {
 		$slug = self::roleSlug( $user_id );
 		if ( null === $slug ) {
-			return __( 'your role', 'senroflux' );
+			return __( 'your role', 'specflux-site-agent' );
 		}
 
 		if ( function_exists( 'wp_roles' ) ) {
@@ -452,11 +452,11 @@ final class Onboarding {
 		return ucfirst( str_replace( '_', ' ', $slug ) );
 	}
 
-	/** "Ask an administrator to bind <Role> to SenroFlux content in SenroGate." */
+	/** "Ask an administrator to bind <Role> to Specflux Site Agent content in Belayline Agent Governance." */
 	public static function askToBindMessage( string $role ): string {
 		return sprintf(
 			/* translators: %s: a user role, e.g. "Editor". */
-			__( 'Ask an administrator to bind %s to SenroFlux content in SenroGate.', 'senroflux' ),
+			__( 'Ask an administrator to bind %s to Specflux Site Agent content in Belayline Agent Governance.', 'specflux-site-agent' ),
 			$role
 		);
 	}

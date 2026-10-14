@@ -4,23 +4,23 @@
  * cards, lookups and the status polyfill. No network: every SureCart model
  * call goes through {@see SureCartRemote}, replaced here with a fake.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce\Platforms\SureCart;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce\Platforms\SureCart;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Packs\Commerce\CommercePack;
-use Specflux\SenroFlux\Packs\Commerce\CommerceSummary;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\StorePlatforms;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartPlatform;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartProductStatus;
-use Specflux\SenroFlux\Packs\Commerce\Platforms\SureCart\SureCartRemote;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Tools\VerbTier;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Packs\Commerce\CommercePack;
+use Specflux\SiteAgent\Packs\Commerce\CommerceSummary;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart\SureCartPlatform;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart\SureCartProductStatus;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\SureCart\SureCartRemote;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Tools\VerbTier;
 use WP_Error;
 
 final class SureCartPlatformTest extends TestCase {
@@ -35,13 +35,13 @@ final class SureCartPlatformTest extends TestCase {
 	private array $env = array();
 
 	protected function setUp(): void {
-		remove_all_filters( 'senroflux_store_platforms' );
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		remove_all_filters( SureCartPlatform::AMOUNT_THRESHOLD_FILTER );
-		$GLOBALS['senroflux_test_options']            = array();
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_user_caps']          = array();
-		$GLOBALS['senroflux_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_options']            = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_user_caps']          = array();
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
 		require_once dirname( __DIR__, 4 ) . '/stubs/blocks.php';
 		Plugin::reset();
 		Abilities::reset();
@@ -70,7 +70,7 @@ final class SureCartPlatformTest extends TestCase {
 
 	protected function tearDown(): void {
 		SureCartRemote::use( null );
-		remove_all_filters( 'senroflux_store_platforms' );
+		remove_all_filters( 'specflux_site_agent_store_platforms' );
 		remove_all_filters( SureCartPlatform::AMOUNT_THRESHOLD_FILTER );
 		Plugin::reset();
 	}
@@ -82,7 +82,7 @@ final class SureCartPlatformTest extends TestCase {
 	/** Register the platform and return a commerce pack speaking for it. */
 	private function pack(): CommercePack {
 		$platform = $this->platform();
-		add_filter( 'senroflux_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
+		add_filter( 'specflux_site_agent_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
 		$pack = new CommercePack();
 		$pack->useRunPlatform( 'surecart' );
 
@@ -102,7 +102,7 @@ final class SureCartPlatformTest extends TestCase {
 		$this->assertSame( 'surecart', $p->id() );
 		$this->assertSame( 'SureCart', $p->label() );
 		$this->assertSame( '4.9.3', $p->minVersion() );
-		$this->assertSame( array( 'surecart/', 'senroflux/' ), $p->abilityNamespaces() );
+		$this->assertSame( array( 'surecart/', 'specflux/' ), $p->abilityNamespaces() );
 		$this->assertSame( 'manage_sc_shop_settings', $p->runCapability() );
 		$this->assertSame( 'manage_options', $p->restoreCapability() );
 	}
@@ -142,10 +142,10 @@ final class SureCartPlatformTest extends TestCase {
 		$p = new SureCartPlatform();
 
 		$this->assertSame( 'not_installed', $p->inactiveReason() );
-		$this->assertFalse( $p->isGoverned(), 'with no SenroGate SureCart module nothing governs surecart/' );
+		$this->assertFalse( $p->isGoverned(), 'with no Belayline Agent Governance SureCart module nothing governs surecart/' );
 	}
 
-	public function test_governed_follows_senrogates_module(): void {
+	public function test_governed_follows_governances_module(): void {
 		$this->assertTrue( $this->platform()->isGoverned() );
 		$this->env['gated'] = false;
 		$this->assertFalse( $this->platform()->isGoverned() );
@@ -184,7 +184,7 @@ final class SureCartPlatformTest extends TestCase {
 	public function test_roles_resolve_to_surecart_abilities_when_registered_else_the_polyfill(): void {
 		$pack = $this->pack();
 		foreach ( array( 'get-product', 'update-price', 'create-refund' ) as $name ) {
-			$GLOBALS['senroflux_test_abilities'][ 'surecart/' . $name ] = new \SenroFlux_Test_Fake_Ability(
+			$GLOBALS['specflux_site_agent_test_abilities'][ 'surecart/' . $name ] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 				'surecart/' . $name,
 				input_schema: array(
 					'type'       => 'object',
@@ -202,8 +202,8 @@ final class SureCartPlatformTest extends TestCase {
 		$this->assertSame( 'surecart/get-product', $resolved['read'] );
 		$this->assertSame( 'surecart/update-price', $resolved['price'] );
 		$this->assertSame( 'surecart/create-refund', $resolved['refund'] );
-		$this->assertSame( 'senroflux/surecart-product-status', $resolved['status'], 'status is polyfill-only' );
-		$this->assertSame( 'senroflux/surecart-create-product', $resolved['create'], 'absent native falls back' );
+		$this->assertSame( 'specflux/surecart-product-status', $resolved['status'], 'status is polyfill-only' );
+		$this->assertSame( 'specflux/surecart-create-product', $resolved['create'], 'absent native falls back' );
 	}
 
 	public function test_the_polyfill_set_is_only_the_status_ability(): void {
@@ -218,7 +218,7 @@ final class SureCartPlatformTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// Tiers (SenroGate's, mirrored)
+	// Tiers (Belayline Agent Governance's, mirrored)
 	// ------------------------------------------------------------------
 
 	/** @return array<string,array{string,array<string,mixed>,int}> */
@@ -375,7 +375,7 @@ final class SureCartPlatformTest extends TestCase {
 				2,
 			),
 			'status published'             => array(
-				'senroflux/surecart-product-status',
+				'specflux/surecart-product-status',
 				array(
 					'id'     => 'p',
 					'status' => 'published',
@@ -383,7 +383,7 @@ final class SureCartPlatformTest extends TestCase {
 				2,
 			),
 			'status draft'                 => array(
-				'senroflux/surecart-product-status',
+				'specflux/surecart-product-status',
 				array(
 					'id'     => 'p',
 					'status' => 'draft',
@@ -397,11 +397,11 @@ final class SureCartPlatformTest extends TestCase {
 	 * @dataProvider tierCases
 	 * @param array<string,mixed> $input Input.
 	 */
-	public function test_tiers_match_senrogates( string $ability, array $input, int $tier ): void {
+	public function test_tiers_match_governances( string $ability, array $input, int $tier ): void {
 		$this->assertSame( $tier, $this->tier( $this->pack(), $ability, $input ) );
 	}
 
-	public function test_the_discount_amount_threshold_follows_senrogates_filter_and_survives_a_broken_one(): void {
+	public function test_the_discount_amount_threshold_follows_governances_filter_and_survives_a_broken_one(): void {
 		$pack  = $this->pack();
 		$input = array(
 			'name'       => 'c',
@@ -426,10 +426,10 @@ final class SureCartPlatformTest extends TestCase {
 	public function test_the_status_polyfill_is_governed_at_its_highest_verb_tier(): void {
 		$map = $this->pack()->agentSafetyVerbMap();
 
-		$this->assertSame( 2, $map['senroflux/surecart-product-status'] );
-		$this->assertSame( 2, $map['senroflux/surecart-update-price'] );
-		$this->assertSame( 0, $map['senroflux/surecart-get-product'] );
-		$this->assertSame( 2, $map['senroflux/surecart-create-refund'] );
+		$this->assertSame( 2, $map['specflux/surecart-product-status'] );
+		$this->assertSame( 2, $map['specflux/surecart-update-price'] );
+		$this->assertSame( 0, $map['specflux/surecart-get-product'] );
+		$this->assertSame( 2, $map['specflux/surecart-create-refund'] );
 	}
 
 	// ------------------------------------------------------------------
@@ -438,7 +438,7 @@ final class SureCartPlatformTest extends TestCase {
 
 	public function test_the_coupon_shape_maps_the_packs_vocabulary_and_leaves_native_input_alone(): void {
 		$pack = $this->pack();
-		$GLOBALS['senroflux_test_abilities']['surecart/create-coupon'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['surecart/create-coupon'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'surecart/create-coupon',
 			input_schema: array(
 				'type'       => 'object',
@@ -474,14 +474,14 @@ final class SureCartPlatformTest extends TestCase {
 		$this->assertSame( $native, $pack->shapeInput( 'surecart/create-coupon', $native ) );
 		$this->assertSame(
 			array( 'code' => 'SPRING' ),
-			$pack->shapeInput( 'senroflux/surecart-create-coupon', array( 'code' => 'SPRING' ) ),
+			$pack->shapeInput( 'specflux/surecart-create-coupon', array( 'code' => 'SPRING' ) ),
 			'the polyfill takes the pack input as is'
 		);
 	}
 
 	public function test_the_promotion_shape_accepts_coupon_id(): void {
 		$pack = $this->pack();
-		$GLOBALS['senroflux_test_abilities']['surecart/create-promotion'] = new \SenroFlux_Test_Fake_Ability(
+		$GLOBALS['specflux_site_agent_test_abilities']['surecart/create-promotion'] = new \SpecfluxSiteAgent_Test_Fake_Ability(
 			'surecart/create-promotion',
 			input_schema: array(
 				'type'       => 'object',
@@ -678,7 +678,7 @@ final class SureCartPlatformTest extends TestCase {
 			'Publish SureCart product Mug',
 			CommerceSummary::filter(
 				'plain',
-				'senroflux/surecart-product-status',
+				'specflux/surecart-product-status',
 				array(
 					'id'     => 'prod_1',
 					'status' => 'published',
@@ -790,14 +790,14 @@ final class SureCartPlatformTest extends TestCase {
 
 	private function registerPolyfills(): void {
 		$platform = $this->platform();
-		add_filter( 'senroflux_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
+		add_filter( 'specflux_site_agent_store_platforms', static fn ( array $p ): array => array_merge( $p, array( $platform ) ), 10, 1 );
 		Abilities::registerCategory();
 		Abilities::register();
 	}
 
 	public function test_the_status_polyfill_is_registered_with_the_platform_and_patches_the_status(): void {
 		$this->registerPolyfills();
-		$ability = wp_get_ability( 'senroflux/surecart-product-status' );
+		$ability = wp_get_ability( 'specflux/surecart-product-status' );
 		$this->assertNotNull( $ability );
 
 		$out = $ability->execute(
@@ -869,10 +869,10 @@ final class SureCartPlatformTest extends TestCase {
 
 	public function test_the_polyfill_needs_surecarts_own_edit_capability(): void {
 		$this->registerPolyfills();
-		$ability = wp_get_ability( 'senroflux/surecart-product-status' );
+		$ability = wp_get_ability( 'specflux/surecart-product-status' );
 
 		$this->assertFalse( $ability->check_permissions( array() ) );
-		$GLOBALS['senroflux_test_user_caps']['edit_sc_products'] = true;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_sc_products'] = true;
 		$this->assertTrue( $ability->check_permissions( array() ) );
 	}
 }

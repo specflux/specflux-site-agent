@@ -2,16 +2,16 @@
 /**
  * 0.4 S4: the "What changes" diff builder.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Approval;
+namespace Specflux\SiteAgent\Tests\Approval;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Approval\Diff\ApprovalDiff;
-use Specflux\SenroFlux\Approval\Diff\ObjectReader;
+use Specflux\SiteAgent\Approval\Diff\ApprovalDiff;
+use Specflux\SiteAgent\Approval\Diff\ObjectReader;
 
 final class ApprovalDiffTest extends TestCase {
 
@@ -55,7 +55,7 @@ final class ApprovalDiffTest extends TestCase {
 
 	public function test_title_and_status_on_a_post(): void {
 		$diff = $this->build(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'     => 5,
 				'title'  => 'New title',
@@ -77,7 +77,7 @@ final class ApprovalDiffTest extends TestCase {
 
 	public function test_content_gets_a_word_diff_of_stripped_text(): void {
 		$diff = $this->build(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'      => 5,
 				'content' => '<!-- wp:paragraph --><p>Hello <strong>brave new</strong> world</p><!-- /wp:paragraph -->',
@@ -106,7 +106,7 @@ final class ApprovalDiffTest extends TestCase {
 
 	public function test_replaced_words_show_as_delete_then_insert(): void {
 		$diff = $this->build(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'      => 5,
 				'content' => '<p>Hello there</p>',
@@ -134,7 +134,7 @@ final class ApprovalDiffTest extends TestCase {
 
 	public function test_menu_labels_are_compared(): void {
 		$diff = $this->build(
-			'senroflux/update-navigation',
+			'specflux/update-navigation',
 			array(
 				'items' => array(
 					array(
@@ -170,7 +170,7 @@ final class ApprovalDiffTest extends TestCase {
 
 	public function test_coupon_amount(): void {
 		$diff = $this->build(
-			'senroflux/coupon-update',
+			'specflux/coupon-update',
 			array(
 				'coupon_id' => 3,
 				'amount'    => '15',
@@ -204,7 +204,7 @@ final class ApprovalDiffTest extends TestCase {
 	public function test_unreadable_object_has_no_diff(): void {
 		$this->assertNull(
 			$this->build(
-				'senroflux/update-post',
+				'specflux/update-post',
 				array(
 					'id'    => 999,
 					'title' => 'x',
@@ -220,7 +220,7 @@ final class ApprovalDiffTest extends TestCase {
 		$reader->posts[5]['content'] = $old;
 
 		$diff = $this->build(
-			'senroflux/update-post',
+			'specflux/update-post',
 			array(
 				'id'      => 5,
 				'content' => $new,

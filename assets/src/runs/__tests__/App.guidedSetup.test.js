@@ -22,7 +22,7 @@ const providerFail = step( {
 	action: { label: 'Open Connectors', url: 'https://example.test/wp-admin/options-connectors.php' },
 } );
 const providerPass = { ...providerFail, status: 'pass', action: null };
-const brief = step( { id: 'site-brief', number: 2, title: 'Tell SenroFlux about your site', status: 'todo', brief: '', maxChars: 2000, canEdit: true } );
+const brief = step( { id: 'site-brief', number: 2, title: 'Tell Specflux Site Agent about your site', status: 'todo', brief: '', maxChars: 2000, canEdit: true } );
 const firstRun = step( {
 	id: 'first-run',
 	number: 3,
@@ -31,7 +31,7 @@ const firstRun = step( {
 	goals: [ { pack: 'pages', text: 'Write an About page for my business' } ],
 } );
 
-const baseConfig = { nonce: 'n', consumer: 'senroflux-admin', gateMode: 'built_in', packs, examples: [] };
+const baseConfig = { nonce: 'n', consumer: 'specflux-site-agent-admin', gateMode: 'built_in', packs, examples: [] };
 
 describe( 'Guided setup on the Runs screen', () => {
 	beforeEach( () => {
@@ -42,12 +42,12 @@ describe( 'Guided setup on the Runs screen', () => {
 	it( 'shows the panel and a Start tooltip naming the failing step', async () => {
 		render( <App config={ { ...baseConfig, startBlocked: true, setupSteps: [ providerFail, brief, firstRun ] } } /> );
 
-		expect( await screen.findByRole( 'heading', { name: 'Set up SenroFlux' } ) ).toBeInTheDocument();
+		expect( await screen.findByRole( 'heading', { name: 'Set up Specflux Site Agent' } ) ).toBeInTheDocument();
 		fireEvent.change( screen.getByPlaceholderText( 'Describe what you want done…' ), { target: { value: 'Write a page' } } );
 
 		expect( screen.getByRole( 'button', { name: 'Start run' } ) ).toHaveAttribute(
 			'title',
-			'Finish step 1, Connect a model, in Set up SenroFlux to start a run.'
+			'Finish step 1, Connect a model, in Set up Specflux Site Agent to start a run.'
 		);
 	} );
 
@@ -60,14 +60,14 @@ describe( 'Guided setup on the Runs screen', () => {
 			steps: [ providerPass, brief, firstRun ],
 		} );
 		render( <App config={ { ...baseConfig, startBlocked: true, setupSteps: [ providerFail, brief, firstRun ] } } /> );
-		await screen.findByRole( 'heading', { name: 'Set up SenroFlux' } );
+		await screen.findByRole( 'heading', { name: 'Set up Specflux Site Agent' } );
 
 		await act( async () => {
 			window.dispatchEvent( new Event( 'focus' ) );
 		} );
 
 		expect( await screen.findByRole( 'button', { name: 'Setup ✓' } ) ).toBeInTheDocument();
-		expect( screen.queryByRole( 'heading', { name: 'Set up SenroFlux' } ) ).not.toBeInTheDocument();
+		expect( screen.queryByRole( 'heading', { name: 'Set up Specflux Site Agent' } ) ).not.toBeInTheDocument();
 		fireEvent.change( screen.getByPlaceholderText( 'Describe what you want done…' ), { target: { value: 'Write a page' } } );
 		expect( screen.getByRole( 'button', { name: 'Start run' } ) ).not.toBeDisabled();
 	} );
@@ -75,13 +75,13 @@ describe( 'Guided setup on the Runs screen', () => {
 	it( 'keeps the last known steps when a refresh fails', async () => {
 		fetchSetupState.mockRejectedValue( new Error( 'offline' ) );
 		render( <App config={ { ...baseConfig, startBlocked: true, setupSteps: [ providerFail ] } } /> );
-		await screen.findByRole( 'heading', { name: 'Set up SenroFlux' } );
+		await screen.findByRole( 'heading', { name: 'Set up Specflux Site Agent' } );
 
 		await act( async () => {
 			window.dispatchEvent( new Event( 'focus' ) );
 		} );
 
-		expect( screen.getByRole( 'heading', { name: 'Set up SenroFlux' } ) ).toBeInTheDocument();
+		expect( screen.getByRole( 'heading', { name: 'Set up Specflux Site Agent' } ) ).toBeInTheDocument();
 	} );
 
 	it( 'fills the goal box from a starter goal without starting a run', async () => {

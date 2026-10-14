@@ -2,12 +2,12 @@
 /**
  * Shared value-cleaning helpers for presenters.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present;
+namespace Specflux\SiteAgent\Present;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -28,7 +28,7 @@ final class Fmt {
 	 */
 	public static function text( mixed $value ): string {
 		if ( is_bool( $value ) ) {
-			return $value ? __( 'Yes', 'senroflux' ) : __( 'No', 'senroflux' );
+			return $value ? __( 'Yes', 'specflux-site-agent' ) : __( 'No', 'specflux-site-agent' );
 		}
 		if ( ! is_scalar( $value ) ) {
 			return '';

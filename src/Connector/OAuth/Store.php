@@ -2,14 +2,14 @@
 /**
  * Persistence for OAuth clients, codes, grants and tokens.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Connector\OAuth;
+namespace Specflux\SiteAgent\Connector\OAuth;
 
-use Specflux\SenroFlux\Run\Clock;
+use Specflux\SiteAgent\Run\Clock;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -20,11 +20,11 @@ defined( 'ABSPATH' ) || exit;
  * handful of rows would add a migration and a wpdb seam for no gain, and
  * every hot-path lookup here is one primary-key read.
  *
- * - client:   option  senroflux_oc_<client id>          (+ index option)
- * - code:     transient senroflux_oac_<hash>  60 s      (+ "used" marker 1 day, for reuse detection)
- * - grant:    option  senroflux_og_<grant id>           (+ index option) = one authorization / token family
- * - refresh:  option  senroflux_or_<hash>; once rotated it becomes a tombstone senroflux_ox_<hash>
- * - access:   transient senroflux_oat_<hash>  1 h
+ * - client:   option  specflux_site_agent_oc_<client id>          (+ index option)
+ * - code:     transient specflux_site_agent_oac_<hash>  60 s      (+ "used" marker 1 day, for reuse detection)
+ * - grant:    option  specflux_site_agent_og_<grant id>           (+ index option) = one authorization / token family
+ * - refresh:  option  specflux_site_agent_or_<hash>; once rotated it becomes a tombstone specflux_site_agent_ox_<hash>
+ * - access:   transient specflux_site_agent_oat_<hash>  1 h
  *
  * Single-use is enforced with the delete: only the caller whose DELETE
  * actually removed the row proceeds, so two racing redemptions cannot both win.
@@ -32,8 +32,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Store {
 
-	private const CLIENT_INDEX = 'senroflux_oauth_clients';
-	private const GRANT_INDEX  = 'senroflux_oauth_grants';
+	private const CLIENT_INDEX = 'specflux_site_agent_oauth_clients';
+	private const GRANT_INDEX  = 'specflux_site_agent_oauth_grants';
 
 	/** How many rotated refresh hashes a family remembers for reuse detection. */
 	private const RETIRED_KEPT = 5;
@@ -50,7 +50,7 @@ final class Store {
 	 */
 	public static function saveClient( array $client ): void {
 		$id = (string) $client['id'];
-		update_option( 'senroflux_oc_' . $id, $client, false );
+		update_option( 'specflux_site_agent_oc_' . $id, $client, false );
 		$index        = self::clientIndex();
 		$index[ $id ] = (int) $client['created'];
 		update_option( self::CLIENT_INDEX, $index, false );
@@ -66,7 +66,7 @@ final class Store {
 		if ( 1 !== preg_match( '/^[A-Za-z0-9_-]{8,64}$/', $id ) ) {
 			return null;
 		}
-		$raw = get_option( 'senroflux_oc_' . $id, null );
+		$raw = get_option( 'specflux_site_agent_oc_' . $id, null );
 		if ( ! is_array( $raw ) || ! isset( $raw['redirect_uris'] ) || ! is_array( $raw['redirect_uris'] ) ) {
 			return null;
 		}
@@ -99,7 +99,7 @@ final class Store {
 				self::revokeGrant( (string) $grant_id );
 			}
 		}
-		delete_option( 'senroflux_oc_' . $id );
+		delete_option( 'specflux_site_agent_oc_' . $id );
 		$index = self::clientIndex();
 		unset( $index[ $id ] );
 		update_option( self::CLIENT_INDEX, $index, false );
@@ -125,7 +125,7 @@ final class Store {
 	 * @param array<string,mixed> $data Bound client, redirect_uri, user, scope, resource, challenge, exp.
 	 */
 	public static function putCode( string $code, array $data ): void {
-		set_transient( 'senroflux_oac_' . OAuth::hash( $code ), $data, OAuth::CODE_TTL );
+		set_transient( 'specflux_site_agent_oac_' . OAuth::hash( $code ), $data, OAuth::CODE_TTL );
 	}
 
 	/**
@@ -135,7 +135,7 @@ final class Store {
 	 * @return array<string,mixed>|null
 	 */
 	public static function consumeCode( string $code ): ?array {
-		$key  = 'senroflux_oac_' . OAuth::hash( $code );
+		$key  = 'specflux_site_agent_oac_' . OAuth::hash( $code );
 		$data = get_transient( $key );
 		if ( ! is_array( $data ) ) {
 			return null;
@@ -152,12 +152,12 @@ final class Store {
 
 	/** Remember which grant a redeemed code produced, so reuse can revoke it. */
 	public static function markCodeUsed( string $code, string $grant_id ): void {
-		set_transient( 'senroflux_oau_' . OAuth::hash( $code ), $grant_id, self::USED_CODE_TTL );
+		set_transient( 'specflux_site_agent_oau_' . OAuth::hash( $code ), $grant_id, self::USED_CODE_TTL );
 	}
 
 	/** The grant a previously redeemed code produced, if still remembered. */
 	public static function grantOfUsedCode( string $code ): ?string {
-		$grant = get_transient( 'senroflux_oau_' . OAuth::hash( $code ) );
+		$grant = get_transient( 'specflux_site_agent_oau_' . OAuth::hash( $code ) );
 
 		return is_string( $grant ) && '' !== $grant ? $grant : null;
 	}
@@ -194,7 +194,7 @@ final class Store {
 		if ( 1 !== preg_match( '/^[a-f0-9]{32}$/', $id ) ) {
 			return null;
 		}
-		$raw = get_option( 'senroflux_og_' . $id, null );
+		$raw = get_option( 'specflux_site_agent_og_' . $id, null );
 
 		return is_array( $raw ) && isset( $raw['user'], $raw['client'], $raw['resource'], $raw['refresh'] ) ? $raw : null;
 	}
@@ -213,7 +213,7 @@ final class Store {
 		$id  = bin2hex( random_bytes( 16 ) );
 		$now = Clock::now();
 		update_option(
-			'senroflux_og_' . $id,
+			'specflux_site_agent_og_' . $id,
 			array(
 				'user'        => $user,
 				'client'      => $client,
@@ -231,7 +231,7 @@ final class Store {
 			'user'   => $user,
 			'client' => $client,
 		);
-		update_option( 'senroflux_oauth_grants', $index, false );
+		update_option( 'specflux_site_agent_oauth_grants', $index, false );
 
 		return $id;
 	}
@@ -243,20 +243,20 @@ final class Store {
 	 * @param array<string,mixed> $record Full record.
 	 */
 	public static function saveGrant( string $id, array $record ): void {
-		update_option( 'senroflux_og_' . $id, $record, false );
+		update_option( 'specflux_site_agent_og_' . $id, $record, false );
 	}
 
 	/** Revoke one grant: its refresh tokens and every access token it issued stop working. */
 	public static function revokeGrant( string $id ): void {
 		$grant = self::grant( $id );
 		if ( null !== $grant ) {
-			delete_option( 'senroflux_or_' . (string) $grant['refresh'] );
+			delete_option( 'specflux_site_agent_or_' . (string) $grant['refresh'] );
 			foreach ( (array) ( $grant['retired'] ?? array() ) as $hash ) {
-				delete_option( 'senroflux_ox_' . (string) $hash );
+				delete_option( 'specflux_site_agent_ox_' . (string) $hash );
 			}
 		}
 		// Access tokens are transients checked against the grant, so removing the grant revokes them.
-		delete_option( 'senroflux_og_' . $id );
+		delete_option( 'specflux_site_agent_og_' . $id );
 		$index = self::grantIndex();
 		unset( $index[ $id ] );
 		update_option( self::GRANT_INDEX, $index, false );
@@ -287,7 +287,7 @@ final class Store {
 	/** Store a live refresh token (by hash). */
 	public static function putRefresh( string $hash, string $grant_id, int $exp ): void {
 		update_option(
-			'senroflux_or_' . $hash,
+			'specflux_site_agent_or_' . $hash,
 			array(
 				'g'   => $grant_id,
 				'exp' => $exp,
@@ -303,7 +303,7 @@ final class Store {
 	 * @return array{g:string,exp:int}|null
 	 */
 	public static function peekRefresh( string $token ): ?array {
-		$rec = get_option( 'senroflux_or_' . OAuth::hash( $token ), null );
+		$rec = get_option( 'specflux_site_agent_or_' . OAuth::hash( $token ), null );
 
 		return is_array( $rec ) && isset( $rec['g'] ) ? array(
 			'g'   => (string) $rec['g'],
@@ -324,7 +324,7 @@ final class Store {
 		if ( null !== $rec ) {
 			// Same assumption as consumeCode(): delete_option() returns true for exactly one caller
 			// (atomic DELETE; compliant object caches). An always-true drop-in would weaken rotation.
-			if ( true !== delete_option( 'senroflux_or_' . $hash ) ) {
+			if ( true !== delete_option( 'specflux_site_agent_or_' . $hash ) ) {
 				return array(
 					'status' => 'reuse',
 					'grant'  => $rec['g'],
@@ -337,7 +337,7 @@ final class Store {
 			);
 		}
 
-		$tomb = get_option( 'senroflux_ox_' . $hash, null );
+		$tomb = get_option( 'specflux_site_agent_ox_' . $hash, null );
 		if ( is_array( $tomb ) && isset( $tomb['g'] ) ) {
 			return array(
 				'status' => 'reuse',
@@ -363,12 +363,12 @@ final class Store {
 		if ( null === $grant ) {
 			return;
 		}
-		update_option( 'senroflux_ox_' . $old_hash, array( 'g' => $grant_id ), false );
+		update_option( 'specflux_site_agent_ox_' . $old_hash, array( 'g' => $grant_id ), false );
 		$retired   = array_values( array_filter( (array) ( $grant['retired'] ?? array() ), 'is_string' ) );
 		$retired[] = $old_hash;
 		$excess    = count( $retired ) - self::RETIRED_KEPT;
 		for ( $i = 0; $i < $excess; $i++ ) {
-			delete_option( 'senroflux_ox_' . (string) array_shift( $retired ) );
+			delete_option( 'specflux_site_agent_ox_' . (string) array_shift( $retired ) );
 		}
 		$exp                  = Clock::now() + OAuth::REFRESH_TTL;
 		$grant['retired']     = $retired;
@@ -383,7 +383,7 @@ final class Store {
 	/** Store an access token (by hash) with the scope it carries. */
 	public static function putAccess( string $hash, string $grant_id, string $scope, int $exp ): void {
 		set_transient(
-			'senroflux_oat_' . $hash,
+			'specflux_site_agent_oat_' . $hash,
 			array(
 				'g'     => $grant_id,
 				'scope' => $scope,
@@ -400,7 +400,7 @@ final class Store {
 	 * @return array{g:string,scope:string,exp:int}|null
 	 */
 	public static function access( string $token ): ?array {
-		$rec = get_transient( 'senroflux_oat_' . OAuth::hash( $token ) );
+		$rec = get_transient( 'specflux_site_agent_oat_' . OAuth::hash( $token ) );
 		if ( ! is_array( $rec ) || ! isset( $rec['g'], $rec['exp'] ) ) {
 			return null;
 		}

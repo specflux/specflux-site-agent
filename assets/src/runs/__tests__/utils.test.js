@@ -83,7 +83,7 @@ describe( 'consecutive tool calls collapse into one ledger group', () => {
 			{ kind: 'tool_result', seq: 5, status: 'ok', tool_name: 'core/content-query' },
 			{ kind: 'model', seq: 6, message: { parts: [ { text: 'Here is a summary for you.' } ] } }, // has prose: breaks the group
 			{ kind: 'model', seq: 7 },
-			{ kind: 'tool_result', seq: 8, status: 'ok', tool_name: 'senroflux/create-page' },
+			{ kind: 'tool_result', seq: 8, status: 'ok', tool_name: 'specflux/create-page' },
 		];
 
 		const entries = groupSteps( steps );
@@ -104,7 +104,7 @@ describe( 'consecutive tool calls collapse into one ledger group', () => {
 		// carrying only the function-call request. The old adjacent-
 		// tool_result rule never fired against this shape at all.
 		const steps = [ { kind: 'user', seq: 0 } ];
-		[ 'core/get-site-info', 'core/content-query', 'senroflux/read-content', 'senroflux/update-page', 'core/content-query', 'senroflux/publish-page' ].forEach(
+		[ 'core/get-site-info', 'core/content-query', 'specflux/read-content', 'specflux/update-page', 'core/content-query', 'specflux/publish-page' ].forEach(
 			( tool_name, index ) => {
 				steps.push( { kind: 'model', seq: index * 2 + 1 } );
 				steps.push( { kind: 'tool_result', seq: index * 2 + 2, status: 'ok', tool_name } );
@@ -120,7 +120,7 @@ describe( 'consecutive tool calls collapse into one ledger group', () => {
 	it( 'marks a tool_result that immediately follows a resolved approval as approved by the viewer', () => {
 		const steps = [
 			{ kind: 'approval', status: 'resolved' },
-			{ kind: 'tool_result', status: 'ok', tool_name: 'senroflux/publish-page' },
+			{ kind: 'tool_result', status: 'ok', tool_name: 'specflux/publish-page' },
 		];
 
 		const entries = groupSteps( steps );
@@ -144,13 +144,13 @@ describe( 'planProgress', () => {
 	it( 'counts executed calls against each plan step in order', () => {
 		const plan = {
 			steps: [
-				{ text: 'Create draft', verbs: [ 'senroflux/create-page' ] },
-				{ text: 'Write + re-read', verbs: [ 'senroflux/update-page', 'core/content-query' ] },
+				{ text: 'Create draft', verbs: [ 'specflux/create-page' ] },
+				{ text: 'Write + re-read', verbs: [ 'specflux/update-page', 'core/content-query' ] },
 			],
 		};
 		const steps = [
-			{ kind: 'tool_result', status: 'ok', tool_name: 'senroflux/create-page' },
-			{ kind: 'tool_result', status: 'ok', tool_name: 'senroflux/update-page' },
+			{ kind: 'tool_result', status: 'ok', tool_name: 'specflux/create-page' },
+			{ kind: 'tool_result', status: 'ok', tool_name: 'specflux/update-page' },
 		];
 
 		const progress = planProgress( plan, steps );
@@ -175,14 +175,14 @@ describe( 'planProgress', () => {
 			message: { role: 'user', parts: [], plan_verb: verb },
 		} );
 		const steps = [
-			result( 'senroflux/ask-user', 'senroflux/ask-user' ),
-			result( 'wpab__senroflux__read-content', 'pages/read' ),
+			result( 'specflux/ask-user', 'specflux/ask-user' ),
+			result( 'wpab__specflux__read-content', 'pages/read' ),
 			{ kind: 'plan', status: 'ok', message: plan },
-			result( 'senroflux/propose-plan', 'senroflux/propose-plan' ),
-			result( 'wpab__senroflux__media-search', 'pages/media-search' ),
-			result( 'wpab__senroflux__create-post', 'pages/create-draft', 'error' ),
-			result( 'wpab__senroflux__create-post', 'pages/create-draft' ),
-			result( 'wpab__senroflux__read-content', 'pages/read' ),
+			result( 'specflux/propose-plan', 'specflux/propose-plan' ),
+			result( 'wpab__specflux__media-search', 'pages/media-search' ),
+			result( 'wpab__specflux__create-post', 'pages/create-draft', 'error' ),
+			result( 'wpab__specflux__create-post', 'pages/create-draft' ),
+			result( 'wpab__specflux__read-content', 'pages/read' ),
 		];
 
 		const progress = planProgress( plan, steps );
@@ -193,11 +193,11 @@ describe( 'planProgress', () => {
 
 describe( 'stepLabel derives a readable label, distinct from the raw ability id (live-review finding)', () => {
 	it( 'turns a mangled wpab__ ability id into a Sentence case label', () => {
-		expect( stepLabel( { tool_name: 'wpab__senroflux__read-content' } ) ).toBe( 'Read content' );
+		expect( stepLabel( { tool_name: 'wpab__specflux__read-content' } ) ).toBe( 'Read content' );
 	} );
 
 	it( 'handles a plain namespaced verb the same way', () => {
-		expect( stepLabel( { tool_name: 'senroflux__create-page' } ) ).toBe( 'Create page' );
+		expect( stepLabel( { tool_name: 'specflux__create-page' } ) ).toBe( 'Create page' );
 	} );
 
 	it( 'falls back to the raw verb when it carries no __ segment to derive from', () => {
@@ -213,7 +213,7 @@ describe( 'stepLabel derives a readable label, distinct from the raw ability id 
 	} );
 
 	it( 'ignores fallbackLabel once a verb IS derivable (fallback only applies to the no-verb case)', () => {
-		expect( stepLabel( { tool_name: 'wpab__senroflux__read-content' }, 'Appel d\'outil' ) ).toBe( 'Read content' );
+		expect( stepLabel( { tool_name: 'wpab__specflux__read-content' }, 'Appel d\'outil' ) ).toBe( 'Read content' );
 	} );
 } );
 
@@ -236,7 +236,7 @@ describe( 'stepResult never returns the bare "Rejected by you, not done" fallbac
 describe( 'ledgerLabels', () => {
 	it( 'names every distinct action in a group, in order', () => {
 		const calls = [ 'read-content', 'create-post', 'read-content', 'read-content' ].map( ( slug ) => ( {
-			step: { tool_name: `wpab__senroflux__${ slug }` },
+			step: { tool_name: `wpab__specflux__${ slug }` },
 		} ) );
 		expect( ledgerLabels( calls, 'Tool call' ) ).toEqual( [ 'Read content', 'Create post' ] );
 	} );
@@ -246,8 +246,8 @@ describe( 'humanizeVerb', () => {
 	it.each( [
 		[ 'create-post', 'Create post' ],
 		[ 'pages/create-post', 'Create post' ],
-		[ 'wpab__senroflux__read-content', 'Read content' ],
-		[ 'senroflux/update_alt', 'Update alt' ],
+		[ 'wpab__specflux__read-content', 'Read content' ],
+		[ 'specflux/update_alt', 'Update alt' ],
 		[ '', '' ],
 	] )( '%s -> %s', ( verb, expected ) => {
 		expect( humanizeVerb( verb ) ).toBe( expected );

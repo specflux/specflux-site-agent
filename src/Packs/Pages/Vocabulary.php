@@ -6,7 +6,7 @@
  *
  * The vocabulary is the single authoring source for:
  *   - the patterns registered on `register_block_pattern` (names
- *     `senroflux/<slug>`, category `senroflux-pages`),
+ *     `specflux/<slug>`, category `specflux-pages`),
  *   - the structural identity the Validator matches against (blockName tree +
  *     layout-defining attrs + slot min/max),
  *   - the `constraints.stated` copy lines the `pages/copy-rules` skill body is
@@ -19,7 +19,7 @@
  *
  * ROUND-TRIP DECISION. The shipped markup carries REAL default copy, never a
  * `{{placeholder}}`, and its `metadata.name` is already the canonical
- * `senroflux/<slug>`. A pattern a human inserts from the editor therefore
+ * `specflux/<slug>`. A pattern a human inserts from the editor therefore
  * survives `create-post` / `update-post` untouched: placeholders would trip the
  * `unresolved_placeholder` refusal on the very first write-back. The model
  * never receives markup — it receives `list-patterns`' `constraints.stated`
@@ -35,15 +35,15 @@
  * to the count the pattern ships — without it, extra headings or paragraphs
  * ride along inside an otherwise-matching pattern.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Pages;
+namespace Specflux\SiteAgent\Packs\Pages;
 
-use Specflux\SenroFlux\Packs\Content\ThemePatternSource;
-use Specflux\SenroFlux\Packs\Content\Vocabulary as ContentVocabulary;
+use Specflux\SiteAgent\Packs\Content\ThemePatternSource;
+use Specflux\SiteAgent\Packs\Content\Vocabulary as ContentVocabulary;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -55,7 +55,7 @@ defined( 'ABSPATH' ) || exit;
  * so the same registrar can resolve a `sections` write item naming a theme
  * pattern.
  *
- * NOT final (0.3 S7): the site pack's {@see \Specflux\SenroFlux\Packs\Site\Vocabulary}
+ * NOT final (0.3 S7): the site pack's {@see \Specflux\SiteAgent\Packs\Site\Vocabulary}
  * extends this to add its two homepage-only patterns on top of the same
  * seven, rather than re-authoring them. `all()`/`listPayload()`/`register()`
  * all dispatch through `$this->all()`/`$this->curated()`, so the extension
@@ -75,7 +75,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	/**
 	 * The pattern category registered with the block editor.
 	 */
-	public const CATEGORY = 'senroflux-pages';
+	public const CATEGORY = 'specflux-pages';
 
 	/**
 	 * The page-shape rules (S11), consumed by the Validator and the layout skill.
@@ -152,7 +152,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	/**
 	 * The active theme's own eligible patterns (0.3 S21), vocabulary-shaped
 	 * and appended AFTER the curated ones — the order every consumer of
-	 * `all()` relies on: {@see \Specflux\SenroFlux\Packs\Pages\Validator}
+	 * `all()` relies on: {@see \Specflux\SiteAgent\Packs\Pages\Validator}
 	 * matches the FIRST structural hit, so a curated pattern wins a shape
 	 * tie against a theme one for free.
 	 *
@@ -209,7 +209,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 
 	/**
 	 * The eligible theme pattern registered under `$name`, or null (0.3 S21,
-	 * {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}).
+	 * {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}).
 	 *
 	 * @return array<string,mixed>|null
 	 */
@@ -225,7 +225,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 
 	/**
 	 * The count of the active theme's own patterns that were NOT eligible
-	 * (0.3 S21, {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}).
+	 * (0.3 S21, {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}).
 	 */
 	public function themePatternsSkippedCount(): int {
 		return ThemePatterns::skippedCount();
@@ -233,7 +233,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 
 	/**
 	 * Whether `$name` names one of the curated seven, not a theme-derived
-	 * pattern (0.3 quality fix, {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}).
+	 * pattern (0.3 quality fix, {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}).
 	 */
 	public function isCuratedPatternName( string $name ): bool {
 		foreach ( $this->curated() as $curated ) {
@@ -247,7 +247,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 
 	/**
 	 * The names of every eligible theme-derived pattern (0.3 quality fix,
-	 * {@see \Specflux\SenroFlux\Packs\Content\ThemePatternSource}).
+	 * {@see \Specflux\SiteAgent\Packs\Content\ThemePatternSource}).
 	 *
 	 * @return list<string>
 	 */
@@ -261,7 +261,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	/**
 	 * Whether `list-patterns` offers this theme's patterns for numbered-slot
 	 * filling. The pages pack builds them through
-	 * {@see \Specflux\SenroFlux\Packs\Pages\Layouts} instead: a live run
+	 * {@see \Specflux\SiteAgent\Packs\Pages\Layouts} instead: a live run
 	 * offered both mixed them and left a pattern's sample text on the page.
 	 */
 	public function offersThemeSlots(): bool {
@@ -269,7 +269,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	}
 
 	/**
-	 * The `senroflux/list-patterns` payload (0.3 S7 gap fix): metadata,
+	 * The `specflux/list-patterns` payload (0.3 S7 gap fix): metadata,
 	 * constraints AND the pattern's shipped sample markup. Prose shape lines
 	 * (in the pack's `layout-rules`/`page-links` skill) are a lossy summary —
 	 * a live run got the shape right from the prose alone and was STILL
@@ -278,7 +278,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	 * `BlockShells` check matches against, so it is the one input a model can
 	 * copy verbatim and always pass editor parity: `style.spacing.padding` is
 	 * optional (a model may drop it, add it, or keep it as shipped — see
-	 * {@see \Specflux\SenroFlux\Packs\Pages\BlockShells}), everything else in
+	 * {@see \Specflux\SiteAgent\Packs\Pages\BlockShells}), everything else in
 	 * the sample is load-bearing.
 	 *
 	 * 0.3 S21: a theme-derived pattern carries `theme_derived: true` and
@@ -394,8 +394,8 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 		register_block_pattern_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'SenroFlux pages', 'senroflux' ),
-				'description' => __( 'Page building blocks for SenroFlux content.', 'senroflux' ),
+				'label'       => __( 'Specflux Site Agent pages', 'specflux-site-agent' ),
+				'description' => __( 'Page building blocks for Specflux Site Agent content.', 'specflux-site-agent' ),
 			)
 		);
 
@@ -462,9 +462,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function hero(): array {
 		return array(
 			'slug'        => 'hero',
-			'name'        => 'senroflux/hero',
+			'name'        => 'specflux/hero',
 			'title'       => 'Hero',
-			'description' => __( 'A full-width hero: one headline, one subheadline and up to two calls to action.', 'senroflux' ),
+			'description' => __( 'A full-width hero: one headline, one subheadline and up to two calls to action.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'hero' ),
 			'repeatable'  => array( 'core/button' ),
 			'constraints' => array(
@@ -488,7 +488,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	 * heading(h1) › paragraph › buttons › button, exactly like {@see hero()}
 	 * except the group is a cover carrying a real photo (0.3 quality fix:
 	 * images required on new pages). An alternative to `hero`, not a
-	 * replacement — {@see \Specflux\SenroFlux\Packs\Pages\Validator::isHeroSlug()}
+	 * replacement — {@see \Specflux\SiteAgent\Packs\Pages\Validator::isHeroSlug()}
 	 * treats it as a hero for "hero first", and its own H1 triggers the
 	 * no-title template the same way `hero`'s does ({@see HeroTemplate}, which
 	 * matches on ANY `<h1` in the content, not the pattern name).
@@ -521,9 +521,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function coverHero(): array {
 		return array(
 			'slug'        => 'cover-hero',
-			'name'        => 'senroflux/cover-hero',
+			'name'        => 'specflux/cover-hero',
 			'title'       => 'Cover hero',
-			'description' => __( 'An image-led hero: a full-width background photo with one headline, one subheadline and up to two calls to action.', 'senroflux' ),
+			'description' => __( 'An image-led hero: a full-width background photo with one headline, one subheadline and up to two calls to action.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'cover-hero' ),
 			'repeatable'  => array( 'core/button' ),
 			'constraints' => array(
@@ -551,9 +551,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function textSection(): array {
 		return array(
 			'slug'        => 'text-section',
-			'name'        => 'senroflux/text-section',
+			'name'        => 'specflux/text-section',
 			'title'       => 'Text section',
-			'description' => __( 'A plain prose section: an H2 heading followed by two to four paragraphs.', 'senroflux' ),
+			'description' => __( 'A plain prose section: an H2 heading followed by two to four paragraphs.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'text-section' ),
 			'repeatable'  => array( 'core/paragraph' ),
 			'constraints' => array(
@@ -590,9 +590,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function mediaText(): array {
 		return array(
 			'slug'        => 'media-text',
-			'name'        => 'senroflux/media-text',
+			'name'        => 'specflux/media-text',
 			'title'       => 'Media and text',
-			'description' => __( 'An image beside a short text block: a photo on one side, an H2 heading and one to three paragraphs (with an optional button) on the other.', 'senroflux' ),
+			'description' => __( 'An image beside a short text block: a photo on one side, an H2 heading and one to three paragraphs (with an optional button) on the other.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'media-text' ),
 			'repeatable'  => array( 'core/paragraph', 'core/buttons', 'core/button' ),
 			'constraints' => array(
@@ -626,9 +626,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function featureGrid(): array {
 		return array(
 			'slug'        => 'feature-grid',
-			'name'        => 'senroflux/feature-grid',
+			'name'        => 'specflux/feature-grid',
 			'title'       => 'Feature grid',
-			'description' => __( 'A two-to-three-column feature grid: an H2 heading and one H3 + paragraph per column.', 'senroflux' ),
+			'description' => __( 'A two-to-three-column feature grid: an H2 heading and one H3 + paragraph per column.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'feature-grid' ),
 			'repeatable'  => array( 'core/column' ),
 			'constraints' => array(
@@ -657,9 +657,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function pricingTable(): array {
 		return array(
 			'slug'        => 'pricing-table',
-			'name'        => 'senroflux/pricing-table',
+			'name'        => 'specflux/pricing-table',
 			'title'       => 'Pricing table',
-			'description' => __( 'A pricing table: an H2 heading and one-to-three plan columns, each with a plan, price, feature list and a call to action.', 'senroflux' ),
+			'description' => __( 'A pricing table: an H2 heading and one-to-three plan columns, each with a plan, price, feature list and a call to action.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'pricing-table' ),
 			'repeatable'  => array( 'core/column' ),
 			'constraints' => array(
@@ -692,9 +692,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function faq(): array {
 		return array(
 			'slug'        => 'faq',
-			'name'        => 'senroflux/faq',
+			'name'        => 'specflux/faq',
 			'title'       => 'FAQ',
-			'description' => __( 'An FAQ: an H2 heading and two-to-eight collapsible details blocks. Answer only from supplied facts; leave out a question you cannot answer from them.', 'senroflux' ),
+			'description' => __( 'An FAQ: an H2 heading and two-to-eight collapsible details blocks. Answer only from supplied facts; leave out a question you cannot answer from them.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'faq' ),
 			'repeatable'  => array( 'core/details' ),
 			'constraints' => array(
@@ -721,9 +721,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function testimonials(): array {
 		return array(
 			'slug'        => 'testimonials',
-			'name'        => 'senroflux/testimonials',
+			'name'        => 'specflux/testimonials',
 			'title'       => 'Testimonials',
-			'description' => __( 'A social-proof section: an H2 heading and one-to-three quotes with attribution.', 'senroflux' ),
+			'description' => __( 'A social-proof section: an H2 heading and one-to-three quotes with attribution.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'testimonials' ),
 			'repeatable'  => array( 'core/quote' ),
 			'constraints' => array(
@@ -749,9 +749,9 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	private function cta(): array {
 		return array(
 			'slug'        => 'cta',
-			'name'        => 'senroflux/cta',
+			'name'        => 'specflux/cta',
 			'title'       => 'Call to action',
-			'description' => __( 'A full-width closing call to action: an H2 heading, one supporting line and one button.', 'senroflux' ),
+			'description' => __( 'A full-width closing call to action: an H2 heading, one supporting line and one button.', 'specflux-site-agent' ),
 			'markup'      => $this->markup( 'cta' ),
 			'repeatable'  => array( 'core/button' ),
 			'constraints' => array(
@@ -774,7 +774,7 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	 * A skeleton's markup from patterns/<slug>.html, byte for byte (the files
 	 * carry no trailing newline).
 	 *
-	 * An image pattern's sample photo is the token `{{senroflux_placeholder_image}}`
+	 * An image pattern's sample photo is the token `{{specflux_site_agent_placeholder_image}}`
 	 * in the file (no remote URL ships), swapped here for the bundled local
 	 * placeholder.
 	 *
@@ -783,6 +783,6 @@ class Vocabulary implements ContentVocabulary, ThemePatternSource {
 	 */
 	private function markup( string $slug ): string {
 		$markup = (string) file_get_contents( __DIR__ . '/patterns/' . $slug . '.html' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a bundled local file, not a remote URL.
-		return str_replace( '{{senroflux_placeholder_image}}', SENROFLUX_URL . 'images/placeholder.jpg', $markup );
+		return str_replace( '{{specflux_site_agent_placeholder_image}}', SPECFLUX_SITE_AGENT_URL . 'images/placeholder.jpg', $markup );
 	}
 }

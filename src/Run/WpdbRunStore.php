@@ -2,14 +2,14 @@
 /**
  * wpdb-backed run store.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Run;
+namespace Specflux\SiteAgent\Run;
 
-use Specflux\SenroFlux\Schema;
+use Specflux\SiteAgent\Schema;
 use wpdb;
 
 // Bail on direct access.

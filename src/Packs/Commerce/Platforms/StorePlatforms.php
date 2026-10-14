@@ -2,15 +2,15 @@
 /**
  * The store-platform registry and per-run selection (C4-0).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms;
 
-use Specflux\SenroFlux\Packs\Commerce\Platforms\Woo\WooPlatform;
-use Specflux\SenroFlux\Packs\Pack;
+use Specflux\SiteAgent\Packs\Commerce\Platforms\Woo\WooPlatform;
+use Specflux\SiteAgent\Packs\Pack;
 use WP_Error;
 
 // Bail on direct access.
@@ -20,14 +20,14 @@ defined( 'ABSPATH' ) || exit;
  * Registered platforms, who is usable, and which one a run uses.
  *
  * Adding a platform: implement {@see StorePlatform} and append an instance on
- * the `senroflux_store_platforms` filter.
+ * the `specflux_site_agent_store_platforms` filter.
  *
  * @internal
  */
 final class StorePlatforms {
 
 	/** The admin's choice when several platforms are usable (stored platform id; '' = unset). */
-	public const OPTION = 'senroflux_store_platform';
+	public const OPTION = 'specflux_site_agent_store_platform';
 
 	/** Capability needed to change the choice. */
 	public const CAPABILITY = 'manage_options';
@@ -35,7 +35,7 @@ final class StorePlatforms {
 	/**
 	 * Every registered platform, keyed by id, in registration order. A filter
 	 * entry that is not a StorePlatform, repeats an id, or whose namespace list
-	 * does not end in `senroflux/` is dropped.
+	 * does not end in `specflux/` is dropped.
 	 *
 	 * @return array<string,StorePlatform>
 	 */
@@ -49,7 +49,7 @@ final class StorePlatforms {
 		 *
 		 * @param list<StorePlatform> $platforms Platforms, WooCommerce first.
 		 */
-		$filtered = apply_filters( 'senroflux_store_platforms', $platforms );
+		$filtered = apply_filters( 'specflux_site_agent_store_platforms', $platforms );
 		if ( ! is_array( $filtered ) ) {
 			$filtered = $platforms;
 		}
@@ -124,7 +124,7 @@ final class StorePlatforms {
 	}
 
 	/**
-	 * Namespaces SenroGate governs through registered platforms: every
+	 * Namespaces Belayline Agent Governance governs through registered platforms: every
 	 * non-polyfill namespace of every registered platform.
 	 *
 	 * @return list<string>
@@ -162,7 +162,7 @@ final class StorePlatforms {
 	}
 
 	/**
-	 * Active platforms that SenroGate governs: the only ones a run may use.
+	 * Active platforms that Belayline Agent Governance governs: the only ones a run may use.
 	 *
 	 * @return list<StorePlatform>
 	 */

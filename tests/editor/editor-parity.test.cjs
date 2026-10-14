@@ -20,7 +20,7 @@ const { JSDOM, VirtualConsole } = require( 'jsdom' );
 
 // The block library expects a browser; jsdom provides enough of one.
 const dom = new JSDOM( '<!doctype html><html><body></body></html>', {
-	url: 'https://senroflux.invalid/',
+	url: 'https://specflux-site-agent.invalid/',
 	virtualConsole: new VirtualConsole(),
 } );
 for ( const key of [
@@ -106,7 +106,7 @@ test( 'a page built from layouts after Validator::clean() opens in the editor wi
 	assert.deepEqual( invalidBlocks( fixtures.layouts ), [] );
 } );
 
-// D3b (S6): sections SenroFlux itself toned (the attribute pair plus the
+// D3b (S6): sections Specflux Site Agent itself toned (the attribute pair plus the
 // has-*-color / has-*-background-color / has-text-color / has-background
 // classes) must open in the editor without recovery.
 test( 'a page with toned curated sections opens in the editor without recovery', () => {
@@ -142,7 +142,7 @@ test( 'a filled Ollie pattern opens in the editor without recovery', () => {
 // once (emoji paragraphs dropped, four cards trimmed to three, the layout's
 // heading inserted first) must open in the editor without recovery.
 test( 'an adapted Ollie section (dropped, trimmed, heading inserted) opens in the editor without recovery', () => {
-	assert.ok( fixtures.adapted.includes( 'senroflux/ollie/features-with-emojis' ) );
+	assert.ok( fixtures.adapted.includes( 'specflux/ollie/features-with-emojis' ) );
 	assert.equal( ( fixtures.adapted.match( /<h3/g ) || [] ).length, 3, 'four cards trimmed to three' );
 	assert.ok( ! /😍|😎|🤓|🤣/u.test( fixtures.adapted ), 'the emoji paragraphs are dropped' );
 	assert.ok(

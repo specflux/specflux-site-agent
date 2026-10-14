@@ -1,15 +1,15 @@
 <?php
 /**
- * The `senroflux/fluentcart-*` polyfill abilities (C4-F).
+ * The `specflux/fluentcart-*` polyfill abilities (C4-F).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms\FluentCart;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms\FluentCart;
 
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
 use WP_Error;
 
 // Bail on direct access.
@@ -95,8 +95,8 @@ final class FluentCartAbilities {
 	private static function registerProductRead(): void {
 		self::define(
 			'fluentcart-product-read',
-			__( 'Read a product', 'senroflux' ),
-			__( 'Read one FluentCart product: status, description and its variations with price (store currency) and SKU.', 'senroflux' ),
+			__( 'Read a product', 'specflux-site-agent' ),
+			__( 'Read one FluentCart product: status, description and its variations with price (store currency) and SKU.', 'specflux-site-agent' ),
 			array( 'id' => array( 'type' => 'integer' ) ),
 			array( 'id' ),
 			'products/view',
@@ -108,8 +108,8 @@ final class FluentCartAbilities {
 	private static function registerOrderRead(): void {
 		self::define(
 			'fluentcart-order-read',
-			__( 'Read an order', 'senroflux' ),
-			__( 'Read one FluentCart order: status, totals (store currency), mode and its payment transactions. No customer details.', 'senroflux' ),
+			__( 'Read an order', 'specflux-site-agent' ),
+			__( 'Read one FluentCart order: status, totals (store currency), mode and its payment transactions. No customer details.', 'specflux-site-agent' ),
 			array( 'id' => array( 'type' => 'integer' ) ),
 			array( 'id' ),
 			'orders/view',
@@ -121,8 +121,8 @@ final class FluentCartAbilities {
 	private static function registerProductCreate(): void {
 		self::define(
 			'fluentcart-product-create',
-			__( 'Create a product', 'senroflux' ),
-			__( 'Create a simple FluentCart product (one variation) as a draft unless a publish status is given. Prices are in the store currency.', 'senroflux' ),
+			__( 'Create a product', 'specflux-site-agent' ),
+			__( 'Create a simple FluentCart product (one variation) as a draft unless a publish status is given. Prices are in the store currency.', 'specflux-site-agent' ),
 			array(
 				'name'              => array( 'type' => 'string' ),
 				'description'       => array( 'type' => 'string' ),
@@ -143,8 +143,8 @@ final class FluentCartAbilities {
 	private static function registerProductUpdate(): void {
 		self::define(
 			'fluentcart-product-update',
-			__( 'Update a product', 'senroflux' ),
-			__( 'Update a FluentCart product\'s name, description, status or price. A price change needs a product with exactly one variation. Prices are in the store currency.', 'senroflux' ),
+			__( 'Update a product', 'specflux-site-agent' ),
+			__( 'Update a FluentCart product\'s name, description, status or price. A price change needs a product with exactly one variation. Prices are in the store currency.', 'specflux-site-agent' ),
 			array(
 				'id'                => array( 'type' => 'integer' ),
 				'name'              => array( 'type' => 'string' ),
@@ -166,8 +166,8 @@ final class FluentCartAbilities {
 	private static function registerSetProductImage(): void {
 		self::define(
 			'fluentcart-set-product-image',
-			__( 'Set product image', 'senroflux' ),
-			__( 'Set (or add to the gallery of) a FluentCart product\'s image from an existing media library attachment; never fetches a URL.', 'senroflux' ),
+			__( 'Set product image', 'specflux-site-agent' ),
+			__( 'Set (or add to the gallery of) a FluentCart product\'s image from an existing media library attachment; never fetches a URL.', 'specflux-site-agent' ),
 			array(
 				'product_id'    => array( 'type' => 'integer' ),
 				'attachment_id' => array( 'type' => 'integer' ),
@@ -184,8 +184,8 @@ final class FluentCartAbilities {
 	private static function registerCouponCreate(): void {
 		self::define(
 			'fluentcart-coupon-create',
-			__( 'Create coupon (draft)', 'senroflux' ),
-			__( 'Create an INACTIVE FluentCart coupon. Refuses a code that already exists. `amount` is a percent for a percentage coupon, a store-currency value for a fixed one.', 'senroflux' ),
+			__( 'Create coupon (draft)', 'specflux-site-agent' ),
+			__( 'Create an INACTIVE FluentCart coupon. Refuses a code that already exists. `amount` is a percent for a percentage coupon, a store-currency value for a fixed one.', 'specflux-site-agent' ),
 			array(
 				'code'          => array( 'type' => 'string' ),
 				'type'          => array(
@@ -207,8 +207,8 @@ final class FluentCartAbilities {
 	private static function registerCouponEnable(): void {
 		self::define(
 			'fluentcart-coupon-enable',
-			__( 'Enable coupon', 'senroflux' ),
-			__( 'Activate an existing FluentCart coupon. Only the status changes.', 'senroflux' ),
+			__( 'Enable coupon', 'specflux-site-agent' ),
+			__( 'Activate an existing FluentCart coupon. Only the status changes.', 'specflux-site-agent' ),
 			array( 'coupon_id' => array( 'type' => 'integer' ) ),
 			array( 'coupon_id' ),
 			'coupons/manage',
@@ -219,8 +219,8 @@ final class FluentCartAbilities {
 	private static function registerOrdersRefund(): void {
 		self::define(
 			'fluentcart-orders-refund',
-			__( 'Refund order', 'senroflux' ),
-			__( 'Refund part or all of a FluentCart order against its latest successful charge, through the payment gateway. Refuses more than remains refundable, and a second refund once this run\'s refund budget is spent. `amount` is in the store currency.', 'senroflux' ),
+			__( 'Refund order', 'specflux-site-agent' ),
+			__( 'Refund part or all of a FluentCart order against its latest successful charge, through the payment gateway. Refuses more than remains refundable, and a second refund once this run\'s refund budget is spent. `amount` is in the store currency.', 'specflux-site-agent' ),
 			array(
 				'order_id' => array( 'type' => 'integer' ),
 				'amount'   => array( 'type' => 'number' ),
@@ -235,8 +235,8 @@ final class FluentCartAbilities {
 	private static function registerShippingZoneSave(): void {
 		self::define(
 			'fluentcart-shipping-zone-save',
-			__( 'Save shipping zone', 'senroflux' ),
-			__( 'Create or update a FluentCart shipping zone; never deletes one. `countries` are two-letter codes (empty = whole world). Methods given are ADDED to the zone, none are edited or removed.', 'senroflux' ),
+			__( 'Save shipping zone', 'specflux-site-agent' ),
+			__( 'Create or update a FluentCart shipping zone; never deletes one. `countries` are two-letter codes (empty = whole world). Methods given are ADDED to the zone, none are edited or removed.', 'specflux-site-agent' ),
 			array(
 				'zone_id'        => array( 'type' => 'integer' ),
 				'name'           => array( 'type' => 'string' ),
@@ -271,8 +271,8 @@ final class FluentCartAbilities {
 	private static function registerTaxRateSave(): void {
 		self::define(
 			'fluentcart-tax-rate-save',
-			__( 'Save tax rate', 'senroflux' ),
-			__( 'Create or update a FluentCart tax rate for a country (and optionally state, postcode, city); never deletes one. Takes effect at checkout immediately.', 'senroflux' ),
+			__( 'Save tax rate', 'specflux-site-agent' ),
+			__( 'Create or update a FluentCart tax rate for a country (and optionally state, postcode, city); never deletes one. Takes effect at checkout immediately.', 'specflux-site-agent' ),
 			array(
 				'tax_rate_id' => array( 'type' => 'integer' ),
 				'country'     => array( 'type' => 'string' ),
@@ -295,8 +295,8 @@ final class FluentCartAbilities {
 	private static function registerStoreReport(): void {
 		self::define(
 			'fluentcart-store-report',
-			__( 'Store health report', 'senroflux' ),
-			__( 'A read-only sales/refunds report over a date window of at most 92 days, with an out-of-stock list.', 'senroflux' ),
+			__( 'Store health report', 'specflux-site-agent' ),
+			__( 'A read-only sales/refunds report over a date window of at most 92 days, with an out-of-stock list.', 'specflux-site-agent' ),
 			array(
 				'from' => array( 'type' => 'string' ),
 				'to'   => array( 'type' => 'string' ),
@@ -321,7 +321,7 @@ final class FluentCartAbilities {
 	 */
 	private static function define( string $template, string $label, string $description, array $properties, array $required, string $permission, callable $execute, bool $read_only = false, ?callable $object_gate = null ): void {
 		wp_register_ability(
-			strtolower( 'senroflux/' . $template ),
+			strtolower( 'specflux/' . $template ),
 			array(
 				'label'               => $label,
 				'description'         => $description,
@@ -352,7 +352,7 @@ final class FluentCartAbilities {
 						'destructive' => false,
 						'idempotent'  => $read_only,
 					),
-					'senroflux'   => array( 'hidden' => false ),
+					'specflux'    => array( 'hidden' => false ),
 				),
 			)
 		);
@@ -457,11 +457,11 @@ final class FluentCartAbilities {
 	public static function executeProductCreate( array $input ): array|WP_Error {
 		$name = is_string( $input['name'] ?? null ) ? trim( $input['name'] ) : '';
 		if ( '' === $name ) {
-			return self::invalid( __( 'A product name is required.', 'senroflux' ) );
+			return self::invalid( __( 'A product name is required.', 'specflux-site-agent' ) );
 		}
 		$status = self::status( $input['status'] ?? 'draft' );
 		if ( null === $status ) {
-			return self::invalid( __( 'The status must be draft, pending or publish.', 'senroflux' ) );
+			return self::invalid( __( 'The status must be draft, pending or publish.', 'specflux-site-agent' ) );
 		}
 		$prices = self::pricesFrom( $input );
 		if ( $prices instanceof WP_Error ) {
@@ -487,7 +487,7 @@ final class FluentCartAbilities {
 		$data = is_array( $created['data'] ?? null ) ? $created['data'] : $created;
 		$id   = (int) ( $data['ID'] ?? $data['id'] ?? 0 );
 		if ( $id <= 0 ) {
-			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which product it created.', 'senroflux' ), array( 'status' => 502 ) );
+			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which product it created.', 'specflux-site-agent' ), array( 'status' => 502 ) );
 		}
 
 		$followed = self::applyProductChanges( $id, $input, array(), $prices );
@@ -506,7 +506,7 @@ final class FluentCartAbilities {
 		if ( array_key_exists( 'status', $input ) ) {
 			$status = self::status( $input['status'] );
 			if ( null === $status ) {
-				return self::invalid( __( 'The status must be draft, pending or publish.', 'senroflux' ) );
+				return self::invalid( __( 'The status must be draft, pending or publish.', 'specflux-site-agent' ) );
 			}
 		}
 		$prices = self::pricesFrom( $input );
@@ -582,7 +582,7 @@ final class FluentCartAbilities {
 		if ( 1 !== count( $variants ) ) {
 			return new WP_Error(
 				'unsupported',
-				__( 'A price change needs a product with exactly one variation; edit the others in FluentCart.', 'senroflux' ),
+				__( 'A price change needs a product with exactly one variation; edit the others in FluentCart.', 'specflux-site-agent' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -590,7 +590,7 @@ final class FluentCartAbilities {
 		$variant    = $variants[0];
 		$variant_id = (int) ( $variant['id'] ?? 0 );
 		if ( $variant_id <= 0 ) {
-			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not return the variation.', 'senroflux' ), array( 'status' => 502 ) );
+			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not return the variation.', 'specflux-site-agent' ), array( 'status' => 502 ) );
 		}
 
 		$item    = (int) ( $variant['item_price'] ?? 0 );
@@ -601,7 +601,7 @@ final class FluentCartAbilities {
 		$sale    = $prices['sale_given'] ? $prices['sale'] : ( $on_sale ? $item : null );
 
 		if ( null !== $sale && $sale >= $regular ) {
-			return self::invalid( __( 'The sale price must be below the regular price.', 'senroflux' ) );
+			return self::invalid( __( 'The sale price must be below the regular price.', 'specflux-site-agent' ) );
 		}
 
 		$variant['post_id']       = $id;
@@ -641,16 +641,16 @@ final class FluentCartAbilities {
 		$gallery       = true === ( $input['gallery'] ?? false );
 
 		if ( 'fluent-products' !== self::postType( $product_id ) ) {
-			return new WP_Error( 'not_found', __( 'Product not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Product not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( 'attachment' !== self::postType( $attachment_id ) || ! self::isImage( $attachment_id ) ) {
-			return new WP_Error( 'not_an_image', __( 'That attachment is not an image.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_an_image', __( 'That attachment is not an image.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( '' === self::altText( $attachment_id ) ) {
-			return new WP_Error( 'missing_alt', __( 'That image has no alt text.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_alt', __( 'That image has no alt text.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( function_exists( 'current_user_can' ) && ! current_user_can( 'edit_post', $product_id ) ) {
-			return new WP_Error( 'forbidden', __( 'You cannot edit that product.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'forbidden', __( 'You cannot edit that product.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 
 		if ( $gallery ) {
@@ -679,7 +679,7 @@ final class FluentCartAbilities {
 			)
 		);
 		if ( ! isset( $shaped['code'], $shaped['type'], $shaped['amount'] ) ) {
-			return self::invalid( __( 'A code, a discount type (fixed or percentage) and an amount are required.', 'senroflux' ) );
+			return self::invalid( __( 'A code, a discount type (fixed or percentage) and an amount are required.', 'specflux-site-agent' ) );
 		}
 
 		return self::manageCoupon( $shaped );
@@ -692,7 +692,7 @@ final class FluentCartAbilities {
 	public static function executeCouponEnable( array $input ): array|WP_Error {
 		$coupon_id = (int) ( $input['coupon_id'] ?? 0 );
 		if ( $coupon_id <= 0 ) {
-			return self::invalid( __( 'A coupon id is required.', 'senroflux' ) );
+			return self::invalid( __( 'A coupon id is required.', 'specflux-site-agent' ) );
 		}
 
 		return self::manageCoupon( FluentCartPlatform::shapeCoupon( array( 'coupon_id' => $coupon_id ) ) );
@@ -705,10 +705,10 @@ final class FluentCartAbilities {
 	private static function manageCoupon( array $shaped ): array|WP_Error {
 		$tools = '\FluentCart\App\Modules\MCP\Tools\CouponTools';
 		if ( ! class_exists( $tools ) || ! is_callable( array( $tools, 'manageCoupon' ) ) ) {
-			return new WP_Error( 'gateway_unavailable', __( 'FluentCart coupons are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'FluentCart coupons are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		if ( ! self::can( 'coupons/manage' ) ) {
-			return new WP_Error( 'forbidden', __( 'You cannot manage coupons.', 'senroflux' ), array( 'status' => 403 ) );
+			return new WP_Error( 'forbidden', __( 'You cannot manage coupons.', 'specflux-site-agent' ), array( 'status' => 403 ) );
 		}
 
 		$result = call_user_func( array( $tools, 'manageCoupon' ), $shaped );
@@ -719,7 +719,7 @@ final class FluentCartAbilities {
 		$data = is_array( $result ) && is_array( $result['data'] ?? null ) ? $result['data'] : ( is_array( $result ) ? $result : array() );
 		$id   = (int) ( $data['coupon_id'] ?? 0 );
 		if ( $id <= 0 ) {
-			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which coupon it saved.', 'senroflux' ), array( 'status' => 502 ) );
+			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which coupon it saved.', 'specflux-site-agent' ), array( 'status' => 502 ) );
 		}
 
 		return array(
@@ -740,7 +740,7 @@ final class FluentCartAbilities {
 		$cents    = (int) round( $amount * 100 );
 
 		if ( $order_id <= 0 || $cents <= 0 ) {
-			return self::invalid( __( 'An order and a refund amount greater than zero are required.', 'senroflux' ) );
+			return self::invalid( __( 'An order and a refund amount greater than zero are required.', 'specflux-site-agent' ) );
 		}
 
 		$order = self::loadOrder( $order_id );
@@ -750,11 +750,11 @@ final class FluentCartAbilities {
 
 		$remaining = (int) ( $order['total_paid'] ?? 0 ) - (int) ( $order['total_refund'] ?? 0 );
 		if ( $cents > $remaining ) {
-			return new WP_Error( 'refund_too_large', __( 'That refund is more than remains refundable on this order.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'refund_too_large', __( 'That refund is more than remains refundable on this order.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		if ( Abilities::refundBudgetSpent() ) {
-			return new WP_Error( 'budget_exhausted', __( 'This run has used up its refund budget.', 'senroflux' ), array( 'status' => 409 ) );
+			return new WP_Error( 'budget_exhausted', __( 'This run has used up its refund budget.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
 		$charge = null;
@@ -764,7 +764,7 @@ final class FluentCartAbilities {
 			}
 		}
 		if ( null === $charge ) {
-			return new WP_Error( 'transaction_not_found', __( 'No refundable charge was found on this order.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'transaction_not_found', __( 'No refundable charge was found on this order.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$result = FluentCartRest::call(
@@ -798,13 +798,13 @@ final class FluentCartAbilities {
 		$zone_id = (int) ( $input['zone_id'] ?? 0 );
 		$name    = is_string( $input['name'] ?? null ) ? trim( $input['name'] ) : '';
 		if ( '' === $name ) {
-			return self::invalid( __( 'A zone name is required.', 'senroflux' ) );
+			return self::invalid( __( 'A zone name is required.', 'specflux-site-agent' ) );
 		}
 
 		$countries = array();
 		foreach ( is_array( $input['countries'] ?? null ) ? $input['countries'] : array() as $code ) {
 			if ( ! is_string( $code ) || 1 !== preg_match( '/^[A-Za-z]{2}$/', trim( $code ) ) ) {
-				return self::invalid( __( 'Countries must be two-letter codes.', 'senroflux' ) );
+				return self::invalid( __( 'Countries must be two-letter codes.', 'specflux-site-agent' ) );
 			}
 			$countries[] = strtoupper( trim( $code ) );
 		}
@@ -813,7 +813,7 @@ final class FluentCartAbilities {
 		$methods = array();
 		foreach ( is_array( $input['methods'] ?? null ) ? $input['methods'] : array() as $method ) {
 			if ( ! is_array( $method ) || ! is_string( $method['title'] ?? null ) || '' === trim( $method['title'] ) || ! is_string( $method['type'] ?? null ) || '' === trim( $method['type'] ) ) {
-				return self::invalid( __( 'Each shipping method needs a title and a type.', 'senroflux' ) );
+				return self::invalid( __( 'Each shipping method needs a title and a type.', 'specflux-site-agent' ) );
 			}
 			$methods[] = array(
 				'title'      => trim( $method['title'] ),
@@ -842,7 +842,7 @@ final class FluentCartAbilities {
 		$row = is_array( $saved['shipping_zone'] ?? null ) ? $saved['shipping_zone'] : array();
 		$id  = $zone_id > 0 ? $zone_id : (int) ( $row['id'] ?? 0 );
 		if ( $id <= 0 ) {
-			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which zone it saved.', 'senroflux' ), array( 'status' => 502 ) );
+			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which zone it saved.', 'specflux-site-agent' ), array( 'status' => 502 ) );
 		}
 
 		foreach ( $methods as $method ) {
@@ -866,10 +866,10 @@ final class FluentCartAbilities {
 		$tax_rate_id = (int) ( $input['tax_rate_id'] ?? 0 );
 		$country     = is_string( $input['country'] ?? null ) ? strtoupper( trim( $input['country'] ) ) : '';
 		if ( 1 !== preg_match( '/^[A-Z]{2}$/', $country ) ) {
-			return self::invalid( __( 'A two-letter country code is required.', 'senroflux' ) );
+			return self::invalid( __( 'A two-letter country code is required.', 'specflux-site-agent' ) );
 		}
 		if ( ! is_numeric( $input['rate'] ?? null ) || (float) $input['rate'] < 0 || (float) $input['rate'] > 100 ) {
-			return self::invalid( __( 'The tax rate must be a percentage between 0 and 100.', 'senroflux' ) );
+			return self::invalid( __( 'The tax rate must be a percentage between 0 and 100.', 'specflux-site-agent' ) );
 		}
 
 		$rate = array(
@@ -897,7 +897,7 @@ final class FluentCartAbilities {
 		$row = is_array( $saved['tax_rate'] ?? null ) ? $saved['tax_rate'] : array();
 		$id  = $tax_rate_id > 0 ? $tax_rate_id : (int) ( $row['id'] ?? 0 );
 		if ( $id <= 0 ) {
-			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which tax rate it saved.', 'senroflux' ), array( 'status' => 502 ) );
+			return new WP_Error( 'fluentcart_unexpected_response', __( 'FluentCart did not say which tax rate it saved.', 'specflux-site-agent' ), array( 'status' => 502 ) );
 		}
 
 		return array( 'tax_rate_id' => $id );
@@ -919,15 +919,15 @@ final class FluentCartAbilities {
 		$from_ts = strtotime( $from . ' 00:00:00 UTC' );
 		$to_ts   = strtotime( $to . ' 23:59:59 UTC' );
 		if ( false === $from_ts || false === $to_ts || $to_ts < $from_ts ) {
-			return self::invalid( __( 'A valid from/to date range is required.', 'senroflux' ) );
+			return self::invalid( __( 'A valid from/to date range is required.', 'specflux-site-agent' ) );
 		}
 		if ( ( $to_ts - $from_ts ) / DAY_IN_SECONDS > 92 ) {
-			return new WP_Error( 'window_too_long', __( 'A store report window may not exceed 92 days.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'window_too_long', __( 'A store report window may not exceed 92 days.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
 		if ( ! $wpdb instanceof \wpdb ) {
-			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'gateway_unavailable', __( 'Orders are not available.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		$orders   = $wpdb->prefix . 'fct_orders';
@@ -992,7 +992,7 @@ final class FluentCartAbilities {
 	 */
 	private static function loadProduct( int $id ): array|WP_Error {
 		if ( $id <= 0 ) {
-			return new WP_Error( 'not_found', __( 'Product not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Product not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		$response = FluentCartRest::call( 'GET', '/products/' . $id . '/pricing' );
 		if ( $response instanceof WP_Error ) {
@@ -1000,7 +1000,7 @@ final class FluentCartAbilities {
 		}
 		$product = $response['product'] ?? null;
 		if ( ! is_array( $product ) || array() === $product ) {
-			return new WP_Error( 'not_found', __( 'Product not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Product not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		return $product;
@@ -1011,7 +1011,7 @@ final class FluentCartAbilities {
 	 */
 	private static function loadOrder( int $id ): array|WP_Error {
 		if ( $id <= 0 ) {
-			return new WP_Error( 'not_found', __( 'Order not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Order not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 		$response = FluentCartRest::call( 'GET', '/orders/' . $id );
 		if ( $response instanceof WP_Error ) {
@@ -1019,7 +1019,7 @@ final class FluentCartAbilities {
 		}
 		$order = $response['order'] ?? null;
 		if ( ! is_array( $order ) || array() === $order ) {
-			return new WP_Error( 'not_found', __( 'Order not found.', 'senroflux' ), array( 'status' => 400 ) );
+			return new WP_Error( 'not_found', __( 'Order not found.', 'specflux-site-agent' ), array( 'status' => 400 ) );
 		}
 
 		return $order;
@@ -1059,7 +1059,7 @@ final class FluentCartAbilities {
 		if ( $regular_given ) {
 			$regular = self::cents( $input['regular_price'] );
 			if ( null === $regular || $regular <= 0 ) {
-				return self::invalid( __( 'The regular price must be a number greater than zero.', 'senroflux' ) );
+				return self::invalid( __( 'The regular price must be a number greater than zero.', 'specflux-site-agent' ) );
 			}
 		}
 
@@ -1067,7 +1067,7 @@ final class FluentCartAbilities {
 		if ( $sale_given && null !== $input['sale_price'] && '' !== $input['sale_price'] ) {
 			$sale = self::cents( $input['sale_price'] );
 			if ( null === $sale || $sale <= 0 ) {
-				return self::invalid( __( 'The sale price must be a number greater than zero.', 'senroflux' ) );
+				return self::invalid( __( 'The sale price must be a number greater than zero.', 'specflux-site-agent' ) );
 			}
 		}
 

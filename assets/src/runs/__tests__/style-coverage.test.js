@@ -1,13 +1,13 @@
 /**
- * Regression gate for the S10 stylesheet gap: every `senroflux-*` class
+ * Regression gate for the S10 stylesheet gap: every `specflux-site-agent-*` class
  * name referenced by the Runs screen components must have at least one
  * rule with a non-empty declaration block in `style.css`. This test
  * extracts class names directly from the component source (not from a
  * hand-maintained list) so a future component that introduces a new class
  * without styling it fails here, not in a live-review pass.
  *
- * Template-interpolated class names (e.g. `senroflux-pill-${ modifier }`)
- * are extracted as a trailing-dash PREFIX (`senroflux-pill-`) and matched
+ * Template-interpolated class names (e.g. `specflux-site-agent-pill-${ modifier }`)
+ * are extracted as a trailing-dash PREFIX (`specflux-site-agent-pill-`) and matched
  * against any stylesheet class that starts with that prefix.
  */
 
@@ -17,7 +17,7 @@ import path from 'path';
 const COMPONENTS_DIR = path.join( __dirname, '..', 'components' );
 const CSS_PATH = path.join( __dirname, '..', 'style.css' );
 
-/** Every `senroflux-*` class name referenced in the component source. */
+/** Every `specflux-site-agent-*` class name referenced in the component source. */
 function extractUsedClassNames() {
 	const files = fs
 		.readdirSync( COMPONENTS_DIR )
@@ -26,18 +26,18 @@ function extractUsedClassNames() {
 
 	const names = new Set();
 	for ( const file of files ) {
-		// A `senroflux-` prefix is also used for values that are not classes
+		// A `specflux-site-agent-` prefix is also used for values that are not classes
 		// and must never demand a rule: the radio `name` attributes that
 		// group ParkCard's choices, element ids, and the S22 pseudo-locale
-		// `data-senroflux-content` marker (a bare boolean JSX attribute,
+		// `data-specflux-site-agent-content` marker (a bare boolean JSX attribute,
 		// not a class — it exists so a test can find DATA text nodes to
 		// EXCLUDE from a translation check, never to be styled). Drop those
 		// before matching, so the gate cannot be satisfied by dead CSS.
 		const source = fs
 			.readFileSync( file, 'utf8' )
 			.replace( /\b(?:name|id|htmlFor)\s*=\s*"[^"]*"/g, '' )
-			.replace( /\bdata-senroflux-content\b/g, '' );
-		const matches = source.match( /senroflux-[a-zA-Z0-9-]+/g ) || [];
+			.replace( /\bdata-specflux-site-agent-content\b/g, '' );
+		const matches = source.match( /specflux-site-agent-[a-zA-Z0-9-]+/g ) || [];
 		matches.forEach( ( m ) => names.add( m ) );
 	}
 	return names;
@@ -83,7 +83,7 @@ function extractStyledClassNames( css ) {
 		if ( ! rule.body.trim() ) {
 			continue;
 		}
-		const classTokens = rule.selector.match( /\.senroflux-[a-zA-Z0-9-]+/g ) || [];
+		const classTokens = rule.selector.match( /\.specflux-site-agent-[a-zA-Z0-9-]+/g ) || [];
 		classTokens.forEach( ( token ) => styled.add( token.slice( 1 ) ) );
 	}
 	return styled;
@@ -101,7 +101,7 @@ function isCovered( name, styledClassNames ) {
 	return styledClassNames.has( name );
 }
 
-describe( 'every senroflux-* class used by the Runs screen has a styled rule', () => {
+describe( 'every specflux-site-agent-* class used by the Runs screen has a styled rule', () => {
 	it( 'has no class name referenced in JS but missing from style.css', () => {
 		const used = extractUsedClassNames();
 		const css = fs.readFileSync( CSS_PATH, 'utf8' );

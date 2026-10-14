@@ -2,27 +2,27 @@
 /**
  * Plugin-level tests for 0.3 S11 follow-up: `start()` refuses on the
  * harness's own blocking checks (the provider check) through the SAME
- * evaluator ({@see \Specflux\SenroFlux\Setup\Checks}) that backs the setup
+ * evaluator ({@see \Specflux\SiteAgent\Setup\Checks}) that backs the setup
  * panel — "one evaluator" (S11), never a rule re-derived at start().
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Model\ModelGatewayInterface;
-use Specflux\SenroFlux\Model\ModelTurn;
-use Specflux\SenroFlux\Packs\Pack;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\Runner;
-use Specflux\SenroFlux\Run\WpdbRunStore;
-use Specflux\SenroFlux\Setup\Checks;
-use Specflux\SenroFlux\Tools\ToolExecutor;
-use Specflux\SenroFlux\Tools\ToolRegistry;
-use Specflux\SenroFlux\Approval\ApprovalBridge;
+use Specflux\SiteAgent\Model\ModelGatewayInterface;
+use Specflux\SiteAgent\Model\ModelTurn;
+use Specflux\SiteAgent\Packs\Pack;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\Runner;
+use Specflux\SiteAgent\Run\WpdbRunStore;
+use Specflux\SiteAgent\Setup\Checks;
+use Specflux\SiteAgent\Tools\ToolExecutor;
+use Specflux\SiteAgent\Tools\ToolRegistry;
+use Specflux\SiteAgent\Approval\ApprovalBridge;
 use WP_Error;
 use wpdb;
 
@@ -30,13 +30,13 @@ final class PluginProviderCheckTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_transients']      = array();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_transients']      = array();
 	}
 
 	protected function tearDown(): void {
 		Checks::setProviderProbe( true ); // Restore the suite-wide default (tests/bootstrap.php).
-		remove_all_filters( 'senroflux_packs' );
+		remove_all_filters( 'specflux_site_agent_packs' );
 		Plugin::reset();
 		unset( $GLOBALS['wpdb'] );
 	}
@@ -70,7 +70,7 @@ final class PluginProviderCheckTest extends TestCase {
 	/** A pack whose own preflight always passes — only the harness check is under test. */
 	private function registerAlwaysBoundPack(): void {
 		add_filter(
-			'senroflux_packs',
+			'specflux_site_agent_packs',
 			static function ( array $packs ): array {
 				$packs['fixture'] = new class() extends Pack {
 					public function name(): string {
@@ -98,10 +98,10 @@ final class PluginProviderCheckTest extends TestCase {
 		Checks::setProviderProbe( false );
 		$this->seedRunnerGraph();
 
-		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'senroflux/read-content' ) );
+		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'specflux/read-content' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_provider_unconfigured', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_provider_unconfigured', $result->get_error_code() );
 		$this->assertSame( 400, $result->get_error_data()['status'] ?? null );
 	}
 
@@ -114,7 +114,7 @@ final class PluginProviderCheckTest extends TestCase {
 		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array(), array(), 'fixture' );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'senroflux_provider_unconfigured', $result->get_error_code() );
+		$this->assertSame( 'specflux_site_agent_provider_unconfigured', $result->get_error_code() );
 	}
 
 	public function test_start_succeeds_once_the_provider_is_configured(): void {
@@ -122,7 +122,7 @@ final class PluginProviderCheckTest extends TestCase {
 		Checks::setProviderProbe( true );
 		$this->seedRunnerGraph();
 
-		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'senroflux/read-content' ) );
+		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'specflux/read-content' ) );
 
 		$this->assertIsArray( $result, is_object( $result ) ? $result->get_error_message() : '' );
 	}
@@ -140,7 +140,7 @@ final class PluginProviderCheckTest extends TestCase {
 		$panel_failure = Checks::firstBlockingFailure( Checks::harnessChecks() );
 		$this->assertNotNull( $panel_failure );
 
-		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'senroflux/read-content' ) );
+		$result = Plugin::instance()->start( 'specflux-mac', 'Write a post', array( 'specflux/read-content' ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( $panel_failure->errorCode(), $result->get_error_code() );

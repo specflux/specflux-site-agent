@@ -5,17 +5,17 @@
  *
  * TARGET REPO PATH: tests/Packs/Commerce/AbilitiesTest.php
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests\Packs\Commerce;
+namespace Specflux\SiteAgent\Tests\Packs\Commerce;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Packs\Commerce\Abilities;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\WpdbRunStore;
+use Specflux\SiteAgent\Packs\Commerce\Abilities;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\WpdbRunStore;
 use WP_Error;
 use wpdb;
 
@@ -34,12 +34,12 @@ final class AbilitiesTest extends TestCase {
 	protected function setUp(): void {
 		$this->loadShims();
 
-		$GLOBALS['senroflux_test_abilities']          = array();
-		$GLOBALS['senroflux_test_posts']              = array();
-		$GLOBALS['senroflux_test_postmeta']           = array();
-		$GLOBALS['senroflux_test_coupon_codes']       = array();
-		$GLOBALS['senroflux_test_next_post_id']       = 100;
-		$GLOBALS['senroflux_test_ability_categories'] = array();
+		$GLOBALS['specflux_site_agent_test_abilities']          = array();
+		$GLOBALS['specflux_site_agent_test_posts']              = array();
+		$GLOBALS['specflux_site_agent_test_postmeta']           = array();
+		$GLOBALS['specflux_site_agent_test_coupon_codes']       = array();
+		$GLOBALS['specflux_site_agent_test_next_post_id']       = 100;
+		$GLOBALS['specflux_site_agent_test_ability_categories'] = array();
 
 		Abilities::reset();
 		Abilities::registerCategory();
@@ -59,8 +59,8 @@ final class AbilitiesTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	private function makePost( string $type, array $overrides = array() ): int {
-		$id                                      = (int) $GLOBALS['senroflux_test_next_post_id'];
-		$GLOBALS['senroflux_test_next_post_id'] += 1;
+		$id = (int) $GLOBALS['specflux_site_agent_test_next_post_id'];
+		$GLOBALS['specflux_site_agent_test_next_post_id'] += 1;
 
 		$post                    = new \stdClass();
 		$post->ID                = $id;
@@ -73,7 +73,7 @@ final class AbilitiesTest extends TestCase {
 		$post->post_parent       = 0;
 		$post->post_name         = '';
 
-		$GLOBALS['senroflux_test_posts'][ $id ] = $post;
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ] = $post;
 
 		return $id;
 	}
@@ -95,7 +95,7 @@ final class AbilitiesTest extends TestCase {
 		update_post_meta( $attachment, '_wp_attachment_image_alt', 'A widget' );
 
 		$result = $this->callAbility(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
 				'product_id'    => $product,
 				'attachment_id' => $attachment,
@@ -109,7 +109,7 @@ final class AbilitiesTest extends TestCase {
 			),
 			$result
 		);
-		$this->assertSame( $attachment, $GLOBALS['senroflux_test_postmeta'][ $product ]['_thumbnail_id'] ?? null );
+		$this->assertSame( $attachment, $GLOBALS['specflux_site_agent_test_postmeta'][ $product ]['_thumbnail_id'] ?? null );
 	}
 
 	public function test_set_product_image_appends_to_the_gallery_when_asked(): void {
@@ -118,7 +118,7 @@ final class AbilitiesTest extends TestCase {
 		update_post_meta( $attachment, '_wp_attachment_image_alt', 'A widget' );
 
 		$this->callAbility(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
 				'product_id'    => $product,
 				'attachment_id' => $attachment,
@@ -128,7 +128,7 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertSame(
 			(string) $attachment,
-			$GLOBALS['senroflux_test_postmeta'][ $product ]['_product_image_gallery'] ?? null
+			$GLOBALS['specflux_site_agent_test_postmeta'][ $product ]['_product_image_gallery'] ?? null
 		);
 	}
 
@@ -138,7 +138,7 @@ final class AbilitiesTest extends TestCase {
 		update_post_meta( $attachment, '_wp_attachment_image_alt', 'A pdf' );
 
 		$result = $this->callAbility(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
 				'product_id'    => $product,
 				'attachment_id' => $attachment,
@@ -154,7 +154,7 @@ final class AbilitiesTest extends TestCase {
 		$attachment = $this->makePost( 'attachment', array( 'post_mime_type' => 'image/jpeg' ) );
 
 		$result = $this->callAbility(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
 				'product_id'    => $product,
 				'attachment_id' => $attachment,
@@ -170,7 +170,7 @@ final class AbilitiesTest extends TestCase {
 		update_post_meta( $attachment, '_wp_attachment_image_alt', 'A widget' );
 
 		$result = $this->callAbility(
-			'senroflux/set-product-image',
+			'specflux/set-product-image',
 			array(
 				'product_id'    => 999999,
 				'attachment_id' => $attachment,
@@ -187,7 +187,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_coupon_create_creates_a_draft_coupon(): void {
 		$result = $this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => 'SAVE10',
 				'discount_type' => 'percent',
@@ -197,13 +197,13 @@ final class AbilitiesTest extends TestCase {
 
 		$this->assertIsArray( $result );
 		$id = $result['coupon_id'];
-		$this->assertSame( 'shop_coupon', $GLOBALS['senroflux_test_posts'][ $id ]->post_type );
-		$this->assertSame( 'draft', $GLOBALS['senroflux_test_posts'][ $id ]->post_status );
+		$this->assertSame( 'shop_coupon', $GLOBALS['specflux_site_agent_test_posts'][ $id ]->post_type );
+		$this->assertSame( 'draft', $GLOBALS['specflux_site_agent_test_posts'][ $id ]->post_status );
 	}
 
 	public function test_coupon_create_refuses_an_existing_code(): void {
 		$this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => 'SAVE10',
 				'discount_type' => 'percent',
@@ -212,7 +212,7 @@ final class AbilitiesTest extends TestCase {
 		);
 
 		$result = $this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => 'SAVE10',
 				'discount_type' => 'fixed_cart',
@@ -226,7 +226,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_coupon_create_refuses_an_empty_code(): void {
 		$result = $this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => '',
 				'discount_type' => 'percent',
@@ -244,7 +244,7 @@ final class AbilitiesTest extends TestCase {
 
 	public function test_coupon_enable_publishes_a_freshly_created_coupon(): void {
 		$created = $this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => 'SAVE10',
 				'discount_type' => 'percent',
@@ -253,15 +253,15 @@ final class AbilitiesTest extends TestCase {
 		);
 		$id      = $created['coupon_id'];
 
-		$result = $this->callAbility( 'senroflux/coupon-enable', array( 'coupon_id' => $id ) );
+		$result = $this->callAbility( 'specflux/coupon-enable', array( 'coupon_id' => $id ) );
 
 		$this->assertSame( array( 'coupon_id' => $id ), $result );
-		$this->assertSame( 'publish', $GLOBALS['senroflux_test_posts'][ $id ]->post_status );
+		$this->assertSame( 'publish', $GLOBALS['specflux_site_agent_test_posts'][ $id ]->post_status );
 	}
 
 	public function test_coupon_enable_refuses_a_stale_write(): void {
 		$created = $this->callAbility(
-			'senroflux/coupon-create',
+			'specflux/coupon-create',
 			array(
 				'code'          => 'SAVE10',
 				'discount_type' => 'percent',
@@ -272,9 +272,9 @@ final class AbilitiesTest extends TestCase {
 
 		// Simulate an external edit this run never saw (S8): bump the marker
 		// directly, bypassing this run's own tracker.
-		$GLOBALS['senroflux_test_posts'][ $id ]->post_modified_gmt = '2099-01-01 00:00:00';
+		$GLOBALS['specflux_site_agent_test_posts'][ $id ]->post_modified_gmt = '2099-01-01 00:00:00';
 
-		$result = $this->callAbility( 'senroflux/coupon-enable', array( 'coupon_id' => $id ) );
+		$result = $this->callAbility( 'specflux/coupon-enable', array( 'coupon_id' => $id ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'stale_write', $result->get_error_code() );
@@ -290,16 +290,16 @@ final class AbilitiesTest extends TestCase {
 				'post_title'  => 'EXTERNAL',
 			)
 		);
-		$GLOBALS['senroflux_test_coupon_codes']['external'] = $id;
+		$GLOBALS['specflux_site_agent_test_coupon_codes']['external'] = $id;
 
-		$result = $this->callAbility( 'senroflux/coupon-enable', array( 'coupon_id' => $id ) );
+		$result = $this->callAbility( 'specflux/coupon-enable', array( 'coupon_id' => $id ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'stale_write', $result->get_error_code() );
 	}
 
 	public function test_coupon_enable_refuses_a_missing_coupon(): void {
-		$result = $this->callAbility( 'senroflux/coupon-enable', array( 'coupon_id' => 999999 ) );
+		$result = $this->callAbility( 'specflux/coupon-enable', array( 'coupon_id' => 999999 ) );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
@@ -310,11 +310,11 @@ final class AbilitiesTest extends TestCase {
 	// ------------------------------------------------------------------
 
 	private function grantOnly( string ...$caps ): void {
-		$GLOBALS['senroflux_test_user_caps'] = array_fill_keys( $caps, true );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array_fill_keys( $caps, true );
 	}
 
 	public function test_set_product_image_needs_edit_on_the_product_and_read_on_the_attachment(): void {
-		$ability = wp_get_ability( 'senroflux/set-product-image' );
+		$ability = wp_get_ability( 'specflux/set-product-image' );
 		$input   = array(
 			'product_id'    => 7,
 			'attachment_id' => 5,
@@ -324,13 +324,13 @@ final class AbilitiesTest extends TestCase {
 		$this->assertFalse( (bool) $ability->check_permissions( $input ), 'an attachment the user cannot read may not be attached' );
 		$this->grantOnly( 'edit_post', 'read_post' );
 		$this->assertTrue( (bool) $ability->check_permissions( $input ) );
-		$GLOBALS['senroflux_test_user_caps']['edit_post:7'] = false;
+		$GLOBALS['specflux_site_agent_test_user_caps']['edit_post:7'] = false;
 		$this->assertFalse( (bool) $ability->check_permissions( $input ), 'no edit on this product' );
 	}
 
 	public function test_coupon_abilities_need_the_coupon_types_own_caps(): void {
-		$create = wp_get_ability( 'senroflux/coupon-create' );
-		$enable = wp_get_ability( 'senroflux/coupon-enable' );
+		$create = wp_get_ability( 'specflux/coupon-create' );
+		$enable = wp_get_ability( 'specflux/coupon-enable' );
 
 		$this->grantOnly( 'manage_woocommerce' );
 		$this->assertFalse( (bool) $create->check_permissions( array( 'code' => 'X' ) ) );

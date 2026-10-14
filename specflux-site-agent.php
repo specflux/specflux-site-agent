@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       SenroFlux
- * Plugin URI:        https://github.com/specflux/senroflux
- * Description:       Resumable, browser-driven multi-step agent runs inside the logged-in WordPress session — Abilities as tools, governed by SenroGate when active or a built-in approval gate otherwise.
+ * Plugin Name:       Specflux Site Agent
+ * Plugin URI:        https://github.com/specflux/specflux-site-agent
+ * Description:       Resumable, browser-driven multi-step agent runs inside the logged-in WordPress session — Abilities as tools, governed by Belayline Agent Governance when active or a built-in approval gate otherwise.
  * Version:           0.4.0
  * Author:            Stephen Paul Samynathan
  * Author URI:        https://www.specflux.com/author/stephen/
@@ -10,57 +10,57 @@
  * Requires PHP:      8.1
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       senroflux
+ * Text Domain:       specflux-site-agent
  *
  * Harness for agent RUNS: one goal pursued by one user through many model
  * turns and tool calls, pausing for human approval whenever a write needs
- * one. SenroFlux owns runs/steps state and nothing else — the chat UI
+ * one. Specflux Site Agent owns runs/steps state and nothing else — the chat UI
  * belongs to consumers (first consumer: marketing-analytics-chat).
  *
  * GATE MODES (0.3 S3): if Agent Safety is active, every governed call goes
  * through its gate (packs, tiers, approvals) and audit trail. Without it,
- * SenroFlux falls back to a built-in minimal gate: every call that changes
- * the site still stops for a person to approve it on SenroFlux's own Runs
+ * Specflux Site Agent falls back to a built-in minimal gate: every call that changes
+ * the site still stops for a person to approve it on Specflux Site Agent's own Runs
  * screen before it runs. A run's mode is pinned at start and never changes
- * underneath it. Multisite is refused outright (senroflux_ungoverned is
+ * underneath it. Multisite is refused outright (specflux_site_agent_ungoverned is
  * reserved for "no WordPress session" and third-party HTTP consumers
  * starting/ticking a built-in-mode run).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux;
+namespace Specflux\SiteAgent;
 
-use Specflux\SenroFlux\MultisiteGuard;
-use Specflux\SenroFlux\Plugin;
+use Specflux\SiteAgent\MultisiteGuard;
+use Specflux\SiteAgent\Plugin;
 
 // Bail on direct access (must precede any other runtime code so static
 // analysers and the plugin-check detector both recognize it).
 defined( 'ABSPATH' ) || exit;
 
-if ( ! defined( 'SENROFLUX_URL' ) ) {
-	define( 'SENROFLUX_URL', plugin_dir_url( __FILE__ ) );
+if ( ! defined( 'SPECFLUX_SITE_AGENT_URL' ) ) {
+	define( 'SPECFLUX_SITE_AGENT_URL', plugin_dir_url( __FILE__ ) );
 }
 
-if ( ! defined( 'SENROFLUX_PATH' ) ) {
+if ( ! defined( 'SPECFLUX_SITE_AGENT_PATH' ) ) {
 	// 0.3 S10/S17: the React Runs screen's build assets are read from disk
 	// (its `index.asset.php` dependency/version manifest) before being
-	// enqueued by URL via `SENROFLUX_URL` above.
-	define( 'SENROFLUX_PATH', plugin_dir_path( __FILE__ ) );
+	// enqueued by URL via `SPECFLUX_SITE_AGENT_URL` above.
+	define( 'SPECFLUX_SITE_AGENT_PATH', plugin_dir_path( __FILE__ ) );
 }
 
-if ( ! defined( 'SENROFLUX_API_VERSION' ) ) {
+if ( ! defined( 'SPECFLUX_SITE_AGENT_API_VERSION' ) ) {
 	// S23: the semver of the DECLARED @api surface (Pack, LayoutVocabulary,
-	// the senroflux_packs/senroflux_run_skills/senroflux_default_budget/
-	// senroflux_result_presenters filters) — independent of the plugin Version header above. A break
+	// the specflux_site_agent_packs/specflux_site_agent_run_skills/specflux_site_agent_default_budget/
+	// specflux_site_agent_result_presenters filters) — independent of the plugin Version header above. A break
 	// (removal or signature change) needs a major bump; an addition needs a
 	// minor bump. tests/Api/PublicSurfaceTest.php enforces this against
 	// tests/Api/public-surface.json. Owner decision 2026-09-19: "everything
-	// in senroflux uses 0.3" — this starts at 0.3.0, not 0.1.0, even though
+	// in specflux-site-agent uses 0.3" — this starts at 0.3.0, not 0.1.0, even though
 	// no @api surface existed before this stage.
-	define( 'SENROFLUX_API_VERSION', '0.4.0' );
+	define( 'SPECFLUX_SITE_AGENT_API_VERSION', '0.4.0' );
 }
 
 
@@ -68,22 +68,22 @@ if ( ! defined( 'SENROFLUX_API_VERSION' ) ) {
 // activation hooks by re-including this file and checking what got registered
 // THAT load, so the callbacks below must exist even when the autoloader is
 // broken — they guard internally instead (fail safe, not silent).
-register_activation_hook( __FILE__, __NAMESPACE__ . '\senroflux_activate' );
-register_deactivation_hook( __FILE__, __NAMESPACE__ . '\senroflux_deactivate' );
+register_activation_hook( __FILE__, __NAMESPACE__ . '\specflux_site_agent_activate' );
+register_deactivation_hook( __FILE__, __NAMESPACE__ . '\specflux_site_agent_deactivate' );
 
 /**
  * Create the runs/steps tables.
  *
  * @return void
  */
-function senroflux_activate(): void {
+function specflux_site_agent_activate(): void {
 	// Multisite is refused (0.3 S2). Checked inline as well as through the
 	// guard class so a broken autoloader cannot let activation through.
 	if ( function_exists( 'is_multisite' ) && is_multisite() ) {
 		if ( class_exists( MultisiteGuard::class ) ) {
 			MultisiteGuard::refuse_activation( __FILE__ );
 		}
-		wp_die( esc_html__( 'SenroFlux does not support WordPress multisite. It was not activated.', 'senroflux' ) );
+		wp_die( esc_html__( 'Specflux Site Agent does not support WordPress multisite. It was not activated.', 'specflux-site-agent' ) );
 	}
 
 	if ( ! class_exists( Schema::class ) || ! function_exists( 'dbDelta' ) ) {
@@ -96,15 +96,15 @@ function senroflux_activate(): void {
 	}
 
 	// 0.4 K4: the daily prune of the connector activity list.
-	if ( class_exists( \Specflux\SenroFlux\Connector\ActivityLog::class ) ) {
-		\Specflux\SenroFlux\Connector\ActivityLog::schedule();
+	if ( class_exists( \Specflux\SiteAgent\Connector\ActivityLog::class ) ) {
+		\Specflux\SiteAgent\Connector\ActivityLog::schedule();
 	}
 
 	// 0.3 S10: no redirect, no site-wide notice — one one-time notice on the
 	// Plugins screen only, rendered by RunsScreen::maybeRenderActivationNotice()
 	// and cleared the first time it shows.
 	if ( function_exists( 'set_transient' ) ) {
-		set_transient( \Specflux\SenroFlux\Admin\RunsScreen::ACTIVATION_NOTICE_TRANSIENT, 1, WEEK_IN_SECONDS );
+		set_transient( \Specflux\SiteAgent\Admin\RunsScreen::ACTIVATION_NOTICE_TRANSIENT, 1, WEEK_IN_SECONDS );
 	}
 }
 
@@ -113,12 +113,12 @@ function senroflux_activate(): void {
  *
  * @return void
  */
-function senroflux_deactivate(): void {
-	if ( class_exists( \Specflux\SenroFlux\Connector\ActivityLog::class ) ) {
-		\Specflux\SenroFlux\Connector\ActivityLog::unschedule();
+function specflux_site_agent_deactivate(): void {
+	if ( class_exists( \Specflux\SiteAgent\Connector\ActivityLog::class ) ) {
+		\Specflux\SiteAgent\Connector\ActivityLog::unschedule();
 	}
 	if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
-		wp_clear_scheduled_hook( 'senroflux_oauth_gc' );
+		wp_clear_scheduled_hook( 'specflux_site_agent_oauth_gc' );
 	}
 }
 
@@ -131,11 +131,11 @@ function senroflux_deactivate(): void {
 if ( ! class_exists( Plugin::class ) ) {
 	spl_autoload_register(
 		static function ( string $class_name ): void {
-			if ( ! str_starts_with( $class_name, 'Specflux\\SenroFlux\\' ) ) {
+			if ( ! str_starts_with( $class_name, 'Specflux\\SiteAgent\\' ) ) {
 				return;
 			}
 
-			$relative = substr( $class_name, strlen( 'Specflux\\SenroFlux\\' ) );
+			$relative = substr( $class_name, strlen( 'Specflux\\SiteAgent\\' ) );
 			$path     = __DIR__ . '/src/' . str_replace( '\\', '/', $relative ) . '.php';
 
 			if ( is_readable( $path ) ) {
@@ -149,8 +149,8 @@ require_once __DIR__ . '/src/api.php';
 
 /**
  * Register the packs and their Agent Safety governance BEFORE Agent Safety's
- * own wiring: it reads `agent_safety_governed_namespaces` and
- * `agent_safety_verb_map` inside its plugins_loaded priority-0 bootstrap, so a
+ * own wiring: it reads `belayline_governed_namespaces` and
+ * `belayline_verb_map` inside its plugins_loaded priority-0 bootstrap, so a
  * pack wired at our boot priority below would never be governed at all.
  */
 add_action(
@@ -178,7 +178,7 @@ add_action(
 				static function (): void {
 					printf(
 						'<div class="notice notice-error"><p>%s</p></div>',
-						esc_html__( 'SenroFlux is inactive: its autoloader is missing (run `composer install` inside the plugin directory).', 'senroflux' )
+						esc_html__( 'Specflux Site Agent is inactive: its autoloader is missing (run `composer install` inside the plugin directory).', 'specflux-site-agent' )
 					);
 				}
 			);

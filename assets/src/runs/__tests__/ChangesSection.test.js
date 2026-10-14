@@ -1,7 +1,7 @@
 /**
  * 0.4 S3.2: the report's Changes section. It renders what the server built,
  * asks for a preview before any undo, shows every outcome in words (and the
- * three-way drift table), and falls back to one line without SenroGate 0.5.
+ * three-way drift table), and falls back to one line without Belayline Agent Governance 0.5.
  */
 
 import fs from 'fs';
@@ -45,7 +45,7 @@ const section = ( over = {} ) => ( {
 
 beforeEach( () => apiFetch.mockReset() );
 
-describe( 'Changes section (SenroGate 0.5 mode)', () => {
+describe( 'Changes section (Belayline Agent Governance 0.5 mode)', () => {
 	it( 'lists each object with its diff and a reason label for what cannot be undone', () => {
 		render( <ChangesSection runId={ 5 } section={ section() } /> );
 
@@ -73,12 +73,12 @@ describe( 'Changes section (SenroGate 0.5 mode)', () => {
 		const dialog = await screen.findByRole( 'dialog' );
 		expect( within( dialog ).getByText( 'Will be restored' ) ).toBeInTheDocument();
 		expect( apiFetch ).toHaveBeenCalledTimes( 1 );
-		expect( apiFetch.mock.calls[ 0 ][ 0 ] ).toMatchObject( { path: '/senroflux/v1/runs/5/changes/preview', method: 'POST', data: { nonce: 'n1' } } );
+		expect( apiFetch.mock.calls[ 0 ][ 0 ] ).toMatchObject( { path: '/specflux-site-agent/v1/runs/5/changes/preview', method: 'POST', data: { nonce: 'n1' } } );
 
 		fireEvent.click( within( dialog ).getByRole( 'button', { name: 'Confirm undo' } ) );
 
 		await waitFor( () => expect( screen.getByText( 'Undone.' ) ).toBeInTheDocument() );
-		expect( apiFetch.mock.calls[ 1 ][ 0 ] ).toMatchObject( { path: '/senroflux/v1/runs/5/changes/undo', data: { nonce: 'n1' } } );
+		expect( apiFetch.mock.calls[ 1 ][ 0 ] ).toMatchObject( { path: '/specflux-site-agent/v1/runs/5/changes/undo', data: { nonce: 'n1' } } );
 		expect( screen.queryByRole( 'dialog' ) ).toBeNull();
 		expect( screen.queryByRole( 'button', { name: 'Undo this run' } ) ).toBeNull();
 	} );
@@ -165,9 +165,9 @@ describe( 'Changes section (SenroGate 0.5 mode)', () => {
 		const { container } = render( <ChangesSection runId={ 5 } section={ evil } /> );
 
 		expect( container.querySelector( 'img' ) ).toBeNull();
-		const name = container.querySelector( '.senroflux-changes-name' );
+		const name = container.querySelector( '.specflux-site-agent-changes-name' );
 		expect( name ).toHaveAttribute( 'dir', 'auto' );
-		expect( name ).toHaveAttribute( 'data-senroflux-content' );
+		expect( name ).toHaveAttribute( 'data-specflux-site-agent-content' );
 	} );
 
 	it( 'styles with logical properties only (RTL-safe)', () => {
@@ -189,23 +189,23 @@ describe( 'Changes section in the report', () => {
 		withheld_roles: [],
 	};
 
-	it( 'fallback: a Revisions link on rows that have one and one "Undo needs SenroGate" line, no undo', () => {
+	it( 'fallback: a Revisions link on rows that have one and one "Undo needs Belayline Agent Governance" line, no undo', () => {
 		const fallback = {
 			mode: 'revisions',
 			revisions: { 12: 'https://example.test/wp-admin/revision.php?revision=99' },
-			note: 'Undo needs SenroGate',
+			note: 'Undo needs Belayline Agent Governance',
 		};
 		render( <ReportView report={ report } steps={ [] } runId={ 5 } changesSection={ fallback } /> );
 
 		const link = screen.getByRole( 'link', { name: 'Revisions of Launch Day' } );
 		expect( link ).toHaveAttribute( 'href', 'https://example.test/wp-admin/revision.php?revision=99' );
 		expect( screen.getAllByRole( 'link', { name: /^Revisions/ } ) ).toHaveLength( 1 );
-		expect( screen.getAllByText( 'Undo needs SenroGate' ) ).toHaveLength( 1 );
+		expect( screen.getAllByText( 'Undo needs Belayline Agent Governance' ) ).toHaveLength( 1 );
 		expect( screen.queryByRole( 'button', { name: /Undo/ } ) ).toBeNull();
 	} );
 
 	it( 'a non-http revisions url is not rendered as a link', () => {
-		const bad = { mode: 'revisions', revisions: { 12: 'javascript:alert(1)' }, note: 'Undo needs SenroGate' };
+		const bad = { mode: 'revisions', revisions: { 12: 'javascript:alert(1)' }, note: 'Undo needs Belayline Agent Governance' };
 		render( <ReportView report={ report } steps={ [] } runId={ 5 } changesSection={ bad } /> );
 
 		expect( screen.queryByRole( 'link', { name: /^Revisions/ } ) ).toBeNull();
@@ -214,7 +214,7 @@ describe( 'Changes section in the report', () => {
 	it( 'no section: nothing about undo appears', () => {
 		render( <ReportView report={ report } steps={ [] } runId={ 5 } /> );
 
-		expect( screen.queryByText( 'Undo needs SenroGate' ) ).toBeNull();
+		expect( screen.queryByText( 'Undo needs Belayline Agent Governance' ) ).toBeNull();
 		expect( screen.queryByRole( 'button', { name: /Undo/ } ) ).toBeNull();
 	} );
 

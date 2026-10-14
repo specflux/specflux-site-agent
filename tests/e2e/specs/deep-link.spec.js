@@ -20,7 +20,7 @@ test.describe( 'S10 a deep-linked run updates after a park resolution without re
 
 		const out = wpCli( [
 			'eval',
-			'wp_set_current_user(1); $p = \\Specflux\\SenroFlux\\Http\\ConsumerPolicy::resolve("senroflux-admin", []); $r = senroflux()->start("senroflux-admin", "Deep-linked run", $p["allow"], $p["budget"]); senroflux()->tick($r["run"]["id"], $r["run"]["step_count"], null); echo $r["run"]["id"];',
+			'wp_set_current_user(1); $p = \\Specflux\\SiteAgent\\Http\\ConsumerPolicy::resolve("specflux-site-agent-admin", []); $r = specflux_site_agent()->start("specflux-site-agent-admin", "Deep-linked run", $p["allow"], $p["budget"]); specflux_site_agent()->tick($r["run"]["id"], $r["run"]["step_count"], null); echo $r["run"]["id"];',
 		] );
 		const runId = out.trim().split( /\s+/ ).pop();
 		expect( runId ).toMatch( /^\d+$/ );
@@ -35,7 +35,7 @@ test.describe( 'S10 a deep-linked run updates after a park resolution without re
 			}
 		} );
 
-		await page.goto( `/wp-admin/admin.php?page=senroflux-runs&run_id=${ runId }` );
+		await page.goto( `/wp-admin/admin.php?page=specflux-site-agent-runs&run_id=${ runId }` );
 		await waitLoaded( page );
 		navigated = false; // Ignore the initial deep-link navigation itself.
 
@@ -43,7 +43,7 @@ test.describe( 'S10 a deep-linked run updates after a park resolution without re
 		await assertNoSeriousA11y( page, 'plan park' );
 		await acceptPlan( page );
 
-		await expect( page.locator( '.senroflux-park-card' ) ).toHaveCount( 0, { timeout: 30000 } );
+		await expect( page.locator( '.specflux-site-agent-park-card' ) ).toHaveCount( 0, { timeout: 30000 } );
 		expect( navigated, 'resolving the park must update the screen in place, without a page reload' ).toBe( false );
 	} );
 } );

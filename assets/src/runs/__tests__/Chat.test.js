@@ -84,7 +84,7 @@ describe( 'the plan card offers pre-approval from the run-detail plan UI (proof 
 	const planStep = {
 		seq: 3,
 		kind: 'plan',
-		message: { goal: 'Schedule three posts', steps: [ { text: 'Draft', verbs: [ 'senroflux/read-content' ], tier: 0 } ], assumptions: [] },
+		message: { goal: 'Schedule three posts', steps: [ { text: 'Draft', verbs: [ 'specflux/read-content' ], tier: 0 } ], assumptions: [] },
 	};
 	const parkedRun = { ...baseRun, status: 'awaiting_plan' };
 
@@ -127,7 +127,7 @@ describe( 'a failed run says why (empty-model-turn shakedown)', () => {
 	} );
 } );
 
-describe( 'a run held by SenroGate (0.4 S5)', () => {
+describe( 'a run held by Belayline Agent Governance (0.4 S5)', () => {
 	const holdStep = {
 		seq: 4,
 		kind: 'approval',
@@ -163,8 +163,8 @@ describe( 'no empty bubble between ledger groups', () => {
 		seq,
 		kind: 'tool_result',
 		status: 'ok',
-		tool_name: 'senroflux__ask-user',
-		message: { verb: 'senroflux/ask-user', response: { answer: 'x' } },
+		tool_name: 'specflux__ask-user',
+		message: { verb: 'specflux/ask-user', response: { answer: 'x' } },
 	} );
 	const model = ( seq, text ) => ( { seq, kind: 'model', status: 'ok', message: { parts: [ { text } ] } } );
 
@@ -175,8 +175,8 @@ describe( 'no empty bubble between ledger groups', () => {
 
 		// Only the goal bubble: the blank model step is transparent, so the two
 		// one-action ledger groups also merge into a single group.
-		expect( container.querySelectorAll( '.senroflux-chat-bubble-bot' ) ).toHaveLength( 0 );
-		expect( container.querySelectorAll( '.senroflux-ledger-group' ) ).toHaveLength( 1 );
+		expect( container.querySelectorAll( '.specflux-site-agent-chat-bubble-bot' ) ).toHaveLength( 0 );
+		expect( container.querySelectorAll( '.specflux-site-agent-ledger-group' ) ).toHaveLength( 1 );
 	} );
 
 	it( 'still renders a bubble for real model prose', () => {
@@ -184,7 +184,7 @@ describe( 'no empty bubble between ledger groups', () => {
 			<Chat run={ { ...baseRun, status: 'awaiting_plan' } } steps={ [ toolResult( 1 ), model( 2, 'Thinking it over.' ), toolResult( 3 ) ] } />
 		);
 
-		expect( container.querySelectorAll( '.senroflux-chat-bubble-bot' ) ).toHaveLength( 1 );
-		expect( container.querySelectorAll( '.senroflux-ledger-group' ) ).toHaveLength( 2 );
+		expect( container.querySelectorAll( '.specflux-site-agent-chat-bubble-bot' ) ).toHaveLength( 1 );
+		expect( container.querySelectorAll( '.specflux-site-agent-ledger-group' ) ).toHaveLength( 2 );
 	} );
 } );

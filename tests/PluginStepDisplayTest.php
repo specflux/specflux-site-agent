@@ -3,30 +3,30 @@
  * 0.4 S1: GET run detail carries a computed `display` on tool_result steps
  * only, and leaves every existing step field alone.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tests;
+namespace Specflux\SiteAgent\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Specflux\SenroFlux\Plugin;
-use Specflux\SenroFlux\Run\StepKind;
+use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Run\StepKind;
 use wpdb;
 
 final class PluginStepDisplayTest extends TestCase {
 
 	protected function setUp(): void {
 		Plugin::reset();
-		$GLOBALS['senroflux_test_current_user_id'] = 1;
-		$GLOBALS['senroflux_test_user_caps']       = array( 'edit_posts' => true );
-		$GLOBALS['wpdb']                           = new wpdb();
+		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
+		$GLOBALS['specflux_site_agent_test_user_caps']       = array( 'edit_posts' => true );
+		$GLOBALS['wpdb']                                     = new wpdb();
 		Plugin::set_dependency_probe( true );
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['wpdb'], $GLOBALS['senroflux_test_user_caps'] );
+		unset( $GLOBALS['wpdb'], $GLOBALS['specflux_site_agent_test_user_caps'] );
 		Plugin::reset();
 	}
 
@@ -34,7 +34,7 @@ final class PluginStepDisplayTest extends TestCase {
 		$method = new \ReflectionMethod( Plugin::class, 'runner' );
 		$method->setAccessible( true );
 		$store  = $method->invoke( Plugin::instance() )->store();
-		$run_id = $store->createRun( 1, 'test-consumer', 'Goal', array( 'senroflux/*' ), array(), null );
+		$run_id = $store->createRun( 1, 'test-consumer', 'Goal', array( 'specflux/*' ), array(), null );
 
 		$store->appendStep(
 			$run_id,
@@ -52,7 +52,7 @@ final class PluginStepDisplayTest extends TestCase {
 				'parts' => array(
 					array(
 						'functionResponse' => array(
-							'name'     => 'wpab__senroflux__create-post',
+							'name'     => 'wpab__specflux__create-post',
 							'response' => array(
 								'id'     => 42,
 								'status' => 'draft',
@@ -62,7 +62,7 @@ final class PluginStepDisplayTest extends TestCase {
 				),
 				'tier'  => 1,
 			),
-			'wpab__senroflux__create-post',
+			'wpab__specflux__create-post',
 			null,
 			'ok'
 		);
@@ -74,13 +74,13 @@ final class PluginStepDisplayTest extends TestCase {
 				'parts' => array(
 					array(
 						'functionResponse' => array(
-							'name'     => 'wpab__senroflux__update-post',
+							'name'     => 'wpab__specflux__update-post',
 							'response' => array( 'error' => 'Post not found.' ),
 						),
 					),
 				),
 			),
-			'wpab__senroflux__update-post',
+			'wpab__specflux__update-post',
 			null,
 			'error'
 		);

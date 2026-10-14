@@ -2,17 +2,17 @@
 /**
  * The run's tool surface: allow-list ∩ registered abilities.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Tools;
+namespace Specflux\SiteAgent\Tools;
 
-use Specflux\SenroFlux\Packs\ToolBreadth;
-use Specflux\SenroFlux\Passthrough\Passthrough;
-use Specflux\SenroFlux\Run\Budget;
-use Specflux\SenroFlux\Run\Run;
+use Specflux\SiteAgent\Packs\ToolBreadth;
+use Specflux\SiteAgent\Passthrough\Passthrough;
+use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Run;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 // Bail on direct access.
@@ -28,20 +28,20 @@ defined( 'ABSPATH' ) || exit;
 final class ToolRegistry {
 
 	/**
-	 * Abilities hidden via meta.senroflux.hidden never become tools.
+	 * Abilities hidden via meta.specflux.hidden never become tools.
 	 */
-	public const HIDDEN_META = 'senroflux';
+	public const HIDDEN_META = 'specflux';
 
 	/**
 	 * The one ability every pack's `generate-image`/`media-generate` verb maps
 	 * onto (0.3 quality fix): a shared ability, registered once, never a
-	 * per-pack id (see {@see \Specflux\SenroFlux\Packs\Content\Media}). Withheld
+	 * per-pack id (see {@see \Specflux\SiteAgent\Packs\Content\Media}). Withheld
 	 * from the tool surface entirely when a run's `images` budget is 0 — a
 	 * declared-but-always-refused tool used to cost live runs a whole
 	 * media-search -> generate-image (refused budget_exhausted) -> re-plan ->
 	 * stock-image-search round trip.
 	 */
-	public const GENERATE_IMAGE_ABILITY = 'senroflux/generate-image';
+	public const GENERATE_IMAGE_ABILITY = 'specflux/generate-image';
 
 	/**
 	 * Build the registry for one run.
@@ -129,7 +129,7 @@ final class ToolRegistry {
 
 	/**
 	 * Resolve a bare tool name (`stock-image-search`, the model dropping the
-	 * `wpab__senroflux__` prefix) to the full function name of the ONE admitted
+	 * `wpab__specflux__` prefix) to the full function name of the ONE admitted
 	 * ability that ends in that segment; null when none or several do.
 	 */
 	public function resolveBareName( string $function_name ): ?string {
@@ -198,8 +198,8 @@ final class ToolRegistry {
 	 * surface — never `names()`, so `admits()` stays ability-only.
 	 *
 	 * COLLISIONS ARE RESOLVED EXPLICITLY, not by array_merge's last-wins. The
-	 * harness tools live in the `senroflux/` namespace, which is also where a
-	 * pack's polyfill abilities live, so an ability named `senroflux/ask-user`
+	 * harness tools live in the `specflux/` namespace, which is also where a
+	 * pack's polyfill abilities live, so an ability named `specflux/ask-user`
 	 * is possible — and a plain merge would have let it silently take over the
 	 * harness tool's declaration while `admits()` still routed calls to the
 	 * ability. Fail closed both ways: the HARNESS declaration wins, and the
@@ -221,7 +221,7 @@ final class ToolRegistry {
 	}
 
 	/**
-	 * Hidden via meta.senroflux.hidden === true?
+	 * Hidden via meta.specflux.hidden === true?
 	 *
 	 * @param object $ability Ability-like object.
 	 */

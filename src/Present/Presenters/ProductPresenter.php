@@ -2,19 +2,19 @@
 /**
  * Product card — name, price, stock, status.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 final class ProductPresenter implements Presenter {
 
@@ -33,13 +33,13 @@ final class ProductPresenter implements Presenter {
 		$fields = array();
 		if ( '' !== $price ) {
 			$fields[] = array(
-				'label' => __( 'Price', 'senroflux' ),
+				'label' => __( 'Price', 'specflux-site-agent' ),
 				'value' => $price,
 			);
 		}
 		if ( '' !== $stock ) {
 			$fields[] = array(
-				'label' => __( 'Stock', 'senroflux' ),
+				'label' => __( 'Stock', 'specflux-site-agent' ),
 				'value' => is_int( $qty ) ? sprintf( '%s (%d)', $stock, $qty ) : $stock,
 			);
 		}
@@ -55,10 +55,10 @@ final class ProductPresenter implements Presenter {
 			// preview pane can show a product like a post or page.
 			'links'  => $id > 0 ? Fmt::links(
 				array(
-					Fmt::link( __( 'Edit', 'senroflux' ), $links->edit( $id ), 'edit' ),
+					Fmt::link( __( 'Edit', 'specflux-site-agent' ), $links->edit( $id ), 'edit' ),
 					$published
-						? Fmt::link( __( 'View', 'senroflux' ), $links->view( $id, true ), 'view' )
-						: Fmt::link( __( 'Preview', 'senroflux' ), $links->view( $id, false ), 'preview' ),
+						? Fmt::link( __( 'View', 'specflux-site-agent' ), $links->view( $id, true ), 'view' )
+						: Fmt::link( __( 'Preview', 'specflux-site-agent' ), $links->view( $id, false ), 'preview' ),
 				)
 			) : array(),
 		);

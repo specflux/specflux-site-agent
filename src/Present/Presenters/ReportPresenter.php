@@ -2,19 +2,19 @@
 /**
  * Store report card — a table of the figures.
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Present\Presenters;
+namespace Specflux\SiteAgent\Present\Presenters;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
-use Specflux\SenroFlux\Present\Fmt;
-use Specflux\SenroFlux\Present\Links;
-use Specflux\SenroFlux\Present\Presenter;
+use Specflux\SiteAgent\Present\Fmt;
+use Specflux\SiteAgent\Present\Links;
+use Specflux\SiteAgent\Present\Presenter;
 
 final class ReportPresenter implements Presenter {
 
@@ -31,14 +31,14 @@ final class ReportPresenter implements Presenter {
 
 		return array(
 			'type'    => 'table',
-			'title'   => trim( sprintf( /* translators: 1: start date, 2: end date. */ __( 'Store report %1$s to %2$s', 'senroflux' ), Fmt::text( $response['from'] ?? '' ), Fmt::text( $response['to'] ?? '' ) ) ),
-			'columns' => array( __( 'Measure', 'senroflux' ), __( 'Value', 'senroflux' ) ),
+			'title'   => trim( sprintf( /* translators: 1: start date, 2: end date. */ __( 'Store report %1$s to %2$s', 'specflux-site-agent' ), Fmt::text( $response['from'] ?? '' ), Fmt::text( $response['to'] ?? '' ) ) ),
+			'columns' => array( __( 'Measure', 'specflux-site-agent' ), __( 'Value', 'specflux-site-agent' ) ),
 			'rows'    => array(
-				array( __( 'Orders', 'senroflux' ), Fmt::text( $response['order_count'] ) ),
-				array( __( 'Gross sales', 'senroflux' ), $money( 'gross_sales' ) ),
-				array( __( 'Net sales', 'senroflux' ), $money( 'net_sales' ) ),
-				array( __( 'Refunds', 'senroflux' ), $money( 'refunds_total' ) ),
-				array( __( 'Low-stock products', 'senroflux' ), (string) $low ),
+				array( __( 'Orders', 'specflux-site-agent' ), Fmt::text( $response['order_count'] ) ),
+				array( __( 'Gross sales', 'specflux-site-agent' ), $money( 'gross_sales' ) ),
+				array( __( 'Net sales', 'specflux-site-agent' ), $money( 'net_sales' ) ),
+				array( __( 'Refunds', 'specflux-site-agent' ), $money( 'refunds_total' ) ),
+				array( __( 'Low-stock products', 'specflux-site-agent' ), (string) $low ),
 			),
 		);
 	}

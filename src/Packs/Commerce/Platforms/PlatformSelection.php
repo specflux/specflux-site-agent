@@ -2,12 +2,12 @@
 /**
  * The outcome of picking a store platform for a run (C4-0).
  *
- * @package SenroFlux
+ * @package Specflux Site Agent
  */
 
 declare ( strict_types = 1 );
 
-namespace Specflux\SenroFlux\Packs\Commerce\Platforms;
+namespace Specflux\SiteAgent\Packs\Commerce\Platforms;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
