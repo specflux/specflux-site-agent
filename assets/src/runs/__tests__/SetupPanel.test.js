@@ -8,7 +8,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import SetupPanel, { firstBlockingStep } from '../components/SetupPanel';
 
 const BIND_URL =
-	'https://example.test/wp-admin/tools.php?page=belayline-packs&agent_governance_bind_token=role%3Aadministrator&agent_governance_bind_pack=specflux-content';
+	'https://example.test/wp-admin/tools.php?page=belayline-packs&belayline_bind_token=role%3Aadministrator&belayline_bind_pack=specflux-content';
 
 const provider = ( over = {} ) => ( {
 	id: 'provider',
@@ -220,8 +220,8 @@ describe( 'SetupPanel step 4: Allow Specflux Site Agent for your role', () => {
 		expect( href ).toBe( BIND_URL );
 		const params = new URL( href ).searchParams;
 		expect( params.get( 'page' ) ).toBe( 'belayline-packs' );
-		expect( params.get( 'agent_governance_bind_token' ) ).toBe( 'role:administrator' );
-		expect( params.get( 'agent_governance_bind_pack' ) ).toBe( 'specflux-content' );
+		expect( params.get( 'belayline_bind_token' ) ).toBe( 'role:administrator' );
+		expect( params.get( 'belayline_bind_pack' ) ).toBe( 'specflux-content' );
 		expect( href ).toContain( 'role%3Aadministrator' );
 		expect( href ).not.toContain( 'role:administrator' );
 	} );

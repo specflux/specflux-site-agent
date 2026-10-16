@@ -423,9 +423,9 @@ final class Onboarding {
 	public static function bindUrl( int $user_id ): string {
 		$query = http_build_query(
 			array(
-				'page'                        => self::PACKS_PAGE,
-				'agent_governance_bind_token' => self::bindToken( $user_id ),
-				'agent_governance_bind_pack'  => ContentBundle::NAME,
+				'page'                 => self::PACKS_PAGE,
+				'belayline_bind_token' => self::bindToken( $user_id ),
+				'belayline_bind_pack'  => ContentBundle::NAME,
 			),
 			'',
 			'&',

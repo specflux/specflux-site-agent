@@ -289,7 +289,7 @@ final class OnboardingTest extends TestCase {
 		$this->assertTrue( $step['blocking'] );
 		$this->assertSame( 'Turn on in Belayline Agent Governance', $step['action']['label'] );
 		$this->assertSame(
-			'https://example.test/wp-admin/tools.php?page=belayline-packs&agent_governance_bind_token=role%3Aadministrator&agent_governance_bind_pack=specflux-content',
+			'https://example.test/wp-admin/tools.php?page=belayline-packs&belayline_bind_token=role%3Aadministrator&belayline_bind_pack=specflux-content',
 			$step['action']['url']
 		);
 		$this->assertNull( $step['ask'] );
@@ -308,7 +308,7 @@ final class OnboardingTest extends TestCase {
 
 	public function test_the_bind_link_uses_the_viewers_own_role_token(): void {
 		$this->assertSame( 'role:editor', Onboarding::bindToken( self::EDITOR ) );
-		$this->assertStringContainsString( 'agent_governance_bind_token=role%3Aeditor&', Onboarding::bindUrl( self::EDITOR ) );
+		$this->assertStringContainsString( 'belayline_bind_token=role%3Aeditor&', Onboarding::bindUrl( self::EDITOR ) );
 
 		$GLOBALS['specflux_site_agent_test_users'][9] = (object) array( 'roles' => array( 'shop_manager', 'administrator' ) );
 		$this->assertSame( 'role:administrator', Onboarding::bindToken( 9 ), 'administrator wins among several roles' );
