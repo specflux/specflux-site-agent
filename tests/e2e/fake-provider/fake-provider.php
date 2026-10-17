@@ -368,6 +368,61 @@ add_action(
 				),
 			)
 		);
+
+		// E1: a REVERSIBLE write on a real post (undo.spec.js / result-cards.spec.js).
+		// Tier 1; updates the post title through wp_update_post(), which is what
+		// Belayline's change capture records and can restore. Answers the
+		// `{id, status, post_type, title_raw}` shape the post result card
+		// (and so the preview pane) is built from.
+		wp_register_ability(
+			'specflux-e2e/retitle-post',
+			array(
+				'label'               => 'Retitle post',
+				'description'         => 'Fixture: changes the title of an existing post. Tier 1; reversible.',
+				'category'            => 'specflux-e2e',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'post_id' => array( 'type' => 'integer' ),
+						'title'   => array( 'type' => 'string' ),
+					),
+					'required'   => array( 'post_id', 'title' ),
+				),
+				'output_schema'       => array( 'type' => 'object' ),
+				'execute_callback'    => static function ( $input = array() ) {
+					$input   = is_array( $input ) ? $input : array();
+					$post_id = (int) ( $input['post_id'] ?? 0 );
+					$title   = (string) ( $input['title'] ?? '' );
+					$post    = $post_id > 0 ? get_post( $post_id ) : null;
+					if ( ! $post instanceof WP_Post ) {
+						return new WP_Error( 'specflux_e2e_no_post', 'No such post.' );
+					}
+					$updated = wp_update_post(
+						array(
+							'ID'         => $post_id,
+							'post_title' => $title,
+						),
+						true
+					);
+					if ( is_wp_error( $updated ) ) {
+						return $updated;
+					}
+					$fresh = get_post( $post_id );
+					return array(
+						'id'        => $post_id,
+						'status'    => (string) $fresh->post_status,
+						'post_type' => (string) $fresh->post_type,
+						'title_raw' => (string) $fresh->post_title,
+					);
+				},
+				'permission_callback' => static fn (): bool => current_user_can( 'edit_posts' ),
+				'meta'                => array(
+					'show_in_rest' => true,
+					'destructive'  => false,
+					'idempotent'   => true,
+				),
+			)
+		);
 	}
 );
 
@@ -398,6 +453,7 @@ if ( '1' !== get_option( 'specflux_site_agent_e2e_no_global_verb_map', '0' ) ) {
 			$map['specflux-e2e/search-things'] = 0;
 			$map['specflux-e2e/create-thing']  = 1;
 			$map['specflux-e2e/publish-thing'] = 2;
+			$map['specflux-e2e/retitle-post']  = 1;
 			return $map;
 		}
 	);
@@ -440,6 +496,7 @@ add_action(
 					'specflux-e2e/search-things',
 					'specflux-e2e/create-thing',
 					'specflux-e2e/publish-thing',
+					'specflux-e2e/retitle-post',
 				);
 			}
 
@@ -460,6 +517,7 @@ add_action(
 					'specflux-e2e/search-things' => 0,
 					'specflux-e2e/create-thing'  => 1,
 					'specflux-e2e/publish-thing' => 2,
+					'specflux-e2e/retitle-post'  => 1,
 				);
 			}
 
@@ -508,6 +566,7 @@ add_filter(
 		$map['specflux-e2e/search-things'] = 0;
 		$map['specflux-e2e/create-thing']  = 1;
 		$map['specflux-e2e/publish-thing'] = 2;
+		$map['specflux-e2e/retitle-post']  = 1;
 		return $map;
 	}
 );
