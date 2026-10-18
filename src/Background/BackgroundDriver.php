@@ -19,6 +19,7 @@ namespace Specflux\SiteAgent\Background;
 
 use Specflux\SiteAgent\Admin\ScreenCapability;
 use Specflux\SiteAgent\Run\Clock;
+use Specflux\SiteAgent\Run\Resume;
 use Specflux\SiteAgent\Run\Run;
 use Specflux\SiteAgent\Run\RunStatus;
 use Specflux\SiteAgent\Run\RunStore;
@@ -72,7 +73,7 @@ final class BackgroundDriver {
 	/**
 	 * @param RunStore                                          $store  Run storage.
 	 * @param Runner                                            $runner The runner (hold detection, failing a run).
-	 * @param callable(int,int,string):(array<string,mixed>|WP_Error) $tick   `(run_id, step_count, driver)` -> the plugin's tick.
+	 * @param callable(int,int,string,array<string,mixed>=):(array<string,mixed>|WP_Error) $tick `(run_id, step_count, driver, resume)` -> the plugin's tick; `resume` is passed only for an off-screen resume.
 	 */
 	public function __construct(
 		private readonly RunStore $store,
@@ -101,15 +102,26 @@ final class BackgroundDriver {
 	 * Scheduler clears it only on completion), so there the pending check is
 	 * done by hand and the insert is not unique.
 	 *
+	 * An off-screen resume rides in the same stored args: `resume` (the exact
+	 * payload the Runs screen would post, `{action: approve|reject}`) and the
+	 * `approval_id` the run must still be parked on when the action fires.
+	 * Both are tiny and validated again in {@see handle()}.
+	 *
+	 * @param array<string,string>|null $resume      Park resolution to deliver, or null for a plain tick.
+	 * @param string|null               $approval_id The approval the resume answers (required with `$resume`).
 	 * @return bool True when an action was queued (false: one was already pending, or no queue).
 	 */
-	public function schedule( int $run_id, int $delay ): bool {
+	public function schedule( int $run_id, int $delay, ?array $resume = null, ?string $approval_id = null ): bool {
 		if ( ! function_exists( 'as_schedule_single_action' ) ) {
 			return false;
 		}
 
 		$when = Clock::now() + max( 0, $delay );
 		$args = array( 'run_id' => $run_id );
+		if ( null !== $resume && null !== $approval_id ) {
+			$args['resume']      = $resume;
+			$args['approval_id'] = $approval_id;
+		}
 
 		if ( $this->in_handler ) {
 			if ( function_exists( 'as_get_scheduled_actions' ) ) {
@@ -163,26 +175,76 @@ final class BackgroundDriver {
 	}
 
 	/**
-	 * The queue callback. Action Scheduler passes the stored args array; under
-	 * PHP 8 its string key arrives as a NAMED argument, so take the variadic.
+	 * Queue the off-screen resume of a run parked on a Belayline approval that
+	 * was just resolved elsewhere (the Pending Agent Actions screen, a phone).
 	 *
-	 * @param mixed ...$args `run_id` (named) or the first positional value.
+	 * Idempotent by construction: the queued action carries the approval id and
+	 * {@see handle()} re-checks the run is STILL parked on it, so a duplicate
+	 * event, or a person who got to the Runs screen first, makes the second
+	 * tick a no-op. With no usable queue nothing happens and the person
+	 * resumes from the Runs screen as before.
+	 *
+	 * @param string $approval_id Belayline approval id.
+	 * @param string $outcome     'approved' or 'rejected'.
+	 * @return bool True when a resume was queued.
+	 */
+	public function resumeOnResolution( string $approval_id, string $outcome ): bool {
+		if ( ! Availability::available() || ! in_array( $outcome, array( 'approved', 'rejected' ), true ) ) {
+			return false;
+		}
+
+		foreach ( $this->store->findAwaitingByApprovalId( $approval_id ) as $run ) {
+			if ( $this->runner->parkedApprovalId( $run ) !== $approval_id ) {
+				continue; // Moved on to a later park.
+			}
+
+			$resume = array( 'action' => 'approved' === $outcome ? 'approve' : 'reject' );
+			if ( true !== Resume::check( $run->status, $resume ) ) {
+				continue;
+			}
+
+			return $this->schedule( $run->id, 0, $resume, $approval_id );
+		}
+
+		return false;
+	}
+
+	/**
+	 * The queue callback. Action Scheduler passes the stored args array; under
+	 * PHP 8 its string keys arrive as NAMED arguments, so take the variadic.
+	 *
+	 * @param mixed ...$args `run_id`, `resume`, `approval_id` (named) or the positional equivalents.
 	 */
 	public function handle( mixed ...$args ): void {
-		$run_id = (int) ( $args['run_id'] ?? $args[0] ?? 0 );
+		$run_id      = (int) ( $args['run_id'] ?? $args[0] ?? 0 );
+		$resume      = $args['resume'] ?? $args[1] ?? null;
+		$approval_id = $args['approval_id'] ?? $args[2] ?? null;
 		if ( $run_id < 1 || ! Availability::available() ) {
 			return;
 		}
 
 		$run = $this->store->getRun( $run_id );
-		if ( null === $run || ! $this->drivable( $run ) ) {
+		if ( null === $run ) {
+			return;
+		}
+
+		if ( null !== $resume ) {
+			// An off-screen resume only ever answers the approval it was queued
+			// for; anything else (already resumed on screen, a later park, a
+			// malformed payload) is a silent skip, never a tick.
+			if ( ! is_array( $resume ) || ! is_string( $approval_id ) || '' === $approval_id
+				|| $this->runner->parkedApprovalId( $run ) !== $approval_id
+				|| true !== Resume::check( $run->status, $resume ) ) {
+				return;
+			}
+		} elseif ( ! $this->drivable( $run ) ) {
 			return;
 		}
 
 		$this->in_handler = true;
 		try {
 			// A screen is (or just was) ticking: stay out of its way.
-			if ( 'screen' === $run->lastDriver && $this->screenTickedRecently( $run ) ) {
+			if ( null === $resume && 'screen' === $run->lastDriver && $this->screenTickedRecently( $run ) ) {
 				$this->schedule( $run_id, $this->grace() );
 
 				return;
@@ -202,8 +264,10 @@ final class BackgroundDriver {
 				return;
 			}
 
-			$result = call_user_func( $this->tick, $run_id, $run->stepCount, Runner::DRIVER_BACKGROUND );
-			$this->afterTick( $run, $result );
+			$result = null === $resume
+				? call_user_func( $this->tick, $run_id, $run->stepCount, Runner::DRIVER_BACKGROUND )
+				: call_user_func( $this->tick, $run_id, $run->stepCount, Runner::DRIVER_BACKGROUND, $resume );
+			$this->afterTick( $run, $result, is_array( $resume ) ? $resume : null, is_string( $approval_id ) ? $approval_id : null );
 		} finally {
 			wp_set_current_user( 0 );
 			$this->in_handler = false;
@@ -314,9 +378,11 @@ final class BackgroundDriver {
 	 * happened inside the tick ({@see handOff()}), so a normal result needs
 	 * nothing here beyond resetting the conflict counter.
 	 *
-	 * @param array<string,mixed>|WP_Error $result Tick result.
+	 * @param array<string,mixed>|WP_Error $result      Tick result.
+	 * @param array<string,string>|null    $resume      The resume this tick carried, so a retry carries it too.
+	 * @param string|null                  $approval_id The approval that resume answers.
 	 */
-	private function afterTick( Run $run, array|WP_Error $result ): void {
+	private function afterTick( Run $run, array|WP_Error $result, ?array $resume = null, ?string $approval_id = null ): void {
 		if ( is_array( $result ) ) {
 			delete_transient( self::CONFLICT_TRANSIENT . $run->id );
 
@@ -326,7 +392,7 @@ final class BackgroundDriver {
 		$code = $result->get_error_code();
 		if ( 'specflux_site_agent_conflict' === $code ) {
 			// Someone else (a screen) holds or advanced the run: look again later.
-			$this->schedule( $run->id, $this->grace() );
+			$this->schedule( $run->id, $this->grace(), $resume, $approval_id );
 
 			return;
 		}
@@ -351,6 +417,6 @@ final class BackgroundDriver {
 		}
 
 		set_transient( self::CONFLICT_TRANSIENT . $run->id, $seen, DAY_IN_SECONDS );
-		$this->schedule( $run->id, self::CONFLICT_DELAY );
+		$this->schedule( $run->id, self::CONFLICT_DELAY, $resume, $approval_id );
 	}
 }

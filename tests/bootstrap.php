@@ -56,6 +56,7 @@ require_once __DIR__ . '/stubs/connector-admin.php';
 require_once __DIR__ . '/stubs/mcp-adapter.php';
 // Action Scheduler queue, version and wp_set_current_user() doubles (0.4 U2).
 require_once __DIR__ . '/stubs/action-scheduler.php';
+require_once __DIR__ . '/stubs/mail.php';
 require_once __DIR__ . '/Connector/ConnectorTestCase.php';
 
 // The global specflux_site_agent() locator (function_exists-guarded, same as main).

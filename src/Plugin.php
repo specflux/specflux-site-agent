@@ -247,7 +247,7 @@ final class Plugin {
 				}
 			},
 			10,
-			1
+			3
 		);
 		add_action(
 			\Specflux\SiteAgent\Background\BackgroundDriver::SWEEP_HOOK,
@@ -257,12 +257,40 @@ final class Plugin {
 				}
 			}
 		);
+		// 0.4 U3: Belayline's approval lifecycle. Feature-detected by nature:
+		// with Belayline absent (or older than 0.5) none of these ever fires.
+		add_action(
+			'belayline_approval_resolved',
+			function ( mixed $approval_id = '', mixed $outcome = '' ): void {
+				if ( $this->ready() ) {
+					$this->approvalEvents()->onResolved( $approval_id, $outcome );
+				}
+			},
+			10,
+			3
+		);
+		add_action(
+			'belayline_approval_expired',
+			function ( mixed $approval_id = '', mixed $verb = '' ): void {
+				if ( $this->ready() ) {
+					$this->approvalEvents()->onExpired( $approval_id, $verb );
+				}
+			},
+			10,
+			2
+		);
+		add_filter( 'belayline_pending_ttl_seconds', array( \Specflux\SiteAgent\Background\ApprovalEvents::class, 'pendingTtl' ), 10, 3 );
+		// 0.4 U3: wall-clock expiry and run retention (daily WP-Cron).
+		\Specflux\SiteAgent\Run\RunLifecycle::register(
+			fn (): ?\Specflux\SiteAgent\Run\RunLifecycle => $this->ready() ? new \Specflux\SiteAgent\Run\RunLifecycle( $this->runner()->store(), $this->runner() ) : null
+		);
 		add_action(
 			'init',
 			static function (): void {
 				// Admin and cron requests only: a front-end hit never pays for the lookup.
 				if ( is_admin() || wp_doing_cron() ) {
 					\Specflux\SiteAgent\Background\BackgroundDriver::ensureSweepScheduled();
+					\Specflux\SiteAgent\Run\RunLifecycle::schedule();
 				}
 			},
 			20
@@ -834,6 +862,8 @@ final class Plugin {
 			// run still running, or hold-parked, queues the next background
 			// tick; polls reach the queue only through here.
 			$this->background()->handOff( $run_id, $result, $driver );
+			// 0.4 U3: and the one place a background tick's new park is mailed.
+			( new \Specflux\SiteAgent\Background\ParkNotifier( $this->runner()->store() ) )->afterTick( $run_id, $result, $driver );
 
 			return $result;
 		} finally {
@@ -1268,13 +1298,18 @@ final class Plugin {
 		);
 	}
 
+	/** Belayline approval events, built lazily over the shared runner and driver. */
+	private function approvalEvents(): \Specflux\SiteAgent\Background\ApprovalEvents {
+		return new \Specflux\SiteAgent\Background\ApprovalEvents( $this->runner()->store(), $this->runner(), $this->background() );
+	}
+
 	/** The background driver, built lazily over the shared runner. */
 	private function background(): \Specflux\SiteAgent\Background\BackgroundDriver {
 		if ( null === $this->background ) {
 			$this->background = new \Specflux\SiteAgent\Background\BackgroundDriver(
 				$this->runner()->store(),
 				$this->runner(),
-				fn ( int $run_id, int $step_count, string $driver ): array|WP_Error => $this->tick( $run_id, $step_count, null, $driver )
+				fn ( int $run_id, int $step_count, string $driver, ?array $resume = null ): array|WP_Error => $this->tick( $run_id, $step_count, $resume, $driver )
 			);
 		}
 
