@@ -37,8 +37,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Implements the S4 tick protocol (as amended by 0.2 S5):
  *
- *  1. Ownership + optimistic lock (echoed step_count) + lock transient,
- *     re-held before every model and tool call ({@see self::LOCK_SECONDS}).
+ *  1. Ownership + optimistic lock (echoed step_count) + an atomic claim on
+ *     the run row (lock_token / lock_until), re-extended before every model
+ *     and tool call ({@see self::LOCK_SECONDS}).
  *  2. Terminal runs return their state unchanged.
  *  3. Parked runs (0.2: awaiting_approval | awaiting_user | awaiting_plan)
  *     resume only with a park resolution whose SHAPE matches the park kind
@@ -74,16 +75,32 @@ final class Runner {
 	 * "Missing the choices key" provider errors landed 2-3 s apart (all within
 	 * 13 s), so the retries never gave the provider time to recover. Capped at
 	 * 30 s; the last entry repeats for any count beyond the schedule's length.
+	 * The wait is NOT slept in-request: the tick result carries it as
+	 * `retry_after` and the driver (browser poller, later a background
+	 * scheduler) waits that long before the next tick.
 	 */
 	private const TRANSIENT_BACKOFF_SCHEDULE_SECONDS = array( 2, 4, 8, 16, 30 );
 
+	/** Default wall-clock length of one tick's slice, in seconds. */
+	public const DEFAULT_TICK_SLICE_SECONDS = 40;
+
+	/** Shortest and longest slice the `specflux_site_agent_tick_slice_seconds` filter may select. */
+	public const MIN_TICK_SLICE_SECONDS = 10;
+	public const MAX_TICK_SLICE_SECONDS = 240;
+
+	/** The driver recorded on a tick when the caller names none. */
+	public const DRIVER_SCREEN = 'screen';
+
 	/**
-	 * The tick lock's lifetime, re-set before every model and tool call. A
+	 * The run claim's lifetime, re-extended before every model and tool call. A
 	 * tick can run for minutes; a lock that lapsed mid-tick let a second tick
 	 * drive the same run (live, 2026-09-28). Long enough for one model call
 	 * plus one tool call, short enough that a crashed tick frees the run.
 	 */
 	private const LOCK_SECONDS = 300;
+
+	/** @var array<int,string> Run id => the claim token this Runner's in-flight tick holds. */
+	private array $claims = array();
 
 	/** Model turns, counted back from the latest, whose call arguments are resent in full. */
 	private const HISTORY_FULL_ARGS_TURNS = 2;
@@ -144,18 +161,6 @@ final class Runner {
 		 */
 		private readonly mixed $read_object_id_resolver = null,
 		/**
-		 * @var callable(int):void|null Transient-error backoff sleeper (S9
-		 * defect fix): called with the whole seconds still owed before the
-		 * next retry, right before the model is called again. Real `sleep()`
-		 * by default — a poller (the Runs screen's `driveTicks()`) re-calls
-		 * `tick()` back-to-back with no client-side delay, so the wait has to
-		 * block INSIDE this tick's HTTP request to actually space the
-		 * provider calls out; a return-early-and-let-the-client-retry seam
-		 * would just burn the client's `MAX_AUTO_TICKS` cap in a tight loop.
-		 * Tests inject a no-op that records the seconds instead of blocking.
-		 */
-		private readonly mixed $transient_backoff_sleeper = null,
-		/**
 		 * @var callable(Run):(string|null)|null S23 (SPEC-SITE-AGENT-PRO.md
 		 * §5 F4): the run's pack's `guidesHash()`, or null for a
 		 * direct-allow run / a pack that reports no separately-hashed
@@ -193,7 +198,7 @@ final class Runner {
 	 *   specflux_site_agent_not_found | specflux_site_agent_forbidden | specflux_site_agent_conflict |
 	 *   specflux_site_agent_ungoverned | resume_mismatch.
 	 */
-	public function tick( int $run_id, int $expected_step_count, ?array $resume = null ): array|WP_Error {
+	public function tick( int $run_id, int $expected_step_count, ?array $resume = null, string $driver = self::DRIVER_SCREEN ): array|WP_Error {
 		$run = $this->store->getRun( $run_id );
 		if ( null === $run ) {
 			return new WP_Error( 'specflux_site_agent_not_found', __( 'Run not found.', 'specflux-site-agent' ), array( 'status' => 404 ) );
@@ -213,11 +218,21 @@ final class Runner {
 			return new WP_Error( 'specflux_site_agent_conflict', __( 'The run advanced since your last request; refresh its state.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
 
-		$lock_key = 'specflux_site_agent_lock_' . $run_id;
-		if ( false !== get_transient( $lock_key ) ) {
+		// Atomic claim on the run row: one UPDATE that only matches an unclaimed
+		// or expired row, so two concurrent ticks can never both own the run.
+		$token = bin2hex( random_bytes( 16 ) );
+		if ( ! $this->store->claimRun( $run_id, $token, self::LOCK_SECONDS ) ) {
 			return new WP_Error( 'specflux_site_agent_conflict', __( 'A tick for this run is already in flight.', 'specflux-site-agent' ), array( 'status' => 409 ) );
 		}
-		set_transient( $lock_key, 1, self::LOCK_SECONDS );
+		$this->claims[ $run_id ] = $token;
+
+		$this->store->updateRun(
+			$run_id,
+			array(
+				'last_driver'  => '' !== $driver ? substr( $driver, 0, 16 ) : self::DRIVER_SCREEN,
+				'last_tick_at' => gmdate( 'Y-m-d H:i:s', Clock::now() ),
+			)
+		);
 
 		// S14: everything this tick does — every audit row, approval and grant
 		// match — runs under ONE correlation id derived from the run row. The
@@ -443,7 +458,7 @@ final class Runner {
 			$run    = $this->refresh( $run );
 			$result = $this->driveLoop( $run, $new_steps );
 
-			return $this->state( $result['run'], $new_steps, $result['ui'] );
+			return $this->state( $result['run'], $new_steps, $result['ui'], $result['retry_after'] ?? 0 );
 		} finally {
 			$this->releaseLock( $run_id ); // Idempotent safety net.
 		}
@@ -577,7 +592,7 @@ final class Runner {
 	 *
 	 * @param Run                       $run       Snapshot.
 	 * @param list<array<string,mixed>> $new_steps Accumulates this tick's steps.
-	 * @return array{run:Run,ui:?array<string,mixed>}
+	 * @return array{run:Run,ui:?array<string,mixed>,retry_after?:int}
 	 */
 	private function driveLoop( Run $run, array &$new_steps ): array {
 		$registry = ToolRegistry::forRun( $run );
@@ -605,6 +620,11 @@ final class Runner {
 			}
 		}
 
+		// Bounded slice: once this much wall-clock has passed, the loop returns
+		// BETWEEN iterations (never mid tool batch) with the run still running,
+		// and the driver ticks again.
+		$slice_deadline = Clock::now() + self::tickSliceSeconds();
+
 		while ( true ) {
 			$this->holdLock( $run->id );
 			if ( $run->stepCount >= $run->budget['max_steps'] ) {
@@ -627,8 +647,6 @@ final class Runner {
 			$pending_calls = $this->unconsumedCalls( $run, $registry );
 
 			if ( null === $pending_calls ) {
-				$this->waitOutTransientBackoff( $run );
-
 				// S6/S7: the harness tools are declared while a question / plan
 				// remains and withdrawn at zero. Recomputed for EVERY model call,
 				// not once per tick: an `invalid_question` refusal inside this
@@ -672,8 +690,9 @@ final class Runner {
 						$this->store->updateRun( $run->id, array( 'status' => RunStatus::Running->value ) );
 
 						return array(
-							'run' => $this->refresh( $run ),
-							'ui'  => null,
+							'run'         => $this->refresh( $run ),
+							'ui'          => null,
+							'retry_after' => $this->transientRetryAfter( $run ),
 						);
 					}
 
@@ -876,6 +895,15 @@ final class Runner {
 				return array(
 					'run' => $this->refresh( $run ),
 					'ui'  => array( 'report' => $report ),
+				);
+			}
+
+			if ( Clock::now() >= $slice_deadline ) {
+				$this->store->updateRun( $run->id, array( 'status' => RunStatus::Running->value ) );
+
+				return array(
+					'run' => $this->refresh( $run ),
+					'ui'  => null,
 				);
 			}
 		}
@@ -1651,68 +1679,16 @@ final class Runner {
 	}
 
 	/**
-	 * `createdAtUtc` of the MOST RECENT transient-error system note (the same
-	 * contiguous tail {@see consecutiveTransientModelErrors()} counts) — null
-	 * when there is none, so a fresh run never waits.
+	 * Seconds the driver should wait before ticking again, for the run's
+	 * current consecutive-error count (1-based, from
+	 * {@see TRANSIENT_BACKOFF_SCHEDULE_SECONDS}; the last entry repeats). The
+	 * tick never sleeps: the wait travels back as `retry_after`.
 	 */
-	private function lastTransientModelErrorAt( Run $run ): ?string {
-		$steps = $this->store->getSteps( $run->id );
-		for ( $i = count( $steps ) - 1; $i >= 0; --$i ) {
-			$step = $steps[ $i ];
-			if ( StepKind::Model === $step->kind ) {
-				break;
-			}
-			if ( StepKind::System === $step->kind && is_array( $step->messageArray )
-				&& 'transient_model_error' === ( $step->messageArray['note'] ?? '' )
-			) {
-				return $step->createdAtUtc;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Space retries out (live evidence 2026-09-29-cards1/scenario-4-1): six
-	 * "Missing the choices key" provider errors landed 2-3 s apart, all
-	 * within 13 s, because every retry called the model again immediately.
-	 * Blocks for whatever's left of {@see TRANSIENT_BACKOFF_SCHEDULE_SECONDS}'
-	 * entry for the run's current consecutive-error count, measured from the
-	 * last error step's own timestamp — not from "now" — so a tick that took
-	 * a while to reach this point (a slow lock, a slow instruction render)
-	 * doesn't wait on top of time that already passed. A no-op when the run
-	 * has no transient errors at its tail.
-	 */
-	private function waitOutTransientBackoff( Run $run ): void {
+	private function transientRetryAfter( Run $run ): int {
 		$consecutive = $this->consecutiveTransientModelErrors( $run );
-		if ( 0 === $consecutive ) {
-			return;
-		}
+		$schedule    = self::TRANSIENT_BACKOFF_SCHEDULE_SECONDS;
 
-		$schedule = self::TRANSIENT_BACKOFF_SCHEDULE_SECONDS;
-		$backoff  = $schedule[ max( 0, min( $consecutive, count( $schedule ) ) - 1 ) ];
-
-		$last_error_at = $this->lastTransientModelErrorAt( $run );
-		$elapsed       = null !== $last_error_at ? $this->elapsedSince( $last_error_at ) : 0;
-		$remaining     = $backoff - $elapsed;
-
-		if ( $remaining > 0 ) {
-			$this->sleepSeconds( $remaining );
-		}
-	}
-
-	/**
-	 * The one seam {@see waitOutTransientBackoff()} sleeps through — real
-	 * `sleep()` unless a test injected {@see $transient_backoff_sleeper}.
-	 */
-	private function sleepSeconds( int $seconds ): void {
-		if ( null !== $this->transient_backoff_sleeper ) {
-			( $this->transient_backoff_sleeper )( $seconds );
-
-			return;
-		}
-
-		sleep( $seconds );
+		return $schedule[ max( 0, min( $consecutive, count( $schedule ) ) - 1 ) ];
 	}
 
 	/**
@@ -1795,16 +1771,30 @@ final class Runner {
 		return (bool) apply_filters( 'specflux_site_agent_can_tick', $user_id === $run->userId, $run );
 	}
 
+	/** Push the claim's lock_until out again, only while this tick's token still owns it. */
 	private function holdLock( int $run_id ): void {
-		if ( function_exists( 'set_transient' ) ) {
-			set_transient( 'specflux_site_agent_lock_' . $run_id, 1, self::LOCK_SECONDS );
+		if ( isset( $this->claims[ $run_id ] ) ) {
+			$this->store->extendClaim( $run_id, $this->claims[ $run_id ], self::LOCK_SECONDS );
 		}
 	}
 
+	/** Release the claim iff this tick's token still owns it. Idempotent. */
 	private function releaseLock( int $run_id ): void {
-		if ( function_exists( 'delete_transient' ) ) {
-			delete_transient( 'specflux_site_agent_lock_' . $run_id );
+		if ( isset( $this->claims[ $run_id ] ) ) {
+			$this->store->releaseClaim( $run_id, $this->claims[ $run_id ] );
+			unset( $this->claims[ $run_id ] );
 		}
+	}
+
+	/**
+	 * The wall-clock slice one tick may drive, in seconds: 40 by default,
+	 * filterable through `specflux_site_agent_tick_slice_seconds`, clamped
+	 * to 10..240 so a bad filter value can neither spin nor starve a tick.
+	 */
+	public static function tickSliceSeconds(): int {
+		$seconds = apply_filters( 'specflux_site_agent_tick_slice_seconds', self::DEFAULT_TICK_SLICE_SECONDS );
+
+		return max( self::MIN_TICK_SLICE_SECONDS, min( self::MAX_TICK_SLICE_SECONDS, is_numeric( $seconds ) ? (int) $seconds : self::DEFAULT_TICK_SLICE_SECONDS ) );
 	}
 
 	private function refresh( Run $run ): Run {
@@ -2584,11 +2574,11 @@ final class Runner {
 	 *
 	 * @param list<array<string,mixed>> $new_steps Steps appended this tick.
 	 * @param array<string,mixed>|null  $ui        UI payload (approval etc.).
-	 * @return array{run:array<string,mixed>,new_steps:list<array<string,mixed>>,ui:array<string,mixed>}
+	 * @return array{run:array<string,mixed>,new_steps:list<array<string,mixed>>,ui:array<string,mixed>,retry_after:int,continue:bool}
 	 */
-	private function state( Run $run, array $new_steps, ?array $ui ): array {
+	private function state( Run $run, array $new_steps, ?array $ui, int $retry_after = 0 ): array {
 		return array(
-			'run'       => array(
+			'run'         => array(
 				'id'           => $run->id,
 				'user_id'      => $run->userId,
 				'consumer'     => $run->consumer,
@@ -2603,8 +2593,15 @@ final class Runner {
 				// 0.3 S20: the source run id when this run is a follow-up.
 				'follow_up_of' => $run->followUpOf,
 			),
-			'new_steps' => $new_steps,
-			'ui'        => $ui ?? array(),
+			'new_steps'   => $new_steps,
+			'ui'          => $ui ?? array(),
+			// Seconds the driver must wait before the next tick (0 = tick again
+			// now). Only a transient model error sets it; nothing sleeps here.
+			'retry_after' => $retry_after,
+			// True while the run is neither parked nor finished: the driver
+			// should tick again (after retry_after). A bounded slice ends this
+			// way, so does a nudge or a transient-error retry.
+			'continue'    => in_array( $run->status, array( RunStatus::Pending, RunStatus::Running ), true ),
 		);
 	}
 

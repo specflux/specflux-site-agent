@@ -131,16 +131,39 @@ final class RunnerTest extends TestCase {
 		$this->assertCount( 0, $this->gateway->calls, 'a stale echo must never reach the model' );
 	}
 
-	public function test_lock_transient_blocks_concurrent_tick_and_is_released(): void {
+	public function test_a_live_run_claim_blocks_a_concurrent_tick_and_is_left_alone(): void {
 		$run_id = $this->createRun();
 
-		set_transient( 'specflux_site_agent_lock_' . $run_id, 1, 30 );
+		$this->assertTrue( $this->store->claimRun( $run_id, 'other-tick', 30 ) );
 		$result = $this->runner->tick( $run_id, 0, null );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'specflux_site_agent_conflict', $result->get_error_code() );
+		$this->assertCount( 0, $this->gateway->calls );
+		$this->assertSame( 'other-tick', $this->store->getRun( $run_id )?->lockToken, 'the losing tick must not release the winner\'s claim' );
+	}
 
-		delete_transient( 'specflux_site_agent_lock_' . $run_id );
-		unset( $GLOBALS['specflux_site_agent_test_transients'][ 'specflux_site_agent_lock_' . $run_id ] );
+	public function test_the_claim_is_released_when_the_tick_ends_and_the_driver_is_recorded(): void {
+		$run_id                  = $this->createRun();
+		$this->gateway->script[] = self::textTurn( 'Done.' );
+		$this->gateway->script[] = self::textTurn( 'Done.' );
+
+		$this->runner->tick( $run_id, 0, null, 'background' );
+
+		$run = $this->store->getRun( $run_id );
+		$this->assertNull( $run?->lockToken );
+		$this->assertNull( $run?->lockUntilUtc );
+		$this->assertSame( 'background', $run?->lastDriver );
+		$this->assertNotNull( $run?->lastTickAtUtc );
+	}
+
+	public function test_the_driver_defaults_to_screen(): void {
+		$run_id                  = $this->createRun();
+		$this->gateway->script[] = self::textTurn( 'Done.' );
+		$this->gateway->script[] = self::textTurn( 'Done.' );
+
+		$this->runner->tick( $run_id, 0, null );
+
+		$this->assertSame( 'screen', $this->store->getRun( $run_id )?->lastDriver );
 	}
 
 	/**
@@ -152,19 +175,20 @@ final class RunnerTest extends TestCase {
 	 */
 	public function test_the_tick_lock_is_held_for_every_model_call(): void {
 		$run_id = $this->createRun();
-		$key    = 'specflux_site_agent_lock_' . $run_id;
 		$seen   = array();
 
 		$this->gateway->script[] = self::callTurn( 'wpab__nope__missing', array() );
 		$this->gateway->script[] = self::textTurn( 'Done.' );
 		$this->gateway->script[] = self::textTurn( 'Done.' );
-		$this->gateway->onCall   = static function ( int $call ) use ( $key, &$seen ): void {
+		$this->gateway->onCall   = function ( int $call ) use ( $run_id, &$seen ): void {
+			$run           = $this->store->getRun( $run_id );
 			$seen[ $call ] = array(
-				'held' => false !== get_transient( $key ),
-				'ttl'  => $GLOBALS['specflux_site_agent_test_transient_ttls'][ $key ] ?? 0,
+				'held' => null !== $run?->lockToken,
+				'ttl'  => null !== $run?->lockUntilUtc ? strtotime( $run->lockUntilUtc . ' UTC' ) - Clock::now() : 0,
 			);
-			// Simulate the transient expiring while the model is thinking.
-			delete_transient( $key );
+			// Simulate the claim lapsing while the model is thinking.
+			$table                                       = \Specflux\SiteAgent\Schema::runsTable( $this->db );
+			$this->db->tables[ $table ][0]['lock_until'] = gmdate( 'Y-m-d H:i:s', Clock::now() - 1 );
 		};
 
 		$result = $this->runner->tick( $run_id, 0, null );
@@ -173,9 +197,9 @@ final class RunnerTest extends TestCase {
 		$this->assertCount( 3, $seen );
 		foreach ( $seen as $call => $lock ) {
 			$this->assertTrue( $lock['held'], "the lock must be held during model call $call" );
-			$this->assertGreaterThanOrEqual( 300, $lock['ttl'], "the lock must outlast one model call and one tool call (call $call)" );
+			$this->assertGreaterThanOrEqual( 299, $lock['ttl'], "the lock must outlast one model call and one tool call (call $call)" );
 		}
-		$this->assertFalse( get_transient( $key ), 'the lock is released when the tick ends' );
+		$this->assertNull( $this->store->getRun( $run_id )?->lockToken, 'the claim is released when the tick ends' );
 	}
 
 	public function test_terminal_run_returns_state_without_model_calls(): void {

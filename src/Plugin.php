@@ -19,6 +19,7 @@ use Specflux\SiteAgent\Model\ModelGatewayInterface;
 use Specflux\SiteAgent\Packs\ObjectLookup;
 use Specflux\SiteAgent\Packs\ToolBreadth;
 use Specflux\SiteAgent\Run\Budget;
+use Specflux\SiteAgent\Run\Clock;
 use Specflux\SiteAgent\Run\GateMode;
 use Specflux\SiteAgent\Run\Report;
 use Specflux\SiteAgent\Run\Runner;
@@ -734,9 +735,13 @@ final class Plugin {
 	 *                                          parameter is REMOVED (breaking,
 	 *                                          S5) — a string here is a type
 	 *                                          error by contract.
-	 * @return array<string,mixed>|WP_Error RunState or a protocol error.
+	 * @param string                   $driver  Who is ticking: 'screen' (the
+	 *                                          browser, default) or 'background';
+	 *                                          recorded on the run row.
+	 * @return array<string,mixed>|WP_Error RunState (plus `retry_after` seconds
+	 *                                      and `continue`) or a protocol error.
 	 */
-	public function tick( int $run_id, int $expected_step_count, ?array $resume = null ): array|WP_Error {
+	public function tick( int $run_id, int $expected_step_count, ?array $resume = null, string $driver = 'screen' ): array|WP_Error {
 		if ( ! $this->ready() ) {
 			return $this->ungoverned_error();
 		}
@@ -788,7 +793,7 @@ final class Plugin {
 		}
 
 		try {
-			$result = $this->runner()->tick( $run_id, $expected_step_count, $resume );
+			$result = $this->runner()->tick( $run_id, $expected_step_count, $resume, $driver );
 
 			return $result;
 		} finally {
@@ -1132,12 +1137,11 @@ final class Plugin {
 					// Runner itself gates ticking on — never a re-derived rule
 					// that could drift from it.
 					'viewer_may_tick' => (bool) apply_filters( 'specflux_site_agent_can_tick', $viewer_id === $run->userId, $run ),
-					// 0.3 S9: a `running` run with no live 30-second tick lock
-					// (the SAME transient Runner::tick() itself sets/releases)
-					// is stalled — its owner closed the tab mid-loop.
+					// 0.3 S9: a `running` run with no live tick claim (the SAME
+					// lock_until Runner::tick() itself sets/releases) is stalled
+					// — its owner closed the tab mid-loop.
 					'stalled'         => RunStatus::Running === $run->status
-						&& function_exists( 'get_transient' )
-						&& false === get_transient( 'specflux_site_agent_lock_' . $run->id ),
+						&& ( null === $run->lockUntilUtc || $run->lockUntilUtc < gmdate( 'Y-m-d H:i:s', Clock::now() ) ),
 				);
 			},
 			array_values( $visible )
@@ -1371,7 +1375,6 @@ final class Plugin {
 
 				return null !== $pack ? $pack->objectIdForRead( $verb, $args ) : null;
 			},
-			null,
 			// S23 (SPEC-SITE-AGENT-PRO.md §5 F4): only the pack knows its own
 			// guidance-hash, if any; a direct-allow run has no pack.
 			static function ( \Specflux\SiteAgent\Run\Run $run ): ?string {

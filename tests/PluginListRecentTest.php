@@ -119,13 +119,22 @@ final class PluginListRecentTest extends TestCase {
 
 	public function test_running_run_with_a_live_lock_is_not_stalled(): void {
 		$run_id = $this->createRun( 1, RunStatus::Running );
-		set_transient( 'specflux_site_agent_lock_' . $run_id, 1, 30 );
+		$this->assertTrue( $this->runner->store()->claimRun( $run_id, 'live-tick', 30 ) );
 
 		$rows = specflux_site_agent()->listRecent();
 
 		$this->assertFalse( $this->row( $rows, $run_id )['stalled'] );
+	}
 
-		delete_transient( 'specflux_site_agent_lock_' . $run_id );
+	public function test_running_run_with_an_expired_claim_is_stalled(): void {
+		$run_id = $this->createRun( 1, RunStatus::Running );
+		$this->assertTrue( $this->runner->store()->claimRun( $run_id, 'dead-tick', 1 ) );
+		\Specflux\SiteAgent\Run\Clock::useFixed( time() + 60 );
+
+		$rows = specflux_site_agent()->listRecent();
+		\Specflux\SiteAgent\Run\Clock::reset();
+
+		$this->assertTrue( $this->row( $rows, $run_id )['stalled'] );
 	}
 
 	public function test_a_parked_run_is_never_reported_stalled(): void {

@@ -49,25 +49,13 @@ final class TransientModelErrorTest extends TestCase {
 
 	private Runner $runner;
 
-	/** @var list<int> Seconds passed to the injected backoff sleeper, in call order. */
-	private array $sleeps = array();
-
 	protected function setUp(): void {
 		$this->db              = new wpdb();
 		$this->db->queryReturn = 1;
 		$this->store           = new WpdbRunStore( $this->db );
 		$this->gateway         = new FakeGateway();
 		$this->bridge          = new RecordingBridge();
-		$this->sleeps          = array();
-		$this->runner          = new Runner(
-			$this->store,
-			new ToolExecutor(),
-			$this->gateway,
-			$this->bridge,
-			transient_backoff_sleeper: function ( int $seconds ): void {
-				$this->sleeps[] = $seconds;
-			}
-		);
+		$this->runner          = new Runner( $this->store, new ToolExecutor(), $this->gateway, $this->bridge );
 
 		$GLOBALS['specflux_site_agent_test_current_user_id'] = 1;
 		$GLOBALS['specflux_site_agent_test_transients']      = array();
@@ -164,38 +152,47 @@ final class TransientModelErrorTest extends TestCase {
 		$this->gateway->script[] = self::textTurn( 'Published three pages.' );
 		$this->gateway->script[] = self::textTurn( 'Published three pages.' );
 
-		$result = null;
+		$result       = null;
+		$retry_afters = array();
+		$started      = hrtime( true );
 		for ( $i = 0; $i < 6; $i++ ) {
-			$result = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
+			$result         = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
+			$retry_afters[] = $result['retry_after'];
 		}
+		$elapsed_seconds = ( hrtime( true ) - $started ) / 1e9;
 
 		$this->assertSame( 'completed', $result['run']['status'] );
 		$this->assertSame(
-			array( 2, 4, 8, 16, 30 ),
-			$this->sleeps,
-			'one backoff wait per retry, spaced 2/4/8/16/30s — the 6th (successful) call still waits out the 5th error\'s backoff first'
+			array( 2, 4, 8, 16, 30, 0 ),
+			$retry_afters,
+			'one retry_after per transient error, on the 2/4/8/16/30s schedule; the successful tick asks for none'
 		);
+		$this->assertLessThan( 2.0, $elapsed_seconds, 'the 60s of backoff is handed to the driver, never slept in-request' );
 	}
 
 	/**
 	 * Live evidence 2026-09-29-cards1/scenario-4-1: six "Missing the choices
 	 * key" provider errors landed 2-3 s apart (all within 13 s) because
-	 * nothing spaced the retries out. Before the fix, {@see Runner::tick()}
-	 * called the gateway again immediately on every retry — this test failed
-	 * with `$this->sleeps` empty (no backoff mechanism existed to record into
-	 * it) rather than the expected `[2, 4, 8, 16, 30]`.
+	 * nothing spaced the retries out. The spacing now rides the tick result as
+	 * `retry_after` (the driver waits) instead of a blocking in-request sleep,
+	 * and the pinned Clock never moves: no wall-clock wait happens in the tick.
 	 */
-	public function test_backoff_is_measured_from_the_last_error_not_from_now(): void {
+	public function test_a_transient_error_returns_retry_after_and_never_sleeps_in_request(): void {
+		\Specflux\SiteAgent\Run\Clock::useFixed( 1_800_000_000 );
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::rateLimitError();
 		$this->gateway->script[] = self::rateLimitError();
 		$this->gateway->script[] = self::textTurn( 'Published three pages.' );
 
-		$this->runner->tick( $run_id, 0, null );
-		$this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
-		$this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
+		$first  = $this->runner->tick( $run_id, 0, null );
+		$second = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
+		$third  = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
 
-		$this->assertSame( array( 2, 4 ), $this->sleeps );
+		$this->assertSame( array( 2, 4, 0 ), array( $first['retry_after'], $second['retry_after'], $third['retry_after'] ) );
+		$this->assertTrue( $first['continue'], 'a retry is still a run to tick again' );
+		$this->assertSame( 'running', $first['run']['status'] );
+		$this->assertSame( 1_800_000_000, \Specflux\SiteAgent\Run\Clock::now() );
+		\Specflux\SiteAgent\Run\Clock::reset();
 	}
 
 	public function test_six_consecutive_transient_errors_fail_as_model_error(): void {
@@ -204,12 +201,16 @@ final class TransientModelErrorTest extends TestCase {
 			$this->gateway->script[] = 0 === $i % 2 ? self::timeoutError() : self::rateLimitError();
 		}
 
-		$run_status = 'pending';
+		$run_status   = 'pending';
+		$retry_afters = array();
 		for ( $i = 0; $i < 6; $i++ ) {
-			$result     = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
-			$run_status = $result['run']['status'];
+			$result         = $this->runner->tick( $run_id, $this->stepCount( $run_id ), null );
+			$run_status     = $result['run']['status'];
+			$retry_afters[] = $result['retry_after'];
 		}
 
+		$this->assertSame( array( 2, 4, 8, 16, 30, 0 ), $retry_afters, 'the 6th error fails the run: no further retry is requested' );
+		$this->assertFalse( $result['continue'] );
 		$this->assertSame( 'failed', $run_status );
 		$this->assertSame( 'model_error', $result['run']['error']['code'] ?? '' );
 		$this->assertCount( 6, $this->gateway->calls, 'no seventh call: the run failed instead of retrying again' );
