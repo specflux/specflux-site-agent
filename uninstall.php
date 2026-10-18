@@ -19,66 +19,34 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) || empty( $GLOBALS['wpdb'] ) ) {
 
 global $wpdb;
 
-// Queued background ticks and the sweep die with the plugin whether or not the
-// site opts into deleting data: their callbacks are gone. (The queue's own
-// functions exist only if another plugin, e.g. WooCommerce, has loaded it.)
-if ( function_exists( 'as_unschedule_all_actions' ) ) {
-	as_unschedule_all_actions( '', array(), 'specflux-site-agent' );
-}
-wp_clear_scheduled_hook( 'specflux_site_agent_background_sweep' );
-wp_clear_scheduled_hook( 'specflux_site_agent_expire_runs' );
-wp_clear_scheduled_hook( 'specflux_site_agent_prune_runs' );
+require_once __DIR__ . '/src/Uninstaller.php';
 
-$specflux_site_agent_delete_data = get_option( 'specflux_site_agent_uninstall_delete_data' );
+// Multisite: every site is its own install (tables, options, crons, queue), so
+// walk them all in batches of 100 and honour each site's own opt-in. The walk is
+// capped so a runaway network cannot hold uninstall forever; WordPress deletes
+// the plugin files regardless, and a site beyond the cap keeps inert leftovers.
+if ( function_exists( 'is_multisite' ) && is_multisite() ) {
+	$specflux_site_agent_offset = 0;
+	$specflux_site_agent_count  = 0;
+	do {
+		$specflux_site_agent_ids = get_sites(
+			array(
+				'number' => 100,
+				'offset' => $specflux_site_agent_offset,
+				'fields' => 'ids',
+			)
+		);
+		foreach ( $specflux_site_agent_ids as $specflux_site_agent_blog_id ) {
+			switch_to_blog( (int) $specflux_site_agent_blog_id );
+			\Specflux\SiteAgent\Uninstaller::uninstallSite( $wpdb );
+			restore_current_blog();
+		}
+		$specflux_site_agent_count   = count( $specflux_site_agent_ids );
+		$specflux_site_agent_offset += 100;
+	} while ( 100 === $specflux_site_agent_count && $specflux_site_agent_offset < 10000 );
 
-if ( true !== $specflux_site_agent_delete_data && '1' !== $specflux_site_agent_delete_data ) {
-	// Keep tables + options; the site did not opt into deletion.
+	// Network (site) options: this plugin stores none.
 	return;
 }
 
-foreach ( array( 'specflux_site_agent_steps', 'specflux_site_agent_runs', 'specflux_site_agent_connector_activity' ) as $specflux_site_agent_table ) {
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- opt-in uninstall dropping a table this plugin owns; nothing to cache.
-	$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . $specflux_site_agent_table ) );
-}
-
-foreach ( array(
-	'specflux_site_agent_db_version',
-	'specflux_site_agent_wallclock_since',
-	'specflux_site_agent_legacy_run_watermark',
-	'specflux_site_agent_site_brief',
-	'specflux_site_agent_setup_brief_skipped',
-	'specflux_site_agent_use_theme_patterns',
-	'specflux_site_agent_uninstall_delete_data',
-	'specflux_site_agent_connector_enabled',
-	'specflux_site_agent_connector_approvals',
-	'specflux_site_agent_oauth_clients',
-	'specflux_site_agent_oauth_grants',
-) as $specflux_site_agent_option ) {
-	delete_option( $specflux_site_agent_option );
-}
-
-foreach ( array( 'specflux_site_agent_activation_notice', 'specflux_site_agent_image_generation_unavailable' ) as $specflux_site_agent_transient ) {
-	delete_transient( $specflux_site_agent_transient );
-}
-
-// Per-user and per-run keys: one pending-brief transient per user id, one legacy
-// tick lock per run id (pre-schema-11 installs; the lock is a run-row claim now). Transients live in the options table unless an external
-// object cache holds them (those expire on their own).
-foreach ( array( 'specflux_site_agent_brief_pending_', 'specflux_site_agent_lock_', 'specflux_site_agent_bgconf_', 'specflux_site_agent_rl_', 'specflux_site_agent_oauth_rl_', 'specflux_site_agent_oauth_cimd_', 'specflux_site_agent_oac_', 'specflux_site_agent_oau_', 'specflux_site_agent_oat_' ) as $specflux_site_agent_prefix ) {
-	foreach ( array( '_transient_', '_transient_timeout_' ) as $specflux_site_agent_kind ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- opt-in uninstall removing this plugin's own prefixed transients; nothing to cache.
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $specflux_site_agent_kind . $specflux_site_agent_prefix ) . '%' ) );
-	}
-}
-
-// Connector approval grants and OAuth clients, grants, refresh tokens and
-// rotated-token tombstones: one option per hash or id.
-foreach ( array( 'specflux_site_agent_cxa_', 'specflux_site_agent_oc_', 'specflux_site_agent_og_', 'specflux_site_agent_or_', 'specflux_site_agent_ox_' ) as $specflux_site_agent_prefix ) {
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- opt-in uninstall removing this plugin's own prefixed options; nothing to cache.
-	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $specflux_site_agent_prefix ) . '%' ) );
-}
-
-delete_metadata( 'user', 0, 'specflux_site_agent_agent_safety_check_dismissed', '', true );
-delete_metadata( 'user', 0, 'specflux_site_agent_connections', '', true );
-delete_post_meta_by_key( '_specflux_site_agent_stock_source_id' );
-delete_post_meta_by_key( '_specflux_site_agent_style_variation' );
+\Specflux\SiteAgent\Uninstaller::uninstallSite( $wpdb );

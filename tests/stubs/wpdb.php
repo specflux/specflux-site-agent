@@ -76,6 +76,10 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			return vsprintf( $quoted, $args );
 		}
 
+		public function esc_like( string $text ): string {
+			return addcslashes( $text, '_%\\' );
+		}
+
 		public function query( string $query ): int|bool {
 			$this->queries[] = $query;
 
