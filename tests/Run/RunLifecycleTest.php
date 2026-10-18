@@ -43,6 +43,8 @@ final class RunLifecycleTest extends TestCase {
 		$GLOBALS['specflux_site_agent_test_cron']    = array();
 		$GLOBALS['specflux_site_agent_test_filters'] = array();
 		Clock::useFixed( self::T0 );
+		// A long-installed site by default: the clock started well before every fixture.
+		$GLOBALS['specflux_site_agent_test_options'][ Schema::WALLCLOCK_OPTION ] = self::T0 - 1000 * 86400;
 	}
 
 	protected function tearDown(): void {
@@ -139,6 +141,37 @@ final class RunLifecycleTest extends TestCase {
 		$this->assertSame( RunStatus::Running, $this->runStatus( $young ) );
 		$this->assertSame( RunStatus::Running, $this->runStatus( $lowered_ok ) );
 		$this->assertSame( RunStatus::Completed, $this->runStatus( $old_done ) );
+	}
+
+	public function test_an_upgrade_does_not_cancel_a_run_that_was_already_old(): void {
+		$GLOBALS['specflux_site_agent_test_options'][ Schema::WALLCLOCK_OPTION ] = self::T0; // Upgraded now.
+		$old = $this->makeRun( 'awaiting_user', 30 );
+
+		$this->assertSame( 0, $this->lifecycle->expireOverdue(), 'first sweep after the upgrade' );
+		$this->assertSame( RunStatus::AwaitingUser, $this->runStatus( $old ) );
+
+		Clock::useFixed( self::T0 + 13 * 86400 );
+		$this->assertSame( 0, $this->lifecycle->expireOverdue() );
+
+		Clock::useFixed( self::T0 + 14 * 86400 + 120 );
+		$this->assertSame( 1, $this->lifecycle->expireOverdue(), '14 days after the upgrade' );
+		$this->assertSame( RunStatus::Cancelled, $this->runStatus( $old ) );
+	}
+
+	public function test_a_fresh_install_follows_created_at_and_records_the_start_once(): void {
+		$GLOBALS['specflux_site_agent_test_options'] = array();
+		\Specflux\SiteAgent\Schema::maybe_upgrade( $this->db );
+		$this->assertSame( self::T0, $GLOBALS['specflux_site_agent_test_options'][ Schema::WALLCLOCK_OPTION ] );
+
+		Clock::useFixed( self::T0 + 20 * 86400 );
+		$run = $this->makeRun( 'running', 0, array( 'created_at' => gmdate( 'Y-m-d H:i:s', self::T0 + 1 ) ) );
+		$this->assertSame( 1, $this->lifecycle->expireOverdue(), 'created after the upgrade: created_at rules' );
+		$this->assertSame( RunStatus::Cancelled, $this->runStatus( $run ) );
+
+		$GLOBALS['specflux_site_agent_test_options'][ Schema::WALLCLOCK_OPTION ]       = 123;
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 0;
+		\Specflux\SiteAgent\Schema::maybe_upgrade( $this->db );
+		$this->assertSame( 123, $GLOBALS['specflux_site_agent_test_options'][ Schema::WALLCLOCK_OPTION ], 'never overwritten' );
 	}
 
 	public function test_an_expired_run_carries_run_expired_and_a_report_line(): void {

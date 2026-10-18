@@ -48,6 +48,9 @@ final class Schema {
 	 */
 	public const DB_VERSION = 11;
 
+	/** Option holding the UTC timestamp schema 11 first ran (never overwritten). */
+	public const WALLCLOCK_OPTION = 'specflux_site_agent_wallclock_since';
+
 	/**
 	 * Runs table name for this site.
 	 */
@@ -116,6 +119,12 @@ final class Schema {
 		self::maybe_record_legacy_watermark( $db, $installed );
 
 		self::install( $db );
+
+		// 0.4 U3: the wall-clock budget counts from the first time this site
+		// ran schema 11, so an upgrade never cancels a run that was already old.
+		if ( function_exists( 'get_option' ) && function_exists( 'update_option' ) && false === get_option( self::WALLCLOCK_OPTION, false ) ) {
+			update_option( self::WALLCLOCK_OPTION, \Specflux\SiteAgent\Run\Clock::now(), false );
+		}
 
 		if ( $installed > 0 ) {
 			self::delete_legacy_lock_transients( $db );

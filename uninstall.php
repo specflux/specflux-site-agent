@@ -43,6 +43,7 @@ foreach ( array( 'specflux_site_agent_steps', 'specflux_site_agent_runs', 'specf
 
 foreach ( array(
 	'specflux_site_agent_db_version',
+	'specflux_site_agent_wallclock_since',
 	'specflux_site_agent_legacy_run_watermark',
 	'specflux_site_agent_site_brief',
 	'specflux_site_agent_setup_brief_skipped',

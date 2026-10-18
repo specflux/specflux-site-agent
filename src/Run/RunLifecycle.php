@@ -21,6 +21,8 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Run;
 
+use Specflux\SiteAgent\Schema;
+
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
 
@@ -60,6 +62,7 @@ final class RunLifecycle {
 	 */
 	public function expireOverdue(): int {
 		$now       = Clock::now();
+		$since     = self::wallclockSince();
 		$prefilter = gmdate( 'Y-m-d H:i:s', $now - DAY_IN_SECONDS );
 		$cancelled = 0;
 		$scanned   = 0;
@@ -75,6 +78,8 @@ final class RunLifecycle {
 				++$scanned;
 				$cursor  = max( $cursor, $run->id );
 				$created = null !== $run->createdAtUtc ? strtotime( $run->createdAtUtc . ' UTC' ) : false;
+				// The clock starts at the later of creation and the first schema-11 run.
+				$created = false === $created ? false : max( $created, $since );
 				$days    = max( 1, (int) ( $run->budget[ Budget::MAX_DAYS ] ?? Budget::defaults()[ Budget::MAX_DAYS ] ) );
 				if ( false === $created || $created >= $now - $days * DAY_IN_SECONDS ) {
 					continue;
@@ -144,6 +149,21 @@ final class RunLifecycle {
 		}
 
 		return $deleted;
+	}
+
+	/**
+	 * When the wall-clock budget started counting for this site: the time
+	 * schema 11 first ran. Recorded once if the upgrade path somehow missed it.
+	 */
+	public static function wallclockSince(): int {
+		$since = get_option( Schema::WALLCLOCK_OPTION, false );
+		if ( is_numeric( $since ) ) {
+			return (int) $since;
+		}
+
+		update_option( Schema::WALLCLOCK_OPTION, Clock::now(), false );
+
+		return Clock::now();
 	}
 
 	/** Hook both jobs. The callbacks build the runner lazily, so a request that never fires them pays nothing. */
