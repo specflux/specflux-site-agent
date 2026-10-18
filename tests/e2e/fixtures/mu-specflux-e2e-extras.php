@@ -1,17 +1,12 @@
 <?php
 /**
  * Plugin Name: Specflux Site Agent E2E Extras
- * Description: E2E/CI-ONLY (stage E1). Three small fixtures the connector,
+ * Description: E2E/CI-ONLY (stage E1). Two small fixtures the connector,
  *              OAuth and passthrough specs need and the fake provider does
  *              not cover:
- *              1. a version probe so the connector treats the mounted
- *                 mcp-adapter as ready (the pinned adapter checkout reports
- *                 0.6.1, below Connector::MIN_ADAPTER_VERSION, although it
- *                 carries the create_server() / transport contract the
- *                 connector uses);
- *              2. an ability from ANOTHER plugin's namespace
+ *              1. an ability from ANOTHER plugin's namespace
  *                 (`e2e-partner/ping`) for the passthrough spec;
- *              3. 41 extra such abilities, only while the option
+ *              2. 41 extra such abilities, only while the option
  *                 `specflux_site_agent_e2e_bulk_passthrough` is '1', to
  *                 exercise the 40-ability cap.
  *
@@ -22,20 +17,6 @@
 declare( strict_types = 1 );
 
 defined( 'ABSPATH' ) || exit;
-
-// 1. The connector's adapter-version gate (see the header note).
-add_action(
-	'plugins_loaded',
-	static function (): void {
-		if (
-			class_exists( 'WP\MCP\Core\McpAdapter' )
-			&& class_exists( \Specflux\SiteAgent\Connector\Connector::class )
-		) {
-			\Specflux\SiteAgent\Connector\Connector::set_adapter_version_probe( '0.7.0' );
-		}
-	},
-	1
-);
 
 // 2 + 3. Abilities from another plugin's namespace.
 add_action(

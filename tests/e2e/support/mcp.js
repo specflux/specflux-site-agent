@@ -7,8 +7,15 @@
  * is the credential the caller passes (an application-password Basic header
  * or an OAuth bearer token) - exactly what an external AI app would have.
  */
-const { request } = require( '@playwright/test' );
 const { BASE_URL } = require( './global-setup' );
+const { wpCli } = require( './wp-cli' );
+
+/** wp-env installs with plain permalinks, which have no /wp-json/ or /.well-known/ routes; set pretty ones. */
+function ensurePrettyPermalinks() {
+	if ( '' === wpCli( [ 'option', 'get', 'permalink_structure' ] ).trim() ) {
+		wpCli( [ 'rewrite', 'structure', '/%postname%/', '--hard' ] );
+	}
+}
 
 /** The connector's endpoint, relative to the site root (pretty permalinks, as wp-env sets up). */
 const MCP_PATH = '/wp-json/specflux-site-agent/mcp';
@@ -19,41 +26,57 @@ function basicAuth( login, password ) {
 }
 
 /**
+ * One HTTP call with Node's fetch. Used instead of Playwright's APIRequestContext
+ * on purpose: inside the test runner that context did not deliver the
+ * `Authorization` header to wp-env (the same header worked from curl and from
+ * fetch), which would make every "refused" assertion pass for the wrong reason.
+ *
+ * @param {string} path
+ * @param {{method?:string,headers?:Object,json?:any,form?:Object}} [opts]
+ * @return {Promise<{status:number,headers:Object<string,string>,text:string,json:any}>}
+ */
+async function httpCall( path, { method = 'GET', headers = {}, json, form } = {} ) {
+	const init = { method, headers: { ...headers }, redirect: 'manual' };
+	if ( undefined !== json ) {
+		init.body = JSON.stringify( json );
+		init.headers[ 'Content-Type' ] = 'application/json';
+	} else if ( form ) {
+		init.body = new URLSearchParams( form ).toString();
+		init.headers[ 'Content-Type' ] = 'application/x-www-form-urlencoded';
+	}
+	const res = await fetch( BASE_URL + path, init );
+	const text = await res.text();
+	let parsed = null;
+	try {
+		parsed = JSON.parse( text );
+	} catch ( e ) {
+		parsed = null;
+	}
+	return { status: res.status, headers: Object.fromEntries( res.headers.entries() ), text, json: parsed };
+}
+
+/**
  * Open an MCP session with one credential.
  *
  * @param {string} authorization Full `Authorization` header value.
  * @return {Promise<{ctx:import('@playwright/test').APIRequestContext,sessionId:string,rpc:Function,listTools:Function,callTool:Function,dispose:Function,initStatus:number}>}
  */
 async function openSession( authorization ) {
-	const ctx = await request.newContext( {
-		baseURL: BASE_URL,
-		extraHTTPHeaders: {
-			Authorization: authorization,
-			Accept: 'application/json, text/event-stream',
-			'Content-Type': 'application/json',
-		},
-	} );
-
 	let sessionId = '';
 	let nextId = 1;
 
 	/** POST one JSON-RPC request; returns the HTTP status, parsed body and headers. */
 	async function rpc( method, params = {}, { session = true } = {} ) {
-		const headers = {};
+		const headers = {
+			Authorization: authorization,
+			Accept: 'application/json, text/event-stream',
+			'Content-Type': 'application/json',
+		};
 		if ( session && sessionId ) {
 			headers[ 'Mcp-Session-Id' ] = sessionId;
 		}
-		const res = await ctx.post( MCP_PATH, {
-			headers,
-			data: { jsonrpc: '2.0', id: nextId++, method, params },
-		} );
-		let body = null;
-		try {
-			body = await res.json();
-		} catch ( e ) {
-			body = null;
-		}
-		return { status: res.status(), body, headers: res.headers() };
+		const res = await httpCall( MCP_PATH, { method: 'POST', headers, json: { jsonrpc: '2.0', id: nextId++, method, params } } );
+		return { status: res.status, body: res.json, headers: res.headers };
 	}
 
 	const init = await rpc(
@@ -91,7 +114,7 @@ async function openSession( authorization ) {
 		return { isError: true === result.isError, text, raw: body, status: res.status };
 	}
 
-	return { ctx, sessionId, rpc, listTools, callTool, dispose: () => ctx.dispose(), initStatus: init.status };
+	return { sessionId, rpc, listTools, callTool, dispose: async () => {}, initStatus: init.status };
 }
 
 /** The tool name for an ability id, found in a tool list (the adapter rewrites `/`, so match on the tail). */
@@ -99,4 +122,4 @@ function toolFor( names, abilityTail ) {
 	return names.find( ( n ) => n.endsWith( abilityTail ) ) || '';
 }
 
-module.exports = { MCP_PATH, basicAuth, openSession, toolFor };
+module.exports = { httpCall, ensurePrettyPermalinks, MCP_PATH, basicAuth, openSession, toolFor };

@@ -1,8 +1,7 @@
 // @ts-check
-const { test, expect, request } = require( '@playwright/test' );
+const { test, expect } = require( '@playwright/test' );
 const { wpCli, dbQuery, setOption, deleteOption } = require( '../support/wp-cli' );
-const { openSession, toolFor, MCP_PATH } = require( '../support/mcp' );
-const { BASE_URL } = require( '../support/global-setup' );
+const { httpCall, openSession, toolFor, MCP_PATH, ensurePrettyPermalinks } = require( '../support/mcp' );
 
 /**
  * Stage E1: the AI-app connector (0.4 K1-K4), end to end over real HTTP.
@@ -57,6 +56,7 @@ async function createConnection( page, scope ) {
 
 test.describe( 'E1 AI-app connector (built-in mode)', () => {
 	test.beforeAll( () => {
+		ensurePrettyPermalinks();
 		// A clean slate: no earlier connections, parked calls, grants or counters.
 		for ( const args of [
 			[ 'user', 'application-password', 'delete', 'admin', '--all' ],
@@ -111,12 +111,8 @@ test.describe( 'E1 AI-app connector (built-in mode)', () => {
 	} );
 
 	test( 'the endpoint refuses a request with no connection', async () => {
-		const anon = await request.newContext( { baseURL: BASE_URL } );
-		const res = await anon.post( MCP_PATH, {
-			data: { jsonrpc: '2.0', id: 1, method: 'initialize', params: {} },
-		} );
-		expect( [ 401, 403 ] ).toContain( res.status() );
-		await anon.dispose();
+		const res = await httpCall( MCP_PATH, { method: 'POST', json: { jsonrpc: '2.0', id: 1, method: 'initialize', params: {} } } );
+		expect( [ 401, 403 ] ).toContain( res.status );
 	} );
 
 	test( 'a read-only connection lists fewer tools than a read-and-write one, and can read', async () => {
