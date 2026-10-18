@@ -138,15 +138,17 @@ final class BackgroundDriver {
 	 *
 	 * @param int                           $run_id Run id.
 	 * @param array<string,mixed>|WP_Error $result The tick's result.
+	 * @param string                       $driver Who drove the tick: after a 'background' tick there is no screen to defer to, so no grace.
 	 */
-	public function handOff( int $run_id, array|WP_Error $result ): void {
+	public function handOff( int $run_id, array|WP_Error $result, string $driver = Runner::DRIVER_SCREEN ): void {
 		if ( ! is_array( $result ) || ! Availability::available() ) {
 			return;
 		}
 
 		$ui = $result['ui'] ?? null;
 		if ( true === ( $result['continue'] ?? false ) ) {
-			$this->schedule( $run_id, max( $this->grace(), (int) ( $result['retry_after'] ?? 0 ) ) );
+			$retry_after = max( 0, (int) ( $result['retry_after'] ?? 0 ) );
+			$this->schedule( $run_id, Runner::DRIVER_BACKGROUND === $driver ? $retry_after : max( $this->grace(), $retry_after ) );
 
 			return;
 		}
@@ -227,7 +229,12 @@ final class BackgroundDriver {
 			if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( self::HOOK, array( 'run_id' => $run->id ), self::GROUP ) ) {
 				continue;
 			}
-			if ( $this->schedule( $run->id, 0 ) ) {
+			// A hold park waits on the clock, not a person; any other park is not ours.
+			$held = RunStatus::AwaitingApproval === $run->status;
+			if ( $held && null === $this->runner->parkedHoldUi( $run ) ) {
+				continue;
+			}
+			if ( $this->schedule( $run->id, $held ? self::HOLD_DELAY : 0 ) ) {
 				++$queued;
 			}
 		}

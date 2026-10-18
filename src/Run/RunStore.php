@@ -151,7 +151,7 @@ interface RunStore {
 	public function listRecentForUser( int $user_id, int $limit = 50 ): array;
 
 	/**
-	 * Active runs nobody is driving: status pending/running, no tick since
+	 * Active runs nobody is driving: status pending/running/awaiting_approval (the last may be a human park; callers filter), no tick since
 	 * `$tick_before` (or never ticked and created before it), and no live claim
 	 * at `$now`. Oldest id first.
 	 *

@@ -833,7 +833,7 @@ final class Plugin {
 			// background driver itself) passes through. A tick that leaves the
 			// run still running, or hold-parked, queues the next background
 			// tick; polls reach the queue only through here.
-			$this->background()->handOff( $run_id, $result );
+			$this->background()->handOff( $run_id, $result, $driver );
 
 			return $result;
 		} finally {

@@ -341,7 +341,7 @@ final class WpdbRunStore implements RunStore {
 		return $this->runsFromRows(
 			$this->db->get_results(
 				$this->db->prepare(
-					"SELECT * FROM %i WHERE status IN ('pending','running') AND ( last_tick_at < %s OR ( last_tick_at IS NULL AND created_at < %s ) ) AND ( lock_until IS NULL OR lock_until < %s ) ORDER BY id ASC LIMIT %d",
+					"SELECT * FROM %i WHERE status IN ('pending','running','awaiting_approval') AND ( last_tick_at < %s OR ( last_tick_at IS NULL AND created_at < %s ) ) AND ( lock_until IS NULL OR lock_until < %s ) ORDER BY id ASC LIMIT %d",
 					$table,
 					$tick_before,
 					$tick_before,

@@ -509,6 +509,65 @@ final class BackgroundDriverTest extends TestCase {
 		$this->assertSame( 3, $queued );
 	}
 
+	public function test_after_a_background_tick_there_is_no_grace(): void {
+		$this->driver->handOff( 1, $this->continuing(), 'background' );
+		$this->driver->handOff( 2, $this->continuing( 8 ), 'background' );
+		$this->driver->handOff( 3, $this->continuing( 8 ), 'screen' );
+		$this->driver->handOff( 4, $this->continuing(), 'screen' );
+
+		$whens = array_map( static fn ( array $row ): int => $row['when'], $this->queued() );
+		$this->assertSame( array( self::T0, self::T0 + 8, self::T0 + 20, self::T0 + 20 ), $whens );
+	}
+
+	private function holdParkedRun( array $fields ): int {
+		$run_id = $this->createRun( 'awaiting_approval', $fields );
+		$this->store->appendStep(
+			$run_id,
+			StepKind::Approval,
+			array(
+				'parked'           => true,
+				'approval_id'      => null,
+				'hold'             => 'rate_limited_minute',
+				'verb'             => 'x',
+				'tool_name'        => 'x',
+				'function_call_id' => 'c1',
+				'args'             => array(),
+				'remaining'        => array(),
+			),
+			'x',
+			null,
+			'parked'
+		);
+
+		return $run_id;
+	}
+
+	public function test_the_sweep_recovers_a_stale_hold_parked_run_at_the_hold_delay_but_not_a_human_park(): void {
+		$old   = self::utc( self::T0 - 600 );
+		$hold  = $this->holdParkedRun( array( 'last_tick_at' => $old ) );
+		$human = $this->createRun( 'awaiting_approval', array( 'last_tick_at' => $old ) );
+		$this->store->appendStep(
+			$human,
+			StepKind::Approval,
+			array(
+				'parked'      => true,
+				'approval_id' => 'a1',
+			),
+			'x',
+			'a1',
+			'parked'
+		);
+		$fresh = $this->holdParkedRun( array( 'last_tick_at' => self::utc( self::T0 - 30 ) ) );
+		unset( $fresh );
+
+		$this->assertSame( 1, $this->driver->sweep() );
+
+		$queued = $this->queued();
+		$this->assertCount( 1, $queued );
+		$this->assertSame( array( 'run_id' => $hold ), $queued[0]['args'] );
+		$this->assertSame( self::T0 + 60, $queued[0]['when'] );
+	}
+
 	public function test_the_sweep_batch_is_limited_to_200_and_the_store_honours_a_limit(): void {
 		for ( $i = 0; $i < 5; ++$i ) {
 			$this->createRun( 'running', array( 'last_tick_at' => self::utc( self::T0 - 600 ) ) );
