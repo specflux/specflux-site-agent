@@ -568,6 +568,53 @@ final class BackgroundDriverTest extends TestCase {
 		$this->assertSame( self::T0 + 60, $queued[0]['when'] );
 	}
 
+	public function test_stale_human_parks_do_not_starve_a_later_hold_run(): void {
+		$old = self::utc( self::T0 - 600 );
+		for ( $i = 0; $i < 250; ++$i ) {
+			$human = $this->createRun( 'awaiting_approval', array( 'last_tick_at' => $old ) );
+			$this->store->appendStep(
+				$human,
+				StepKind::Approval,
+				array(
+					'parked'      => true,
+					'approval_id' => 'a' . $i,
+				),
+				'x',
+				'a' . $i,
+				'parked'
+			);
+		}
+		$hold = $this->holdParkedRun( array( 'last_tick_at' => $old ) );
+
+		$this->assertSame( 1, $this->driver->sweep() );
+		$this->assertSame( array( 'run_id' => $hold ), $this->queued()[0]['args'] );
+	}
+
+	public function test_the_sweep_stops_scanning_at_the_scan_cap(): void {
+		$this->db->queries = array();
+		$old               = self::utc( self::T0 - 600 );
+		$table             = Schema::runsTable( $this->db );
+		for ( $i = 1; $i <= 5200; ++$i ) {
+			$this->db->tables[ $table ][] = array(
+				'id'           => $i,
+				'user_id'      => 1,
+				'consumer'     => 'c',
+				'goal'         => 'g',
+				'status'       => 'awaiting_approval',
+				'allow_json'   => '[]',
+				'budget_json'  => '{}',
+				'step_count'   => 0,
+				'created_at'   => $old,
+				'updated_at'   => $old,
+				'last_tick_at' => $old,
+			);
+		}
+
+		$this->assertSame( 0, $this->driver->sweep() );
+		$pages = count( array_filter( $this->db->queries, static fn ( string $q ): bool => str_contains( $q, 'ORDER BY id ASC' ) ) );
+		$this->assertSame( 25, $pages, '5,000 rows / 200 per page, then it stops' );
+	}
+
 	public function test_the_sweep_batch_is_limited_to_200_and_the_store_honours_a_limit(): void {
 		for ( $i = 0; $i < 5; ++$i ) {
 			$this->createRun( 'running', array( 'last_tick_at' => self::utc( self::T0 - 600 ) ) );

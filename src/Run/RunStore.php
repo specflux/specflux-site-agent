@@ -158,7 +158,8 @@ interface RunStore {
 	 * @param string $tick_before UTC `Y-m-d H:i:s` cutoff.
 	 * @param string $now         UTC `Y-m-d H:i:s` for the claim-expiry test.
 	 * @param int    $limit       Max rows.
+	 * @param int    $after_id    Keyset cursor: only runs with a larger id.
 	 * @return list<Run>
 	 */
-	public function findStalled( string $tick_before, string $now, int $limit ): array;
+	public function findStalled( string $tick_before, string $now, int $limit, int $after_id = 0 ): array;
 }

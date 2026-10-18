@@ -60,6 +60,9 @@ final class BackgroundDriver {
 	/** Most runs one sweep schedules. */
 	public const SWEEP_LIMIT = 200;
 
+	/** Most rows one sweep inspects, scheduled or not. */
+	public const SWEEP_SCAN_CAP = 5000;
+
 	/** Transient prefix of the per-run consecutive-conflict counter. */
 	public const CONFLICT_TRANSIENT = 'specflux_site_agent_bgconf_';
 
@@ -219,23 +222,40 @@ final class BackgroundDriver {
 
 		$now     = Clock::now();
 		$queued  = 0;
-		$stalled = $this->store->findStalled(
-			gmdate( 'Y-m-d H:i:s', $now - self::STALL_SECONDS ),
-			gmdate( 'Y-m-d H:i:s', $now ),
-			self::SWEEP_LIMIT
-		);
+		$scanned = 0;
+		$cursor  = 0;
+		$before  = gmdate( 'Y-m-d H:i:s', $now - self::STALL_SECONDS );
+		$at      = gmdate( 'Y-m-d H:i:s', $now );
 
-		foreach ( $stalled as $run ) {
-			if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( self::HOOK, array( 'run_id' => $run->id ), self::GROUP ) ) {
-				continue;
+		// Keyset pages: stale human parks must not starve the runs behind them,
+		// so the limit counts SCHEDULED runs, bounded by a scan cap.
+		while ( $queued < self::SWEEP_LIMIT && $scanned < self::SWEEP_SCAN_CAP ) {
+			$page = $this->store->findStalled( $before, $at, self::SWEEP_LIMIT, $cursor );
+			if ( array() === $page ) {
+				break;
 			}
-			// A hold park waits on the clock, not a person; any other park is not ours.
-			$held = RunStatus::AwaitingApproval === $run->status;
-			if ( $held && null === $this->runner->parkedHoldUi( $run ) ) {
-				continue;
+
+			foreach ( $page as $run ) {
+				++$scanned;
+				$cursor = max( $cursor, $run->id );
+				if ( $queued >= self::SWEEP_LIMIT ) {
+					break;
+				}
+				if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( self::HOOK, array( 'run_id' => $run->id ), self::GROUP ) ) {
+					continue;
+				}
+				// A hold park waits on the clock, not a person; any other park is not ours.
+				$held = RunStatus::AwaitingApproval === $run->status;
+				if ( $held && null === $this->runner->parkedHoldUi( $run ) ) {
+					continue;
+				}
+				if ( $this->schedule( $run->id, $held ? self::HOLD_DELAY : 0 ) ) {
+					++$queued;
+				}
 			}
-			if ( $this->schedule( $run->id, $held ? self::HOLD_DELAY : 0 ) ) {
-				++$queued;
+
+			if ( count( $page ) < self::SWEEP_LIMIT ) {
+				break;
 			}
 		}
 

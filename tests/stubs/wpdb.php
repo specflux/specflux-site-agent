@@ -233,7 +233,7 @@ if ( ! class_exists( 'wpdb', false ) ) {
 			if (
 				$this->emulateRows
 				&& null !== $query
-				&& preg_match( "/SELECT \\* FROM (\\S+) WHERE status IN \\('pending','running','awaiting_approval'\\) AND \\( last_tick_at < '([^']*)' OR \\( last_tick_at IS NULL AND created_at < '([^']*)' \\) \\) AND \\( lock_until IS NULL OR lock_until < '([^']*)' \\) ORDER BY id ASC LIMIT (\\d+)/", $query, $m )
+				&& preg_match( "/SELECT \\* FROM (\\S+) WHERE status IN \\('pending','running','awaiting_approval'\\) AND \\( last_tick_at < '([^']*)' OR \\( last_tick_at IS NULL AND created_at < '([^']*)' \\) \\) AND \\( lock_until IS NULL OR lock_until < '([^']*)' \\) AND id > (\\d+) ORDER BY id ASC LIMIT (\\d+)/", $query, $m )
 			) {
 				$rows = array_values(
 					array_filter(
@@ -241,11 +241,12 @@ if ( ! class_exists( 'wpdb', false ) ) {
 						static fn ( array $row ): bool => in_array( $row['status'] ?? '', array( 'pending', 'running', 'awaiting_approval' ), true )
 							&& ( isset( $row['last_tick_at'] ) ? (string) $row['last_tick_at'] < $m[2] : (string) ( $row['created_at'] ?? '' ) < $m[3] )
 							&& ( ! isset( $row['lock_until'] ) || (string) $row['lock_until'] < $m[4] )
+							&& (int) $row['id'] > (int) $m[5]
 					)
 				);
 				usort( $rows, static fn ( array $a, array $b ): int => (int) $a['id'] <=> (int) $b['id'] );
 
-				return array_slice( $rows, 0, (int) $m[5] );
+				return array_slice( $rows, 0, (int) $m[6] );
 			}
 
 			// Connector activity (K4): newest first, optionally one connection.
