@@ -185,10 +185,14 @@
 		}
 	}
 
-	function schedulePoll() {
+	// `retryAfter` is the tick result's `retry_after` (seconds): after a
+	// transient model error the server no longer sleeps in-request, it asks
+	// the poller to wait. Absent/0 keeps the normal pollInterval.
+	function schedulePoll( retryAfter ) {
 		stopPolling();
 		if ( isRunning( lastStatus ) ) {
-			timer = window.setTimeout( pollOnce, pollInterval );
+			var wait = parseInt( retryAfter, 10 ) > 0 ? parseInt( retryAfter, 10 ) * 1000 : pollInterval;
+			timer = window.setTimeout( pollOnce, wait );
 		}
 	}
 
@@ -249,7 +253,7 @@
 					}, parkAnnounceMs );
 					return;
 				}
-				schedulePoll();
+				schedulePoll( state.retry_after );
 			} )
 			.catch( function () {
 				stopPolling();

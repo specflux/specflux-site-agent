@@ -279,12 +279,12 @@ export default function App( { config } ) {
 	 * selected. This is the ONLY thing that advances a run; there is no
 	 * server-side polling or cron.
 	 */
-	// A tick round-trip that returns neither parked nor terminal is a stalled
-	// run being resumed (a crashed/closed-tab tick, B0 rule 4 — a NORMAL tick
-	// always drains to a park or a terminal status in one call). This caps the
+	// A tick is a bounded slice (40 s by default), so a long run takes several
+	// round-trips that each return neither parked nor terminal, plus a stalled
+	// run being resumed (a crashed/closed-tab tick, B0 rule 4). This caps the
 	// automatic follow-up chain so a server bug that never parks can't spin
 	// the tab forever calling tick().
-	const MAX_AUTO_TICKS = 25;
+	const MAX_AUTO_TICKS = 60;
 
 	const driveTicks = useCallback(
 		( runId, stepCount, resume ) => {
@@ -304,7 +304,20 @@ export default function App( { config } ) {
 						! isTerminalStatus( status ) &&
 						iteration < MAX_AUTO_TICKS
 					) {
-						return step( id, state.run.step_count, null, iteration + 1 );
+						// A bounded slice or a transient model error returns the run
+						// still running; `retry_after` (seconds) is the server asking
+						// us to wait before the next tick instead of sleeping itself.
+						const wait = Math.max( 0, Number( state.retry_after ) || 0 ) * 1000;
+						const next = () => step( id, state.run.step_count, null, iteration + 1 );
+						if ( 0 === wait ) {
+							return next();
+						}
+						return new Promise( ( resolve ) => setTimeout( resolve, wait ) ).then( () => {
+							if ( ! aliveRef.current || ! sameRunId( id, activeRunRef.current ) ) {
+								return undefined;
+							}
+							return next();
+						} );
 					}
 				} );
 			};
