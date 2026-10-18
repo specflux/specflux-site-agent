@@ -152,6 +152,20 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				return $before - count( $this->tables[ $m[1] ] );
 			}
 
+			// Run retention (0.4 U3): DELETE ... WHERE run_id|id IN (...).
+			if ( preg_match( '/^DELETE FROM (\\S+) WHERE (run_id|id) IN \\(([\\d,]+)\\)$/', $query, $m ) ) {
+				$ids                   = array_map( 'intval', explode( ',', $m[3] ) );
+				$before                = count( $this->tables[ $m[1] ] ?? array() );
+				$this->tables[ $m[1] ] = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => ! in_array( (int) $row[ $m[2] ], $ids, true )
+					)
+				);
+
+				return $before - count( $this->tables[ $m[1] ] );
+			}
+
 			return $this->queryReturn;
 		}
 
@@ -247,6 +261,73 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				usort( $rows, static fn ( array $a, array $b ): int => (int) $a['id'] <=> (int) $b['id'] );
 
 				return array_slice( $rows, 0, (int) $m[6] );
+			}
+
+			// Approval-id lookup (0.4 U3).
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/^SELECT run_id FROM (\\S+) WHERE approval_id = '([^']*)' ORDER BY id DESC LIMIT (\\d+)$/", $query, $m )
+			) {
+				$rows = array_values( array_filter( $this->tables[ $m[1] ] ?? array(), static fn ( array $row ): bool => (string) ( $row['approval_id'] ?? '' ) === $m[2] ) );
+				usort( $rows, static fn ( array $a, array $b ): int => (int) $b['id'] <=> (int) $a['id'] );
+
+				return array_slice( array_map( static fn ( array $row ): array => array( 'run_id' => $row['run_id'] ), $rows ), 0, (int) $m[3] );
+			}
+
+			// Wall-clock expiry candidates (0.4 U3): non-terminal, old, keyset by id.
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/^SELECT \\* FROM (\\S+) WHERE status NOT IN \\('completed','failed','cancelled'\\) AND created_at < '([^']*)' AND id > (\\d+) ORDER BY id ASC LIMIT (\\d+)$/", $query, $m )
+			) {
+				$rows = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => ! in_array( $row['status'] ?? '', array( 'completed', 'failed', 'cancelled' ), true )
+							&& (string) ( $row['created_at'] ?? '' ) < $m[2]
+							&& (int) $row['id'] > (int) $m[3]
+					)
+				);
+				usort( $rows, static fn ( array $a, array $b ): int => (int) $a['id'] <=> (int) $b['id'] );
+
+				return array_slice( $rows, 0, (int) $m[4] );
+			}
+
+			// Retention candidates (0.4 U3): terminal ids finished before a cutoff.
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/^SELECT id FROM (\\S+) WHERE status IN \\('completed','failed','cancelled'\\) AND COALESCE\\(finished_at, updated_at\\) < '([^']*)' AND id > (\\d+) ORDER BY id ASC LIMIT (\\d+)$/", $query, $m )
+			) {
+				$rows = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => in_array( $row['status'] ?? '', array( 'completed', 'failed', 'cancelled' ), true )
+							&& (string) ( $row['finished_at'] ?? $row['updated_at'] ?? '' ) < $m[2]
+							&& (int) $row['id'] > (int) $m[3]
+					)
+				);
+				usort( $rows, static fn ( array $a, array $b ): int => (int) $a['id'] <=> (int) $b['id'] );
+
+				return array_slice( array_map( static fn ( array $row ): array => array( 'id' => $row['id'] ), $rows ), 0, (int) $m[4] );
+			}
+
+			// Sources of live follow-ups (0.4 U3).
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/^SELECT DISTINCT follow_up_of FROM (\\S+) WHERE follow_up_of IN \\(([\\d,]+)\\) AND status NOT IN \\('completed','failed','cancelled'\\)$/", $query, $m )
+			) {
+				$ids = array_map( 'intval', explode( ',', $m[2] ) );
+				$out = array();
+				foreach ( $this->tables[ $m[1] ] ?? array() as $row ) {
+					if ( isset( $row['follow_up_of'] ) && in_array( (int) $row['follow_up_of'], $ids, true ) && ! in_array( $row['status'] ?? '', array( 'completed', 'failed', 'cancelled' ), true ) ) {
+						$out[ (int) $row['follow_up_of'] ] = array( 'follow_up_of' => (int) $row['follow_up_of'] );
+					}
+				}
+
+				return array_values( $out );
 			}
 
 			// Connector activity (K4): newest first, optionally one connection.

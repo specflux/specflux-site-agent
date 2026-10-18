@@ -1377,6 +1377,56 @@ final class Runner {
 	}
 
 	/**
+	 * The approval id a run is CURRENTLY parked on (a human approval park, not
+	 * a hold), or null. The off-screen resume and the expiry sweep use it so a
+	 * stale or duplicate Belayline event can never act on a run that moved on.
+	 */
+	public function parkedApprovalId( Run $run ): ?string {
+		if ( RunStatus::AwaitingApproval !== $run->status ) {
+			return null;
+		}
+
+		$parked = $this->latestParkedContext( $run->id );
+		if ( null === $parked || ( is_string( $parked['hold'] ?? null ) && '' !== $parked['hold'] ) ) {
+			return null;
+		}
+
+		$id = $parked['approval_id'] ?? null;
+
+		return is_string( $id ) && '' !== $id ? $id : null;
+	}
+
+	/**
+	 * End a run from outside a tick (a wall-clock expiry, an approval that
+	 * lapsed): the same terminal bookkeeping a failure does, and the message
+	 * is also the report's one-line note so the owner sees why.
+	 *
+	 * @param RunStatus $status Terminal status: Failed or Cancelled.
+	 * @return array<string,mixed> RunState of the ended run.
+	 */
+	public function endRun( Run $run, RunStatus $status, string $code, string $message ): array {
+		if ( $run->status->isTerminal() ) {
+			return $this->state( $run, array(), null );
+		}
+
+		$this->store->updateRun(
+			$run->id,
+			array(
+				'status'      => $status->value,
+				'error_json'  => array(
+					'code'    => $code,
+					'message' => $message,
+				),
+				'finished_at' => gmdate( 'Y-m-d H:i:s', Clock::now() ),
+			)
+		);
+		$this->revokeGrants( $run->id );
+		$report = $this->report( $run->id, $message );
+
+		return $this->state( $this->refresh( $run ), array(), array( 'report' => $report ) );
+	}
+
+	/**
 	 * The approval card's UI facts for a run currently parked on an approval,
 	 * computed fresh (same {@see approvalUi()} the tick response uses), or
 	 * null when the run is not `awaiting_approval`. The run-detail read

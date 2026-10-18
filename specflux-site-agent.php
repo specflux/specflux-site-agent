@@ -100,6 +100,11 @@ function specflux_site_agent_activate(): void {
 		\Specflux\SiteAgent\Connector\ActivityLog::schedule();
 	}
 
+	// 0.4 U3: the daily wall-clock expiry and run-retention events.
+	if ( class_exists( \Specflux\SiteAgent\Run\RunLifecycle::class ) ) {
+		\Specflux\SiteAgent\Run\RunLifecycle::schedule();
+	}
+
 	// 0.3 S10: no redirect, no site-wide notice — one one-time notice on the
 	// Plugins screen only, rendered by RunsScreen::maybeRenderActivationNotice()
 	// and cleared the first time it shows.
@@ -119,6 +124,9 @@ function specflux_site_agent_deactivate(): void {
 	}
 	if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
 		wp_clear_scheduled_hook( 'specflux_site_agent_oauth_gc' );
+	}
+	if ( class_exists( \Specflux\SiteAgent\Run\RunLifecycle::class ) ) {
+		\Specflux\SiteAgent\Run\RunLifecycle::unschedule();
 	}
 	// 0.4 U2: every queued background tick and the hourly sweep.
 	if ( class_exists( \Specflux\SiteAgent\Background\BackgroundDriver::class ) ) {

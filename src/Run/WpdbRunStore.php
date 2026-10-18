@@ -354,6 +354,107 @@ final class WpdbRunStore implements RunStore {
 		);
 	}
 
+	/** {@inheritDoc} */
+	public function findAwaitingByApprovalId( string $approval_id ): array {
+		if ( '' === $approval_id ) {
+			return array();
+		}
+
+		$rows = $this->db->get_results(
+			$this->db->prepare(
+				'SELECT run_id FROM %i WHERE approval_id = %s ORDER BY id DESC LIMIT 5',
+				Schema::stepsTable( $this->db ),
+				$approval_id
+			),
+			ARRAY_A
+		);
+
+		$runs = array();
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$run_id = (int) ( $row['run_id'] ?? 0 );
+			$run    = $run_id > 0 && ! isset( $runs[ $run_id ] ) ? $this->getRun( $run_id ) : null;
+			if ( null !== $run && RunStatus::AwaitingApproval === $run->status ) {
+				$runs[ $run_id ] = $run;
+			}
+		}
+
+		return array_values( $runs );
+	}
+
+	/** {@inheritDoc} */
+	public function findActiveCreatedBefore( string $created_before, int $limit, int $after_id = 0 ): array {
+		return $this->runsFromRows(
+			$this->db->get_results(
+				$this->db->prepare(
+					"SELECT * FROM %i WHERE status NOT IN ('completed','failed','cancelled') AND created_at < %s AND id > %d ORDER BY id ASC LIMIT %d",
+					Schema::runsTable( $this->db ),
+					$created_before,
+					max( 0, $after_id ),
+					max( 1, $limit )
+				),
+				ARRAY_A
+			)
+		);
+	}
+
+	/** {@inheritDoc} */
+	public function findTerminalIdsFinishedBefore( string $before, int $limit, int $after_id = 0 ): array {
+		$rows = $this->db->get_results(
+			$this->db->prepare(
+				"SELECT id FROM %i WHERE status IN ('completed','failed','cancelled') AND COALESCE(finished_at, updated_at) < %s AND id > %d ORDER BY id ASC LIMIT %d",
+				Schema::runsTable( $this->db ),
+				$before,
+				max( 0, $after_id ),
+				max( 1, $limit )
+			),
+			ARRAY_A
+		);
+
+		return array_values( array_map( static fn ( array $row ): int => (int) $row['id'], is_array( $rows ) ? $rows : array() ) );
+	}
+
+	/** {@inheritDoc} */
+	public function idsFollowedUpByLiveRuns( array $run_ids ): array {
+		$run_ids = self::positiveIds( $run_ids );
+		if ( array() === $run_ids ) {
+			return array();
+		}
+
+		$list = implode( ',', $run_ids );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- ids are cast to positive ints above.
+		$sql = $this->db->prepare( "SELECT DISTINCT follow_up_of FROM %i WHERE follow_up_of IN ({$list}) AND status NOT IN ('completed','failed','cancelled')", Schema::runsTable( $this->db ) ); // @phpstan-ignore argument.type (the id list cannot be a literal)
+		// phpcs:enable
+		$rows = $this->db->get_results( (string) $sql, ARRAY_A );
+
+		return array_values( array_map( static fn ( array $row ): int => (int) $row['follow_up_of'], is_array( $rows ) ? $rows : array() ) );
+	}
+
+	/** {@inheritDoc} */
+	public function deleteRunsWithSteps( array $run_ids ): int {
+		$run_ids = self::positiveIds( $run_ids );
+		if ( array() === $run_ids ) {
+			return 0;
+		}
+
+		$list = implode( ',', $run_ids );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- retention delete on this plugin's own tables; ids are cast to positive ints above.
+		$steps_sql = $this->db->prepare( 'DELETE FROM %i WHERE run_id IN (' . $list . ')', Schema::stepsTable( $this->db ) ); // @phpstan-ignore argument.type (ids are cast to ints; the id list cannot be a literal)
+		$runs_sql  = $this->db->prepare( 'DELETE FROM %i WHERE id IN (' . $list . ')', Schema::runsTable( $this->db ) ); // @phpstan-ignore argument.type (same)
+		$this->db->query( (string) $steps_sql );
+		$deleted = $this->db->query( (string) $runs_sql );
+		// phpcs:enable
+
+		return is_int( $deleted ) ? $deleted : 0;
+	}
+
+	/**
+	 * @param array<mixed> $ids Raw ids.
+	 * @return list<int>
+	 */
+	private static function positiveIds( array $ids ): array {
+		return array_values( array_unique( array_filter( array_map( 'intval', $ids ), static fn ( int $id ): bool => $id > 0 ) ) );
+	}
+
 	/**
 	 * @param mixed $rows get_results() output.
 	 * @return list<Run>

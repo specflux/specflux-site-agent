@@ -26,6 +26,8 @@ if ( function_exists( 'as_unschedule_all_actions' ) ) {
 	as_unschedule_all_actions( '', array(), 'specflux-site-agent' );
 }
 wp_clear_scheduled_hook( 'specflux_site_agent_background_sweep' );
+wp_clear_scheduled_hook( 'specflux_site_agent_expire_runs' );
+wp_clear_scheduled_hook( 'specflux_site_agent_prune_runs' );
 
 $specflux_site_agent_delete_data = get_option( 'specflux_site_agent_uninstall_delete_data' );
 

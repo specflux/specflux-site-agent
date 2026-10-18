@@ -162,4 +162,48 @@ interface RunStore {
 	 * @return list<Run>
 	 */
 	public function findStalled( string $tick_before, string $now, int $limit, int $after_id = 0 ): array;
+
+	/**
+	 * Runs that are parked (`awaiting_approval`) and own a step carrying this
+	 * approval id. The caller still checks the run's CURRENT park is that id.
+	 *
+	 * @return list<Run>
+	 */
+	public function findAwaitingByApprovalId( string $approval_id ): array;
+
+	/**
+	 * Non-terminal runs created before a cutoff, oldest id first, keyset-paged.
+	 *
+	 * @param string $created_before UTC `Y-m-d H:i:s` cutoff.
+	 * @param int    $limit          Page size.
+	 * @param int    $after_id       Keyset cursor: only runs with a larger id.
+	 * @return list<Run>
+	 */
+	public function findActiveCreatedBefore( string $created_before, int $limit, int $after_id = 0 ): array;
+
+	/**
+	 * Ids of terminal runs (completed/failed/cancelled) whose `finished_at`
+	 * (`updated_at` when null) is before the cutoff, oldest id first.
+	 *
+	 * @param string $before   UTC `Y-m-d H:i:s` cutoff.
+	 * @param int    $limit    Page size.
+	 * @param int    $after_id Keyset cursor: only ids larger than this.
+	 * @return list<int>
+	 */
+	public function findTerminalIdsFinishedBefore( string $before, int $limit, int $after_id = 0 ): array;
+
+	/**
+	 * Of these run ids, the ones some NON-terminal run names as `follow_up_of`.
+	 *
+	 * @param list<int> $run_ids Candidate ids.
+	 * @return list<int>
+	 */
+	public function idsFollowedUpByLiveRuns( array $run_ids ): array;
+
+	/**
+	 * Delete runs and all their steps (steps first). Returns how many runs went.
+	 *
+	 * @param list<int> $run_ids Run ids.
+	 */
+	public function deleteRunsWithSteps( array $run_ids ): int;
 }
