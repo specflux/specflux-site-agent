@@ -174,10 +174,10 @@ test.describe( 'S22 pseudo-locale: no unwrapped English on Runs, Settings or the
 		const page = await context.newPage();
 
 		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-settings' );
-		await page.waitForSelector( '.wrap form' );
+		await page.waitForSelector( '.aui form' );
 
-		await assertNoUnwrappedEnglish( page, '.wrap', 'Settings screen' );
-		await assertNoSeriousA11y( page, 'Settings screen (pseudo-locale)', '.wrap' );
+		await assertNoUnwrappedEnglish( page, '.aui', 'Settings screen' );
+		await assertNoSeriousA11y( page, 'Settings screen (pseudo-locale)', '.aui' );
 
 		await context.close();
 	} );

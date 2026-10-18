@@ -165,7 +165,7 @@ final class ParkNotifier {
 			'plan'     => __( 'needs you to approve its plan', 'specflux-site-agent' ),
 			default    => __( 'needs your approval', 'specflux-site-agent' ),
 		};
-		$link = admin_url( 'tools.php?page=' . RunsScreen::SLUG . '&run_id=' . $run->id );
+		$link = RunsScreen::url( array( 'run_id' => $run->id ) );
 
 		return array(
 			'to'      => $to,

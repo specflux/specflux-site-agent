@@ -1,4 +1,5 @@
 import { __, sprintf } from '@wordpress/i18n';
+import { AuiBadge } from './ui';
 
 /**
  * A tier as an integer, or null when there isn't a usable one.
@@ -57,9 +58,12 @@ export default function TierBadge( { gateMode, tier: rawTier } ) {
 	/* translators: %d: tier number. */
 	const title = sprintf( __( 'Tier %d', 'specflux-site-agent' ), tier );
 
+	// Kit tier vocabulary: Tier 0 neutral, Tier 1 warn, Tier 2 ink.
+	const tone = 1 === tier ? 'warn' : tier >= 2 ? 'ink' : undefined;
+
 	return (
-		<span className={ className } data-testid="tier-badge" title={ title }>
+		<AuiBadge tone={ tone } className={ className } data-testid="tier-badge" title={ title }>
 			{ label }
-		</span>
+		</AuiBadge>
 	);
 }

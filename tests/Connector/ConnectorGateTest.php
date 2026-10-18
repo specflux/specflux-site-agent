@@ -53,7 +53,7 @@ final class ConnectorGateTest extends ConnectorTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'specflux_site_agent_connector_awaiting_approval', $result->get_error_code() );
 		$this->assertStringContainsString( ApprovalsScreen::url(), $result->get_error_message() );
-		$this->assertStringContainsString( 'page=specflux-site-agent-runs&tab=ai-apps', $result->get_error_message() );
+		$this->assertStringContainsString( 'page=specflux-site-agent-apps#specflux-site-agent-waiting', $result->get_error_message() );
 		$this->assertStringContainsString( 'repeat exactly the same call', $result->get_error_message() );
 		$pending = Approvals::pending();
 		$this->assertArrayHasKey( $this->hash( array( 'title' => 'Hello' ) ), $pending );

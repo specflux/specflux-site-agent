@@ -1,5 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { AuiBadge, AuiButton, AuiIcon } from './ui';
 
 /**
  * The first blocking step that fails, or null. A blocking step that fails is
@@ -32,7 +33,7 @@ function ActionLink( { action } ) {
 		return null;
 	}
 	return (
-		<a className="button specflux-site-agent-setup-action" href={ action.url }>
+		<a className="aui-btn aui-btn--secondary specflux-site-agent-setup-action" href={ action.url }>
 			{ action.label }
 		</a>
 	);
@@ -47,7 +48,7 @@ function ApprovalOptions( { step } ) {
 				return (
 					<div
 						key={ option.id }
-						className={ 'specflux-site-agent-setup-card' + ( current ? ' specflux-site-agent-setup-card--current' : '' ) }
+						className={ 'aui-card specflux-site-agent-setup-card' + ( current ? ' specflux-site-agent-setup-card--current' : '' ) }
 					>
 						<strong>{ option.title }</strong>
 						<p>{ option.description }</p>
@@ -91,15 +92,15 @@ function SiteBriefForm( { step, onSaveBrief, onSkipBrief } ) {
 	const tooLong = text.length > step.maxChars;
 	return (
 		<div className="specflux-site-agent-setup-brief">
-			<label htmlFor="specflux-site-agent-setup-brief-text">{ __( 'Site brief', 'specflux-site-agent' ) }</label>
+			<label className="aui-label" htmlFor="specflux-site-agent-setup-brief-text">{ __( 'Site brief', 'specflux-site-agent' ) }</label>
 			<textarea
 				id="specflux-site-agent-setup-brief-text"
-				className="specflux-site-agent-setup-brief-input"
+				className="aui-textarea specflux-site-agent-setup-brief-input"
 				rows={ 4 }
 				value={ text }
 				onChange={ ( e ) => setText( e.target.value ) }
 			/>
-			<p className="specflux-site-agent-setup-count">
+			<p className="aui-muted specflux-site-agent-setup-count">
 				{ sprintf(
 					/* translators: 1: characters typed. 2: the limit. */
 					__( '%1$d of %2$d characters', 'specflux-site-agent' ),
@@ -112,18 +113,17 @@ function SiteBriefForm( { step, onSaveBrief, onSkipBrief } ) {
 					{ error }
 				</p>
 			) }
-			<p>
-				<button
-					type="button"
-					className="button button-primary"
+			<p className="specflux-site-agent-setup-buttons">
+				<AuiButton
+					variant="primary"
 					disabled={ busy || tooLong || '' === text.trim() }
 					onClick={ () => run( () => onSaveBrief( text ) ) }
 				>
 					{ __( 'Save brief', 'specflux-site-agent' ) }
-				</button>{ ' ' }
-				<button type="button" className="button" disabled={ busy } onClick={ () => run( onSkipBrief ) }>
+				</AuiButton>
+				<AuiButton disabled={ busy } onClick={ () => run( onSkipBrief ) }>
 					{ __( 'Skip for now', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			</p>
 		</div>
 	);
@@ -138,9 +138,9 @@ function StarterGoals( { step, onPickGoal } ) {
 		<ul className="specflux-site-agent-setup-goals">
 			{ step.goals.map( ( goal ) => (
 				<li key={ goal.text }>
-					<button type="button" className="button-link" onClick={ () => onPickGoal && onPickGoal( goal ) }>
+					<AuiButton variant="ghost" size="sm" onClick={ () => onPickGoal && onPickGoal( goal ) }>
 						{ goal.text }
-					</button>
+					</AuiButton>
 				</li>
 			) ) }
 		</ul>
@@ -177,11 +177,11 @@ export default function SetupPanel( { steps, onSaveBrief, onSkipBrief, onPickGoa
 		const firstRun = steps.find( ( step ) => 'first-run' === step.id );
 		return (
 			<div className="specflux-site-agent-setup-collapsed">
-				<button type="button" className="specflux-site-agent-setup-chip" aria-expanded="false" onClick={ () => setOpen( true ) }>
+				<button type="button" className="aui-badge aui-badge--ok specflux-site-agent-setup-chip" aria-expanded="false" onClick={ () => setOpen( true ) }>
 					{ __( 'Setup ✓', 'specflux-site-agent' ) }
 				</button>
 				{ firstRun && 'pass' !== firstRun.status && firstRun.goals && firstRun.goals.length > 0 && (
-					<div className="specflux-site-agent-setup-firstrun">
+					<div className="aui-card specflux-site-agent-setup-firstrun">
 						<p>{ firstRun.why }</p>
 						<StarterGoals step={ firstRun } onPickGoal={ onPickGoal } />
 					</div>
@@ -191,20 +191,23 @@ export default function SetupPanel( { steps, onSaveBrief, onSkipBrief, onPickGoa
 	}
 
 	return (
-		<section className="specflux-site-agent-setup-steps" aria-label={ __( 'Set up Specflux Site Agent', 'specflux-site-agent' ) }>
+		<section className="aui-card specflux-site-agent-setup-steps" aria-label={ __( 'Set up Specflux Site Agent', 'specflux-site-agent' ) }>
 			<div className="specflux-site-agent-setup-head">
 				<h2>{ __( 'Set up Specflux Site Agent', 'specflux-site-agent' ) }</h2>
 				{ complete && (
-					<button type="button" className="button-link" aria-expanded="true" onClick={ () => setOpen( false ) }>
+					<AuiButton variant="ghost" size="sm" aria-expanded="true" onClick={ () => setOpen( false ) }>
 						{ __( 'Hide setup', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				) }
 			</div>
 			<ol className="specflux-site-agent-setup-list">
 				{ steps.map( ( step ) => (
 					<li key={ step.id } className={ 'specflux-site-agent-setup-step specflux-site-agent-setup-step--' + step.status } data-step={ step.id }>
 						<div className="specflux-site-agent-setup-step-head">
-							<span className="specflux-site-agent-setup-status">{ statusLabel( step.status ) }</span>
+							<AuiBadge tone={ 'pass' === step.status ? 'ok' : 'fail' === step.status ? 'warn' : undefined } className="specflux-site-agent-setup-status">
+								{ 'pass' === step.status && <AuiIcon name="check" /> }
+								{ statusLabel( step.status ) }
+							</AuiBadge>
 							<strong>{ sprintf(
 								/* translators: 1: step number. 2: step title. */
 								__( '%1$d. %2$s', 'specflux-site-agent' ),

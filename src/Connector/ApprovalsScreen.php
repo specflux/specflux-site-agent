@@ -1,6 +1,7 @@
 <?php
 /**
- * The "From AI apps" tab: parked connector calls waiting for an admin (K2).
+ * The "Waiting for approval" section of the AI apps tab: parked connector calls
+ * waiting for an admin (K2).
  *
  * @package Specflux Site Agent
  */
@@ -9,7 +10,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Admin\Ui\Shell;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -22,8 +23,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ApprovalsScreen {
 
-	/** The `tab` query value that selects this view. */
-	public const TAB = 'ai-apps';
+	/** The `tab` query value the Runs screen used for this view before the AI apps tab existed. */
+	public const TAB = Shell::LEGACY_APPROVALS_TAB;
 
 	/** Nonce action prefix; the call's hash is appended. */
 	public const NONCE_PREFIX = 'specflux_site_agent_connector_decision_';
@@ -34,14 +35,9 @@ final class ApprovalsScreen {
 		add_action( 'admin_post_specflux_site_agent_connector_deny', array( self::class, 'handleDeny' ) );
 	}
 
-	/** Where the agent is told to send the site owner. */
+	/** Where the agent is told to send the site owner: the waiting-calls section of the AI apps tab. */
 	public static function url(): string {
-		return admin_url( 'admin.php?page=' . RunsScreen::SLUG . '&tab=' . self::TAB );
-	}
-
-	/** Is the current request asking for this tab? */
-	public static function requested(): bool {
-		return isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) && self::TAB === sanitize_key( wp_unslash( $_GET['tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab selection.
+		return Shell::url( 'apps', array(), Shell::SECTION_WAITING );
 	}
 
 	/** admin-post: approve one parked call. */
@@ -74,50 +70,32 @@ final class ApprovalsScreen {
 		wp_safe_redirect( self::url() );
 	}
 
-	/** The tab links, shown once the connector is on or something is waiting. */
-	public static function renderTabs(): void {
-		if ( ! Connector::stored() && array() === Approvals::pending() ) {
-			return;
-		}
-
-		$count = count( Approvals::pending() );
-		echo '<nav class="nav-tab-wrapper">';
-		printf(
-			'<a href="%s" class="nav-tab%s">%s</a>',
-			esc_url( admin_url( 'admin.php?page=' . RunsScreen::SLUG ) ),
-			self::requested() ? '' : ' nav-tab-active',
-			esc_html__( 'Runs', 'specflux-site-agent' )
-		);
-		printf(
-			'<a href="%s" class="nav-tab%s">%s</a>',
-			esc_url( self::url() ),
-			self::requested() ? ' nav-tab-active' : '',
-			esc_html( $count > 0 ? sprintf( /* translators: %d: calls waiting. */ __( 'From AI apps (%d)', 'specflux-site-agent' ), $count ) : __( 'From AI apps', 'specflux-site-agent' ) )
-		);
-		echo '</nav>';
-	}
-
-	/** Render the tab body (the caller prints the page chrome). */
+	/** Render the section: a card, with a table of the waiting calls. */
 	public static function render(): void {
-		echo '<h2>' . esc_html__( 'From AI apps', 'specflux-site-agent' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'Changes that AI apps asked for and are waiting on you. Approve one and the app can repeat the same request within 15 minutes; it runs once.', 'specflux-site-agent' ) . '</p>';
-
 		$pending = Approvals::pending();
+
+		echo '<section class="aui-card" id="' . esc_attr( Shell::SECTION_WAITING ) . '"><div class="aui-card-h"><div><h2 class="aui-card-t">' . esc_html__( 'Waiting for approval', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="aui-card-d">' . esc_html__( 'Changes that AI apps asked for and are waiting on you. Approve one and the app can repeat the same request within 15 minutes; it runs once.', 'specflux-site-agent' ) . '</p></div>';
+		if ( array() !== $pending ) {
+			echo '<span class="aui-count aui-count--warn aui-end">' . esc_html( (string) count( $pending ) ) . '</span>';
+		}
+		echo '</div>';
+
 		if ( array() === $pending ) {
-			echo '<p>' . esc_html__( 'Nothing is waiting.', 'specflux-site-agent' ) . '</p>';
+			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'Nothing is waiting.', 'specflux-site-agent' ) . '</p></div></section>';
 
 			return;
 		}
 
-		echo '<table class="widefat striped"><thead><tr>';
-		foreach ( array( __( 'Asked', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Arguments', 'specflux-site-agent' ), '' ) as $heading ) {
-			echo '<th>' . esc_html( $heading ) . '</th>';
+		echo '<div class="aui-table-wrap"><table class="aui-table"><thead><tr>';
+		foreach ( array( __( 'Asked', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Arguments', 'specflux-site-agent' ) ) as $heading ) {
+			echo '<th scope="col">' . esc_html( $heading ) . '</th>';
 		}
-		echo '</tr></thead><tbody>';
+		echo '<th scope="col"><span class="aui-sr">' . esc_html__( 'Actions', 'specflux-site-agent' ) . '</span></th></tr></thead><tbody>';
 		foreach ( $pending as $hash => $entry ) {
 			self::renderRow( $hash, $entry );
 		}
-		echo '</tbody></table>';
+		echo '</tbody></table></div></section>';
 	}
 
 	/**
@@ -132,24 +110,24 @@ final class ApprovalsScreen {
 		$args = (string) wp_json_encode( $entry['args'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
 		echo '<tr>';
-		echo '<td>' . esc_html( (string) wp_date( 'Y-m-d H:i', $entry['created'] ) ) . '</td>';
+		echo '<td class="aui-mono">' . esc_html( (string) wp_date( 'Y-m-d H:i', $entry['created'] ) ) . '</td>';
 		echo '<td>' . esc_html( $name ) . '</td>';
-		echo '<td><code>' . esc_html( substr( $entry['uuid'], 0, 8 ) ) . '</code></td>';
-		echo '<td><code>' . esc_html( $entry['ability'] ) . '</code></td>';
-		echo '<td><pre style="margin:0;white-space:pre-wrap">' . esc_html( $args ) . '</pre></td>';
-		echo '<td>';
+		echo '<td class="aui-mono">' . esc_html( substr( $entry['uuid'], 0, 8 ) ) . '</td>';
+		echo '<td class="aui-mono">' . esc_html( $entry['ability'] ) . '</td>';
+		echo '<td><pre class="specflux-site-agent-pre">' . esc_html( $args ) . '</pre></td>';
+		echo '<td><div class="aui-actions">';
 		self::renderButton( 'specflux_site_agent_connector_approve', __( 'Approve', 'specflux-site-agent' ), $hash, true );
 		self::renderButton( 'specflux_site_agent_connector_deny', __( 'Deny', 'specflux-site-agent' ), $hash, false );
-		echo '</td></tr>';
+		echo '</div></td></tr>';
 	}
 
 	/** One admin-post button. */
 	private static function renderButton( string $action, string $label, string $hash, bool $primary ): void {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-right:4px">';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="' . esc_attr( $action ) . '">';
 		echo '<input type="hidden" name="hash" value="' . esc_attr( $hash ) . '">';
 		wp_nonce_field( self::NONCE_PREFIX . $hash );
-		printf( '<button type="submit" class="button%s">%s</button>', $primary ? ' button-primary' : '', esc_html( $label ) );
+		printf( '<button type="submit" class="aui-btn aui-btn--sm %s">%s</button>', $primary ? 'aui-btn--primary' : 'aui-btn--secondary', esc_html( $label ) );
 		echo '</form>';
 	}
 }

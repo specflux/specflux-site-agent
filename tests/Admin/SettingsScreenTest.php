@@ -56,17 +56,20 @@ final class SettingsScreenTest extends TestCase {
 		$this->assertTrue( call_user_func( $registered['sanitize_callback'], '1' ) );
 	}
 
-	public function test_the_screen_shows_one_checkbox_ticked_by_default(): void {
+	public function test_the_screen_shows_one_theme_patterns_switch_on_by_default(): void {
 		$html = $this->html( $this->screen() );
 
 		$this->assertSame( 1, substr_count( $html, 'name="specflux_site_agent_use_theme_patterns"' ) );
-		$this->assertMatchesRegularExpression( '/name="specflux_site_agent_use_theme_patterns"[^>]* checked=/', $html );
+		$this->assertMatchesRegularExpression( '/name="specflux_site_agent_use_theme_patterns" value="1"/', $html );
+		$this->assertMatchesRegularExpression( '/aria-pressed="true" aria-label="Use my theme[^"]*s patterns"/', $html );
 	}
 
-	public function test_the_checkbox_is_unticked_once_the_switch_is_off(): void {
+	public function test_the_switch_is_off_once_the_option_is_off(): void {
 		update_option( ThemePatterns::OPTION, false );
 
-		$this->assertDoesNotMatchRegularExpression( '/name="specflux_site_agent_use_theme_patterns"[^>]* checked=/', $this->html( $this->screen() ) );
+		$html = $this->html( $this->screen() );
+		$this->assertMatchesRegularExpression( '/name="specflux_site_agent_use_theme_patterns" value="0"/', $html );
+		$this->assertMatchesRegularExpression( '/aria-pressed="false" aria-label="Use my theme[^"]*s patterns"/', $html );
 	}
 
 	public function test_saving_with_the_box_unticked_turns_the_switch_off(): void {

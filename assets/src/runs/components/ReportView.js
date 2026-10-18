@@ -1,6 +1,7 @@
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { reportCounts, storeReportFromSteps } from '../utils';
 import ChangesSection from './ChangesSection';
+import { AuiBadge } from './ui';
 
 /** Only http(s) links render as links: the edit url is server-built, but a stored report is read back as untrusted. */
 function safeUrl( url ) {
@@ -128,9 +129,9 @@ function ChangeRow( { change, revisionUrl } ) {
 					{ __( 'Revisions', 'specflux-site-agent' ) }
 				</a>
 			) }
-			<span className="specflux-site-agent-report-state">
+			<AuiBadge tone={ verified ? 'ok' : 'warn' } className="specflux-site-agent-report-state">
 				{ verified ? __( 'Verified', 'specflux-site-agent' ) : __( 'Not checked after the change', 'specflux-site-agent' ) }
-			</span>
+			</AuiBadge>
 		</li>
 	);
 }
@@ -172,7 +173,7 @@ function StoreReport( { data } ) {
 	return (
 		<>
 			<h3 className="specflux-site-agent-report-subheading">{ __( 'Store report', 'specflux-site-agent' ) }</h3>
-			<dl className="specflux-site-agent-report-store">
+			<dl className="aui-kv specflux-site-agent-report-store">
 				{ rows.map( ( [ label, value ] ) => (
 					<div key={ label } className="specflux-site-agent-report-store-row">
 						<dt>{ label }</dt>
@@ -210,7 +211,7 @@ export default function ReportView( { report, steps, runId, changesSection } ) {
 	const storeReport = storeReportFromSteps( steps );
 
 	return (
-		<section className="specflux-site-agent-report" aria-labelledby="specflux-site-agent-report-heading">
+		<section className="aui-card specflux-site-agent-report" aria-labelledby="specflux-site-agent-report-heading">
 			<h2 id="specflux-site-agent-report-heading" className="specflux-site-agent-report-heading">
 				{ __( 'Report', 'specflux-site-agent' ) }
 			</h2>
@@ -227,7 +228,7 @@ export default function ReportView( { report, steps, runId, changesSection } ) {
 				</ul>
 			) }
 			<ChangesSection runId={ runId } section={ changesSection } />
-			<ul className="specflux-site-agent-report-meta">
+			<ul className="aui-muted specflux-site-agent-report-meta">
 				<li className="specflux-site-agent-report-gate">
 					{ __( 'Gate mode:', 'specflux-site-agent' ) } { gateModeLabel( report.gate_mode ) }
 				</li>

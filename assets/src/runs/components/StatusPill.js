@@ -1,5 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { isParkedStatus, isTerminalStatus } from '../utils';
+import { AuiBadge } from './ui';
 
 const LABELS = {
 	pending: __( 'Pending', 'specflux-site-agent' ),
@@ -12,6 +13,15 @@ const LABELS = {
 	cancelled: __( 'Cancelled', 'specflux-site-agent' ),
 };
 
+const TONES = {
+	awaiting_approval: 'warn',
+	awaiting_user: 'warn',
+	awaiting_plan: 'warn',
+	running: 'info',
+	completed: 'ok',
+	failed: 'bad',
+};
+
 /** The run-list/header status pill (S10 park kinds are named in the row). */
 export default function StatusPill( { status, stalled } ) {
 	const modifier = isParkedStatus( status )
@@ -21,8 +31,8 @@ export default function StatusPill( { status, stalled } ) {
 		: 'running';
 
 	return (
-		<span className={ `specflux-site-agent-pill specflux-site-agent-pill-${ modifier }` }>
+		<AuiBadge tone={ stalled ? 'warn' : TONES[ status ] } className={ `specflux-site-agent-pill specflux-site-agent-pill-${ modifier }` }>
 			{ stalled ? __( 'Paused while closed — open to continue', 'specflux-site-agent' ) : LABELS[ status ] || status }
-		</span>
+		</AuiBadge>
 	);
 }

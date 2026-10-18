@@ -436,7 +436,7 @@ final class UnattendedResumeTest extends TestCase {
 		$this->assertStringContainsString( 'Acme Shop', $mail[0]['subject'] );
 		$this->assertStringContainsString( 'has a question for you', $mail[0]['subject'] );
 		$this->assertStringContainsString( 'Goal: Rewrite the about page', $mail[0]['body'] );
-		$this->assertStringContainsString( 'tools.php?page=' . \Specflux\SiteAgent\Admin\RunsScreen::SLUG . '&run_id=' . $run_id, $mail[0]['body'] );
+		$this->assertStringContainsString( 'admin.php?page=' . \Specflux\SiteAgent\Admin\RunsScreen::SLUG . '&run_id=' . $run_id, $mail[0]['body'] );
 		$this->assertNotNull( $this->store->getRun( $run_id )->notifiedParkStep );
 	}
 

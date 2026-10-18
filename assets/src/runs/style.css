@@ -1,1440 +1,595 @@
-/* Specflux Site Agent Runs screen (S10/S17): messenger layout, ledger rows, pinned
- * plan, park cards. Every rule uses LOGICAL properties (inline-start/
- * inline-end/block-start/block-end) rather than left/right/top/bottom, per
- * the stage-17a brief, and every animation is guarded behind
- * `prefers-reduced-motion`. */
+/* Specflux Site Agent Runs screen. Layout and the few component rules the
+ * admin UI kit does not cover. Colours, borders, radii and spacing come from
+ * the kit's `--aui-*` variables (PHP loads the kit; every rule here sits under
+ * `.aui`, so it also out-ranks the kit's `.aui p/ul/dl` resets). Logical
+ * properties only, and every animation is guarded by `prefers-reduced-motion`. */
 
-.specflux-site-agent-runs-app {
+/* Layout: run list | chat | optional preview. */
+.aui .specflux-site-agent-runs-app {
 	display: grid;
-	grid-template-columns: 260px 1fr;
-	min-height: 60vh;
+	grid-template-columns: 280px minmax(0, 1fr);
+	gap: var(--aui-s4);
+	block-size: calc(100vh - 240px);
+	min-block-size: 520px;
 }
 
-.specflux-site-agent-run-list {
-	border-inline-end: 1px solid #dcdcde;
-	background: #fff;
-	padding-block: 12px;
-}
+.aui .specflux-site-agent-runs-app--with-preview { grid-template-columns: 280px minmax(0, 1fr) auto; }
 
-/* The four tabs do not fit one line in this column at common admin widths.
- * They wrap rather than scroll: a tab pushed off a scrolling strip has no
- * affordance, and "All" is the only tab a `pending` run appears in. */
-.specflux-site-agent-run-tabs {
+.aui .specflux-site-agent-run-list,
+.aui .specflux-site-agent-preview-pane {
 	display: flex;
-	flex-wrap: wrap;
-	column-gap: 4px;
-	border-block-end: 1px solid #dcdcde;
-	padding-inline: 8px;
-	margin-block-end: 6px;
+	flex-direction: column;
+	gap: var(--aui-s3);
+	min-block-size: 0;
+	padding: var(--aui-s3);
+	overflow-y: auto;
 }
 
-.specflux-site-agent-run-tab {
-	background: none;
-	border: 0;
-	border-block-end: 2px solid transparent;
-	padding: 4px 6px;
-	cursor: pointer;
-	font-size: 12px;
-	color: #50575e;
-	white-space: nowrap;
+.aui .specflux-site-agent-runs-main { display: flex; flex-direction: column; min-block-size: 0; overflow: hidden; }
+
+.aui .specflux-site-agent-loading,
+.aui .specflux-site-agent-pick-a-run { padding: var(--aui-s5); color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-action-error { margin: var(--aui-s3) var(--aui-s5) 0; }
+
+.aui .specflux-site-agent-notice-body { min-inline-size: 0; overflow-wrap: anywhere; }
+
+@media ( max-width: 1100px ) {
+	.aui .specflux-site-agent-runs-app,
+	.aui .specflux-site-agent-runs-app--with-preview { grid-template-columns: minmax(0, 1fr); block-size: auto; min-block-size: 0; }
+
+	.aui .specflux-site-agent-runs-main { min-block-size: 480px; overflow: visible; }
+
+	.aui .specflux-site-agent-chat { overflow-y: visible; }
 }
 
-.specflux-site-agent-run-tab.is-active {
-	border-block-end-color: #2271b1;
-	color: #1d2327;
-	font-weight: 600;
-}
+/* Run list. The four tabs wrap rather than scroll: a tab pushed off a
+ * scrolling strip has no affordance. */
+.aui .aui-tablist.specflux-site-agent-run-tabs { display: flex; flex-wrap: wrap; }
 
-.specflux-site-agent-run-rows {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
+.aui .aui-tablist.specflux-site-agent-run-tabs .specflux-site-agent-run-tab { padding-inline: var(--aui-s2); font-size: 12px; white-space: nowrap; }
 
-.specflux-site-agent-run-row {
+.aui .specflux-site-agent-run-rows { display: flex; flex-direction: column; gap: var(--aui-s1); }
+
+.aui .specflux-site-agent-run-row {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: 4px;
-	width: 100%;
+	gap: var(--aui-s1);
+	inline-size: 100%;
+	padding: var(--aui-s2) var(--aui-s3);
+	border: 1px solid transparent;
+	border-radius: var(--aui-r-sm);
+	background: transparent;
 	text-align: start;
-	background: none;
-	border: 0;
-	border-inline-start: 3px solid transparent;
-	padding: 8px 14px;
 	cursor: pointer;
 }
 
-.specflux-site-agent-run-row.is-selected {
-	background: #f0f6fc;
-	border-inline-start-color: #2271b1;
-}
+.aui .specflux-site-agent-run-row:hover { background: var(--aui-inset); }
 
-.specflux-site-agent-run-row-title {
-	/* Stage-17f decision: clamp to two lines with an ellipsis so a run row
-	 * takes a predictable amount of vertical space and more than four rows
-	 * fit on screen. The full goal text stays in the DOM (this is a purely
-	 * visual clamp, not a JS truncation) so the accessible name is not
-	 * shortened — only the paint is. Both the standard and prefixed
-	 * properties are set; `overflow-wrap: anywhere` is kept from the
-	 * live-review finding below so mid-word breaks still happen inside the
-	 * two visible lines rather than overflowing them.
-	 *
-	 * Live-review finding: long goal titles must WRAP, not run off the
-	 * viewport — no `white-space: nowrap`, no `text-overflow: ellipsis`. */
+.aui .specflux-site-agent-run-row.is-selected { border-color: var(--aui-accent); background: var(--aui-accent-tint); }
+
+/* Titles clamp to two lines (the full goal stays in the DOM, so the
+ * accessible name is not shortened) and still wrap mid-word, never overflow. */
+.aui .specflux-site-agent-run-row-title {
 	display: -webkit-box;
-	width: 100%;
+	inline-size: 100%;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 2;
 	line-clamp: 2;
 	overflow: hidden;
+	overflow-wrap: anywhere;
 	font-weight: 500;
-	overflow-wrap: anywhere;
 }
 
-.specflux-site-agent-run-row-pack {
-	font-size: 11px;
-	color: #646970;
-	background: #f0f0f1;
-	border-radius: 10px;
-	padding: 1px 8px;
-	white-space: nowrap;
-}
+.aui .specflux-site-agent-run-row-pack { font-size: 12px; color: var(--aui-text-3); }
 
-/* Status pill (run list rows and the run header). Modifiers are built by
- * template interpolation in StatusPill.js: `specflux-site-agent-pill-${ modifier }`
- * with modifier one of needs|running|done; `cancelled` is included too
- * since it is a real run status even though the current component never
- * emits that modifier itself. */
-.specflux-site-agent-pill {
-	display: inline-block;
-	font-size: 11px;
-	padding: 1px 8px;
-	border-radius: 10px;
-	background: #e6e6e7;
-	color: #3c434a;
-	white-space: nowrap;
-}
+.aui .specflux-site-agent-run-rows-empty { padding: var(--aui-s4) var(--aui-s3); color: var(--aui-text-3); }
 
-.specflux-site-agent-pill-needs {
-	background: #fcf0e3;
-	color: #8a4b00;
-	font-weight: 600;
-}
+/* Status pill: a kit badge that may wrap ("Paused while closed ..."). */
+.aui .specflux-site-agent-pill { block-size: auto; min-block-size: 20px; white-space: normal; }
 
-.specflux-site-agent-pill-running {
-	background: #dbe9f6;
-	color: #135e96;
-}
+.aui .specflux-site-agent-pill-needs { font-weight: 600; }
 
-.specflux-site-agent-pill-done {
-	background: #edfaef;
-	color: #00701a;
-}
+/* Chat header. */
+.aui .specflux-site-agent-chat-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aui-s2) var(--aui-s3); }
 
-.specflux-site-agent-pill-cancelled {
-	background: #f6e0e0;
-	color: #8a2424;
-}
+.aui .specflux-site-agent-run-heading { flex: 1 1 auto; overflow-wrap: anywhere; }
 
-.specflux-site-agent-run-rows-empty {
-	display: block;
-	padding: 16px 14px;
-	color: #646970;
-	font-style: italic;
-}
+.aui .specflux-site-agent-run-model { flex: 1 0 100%; font-size: 12px; color: var(--aui-text-3); }
 
-.specflux-site-agent-runs-main {
+.aui .specflux-site-agent-needs-you { border-color: var(--aui-warn-line); background: var(--aui-warn-bg); color: var(--aui-warn); }
+
+.aui .specflux-site-agent-usage-ceilings { display: flex; flex-wrap: wrap; gap: var(--aui-s2); }
+
+.aui .specflux-site-agent-usage-ceiling { font-family: var(--aui-mono); white-space: nowrap; }
+
+/* Chat: the stream scrolls inside the card; the composer is pinned below. */
+.aui .specflux-site-agent-chat {
 	display: flex;
-	flex-direction: column;
-	min-width: 0;
-}
-
-.specflux-site-agent-run-heading {
-	/* Same wrapping rule as the list row title, for the same reason. */
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-chat-header {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 10px;
-}
-
-.specflux-site-agent-chat-header .specflux-site-agent-run-heading {
 	flex: 1 1 auto;
-	margin: 0;
-}
-
-/* The pinned per-run model line: unobtrusive metadata, not a heading —
- * full width of the wrapped flex header so it doesn't fight the "Needs you"
- * button/usage chips for a place on the first line. */
-.specflux-site-agent-run-model {
-	flex: 1 0 100%;
-	margin: 0;
-	font-size: 12px;
-	color: #646970;
-}
-
-/* "Needs you" jump button in the run header — same amber-on-transparent
- * treatment as the pinned-plan jump control in the prototype, so it reads
- * as an action distinct from the plain WP-admin `.button`. */
-.specflux-site-agent-needs-you {
-	background: #dba617;
-	border-color: #dba617;
-	color: #1d2327;
-	font-weight: 600;
-}
-
-.specflux-site-agent-usage-ceilings {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	font-size: 12px;
-	color: #646970;
-}
-
-/* Individual usage-ceiling chip ("Tool calls 10/30") so the three ceilings
- * read as distinct pieces of data rather than one run-on sentence. */
-.specflux-site-agent-usage-ceiling {
-	display: inline-flex;
-	align-items: center;
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 10px;
-	padding: 1px 10px;
-	white-space: nowrap;
-}
-
-.specflux-site-agent-pick-a-run {
-	padding: 16px 20px;
-}
-
-.specflux-site-agent-loading {
-	padding: 16px 20px;
-	color: #646970;
-}
-
-.specflux-site-agent-action-error,
-.specflux-site-agent-run-error {
-	margin: 0 20px;
-	color: #b32d2e;
-}
-
-.specflux-site-agent-background-note {
-	margin: 8px 20px;
-	font-size: 12px;
-	color: #646970;
-}
-
-.specflux-site-agent-background-note--unavailable {
-	color: #8a5a00;
-}
-
-.specflux-site-agent-plan-decision,
-.specflux-site-agent-answer-choices {
-	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	margin-block: 10px;
+	gap: var(--aui-s3);
+	min-block-size: 0;
+	padding: var(--aui-s4) var(--aui-s5);
+	overflow-y: auto;
 }
 
-.specflux-site-agent-answer-other,
-.specflux-site-agent-answer-text {
-	width: 100%;
-	box-sizing: border-box;
-	min-height: 60px;
-	resize: vertical;
+.aui .specflux-site-agent-chat-bubble { overflow-wrap: anywhere; }
+
+.aui .aui-bubble.specflux-site-agent-chat-bubble-user { border-color: var(--aui-accent); background: var(--aui-accent-tint); }
+
+.aui .aui-bubble.specflux-site-agent-chat-bubble-bot { background: var(--aui-surface); }
+
+.aui .specflux-site-agent-chat-stream .specflux-site-agent-typing { color: var(--aui-text-3); }
+
+@media not ( prefers-reduced-motion: reduce ) {
+	.aui .specflux-site-agent-typing::after { content: '…'; animation: specflux-site-agent-typing-blink 1.2s infinite; }
+
+	@keyframes specflux-site-agent-typing-blink {
+		0%, 80%, 100% { opacity: 0.25; }
+
+		40% { opacity: 1; }
+	}
 }
 
-.specflux-site-agent-chat {
+.aui .specflux-site-agent-run-error,
+.aui .specflux-site-agent-background-note { font-size: 12px; }
+
+.aui .specflux-site-agent-background-note { color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-background-note--unavailable { color: var(--aui-warn); }
+
+.aui .specflux-site-agent-run-actions,
+.aui .specflux-site-agent-followup-actions {
 	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 16px 20px;
-	min-width: 0;
-}
-
-.specflux-site-agent-chat-stream {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
-.specflux-site-agent-chat-bubble {
-	max-width: 78%;
-	padding: 9px 13px;
-	border-radius: 14px;
-	background: #fff;
-	box-shadow: 0 1px 1px rgba( 0, 0, 0, 0.05 );
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-chat-bubble-user {
-	align-self: flex-end;
-	background: #2271b1;
-	color: #fff;
-}
-
-.specflux-site-agent-chat-bubble-bot {
-	align-self: flex-start;
+	gap: var(--aui-s3);
+	padding-block-start: var(--aui-s3);
+	border-block-start: 1px solid var(--aui-border);
 }
 
 /* Pinned plan. */
-.specflux-site-agent-pinned-plan {
-	position: sticky;
-	inset-block-start: 0;
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 8px;
-	padding: 8px 14px;
-	box-shadow: 0 2px 6px rgba( 0, 0, 0, 0.06 );
-}
+.aui .aui-card.specflux-site-agent-pinned-plan { position: sticky; inset-block-start: 0; z-index: 1; padding: var(--aui-s2) var(--aui-s3); }
 
-.specflux-site-agent-pinned-plan-header {
-	display: flex;
-	justify-content: space-between;
-	gap: 10px;
-	align-items: baseline;
-}
+.aui .specflux-site-agent-pinned-plan-header { display: flex; align-items: center; justify-content: space-between; gap: var(--aui-s3); }
 
-.specflux-site-agent-pinned-plan-goal {
-	font-weight: 600;
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-pinned-plan-goal { flex: 1 1 auto; font-weight: 600; overflow-wrap: anywhere; }
 
-.specflux-site-agent-pinned-plan-count {
-	font-size: 11px;
-	color: #646970;
-	white-space: nowrap;
-}
+.aui .specflux-site-agent-pinned-plan-count,
+.aui .specflux-site-agent-plan-step-count { font-size: 12px; color: var(--aui-text-3); white-space: nowrap; }
 
-.specflux-site-agent-pinned-plan-toggle {
-	background: none;
-	border: 0;
-	color: #2271b1;
-	cursor: pointer;
-	padding: 0;
-}
+.aui .specflux-site-agent-pinned-plan-none { color: var(--aui-text-3); }
 
-.specflux-site-agent-pinned-plan-none {
-	color: #646970;
-	font-style: italic;
-}
+.aui .specflux-site-agent-pinned-plan-steps { margin-block-start: var(--aui-s2); }
 
-.specflux-site-agent-pinned-plan-steps {
-	list-style: none;
-	margin: 6px 0 0;
-	padding: 0;
-}
+.aui .specflux-site-agent-pinned-plan-toggle { flex: none; }
 
-.specflux-site-agent-pinned-plan-steps li {
-	display: flex;
-	gap: 8px;
-	padding-block: 2px;
-}
+.aui .specflux-site-agent-plan-step-text { flex: 1 1 auto; overflow-wrap: anywhere; }
 
-.specflux-site-agent-plan-step-text {
-	flex: 1 1 auto;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-plan-step-count {
-	font-size: 11px;
-	color: #646970;
-	white-space: nowrap;
-}
-
-.specflux-site-agent-plan-step-waiting {
-	color: #8a4b00;
-	font-weight: 600;
-}
+.aui .specflux-site-agent-plan-step-waiting { font-weight: 600; color: var(--aui-warn); }
 
 /* Ledger groups. */
-.specflux-site-agent-ledger-group summary {
-	cursor: pointer;
-	font-size: 12px;
-	color: #50575e;
-}
+.aui .specflux-site-agent-ledger-group summary { cursor: pointer; font-size: 12px; color: var(--aui-text-2); }
 
-.specflux-site-agent-ledger {
-	list-style: none;
-	margin: 4px 0 0;
-	padding: 4px 12px;
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 6px;
-}
+.aui .aui-card.specflux-site-agent-ledger { margin-block-start: var(--aui-s1); padding: var(--aui-s1) var(--aui-s3); }
 
-.specflux-site-agent-ledger-row {
+.aui .specflux-site-agent-ledger-row {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
 	align-items: baseline;
-	padding-block: 4px;
-	border-block-start: 1px solid #f0f0f1;
+	gap: var(--aui-s2);
+	padding-block: var(--aui-s1);
+	border-block-start: 1px solid var(--aui-border);
 }
 
-.specflux-site-agent-ledger-row:first-child {
-	border-block-start: 0;
-}
+.aui .specflux-site-agent-ledger-row:first-child { border-block-start: 0; }
 
-/* The ✓/✕ mark, the ability id (monospace, per the prototype's `.mono`
- * treatment) and the verb/status wording that make up one ledger line. The
- * mark itself carries no rejected/approved modifier class (LedgerGroup.js
- * only varies its text content, ✓ vs ✕), so it gets one neutral, legible
- * weight rather than a colour that would be wrong half the time. */
-.specflux-site-agent-ledger-status {
-	font-weight: 700;
-	color: #3c434a;
-}
+.aui .specflux-site-agent-ledger-status { font-weight: 700; }
 
-.specflux-site-agent-ledger-label {
-	font-family: Menlo, Consolas, monospace;
-	font-size: 11.5px;
-	color: #50575e;
-}
+.aui .specflux-site-agent-ledger-label,
+.aui .specflux-site-agent-ledger-verb { color: var(--aui-text-2); }
 
-.specflux-site-agent-ledger-verb {
-	color: #50575e;
-}
+.aui .specflux-site-agent-ledger-result { flex-basis: 100%; color: var(--aui-text-3); overflow-wrap: anywhere; }
 
-.specflux-site-agent-ledger-result {
-	flex-basis: 100%;
-	padding-inline-start: 20px;
-	color: #646970;
-	/* Ledger results are harness-rendered ("Approved by you" / "Rejected by
-	 * you, not done") or a tool response — same no-truncation rule as the
-	 * approval-card arguments, since a rejected/approved call is exactly the
-	 * safety-relevant text a viewer must be able to read in full. */
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-ledger-you { font-weight: 600; }
 
-.specflux-site-agent-ledger-you {
-	color: #8a4b00;
-}
+/* Tier badge (Belayline Agent Governance mode only). Tier 0 neutral, 1 warn, 2 ink. */
+.aui .specflux-site-agent-tier { align-self: flex-start; white-space: nowrap; }
 
-/* Tier badge (Agent Safety mode only — see components/TierBadge.js, which
- * never even renders this element in built-in mode). */
-.specflux-site-agent-tier {
-	display: inline-block;
-	/* The park card body is a flex column, whose default stretch would blow
-	 * an inline-block badge out to the full card width. */
-	align-self: flex-start;
-	font-size: 10.5px;
-	padding: 0 6px;
-	border-radius: 9px;
-	background: #e6e6e7;
-	color: #3c434a;
-	white-space: nowrap;
-}
+.aui .specflux-site-agent-tier-2 { font-weight: 600; }
 
-.specflux-site-agent-tier-1 {
-	background: #dbe9f6;
-	color: #135e96;
-}
+/* Park cards (question / plan / approval / hold). */
+.aui .aui-card.specflux-site-agent-park-card { border-block-start: 3px solid var(--aui-warn); }
 
-.specflux-site-agent-tier-2 {
-	background: #fcf0e3;
-	color: #8a4b00;
-	box-shadow: inset 0 0 0 1px #dba617;
-}
+.aui .specflux-site-agent-park-heading { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--aui-text-2); }
 
-/* A plan step's actions: muted, secondary to the step text. */
-.specflux-site-agent-plan-actions {
-	display: block;
-	font-size: 12px;
-	color: #646970;
-}
+.aui .specflux-site-agent-park-heading:focus-visible { outline: 2px solid var(--aui-accent); outline-offset: 2px; }
 
-/* Park cards. */
-.specflux-site-agent-park-card {
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 10px;
-	border-block-start: 4px solid #dba617;
-	padding: 12px 16px;
-}
+.aui .specflux-site-agent-park-actions { gap: var(--aui-s2); }
 
-/* Live-review finding: the park-heading focus ring must HUG THE HEADING,
- * not span the whole card — the ring lives on the heading element only. The
- * card itself (`.specflux-site-agent-park-card`) carries no focus-visible rule at
- * all. */
-.specflux-site-agent-park-heading {
-	display: inline-block;
-	margin: 0 0 6px;
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: #8a4b00;
-}
+.aui .specflux-site-agent-park-body { display: flex; flex-direction: column; gap: var(--aui-s2); }
 
-.specflux-site-agent-park-heading:focus-visible {
-	outline: 2px solid #2271b1;
-	outline-offset: 2px;
-}
+.aui .specflux-site-agent-plan-decision,
+.aui .specflux-site-agent-answer-choices { display: flex; flex-direction: column; gap: var(--aui-s2); }
 
-.specflux-site-agent-park-body {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
+.aui .specflux-site-agent-answer-other,
+.aui .specflux-site-agent-answer-text,
+.aui .specflux-site-agent-plan-veto-note { min-block-size: 64px; }
 
-.specflux-site-agent-rationale {
-	color: #646970;
+.aui .specflux-site-agent-rationale,
+.aui .specflux-site-agent-withheld-roles,
+.aui .specflux-site-agent-plan-objects { overflow-wrap: anywhere; }
+
+.aui ol.specflux-site-agent-plan-steps { padding-inline-start: var(--aui-s5); list-style: decimal; }
+
+.aui ul.specflux-site-agent-plan-objects { padding-inline-start: var(--aui-s4); list-style: disc; color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-plan-steps li { margin-block: var(--aui-s1); }
+
+.aui .specflux-site-agent-plan-actions { display: block; font-size: 12px; color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-plan-approval-count { color: var(--aui-warn); }
+
+.aui .specflux-site-agent-approval-notice,
+.aui .specflux-site-agent-hold-message { overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-approval-summary-block { display: flex; flex-direction: column; gap: var(--aui-s1); }
+
+.aui .specflux-site-agent-approval-summary { overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-approval-args > summary { margin-block-end: var(--aui-s2); cursor: pointer; font-weight: 600; }
+
+/* Approval arguments must WRAP and show in full: a safety property, not
+ * cosmetics. No `overflow: hidden`, no ellipsis; `overflow-y` only scrolls a
+ * TALL box, it never clips a WIDE line. */
+.aui .specflux-site-agent-args {
+	max-block-size: 320px;
 	margin: 0;
-}
-
-.specflux-site-agent-plan-steps {
-	margin-block: 6px;
-	margin-inline-start: 20px;
-	margin-inline-end: 0;
-	padding: 0;
-}
-
-.specflux-site-agent-plan-steps li {
-	margin-block: 4px;
-}
-
-.specflux-site-agent-plan-objects {
-	margin-block: 2px;
-	margin-inline-start: 16px;
-	margin-inline-end: 0;
-	padding: 0;
-	color: #646970;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-plan-approval-count {
-	font-weight: 600;
-	color: #8a4b00;
-}
-
-.specflux-site-agent-withheld-roles {
-	color: #646970;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-park-actions {
-	display: flex;
-	/* Live-review finding: Approve and Reject need spacing between them (no
-	 * adjacent click targets) — the same rule covers Accept/Veto and
-	 * Answer/Skip. */
-	gap: 10px;
-	margin-block-start: 12px;
-}
-
-/* Live-review finding: approval-card arguments must WRAP and show in full —
- * a safety property, not cosmetics. No `overflow: hidden` and no
- * `text-overflow: ellipsis` on this element; `overflow-y: auto` only
- * scrolls a TALL box vertically, it never clips a WIDE line. */
-.specflux-site-agent-args {
-	background: #f6f7f7;
-	padding: 8px;
+	padding: var(--aui-s2);
+	border-radius: var(--aui-r-sm);
+	background: var(--aui-inset);
+	font-family: var(--aui-mono);
+	font-size: 12px;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 	overflow-y: auto;
-	max-height: 320px;
 }
 
-.specflux-site-agent-approval-notice {
-	margin: 8px 0;
-	padding: 8px 10px;
-	border-left: 4px solid #996800;
-	background: #fcf9e8;
-	overflow-wrap: anywhere;
+/* Approve with a diff: removed text struck through and added text underlined,
+ * so it reads without colour. */
+.aui .specflux-site-agent-approval-diff {
+	padding: var(--aui-s3);
+	border-inline-start: 3px solid var(--aui-border-strong);
+	border-radius: var(--aui-r-sm);
+	background: var(--aui-inset);
 }
 
-.specflux-site-agent-hold-message {
-	margin: 8px 0;
-	padding: 8px 10px;
-	border-left: 4px solid #996800;
-	background: #fcf9e8;
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-diff-fields { display: flex; flex-direction: column; gap: var(--aui-s2); }
 
-.specflux-site-agent-approval-summary-block {
-	margin: 8px 0;
-}
+.aui .specflux-site-agent-diff-field dt { font-weight: 600; }
 
-.specflux-site-agent-approval-summary {
-	margin: 0 0 12px;
-	padding: 8px 10px;
-	border-left: 4px solid #1d2327;
-	background: #f6f7f7;
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-diff-field dd { display: flex; flex-wrap: wrap; gap: var(--aui-s1) var(--aui-s4); overflow-wrap: anywhere; }
 
-.specflux-site-agent-approval-args > summary {
-	cursor: pointer;
-	font-weight: 600;
-	margin-bottom: 6px;
-}
+.aui .specflux-site-agent-diff-current,
+.aui .specflux-site-agent-diff-proposed { min-inline-size: 0; }
 
-.specflux-site-agent-args:focus-visible {
-	outline: 2px solid #2271b1;
-	outline-offset: 1px;
-}
+.aui .specflux-site-agent-diff-tag,
+.aui .specflux-site-agent-diff-note { color: var(--aui-text-3); }
 
-.specflux-site-agent-button-danger {
-	border-color: #b32d2e;
-	color: #b32d2e;
-}
+.aui .specflux-site-agent-diff-del { background: var(--aui-bad-bg); text-decoration: line-through; }
 
-.specflux-site-agent-plan-veto-note {
-	width: 100%;
-	box-sizing: border-box;
-	min-height: 60px;
-	resize: vertical;
-}
+.aui .specflux-site-agent-diff-ins { background: var(--aui-ok-bg); text-decoration: underline; }
 
-.specflux-site-agent-run-actions {
-	display: flex;
-	gap: 10px;
-	padding: 12px 20px;
-	border-block-start: 1px solid #dcdcde;
-}
+.aui .specflux-site-agent-diff-block { margin-block-start: var(--aui-s2); }
 
-/* Suggestion cards (0.3 S20). */
-.specflux-site-agent-suggestion-card {
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 10px;
-	border-block-start: 4px solid #2271b1;
-	padding: 12px 16px;
-}
+.aui .specflux-site-agent-diff-heading { font-weight: 600; }
 
-.specflux-site-agent-suggestion-heading {
-	display: inline-block;
-	margin: 0 0 6px;
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: #1d4f76;
-}
+.aui .specflux-site-agent-diff-ops { overflow-wrap: anywhere; white-space: pre-wrap; }
 
-.specflux-site-agent-suggestion-status {
-	color: #646970;
-}
+/* Suggestion cards. */
+.aui .aui-card.specflux-site-agent-suggestion-card { border-block-start: 3px solid var(--aui-accent); }
 
-.specflux-site-agent-suggestion-text,
-.specflux-site-agent-suggestion-text-final {
-	width: 100%;
-	box-sizing: border-box;
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-suggestion-heading { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--aui-text-2); }
 
-.specflux-site-agent-suggestion-text-final {
-	background: #f6f7f7;
-	padding: 8px;
-	margin: 0;
-}
+.aui .specflux-site-agent-suggestion-text,
+.aui .specflux-site-agent-suggestion-text-final { white-space: pre-wrap; overflow-wrap: anywhere; }
 
-.specflux-site-agent-suggestion-error {
-	color: #b32d2e;
-}
+.aui .specflux-site-agent-suggestion-text-final { margin: 0; padding: var(--aui-s2); border-radius: var(--aui-r-sm); background: var(--aui-inset); }
 
-.specflux-site-agent-suggestion-admin-only {
-	color: #646970;
-	font-style: italic;
-}
+.aui .specflux-site-agent-suggestion-actions { gap: var(--aui-s2); }
 
-.specflux-site-agent-suggestion-actions {
-	display: flex;
-	gap: 10px;
-	margin-block-start: 12px;
-}
+.aui .specflux-site-agent-suggestion-status,
+.aui .specflux-site-agent-suggestion-admin-only { font-style: italic; }
 
-/* Message box. */
-.specflux-site-agent-message-box-wrap {
-	border-block-start: 1px solid #dcdcde;
-	padding-block-start: 12px;
-}
+.aui .specflux-site-agent-suggestion-error { color: var(--aui-bad); }
 
-.specflux-site-agent-message-box {
-	display: flex;
-	gap: 8px;
-	align-items: flex-end;
-}
+/* Composer (pinned at the bottom of the chat card). */
+.aui .specflux-site-agent-message-box-wrap { flex: none; padding: var(--aui-s3) var(--aui-s4); border-block-start: 1px solid var(--aui-border); }
 
-.specflux-site-agent-message-box-pack {
-	flex: 0 0 auto;
-	max-width: 200px;
-}
+.aui .aui-composer.specflux-site-agent-message-box { flex-wrap: wrap; }
 
-.specflux-site-agent-message-box-input {
-	flex: 1;
-	resize: none;
-	min-height: 40px;
-}
+.aui .aui-composer .specflux-site-agent-message-box-pack,
+.aui .aui-composer .specflux-site-agent-message-box-model { flex: 0 0 auto; inline-size: auto; max-inline-size: 220px; }
 
-.specflux-site-agent-unavailable-packs {
-	list-style: none;
-	margin: 0 0 8px;
-	padding: 0;
-	color: #646970;
-	font-size: 13px;
-}
+.aui .aui-composer .specflux-site-agent-message-box-input { min-inline-size: 160px; }
 
-/* The per-run model picker sits beside the textarea, not above it —
- * a compact, fixed-width control so it never competes with the textarea for
- * the row's width. */
-.specflux-site-agent-message-box-model {
-	flex: 0 0 auto;
-	width: 220px;
-}
+.aui .specflux-site-agent-start-wrap { display: inline-block; }
+
+.aui .specflux-site-agent-unavailable-packs,
+.aui .specflux-site-agent-followup-note,
+.aui .specflux-site-agent-start-blocked { margin-block-end: var(--aui-s2); color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-start-blocked { margin-block: var(--aui-s2) 0; }
 
 /* Empty state. */
-.specflux-site-agent-empty-state {
-	margin: auto;
-	max-width: 520px;
-	text-align: center;
-	padding: 40px 20px;
-}
+.aui .specflux-site-agent-empty-state { margin-block: auto; }
 
-.specflux-site-agent-empty-examples {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.specflux-site-agent-empty-example {
-	display: block;
-	width: 100%;
-	text-align: start;
-	margin-block: 6px;
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 8px;
-	padding: 8px 12px;
-	cursor: pointer;
-}
-
-/* Typing indicator: a `prefers-reduced-motion`-guarded animation only. */
-.specflux-site-agent-typing {
-	color: #646970;
-}
-
-@media not ( prefers-reduced-motion: reduce ) {
-	.specflux-site-agent-typing::after {
-		content: '…';
-		animation: specflux-site-agent-typing-blink 1.2s infinite;
-	}
-
-	@keyframes specflux-site-agent-typing-blink {
-		0%, 80%, 100% {
-			opacity: 0.25;
-		}
-		40% {
-			opacity: 1;
-		}
-	}
-}
-
-/* The run report at a terminal state (0.3 S12, stage 22b). A row's state is
- * always said in text: the mark and the border are decoration on top, so the
- * "Not checked after the change" state never depends on colour. */
-.specflux-site-agent-report {
-	background: #fff;
-	border-block-start: 1px solid #dcdcde;
-	padding: 12px 20px 16px;
-}
-
-.specflux-site-agent-report-heading {
-	margin: 0 0 4px;
-	font-size: 16px;
-}
-
-.specflux-site-agent-report-summary {
-	margin: 0 0 10px;
-	font-weight: 600;
-}
-
-.specflux-site-agent-report-subheading {
-	margin: 14px 0 6px;
-	font-size: 13px;
-}
-
-.specflux-site-agent-report-changes,
-.specflux-site-agent-report-objects,
-.specflux-site-agent-report-grants,
-.specflux-site-agent-report-meta {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.specflux-site-agent-report-change {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 4px 10px;
-	padding: 6px 10px;
-	margin-block-end: 4px;
-	border: 1px solid #dcdcde;
-	border-inline-start: 4px solid #00a32a;
-	border-radius: 4px;
-}
-
-/* Not checked: a dashed, different border shape as well as the warning mark
- * and the words, so it differs from a verified row in outline, glyph and text. */
-.specflux-site-agent-report-change.is-unchecked {
-	border-style: dashed;
-	border-inline-start: 4px dashed #996800;
-	background: #fcf9e8;
-}
-
-.specflux-site-agent-report-mark {
-	font-weight: 700;
-}
-
-.specflux-site-agent-report-object {
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-report-object-meta {
-	color: #646970;
-	font-size: 12px;
-}
-
-.specflux-site-agent-report-state {
-	margin-inline-start: auto;
-	font-size: 12px;
-	font-weight: 600;
-}
-
-.specflux-site-agent-report-meta {
-	margin-block-start: 10px;
-	color: #50575e;
-	font-size: 13px;
-}
-
-.specflux-site-agent-report-gate,
-.specflux-site-agent-report-gate-note,
-.specflux-site-agent-report-withheld,
-.specflux-site-agent-report-grant,
-.specflux-site-agent-report-object-row {
-	margin-block-end: 2px;
-}
-
-.specflux-site-agent-report-object-row {
-	display: flex;
-	gap: 10px;
-	align-items: baseline;
-}
-
-.specflux-site-agent-report-store {
-	margin: 0;
-}
-
-.specflux-site-agent-report-store-row {
-	display: flex;
-	gap: 10px;
-}
-
-.specflux-site-agent-report-store-row dt {
-	min-inline-size: 150px;
-	color: #50575e;
-}
-
-.specflux-site-agent-report-store-row dd {
-	margin: 0;
-	font-weight: 600;
-}
-
-/* "Start a follow-up" on a finished run, and the box's follow-up note (S20). */
-.specflux-site-agent-followup-actions {
-	display: flex;
-	gap: 10px;
-	padding: 12px 20px;
-	border-block-start: 1px solid #dcdcde;
-}
-
-.specflux-site-agent-followup-note,
-.specflux-site-agent-start-blocked {
-	margin: 0 0 8px;
-	color: #50575e;
-	font-size: 13px;
-}
-
-.specflux-site-agent-start-blocked {
-	margin-block: 8px 0;
-}
-
-.specflux-site-agent-report-edit {
-	font-size: 12px;
-}
-
-/* The server-rendered setup panel above the app (S11); swapped in place on
- * window focus, so its spacing lives here rather than inline. */
-.specflux-site-agent-setup-panel {
-	margin-block-end: 8px;
-}
-
-/* The advisory's Dismiss button (server-rendered inside the setup panel). */
-.specflux-site-agent-dismiss-check {
-	margin-block-start: 4px;
-}
-
-/* Result cards (0.4 S2): text-only renderings of a tool result's `display`
- * payload. Logical properties only; the one transition is motion-guarded. */
-.specflux-site-agent-card {
+.aui .specflux-site-agent-empty-examples {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-	padding: 6px 10px;
-	border: 1px solid #dcdcde;
-	border-inline-start-width: 3px;
-	border-radius: 4px;
-	background: #fff;
-	color: #1d2327;
-}
-
-.specflux-site-agent-card p {
-	margin: 0;
-}
-
-.specflux-site-agent-card-title {
-	font-weight: 600;
-}
-
-.specflux-site-agent-card-status {
-	margin-inline-start: 8px;
-	padding-inline: 6px;
-	border-radius: 9px;
-	background: #e6e6e7;
-	color: #3c434a;
-	font-size: 11px;
-	font-weight: 400;
-}
-
-.specflux-site-agent-card-fields {
-	margin: 0;
-}
-
-.specflux-site-agent-card-field {
-	display: flex;
-	gap: 8px;
-}
-
-.specflux-site-agent-card-field dt {
-	font-weight: 600;
-	min-inline-size: 8em;
-}
-
-.specflux-site-agent-card-field dd {
-	margin: 0;
-}
-
-.specflux-site-agent-card-links {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 12px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.specflux-site-agent-card-thumb-wrap {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 2px;
-}
-
-.specflux-site-agent-card-thumb {
-	max-inline-size: 96px;
-	max-block-size: 96px;
-	object-fit: cover;
-	border-radius: 3px;
-}
-
-.specflux-site-agent-card-noalt {
-	font-size: 11px;
-	color: #8a4b00;
-	font-style: italic;
-}
-
-.specflux-site-agent-card-list {
-	margin: 0;
-	padding-inline-start: 18px;
-}
-
-.specflux-site-agent-card-list li {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	align-items: center;
-}
-
-.specflux-site-agent-card-detail {
-	color: #50575e;
-}
-
-.specflux-site-agent-card-more {
-	color: #50575e;
-	font-style: italic;
-}
-
-.specflux-site-agent-card-table {
-	border-collapse: collapse;
+	gap: var(--aui-s2);
 	inline-size: 100%;
+	max-inline-size: 520px;
 }
 
-.specflux-site-agent-card-table th,
-.specflux-site-agent-card-table td {
-	padding: 2px 8px;
+.aui .aui-btn.specflux-site-agent-empty-example {
+	justify-content: flex-start;
+	inline-size: 100%;
+	block-size: auto;
+	min-block-size: 32px;
+	padding-block: var(--aui-s2);
 	text-align: start;
-	border-block-end: 1px solid #f0f0f1;
+	white-space: normal;
 }
 
-.specflux-site-agent-card-error {
-	color: #8a2424;
-}
+/* Result cards (a tool result's `display` payload). */
+.aui .specflux-site-agent-card { background: var(--aui-surface); }
 
-.specflux-site-agent-card-errorlabel {
-	text-decoration: underline;
-}
+.aui .specflux-site-agent-card .aui-result-h:last-child,
+.aui .specflux-site-agent-card .aui-result-b:last-child { border-block-end: 0; }
 
-.specflux-site-agent-card-raw-toggle {
-	align-self: flex-start;
-	font-size: 12px;
-}
+.aui .specflux-site-agent-card .aui-result-b:empty { display: none; }
 
-.specflux-site-agent-card-raw {
+.aui .specflux-site-agent-card-title { min-inline-size: 0; overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-card-status { font-weight: 400; }
+
+.aui .specflux-site-agent-card-field { display: contents; }
+
+.aui .specflux-site-agent-card-fields,
+.aui .specflux-site-agent-report-store { row-gap: var(--aui-s1); }
+
+.aui .specflux-site-agent-card-links,
+.aui .specflux-site-agent-card-thumb-wrap { display: flex; flex-wrap: wrap; gap: var(--aui-s3); }
+
+.aui .specflux-site-agent-card-thumb-wrap { flex-direction: column; align-items: flex-start; gap: 2px; }
+
+.aui .specflux-site-agent-card-thumb { max-inline-size: 96px; max-block-size: 96px; border-radius: var(--aui-r-sm); object-fit: cover; }
+
+.aui .specflux-site-agent-card-noalt { font-size: 12px; font-style: italic; color: var(--aui-warn); }
+
+.aui .specflux-site-agent-card-list { display: flex; flex-direction: column; gap: var(--aui-s1); }
+
+.aui .specflux-site-agent-card-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aui-s2); }
+
+.aui .specflux-site-agent-card-detail,
+.aui .specflux-site-agent-card-more { color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-card-errorlabel { text-decoration: underline; }
+
+.aui .specflux-site-agent-card-error { color: var(--aui-bad); }
+
+.aui .specflux-site-agent-card-message { overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-card-table { inline-size: 100%; }
+
+.aui .specflux-site-agent-card-raw {
 	margin: 0;
-	padding: 6px;
-	background: #f6f7f7;
+	padding: var(--aui-s2) var(--aui-s3);
+	border-block-start: 1px solid var(--aui-border);
+	background: var(--aui-inset);
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
-	font-size: 11.5px;
 }
 
-@media not ( prefers-reduced-motion: reduce ) {
-	.specflux-site-agent-card-raw-toggle {
-		transition: color 0.15s ease;
-	}
-}
+.aui .specflux-site-agent-card-raw-toggle { margin-inline-start: calc(-1 * var(--aui-s2)); }
 
-.specflux-site-agent-card-message {
-	overflow-wrap: anywhere;
-}
+/* Preview pane: a card beside the chat; collapsed it is a narrow rail. */
+.aui .specflux-site-agent-preview-pane { inline-size: 340px; max-inline-size: 30vw; }
 
-/* Preview pane (0.4 S3): a third column beside the chat, only when the run
- * has a previewable object. Logical properties throughout, so it flips in
- * RTL. Collapsed it is a narrow rail holding just the toggle. */
-.specflux-site-agent-runs-app--with-preview {
-	grid-template-columns: 260px minmax(0, 1fr) auto;
-}
+.aui .specflux-site-agent-preview-pane.is-collapsed { inline-size: auto; padding-inline: var(--aui-s2); }
 
-.specflux-site-agent-preview-pane {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	inline-size: 340px;
-	max-inline-size: 40vw;
-	padding: 12px;
-	border-inline-start: 1px solid #dcdcde;
-	background: #fff;
-	box-sizing: border-box;
-}
-
-.specflux-site-agent-preview-pane.is-collapsed {
-	inline-size: auto;
-	padding-inline: 6px;
-}
-
-.specflux-site-agent-preview-pane.is-collapsed .specflux-site-agent-preview-toggle {
+.aui .specflux-site-agent-preview-pane.is-collapsed .specflux-site-agent-preview-toggle {
+	block-size: auto;
+	padding-block: var(--aui-s3);
 	writing-mode: vertical-rl;
-	padding-block: 12px;
 }
 
-.specflux-site-agent-preview-body {
-	min-inline-size: 0;
-	overflow-wrap: anywhere;
-}
+.aui .specflux-site-agent-preview-body { min-inline-size: 0; overflow-wrap: anywhere; }
 
-.specflux-site-agent-preview-open {
-	margin-block: 8px 0;
-}
+.aui .specflux-site-agent-preview-open { margin-block-start: var(--aui-s2); }
 
-.specflux-site-agent-preview-frame {
+.aui .specflux-site-agent-preview-frame {
 	inline-size: 100%;
 	block-size: 360px;
-	margin-block-start: 8px;
-	border: 1px solid #dcdcde;
-	background: #fff;
+	margin-block-start: var(--aui-s2);
+	border: 1px solid var(--aui-border-strong);
+	border-radius: var(--aui-r-sm);
+	background: var(--aui-surface);
 }
 
 @media ( max-width: 1100px ) {
-	.specflux-site-agent-runs-app--with-preview {
-		grid-template-columns: 220px minmax(0, 1fr);
-	}
+	.aui .specflux-site-agent-preview-pane,
+	.aui .specflux-site-agent-preview-pane.is-collapsed { inline-size: auto; max-inline-size: none; }
 
-	.specflux-site-agent-preview-pane,
-	.specflux-site-agent-preview-pane.is-collapsed {
-		grid-column: 1 / -1;
-		inline-size: auto;
-		max-inline-size: none;
-		border-inline-start: 0;
-		border-block-start: 1px solid #dcdcde;
-	}
-
-	.specflux-site-agent-preview-pane.is-collapsed .specflux-site-agent-preview-toggle {
-		writing-mode: horizontal-tb;
-		padding-block: 0;
-	}
+	.aui .specflux-site-agent-preview-pane.is-collapsed .specflux-site-agent-preview-toggle { padding-block: 0; writing-mode: horizontal-tb; }
 }
 
-@media not ( prefers-reduced-motion: reduce ) {
-	.specflux-site-agent-preview-pane {
-		transition: inline-size 0.15s ease;
-	}
+/* Run report. A row's state is always said in text; the mark and the border
+ * are decoration on top, so "Not checked after the change" never depends on
+ * colour (dashed border, warning mark and words all differ from a verified row). */
+.aui .aui-card.specflux-site-agent-report { flex: none; padding: var(--aui-s4) var(--aui-s5); }
+
+.aui .specflux-site-agent-report-heading { font-size: 16px; }
+
+.aui .specflux-site-agent-report-summary { margin-block: var(--aui-s1) var(--aui-s3); font-weight: 600; }
+
+.aui .specflux-site-agent-report-subheading { margin-block: var(--aui-s4) var(--aui-s2); }
+
+.aui .specflux-site-agent-report-changes,
+.aui .specflux-site-agent-report-objects,
+.aui .specflux-site-agent-report-grants,
+.aui .specflux-site-agent-changes-list,
+.aui .specflux-site-agent-undo-items { display: flex; flex-direction: column; gap: var(--aui-s2); }
+
+.aui .specflux-site-agent-report-change,
+.aui .specflux-site-agent-report-object-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--aui-s1) var(--aui-s3); }
+
+.aui .specflux-site-agent-report-change {
+	padding: var(--aui-s2) var(--aui-s3);
+	border: 1px solid var(--aui-border-strong);
+	border-inline-start: 4px solid var(--aui-ok);
+	border-radius: var(--aui-r-sm);
 }
 
-/* Changes and undo in the report (0.4 S3.2). State is said in words; logical
- * properties only so it reads correctly in RTL. */
-.specflux-site-agent-changes-heading {
-	margin-block-end: 4px;
+.aui .specflux-site-agent-report-change.is-unchecked {
+	border-style: dashed;
+	border-inline-start-color: var(--aui-warn);
+	background: var(--aui-warn-bg);
 }
 
-.specflux-site-agent-changes {
-	margin-block: 8px;
+.aui .specflux-site-agent-report-mark { font-weight: 700; }
+
+.aui .specflux-site-agent-report-object { overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-report-object-meta,
+.aui .specflux-site-agent-report-edit,
+.aui .specflux-site-agent-report-revisions { font-size: 12px; }
+
+.aui .specflux-site-agent-report-object-meta { color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-report-state { margin-inline-start: auto; }
+
+.aui .specflux-site-agent-report-meta { margin-block-start: var(--aui-s3); font-size: 12px; }
+
+.aui .specflux-site-agent-report-store-row { display: contents; }
+
+.aui .specflux-site-agent-report-gate,
+.aui .specflux-site-agent-report-gate-note,
+.aui .specflux-site-agent-report-withheld,
+.aui .specflux-site-agent-report-grant { margin-block-end: 2px; }
+
+/* Changes and undo. */
+.aui .specflux-site-agent-changes { margin-block: var(--aui-s3); }
+
+.aui .specflux-site-agent-changes-heading { margin-block: 0 var(--aui-s2); }
+
+.aui .specflux-site-agent-changes-note { font-size: 12px; }
+
+.aui .specflux-site-agent-changes-row,
+.aui .specflux-site-agent-undo-item { padding-inline-start: var(--aui-s3); border-inline-start: 3px solid var(--aui-border-strong); }
+
+.aui .specflux-site-agent-undo-item.is-failed { border-inline-start-color: var(--aui-bad); }
+
+.aui .specflux-site-agent-changes-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--aui-s1) var(--aui-s3); }
+
+.aui .specflux-site-agent-changes-name,
+.aui .specflux-site-agent-undo-item-status,
+.aui .specflux-site-agent-undo-result-line { font-weight: 600; overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-changes-state,
+.aui .specflux-site-agent-undo-item-reason,
+.aui .specflux-site-agent-undo-result-reason { color: var(--aui-text-3); }
+
+.aui .specflux-site-agent-changes-undo { margin-inline-start: auto; }
+
+.aui .specflux-site-agent-changes-undo-run { margin-block-start: var(--aui-s2); }
+
+.aui .specflux-site-agent-changes-diff,
+.aui .specflux-site-agent-drift-table { margin-block: var(--aui-s1); font-size: 12px; }
+
+.aui .specflux-site-agent-changes-diff th,
+.aui .specflux-site-agent-changes-diff td,
+.aui .specflux-site-agent-drift-table th,
+.aui .specflux-site-agent-drift-table td { padding: 2px var(--aui-s2); overflow-wrap: anywhere; }
+
+.aui .specflux-site-agent-undo-result,
+.aui .specflux-site-agent-changes-error { margin-block: var(--aui-s2); }
+
+/* The undo dialog is portalled out of `.aui`, so its body re-opens a scope. */
+.aui.specflux-site-agent-undo-scope { margin: 0; background: transparent; }
+
+.specflux-site-agent-undo-dialog { max-inline-size: 640px; border-radius: 8px; }
+
+.aui .specflux-site-agent-undo-dialog-actions { display: flex; justify-content: flex-end; gap: var(--aui-s2); margin-block-start: var(--aui-s3); }
+
+/* Guided setup panel above the app. */
+.aui .aui-card.specflux-site-agent-setup-steps {
+	margin-block-end: var(--aui-s4);
+	padding: var(--aui-s4) var(--aui-s5);
+	border-inline-start: 4px solid var(--aui-accent);
 }
 
-.specflux-site-agent-changes-list,
-.specflux-site-agent-undo-items {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.specflux-site-agent-changes-row,
-.specflux-site-agent-undo-item {
-	margin-block-end: 8px;
-	padding-inline-start: 10px;
-	border-inline-start: 3px solid #dcdcde;
-}
-
-.specflux-site-agent-undo-item.is-failed {
-	border-inline-start-color: #b32d2e;
-}
-
-.specflux-site-agent-changes-head {
+.aui .specflux-site-agent-setup-head {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
-	gap: 4px 12px;
-}
-
-.specflux-site-agent-changes-name {
-	font-weight: 600;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-changes-state,
-.specflux-site-agent-undo-item-reason,
-.specflux-site-agent-changes-note {
-	color: #50575e;
-}
-
-.specflux-site-agent-changes-diff,
-.specflux-site-agent-drift-table {
-	margin-block: 4px;
-	border-collapse: collapse;
-	font-size: 12px;
-}
-
-.specflux-site-agent-changes-diff th,
-.specflux-site-agent-changes-diff td,
-.specflux-site-agent-drift-table th,
-.specflux-site-agent-drift-table td {
-	padding: 2px 8px;
-	border: 1px solid #dcdcde;
-	text-align: start;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-drift-table caption {
-	padding-block: 2px;
-	font-weight: 600;
-	text-align: start;
-}
-
-.specflux-site-agent-changes-error {
-	color: #b32d2e;
-}
-
-.specflux-site-agent-undo-dialog-actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-	margin-block-start: 12px;
-}
-
-.specflux-site-agent-report-revisions {
-	font-size: 12px;
-}
-
-.specflux-site-agent-undo-result {
-	margin-block: 8px;
-}
-
-.specflux-site-agent-undo-result-line {
-	margin-block: 0 4px;
-	font-weight: 600;
-}
-
-.specflux-site-agent-undo-result-reason {
-	margin-block: 0 4px;
-	color: #50575e;
-}
-
-.specflux-site-agent-undo-item-status {
-	font-weight: 600;
-}
-
-.specflux-site-agent-changes-undo-run {
-	margin-block-start: 4px;
-}
-
-.specflux-site-agent-changes-undo {
-	margin-inline-start: auto;
-}
-
-.specflux-site-agent-undo-dialog {
-	max-inline-size: 640px;
-}
-
-/* Approve with a diff (0.4 S4): "What changes". Removed text is struck
- * through and added text underlined, so it reads without colour; logical
- * properties keep it correct in RTL. */
-.specflux-site-agent-approval-diff {
-	margin-block: 8px;
-	padding-inline-start: 10px;
-	border-inline-start: 3px solid #dcdcde;
-}
-
-.specflux-site-agent-diff-fields {
-	margin: 0;
-}
-
-.specflux-site-agent-diff-field {
-	margin-block-end: 6px;
-}
-
-.specflux-site-agent-diff-field dt {
-	font-weight: 600;
-}
-
-.specflux-site-agent-diff-field dd {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px 16px;
-	margin: 0;
-	overflow-wrap: anywhere;
-}
-
-.specflux-site-agent-diff-tag {
-	color: #50575e;
-}
-
-.specflux-site-agent-diff-del {
-	background: #fcf0f1;
-	text-decoration: line-through;
-}
-
-.specflux-site-agent-diff-ins {
-	background: #edfaef;
-	text-decoration: underline;
-}
-
-.specflux-site-agent-diff-ops {
-	margin: 0;
-	overflow-wrap: anywhere;
-	white-space: pre-wrap;
-}
-
-.specflux-site-agent-diff-heading {
-	margin-block: 6px 2px;
-	font-weight: 600;
-}
-
-.specflux-site-agent-diff-note {
-	margin: 0;
-	color: #50575e;
-}
-
-.specflux-site-agent-diff-block {
-	margin-block-start: 6px;
-}
-
-.specflux-site-agent-diff-current,
-.specflux-site-agent-diff-proposed {
-	min-inline-size: 0;
-}
-
-/* Guided setup: the "Set up Specflux Site Agent" panel above the app. Logical
- * properties only; colours follow wp-admin's own notice palette. */
-.specflux-site-agent-setup-steps {
-	margin-block: 0 12px;
-	padding: 12px 16px;
-	border: 1px solid #dcdcde;
-	border-inline-start: 4px solid #2271b1;
-	background: #fff;
-}
-
-.specflux-site-agent-setup-head {
-	display: flex;
-	align-items: baseline;
 	justify-content: space-between;
-	gap: 12px;
+	gap: var(--aui-s3);
+	margin-block-end: var(--aui-s2);
 }
 
-.specflux-site-agent-setup-head h2 {
-	margin: 0 0 8px;
-	font-size: 16px;
-}
+.aui .specflux-site-agent-setup-panel { margin-block-end: var(--aui-s4); }
 
-.specflux-site-agent-setup-list {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
+.aui .specflux-site-agent-setup-list { display: flex; flex-direction: column; }
 
-.specflux-site-agent-setup-step {
-	padding-block: 10px;
-	border-block-start: 1px solid #f0f0f1;
-}
+.aui .specflux-site-agent-setup-status { white-space: nowrap; }
 
-.specflux-site-agent-setup-step--pass {
-	color: #50575e;
-}
+.aui .specflux-site-agent-setup-step { padding-block: var(--aui-s3); border-block-start: 1px solid var(--aui-border); }
 
-.specflux-site-agent-setup-step--fail {
-	border-inline-start: 3px solid #d63638;
-	padding-inline-start: 10px;
-}
+.aui .specflux-site-agent-setup-step--pass { color: var(--aui-text-3); }
 
-.specflux-site-agent-setup-step--todo {
-	color: #1d2327;
-}
+.aui .specflux-site-agent-setup-step--fail { padding-inline-start: var(--aui-s3); border-inline-start: 3px solid var(--aui-warn); }
 
-.specflux-site-agent-setup-step-head {
+.aui .specflux-site-agent-setup-step-head { display: flex; align-items: center; gap: var(--aui-s2); }
+
+.aui .specflux-site-agent-setup-why,
+.aui .specflux-site-agent-setup-detail,
+.aui .specflux-site-agent-setup-ask { margin-block: var(--aui-s1); }
+
+.aui .specflux-site-agent-setup-detail,
+.aui .specflux-site-agent-setup-error { color: var(--aui-bad); }
+
+.aui .specflux-site-agent-setup-ask { font-style: italic; }
+
+.aui .specflux-site-agent-setup-action { margin-block-start: var(--aui-s1); }
+
+.aui .specflux-site-agent-setup-cards { display: flex; flex-wrap: wrap; gap: var(--aui-s2); margin-block: var(--aui-s2); }
+
+.aui .aui-card.specflux-site-agent-setup-card {
 	display: flex;
-	align-items: baseline;
-	gap: 8px;
-}
-
-.specflux-site-agent-setup-status {
-	padding: 1px 6px;
-	border-radius: 3px;
-	background: #f0f0f1;
-	font-size: 12px;
-}
-
-.specflux-site-agent-setup-step--fail .specflux-site-agent-setup-status {
-	background: #fcf0f1;
-	color: #8a2424;
-}
-
-.specflux-site-agent-setup-step--pass .specflux-site-agent-setup-status {
-	background: #edfaef;
-	color: #1a4d2e;
-}
-
-.specflux-site-agent-setup-why,
-.specflux-site-agent-setup-detail,
-.specflux-site-agent-setup-ask {
-	margin: 4px 0;
-}
-
-.specflux-site-agent-setup-detail,
-.specflux-site-agent-setup-error {
-	color: #8a2424;
-}
-
-.specflux-site-agent-setup-ask {
-	font-style: italic;
-}
-
-.specflux-site-agent-setup-action {
-	margin-block-start: 4px;
-}
-
-.specflux-site-agent-setup-cards {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-block: 6px;
-}
-
-.specflux-site-agent-setup-card {
 	flex: 1 1 220px;
-	padding: 8px 12px;
-	border: 1px solid #dcdcde;
-	border-radius: 4px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--aui-s1);
+	padding: var(--aui-s3);
 }
 
-.specflux-site-agent-setup-card p {
-	margin: 4px 0;
-}
+.aui .aui-card.specflux-site-agent-setup-card--current { border-color: var(--aui-accent); }
 
-.specflux-site-agent-setup-card--current {
-	border-color: #2271b1;
-}
+.aui .specflux-site-agent-setup-current { font-weight: 600; color: var(--aui-ok); }
 
-.specflux-site-agent-setup-current {
-	color: #1a4d2e;
-	font-weight: 600;
-}
+.aui .specflux-site-agent-setup-brief-input { min-block-size: 96px; }
 
-.specflux-site-agent-setup-brief label {
-	display: block;
-	font-weight: 600;
-}
+.aui .specflux-site-agent-setup-brief { display: flex; flex-direction: column; gap: var(--aui-s1); }
 
-.specflux-site-agent-setup-brief-input {
-	width: 100%;
-}
+.aui .specflux-site-agent-setup-buttons { display: flex; gap: var(--aui-s2); }
 
-.specflux-site-agent-setup-count {
-	margin: 2px 0;
-	color: #50575e;
-	font-size: 12px;
-}
+.aui .specflux-site-agent-setup-count { font-size: 12px; }
 
-.specflux-site-agent-setup-goals {
-	margin: 6px 0 0;
-	padding-inline-start: 18px;
-}
+.aui .specflux-site-agent-setup-goals { display: flex; flex-direction: column; align-items: flex-start; margin-block-start: var(--aui-s2); }
 
-.specflux-site-agent-setup-collapsed {
-	margin-block: 0 12px;
-}
+.aui .specflux-site-agent-setup-collapsed { margin-block-end: var(--aui-s4); }
 
-.specflux-site-agent-setup-chip {
-	padding: 2px 10px;
-	border: 1px solid #1a4d2e;
-	border-radius: 12px;
-	background: #edfaef;
-	color: #1a4d2e;
-	cursor: pointer;
-}
+.aui .specflux-site-agent-setup-chip { cursor: pointer; }
 
-.specflux-site-agent-setup-firstrun {
-	margin-block-start: 8px;
-	padding: 8px 12px;
-	border: 1px solid #dcdcde;
-	background: #fff;
-}
-
-.specflux-site-agent-setup-firstrun p {
-	margin: 0;
-}
-
-.specflux-site-agent-start-wrap {
-	display: inline-block;
-}
+.aui .aui-card.specflux-site-agent-setup-firstrun { margin-block-start: var(--aui-s2); padding: var(--aui-s3); }

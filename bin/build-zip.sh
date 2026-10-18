@@ -88,7 +88,8 @@ DENY_RE="$DENY_RE|(^|/)\.github(/|$)"
 DENY_RE="$DENY_RE|(^|/)node_modules(/|$)"
 DENY_RE="$DENY_RE|(^|/)[Tt]ests(/|$)"
 # vendor/ is denied EXCEPT the bundled Action Scheduler (see step 2).
-DENY_RE="$DENY_RE|(^|/)vendor/(autoload|bin|composer)|(^|/)vendor/[^w]|(^|/)vendor/woocommerce/[^a]"
+# Anchored to the plugin's top-level vendor/: assets/vendor/admin-ui-kit/ is the shared UI kit and ships.
+DENY_RE="$DENY_RE|^[^/]+/vendor/(autoload|bin|composer)|^[^/]+/vendor/[^w]|^[^/]+/vendor/woocommerce/[^a]"
 DENY_RE="$DENY_RE|(^|/)dist(/|$)"
 DENY_RE="$DENY_RE|(^|/)bin(/|$)"
 DENY_RE="$DENY_RE|(^|/)assets/src(/|$)"

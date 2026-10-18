@@ -12,7 +12,7 @@ export default function BackgroundNote( { background } ) {
 
 	if ( background.available ) {
 		return (
-			<p className="specflux-site-agent-background-note" data-background="available">
+			<p className="aui-muted specflux-site-agent-background-note" data-background="available">
 				{ __( 'Keeps running if you close this page.', 'specflux-site-agent' ) }
 			</p>
 		);

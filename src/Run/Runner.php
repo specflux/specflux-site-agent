@@ -3227,7 +3227,7 @@ final class Runner {
 			'rationale'   => (string) ( $payload['rationale'] ?? '' ),
 			'remaining'   => $remaining,
 			'review_url'  => function_exists( 'admin_url' )
-				? admin_url( 'tools.php?page=specflux-site-agent-runs&run=' . (int) $run_id )
+				? \Specflux\SiteAgent\Admin\Ui\Shell::url( 'runs', array( 'run_id' => (int) $run_id ) )
 				: '',
 		);
 	}
@@ -4221,7 +4221,7 @@ final class Runner {
 			'remaining_plans'      => $remaining,
 			'preapprove_available' => $this->preapprovalEnabled(),
 			'review_url'           => function_exists( 'admin_url' )
-				? admin_url( 'tools.php?page=specflux-site-agent-runs&run=' . (int) $run_id )
+				? \Specflux\SiteAgent\Admin\Ui\Shell::url( 'runs', array( 'run_id' => (int) $run_id ) )
 				: '',
 		);
 	}

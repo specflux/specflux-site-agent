@@ -1,5 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { AuiButton, AuiCard } from './ui';
 import ResultCard, { safeUrl } from './ResultCard';
 import { latestPreviewable, readPreviewCollapsed, storePreviewCollapsed } from '../utils';
 import { PREVIEW_IFRAME_ENABLED, PREVIEW_SANDBOX } from '../previewConfig';
@@ -37,19 +38,20 @@ export default function PreviewPane( { steps, userId, iframe = PREVIEW_IFRAME_EN
 	};
 
 	return (
-		<aside
+		<AuiCard
+			as="aside"
 			className={ 'specflux-site-agent-preview-pane' + ( collapsed ? ' is-collapsed' : '' ) }
 			aria-label={ __( 'Preview', 'specflux-site-agent' ) }
 		>
-			<button
-				type="button"
-				className="specflux-site-agent-preview-toggle button"
+			<AuiButton
+				size="sm"
+				className="specflux-site-agent-preview-toggle"
 				aria-expanded={ ! collapsed }
 				aria-controls="specflux-site-agent-preview-body"
 				onClick={ toggle }
 			>
 				{ collapsed ? __( 'Show preview', 'specflux-site-agent' ) : __( 'Hide preview', 'specflux-site-agent' ) }
-			</button>
+			</AuiButton>
 			<div id="specflux-site-agent-preview-body" className="specflux-site-agent-preview-body" hidden={ collapsed }>
 				<ResultCard display={ display } raw="" />
 				{ url && (
@@ -72,6 +74,6 @@ export default function PreviewPane( { steps, userId, iframe = PREVIEW_IFRAME_EN
 					/>
 				) }
 			</div>
-		</aside>
+		</AuiCard>
 	);
 }

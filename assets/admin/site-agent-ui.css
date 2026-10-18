@@ -1,0 +1,70 @@
+/* Site Agent admin: the few rules the shared kit does not cover. Everything is
+ * nested under .aui so nothing leaks into the rest of wp-admin. */
+
+.aui .specflux-site-agent-pre {
+	margin: 0;
+	padding: 12px;
+	border: 1px solid var(--aui-border-strong);
+	border-radius: var(--aui-r-sm);
+	background: var(--aui-inset);
+	color: var(--aui-text);
+	font-family: var(--aui-mono);
+	font-size: 12px;
+	line-height: 18px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	max-height: 320px;
+	overflow: auto;
+}
+
+/* A form on the Settings tab: its save bar runs edge to edge under the page padding. */
+.aui .specflux-site-agent-form > .aui-savebar {
+	margin-inline: calc(var(--aui-s6) * -1);
+	margin-top: var(--aui-s4);
+}
+
+.aui .specflux-site-agent-form + .specflux-site-agent-form,
+.aui .specflux-site-agent-form + .aui-card {
+	margin-top: 0;
+}
+
+/* Per-ability "Treat as" picker and notes in the abilities list. */
+.aui .aui-item .specflux-site-agent-mode {
+	flex: none;
+	width: 150px;
+}
+
+.aui .specflux-site-agent-item-note {
+	margin-top: 2px;
+	color: var(--aui-warn);
+	font-size: 12px;
+}
+
+/* The server-rendered setup notices above the Runs app. */
+.aui .specflux-site-agent-setup-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.aui .specflux-site-agent-setup-panel:not(:empty) {
+	margin-bottom: 16px;
+}
+
+.aui .aui-card-h .aui-tile--sm b {
+	font-size: 12px;
+}
+
+@media (max-width: 782px) {
+	.aui .specflux-site-agent-form > .aui-savebar {
+		margin-inline: calc(var(--aui-s4) * -1);
+	}
+
+	.aui .aui-item .specflux-site-agent-mode {
+		width: 120px;
+	}
+}
+
+.aui .aui-card-f {
+	flex-wrap: wrap;
+}

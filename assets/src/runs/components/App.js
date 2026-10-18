@@ -8,6 +8,7 @@ import EmptyState from './EmptyState';
 import MessageBox from './MessageBox';
 import PreviewPane from './PreviewPane';
 import SetupPanel, { firstBlockingStep } from './SetupPanel';
+import { AuiCard, AuiNotice } from './ui';
 
 /**
  * Add the brief suggestions a tick's new steps created to the shown list, in
@@ -508,8 +509,12 @@ export default function App( { config } ) {
 				selectedRunId={ selectedRunId }
 				onSelectRun={ handleSelectRun }
 			/>
-			<main className="specflux-site-agent-runs-main">
-				{ actionError && <p className="specflux-site-agent-action-error">{ actionError }</p> }
+			<AuiCard as="main" className="specflux-site-agent-runs-main">
+				{ actionError && (
+					<AuiNotice tone="error" className="specflux-site-agent-action-error">
+						{ actionError }
+					</AuiNotice>
+				) }
 				{ runDetail ? (
 					<Chat
 						run={ runDetail.run }
@@ -539,7 +544,7 @@ export default function App( { config } ) {
 					// this happens whenever nothing auto-selected (e.g. the
 					// active tab genuinely has no rows), and must say so
 					// rather than claim no run has ever started.
-					<div className="specflux-site-agent-pick-a-run">
+					<div className="aui-empty specflux-site-agent-pick-a-run">
 						<h2>{ __( 'Pick a run', 'specflux-site-agent' ) }</h2>
 						<p>{ __( 'Choose a run from the list to see its detail.', 'specflux-site-agent' ) }</p>
 					</div>
@@ -563,7 +568,7 @@ export default function App( { config } ) {
 					followUp={ followUp }
 					onCancelFollowUp={ () => setFollowUp( null ) }
 				/>
-			</main>
+			</AuiCard>
 			{ hasPreview && <PreviewPane steps={ runDetail.steps } userId={ config.userId } /> }
 		</div>
 		</>

@@ -1,6 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 import { RUN_TABS, runsForTab, tabCounts } from '../utils';
 import StatusPill from './StatusPill';
+import { AuiCard, AuiTabs } from './ui';
 
 /**
  * S22 pseudo-locale finding: `RUN_TABS`' own `label` field is a bare
@@ -29,22 +30,19 @@ export default function RunList( { runs, activeTab, onTabChange, selectedRunId, 
 	const visible = runsForTab( runs, activeTab );
 
 	return (
-		<aside className="specflux-site-agent-run-list" aria-label={ __( 'Runs', 'specflux-site-agent' ) }>
-			<div className="specflux-site-agent-run-tabs" role="tablist">
-				{ RUN_TABS.map( ( tab ) => (
-					<button
-						key={ tab.key }
-						type="button"
-						role="tab"
-						aria-selected={ activeTab === tab.key }
-						className={ `specflux-site-agent-run-tab${ activeTab === tab.key ? ' is-active' : '' }` }
-						onClick={ () => onTabChange( tab.key ) }
-					>
-						{ tabLabel( tab.key ) }
-						{ ` (${ counts[ tab.key ] })` }
-					</button>
-				) ) }
-			</div>
+		<AuiCard as="aside" className="specflux-site-agent-run-list" aria-label={ __( 'Runs', 'specflux-site-agent' ) }>
+			<AuiTabs
+				className="specflux-site-agent-run-tabs"
+				tabClassName="specflux-site-agent-run-tab"
+				active={ activeTab }
+				onChange={ onTabChange }
+				tabs={ RUN_TABS.map( ( tab ) => ( {
+					key: tab.key,
+					label: tabLabel( tab.key ),
+					count: counts[ tab.key ],
+					tone: 'needs_you' === tab.key && counts[ tab.key ] > 0 ? 'warn' : undefined,
+				} ) ) }
+			/>
 			<ul className="specflux-site-agent-run-rows">
 				{ visible.map( ( run ) => (
 					<li key={ run.id }>
@@ -65,6 +63,6 @@ export default function RunList( { runs, activeTab, onTabChange, selectedRunId, 
 					</li>
 				) }
 			</ul>
-		</aside>
+		</AuiCard>
 	);
 }

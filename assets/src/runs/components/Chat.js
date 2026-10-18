@@ -7,6 +7,23 @@ import ParkCard from './ParkCard';
 import SuggestionCard from './SuggestionCard';
 import ReportView from './ReportView';
 import BackgroundNote from './BackgroundNote';
+import { AuiBadge, AuiButton, AuiIcon, AuiNotice } from './ui';
+
+/** One agent-side chat row: the kit avatar plus a body column. */
+function AgentMessage( { className, dir, children } ) {
+	return (
+		<div className="aui-msg aui-msg--agent">
+			<span className="aui-avatar" aria-hidden="true">
+				<AuiIcon name="robot" />
+			</span>
+			<div className="aui-msg-body">
+				<div className={ `aui-bubble specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot ${ className || '' }`.trim() } dir={ dir }>
+					{ children }
+				</div>
+			</div>
+		</div>
+	);
+}
 
 /**
  * The newest step of the kind matching the run's OWN park status. A question
@@ -192,9 +209,9 @@ export default function Chat( {
 					</span>
 				</p>
 				{ park && (
-					<button
-						type="button"
-						className="button specflux-site-agent-needs-you"
+					<AuiButton
+						size="sm"
+						className="specflux-site-agent-needs-you"
 						onClick={ () => {
 							const heading = document.getElementById( 'specflux-site-agent-park-heading' );
 							if ( heading ) {
@@ -203,8 +220,9 @@ export default function Chat( {
 							}
 						} }
 					>
+						<AuiIcon name="bell" />
 						{ __( 'Needs you', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				) }
 				<UsageCeilings usage={ usage } />
 			</div>
@@ -220,7 +238,7 @@ export default function Chat( {
 			 * nothing (no empty paragraph either).
 			 */ }
 			{ Array.isArray( run.withheld_roles ) && run.withheld_roles.length > 0 && (
-				<p className="specflux-site-agent-withheld-roles">
+				<AuiNotice tone="info" className="specflux-site-agent-withheld-roles">
 					{ run.withheld_notice
 						? run.withheld_notice
 						: sprintf(
@@ -231,11 +249,13 @@ export default function Chat( {
 								),
 								run.withheld_roles.join( ', ' )
 						  ) }
-				</p>
+				</AuiNotice>
 			) }
 			<PinnedPlan plan={ plan } steps={ steps } />
-			<div className="specflux-site-agent-chat-stream">
-				<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-user" dir="auto">{ run.goal }</div>
+			<div className="aui-chat specflux-site-agent-chat-stream">
+				<div className="aui-msg aui-msg--user">
+					<div className="aui-bubble specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-user" dir="auto">{ run.goal }</div>
+				</div>
 				{ entries.map( ( entry, index ) => {
 					if ( 'ledger' === entry.type ) {
 						return <LedgerGroup key={ index } calls={ entry.calls } gateMode={ run.gate_mode } />;
@@ -245,9 +265,9 @@ export default function Chat( {
 					if ( 'model' === step.kind ) {
 						const text = stepText( step );
 						return text ? (
-							<div key={ index } className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot" dir="auto">
+							<AgentMessage key={ index } dir="auto">
 								{ text }
-							</div>
+							</AgentMessage>
 						) : null;
 					}
 					if ( [ 'question', 'plan', 'approval' ].includes( step.kind ) && step === park ) {
@@ -302,27 +322,27 @@ export default function Chat( {
 				 * invented content.
 				 */ }
 				{ busy && ! park && (
-					<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot specflux-site-agent-typing">
+					<AgentMessage className="specflux-site-agent-typing">
 						{ sprintf(
 							/* translators: %d: which tick round-trip this is, for this page-load. */
 							__( 'Tick %d: thinking…', 'specflux-site-agent' ),
 							tickCount || 1
 						) }
-					</div>
+					</AgentMessage>
 				) }
 				{ 'running' === run.status && ! park && ! busy && (
-					<div className="specflux-site-agent-chat-bubble specflux-site-agent-chat-bubble-bot specflux-site-agent-typing">
+					<AgentMessage className="specflux-site-agent-typing">
 						{ __( 'Working…', 'specflux-site-agent' ) }
-					</div>
+					</AgentMessage>
 				) }
 			</div>
 			{ /* 0.4 U2: whether closing the page stops this run. */ }
 			{ ( 'running' === run.status || 'pending' === run.status ) && <BackgroundNote background={ background } /> }
 			{ /* A failed run says why (e.g. the model went silent twice), when the server gave a reason. */ }
 			{ 'failed' === run.status && run.error && 'string' === typeof run.error.message && '' !== run.error.message && (
-				<p className="specflux-site-agent-run-error" role="alert" dir="auto">
+				<AuiNotice tone="error" className="specflux-site-agent-run-error" role="alert" dir="auto">
 					{ run.error.message }
-				</p>
+				</AuiNotice>
 			) }
 			{ /* 0.3 S12 (stage 22b): the harness-built report, once the run is terminal. */ }
 			{ isTerminalStatus( run.status ) && run.report && 'object' === typeof run.report && (
@@ -331,9 +351,9 @@ export default function Chat( {
 			{ /* 0.3 S20 (stage 22b): a follow-up starts from a finished, cancelled or failed run. */ }
 			{ isTerminalStatus( run.status ) && canFollowUp && onFollowUp && (
 				<div className="specflux-site-agent-followup-actions">
-					<button type="button" className="button" onClick={ () => onFollowUp( run ) }>
+					<AuiButton onClick={ () => onFollowUp( run ) }>
 						{ __( 'Start a follow-up', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				</div>
 			) }
 			{ /* Live-review finding: a terminal run shows NO Cancel button — there is
@@ -341,14 +361,9 @@ export default function Chat( {
 			 * disabled one. */ }
 			{ ! isTerminalStatus( run.status ) && (
 				<div className="specflux-site-agent-run-actions">
-					<button
-						type="button"
-						className="button specflux-site-agent-button-danger"
-						disabled={ ! onCancel || busy }
-						onClick={ () => onCancel && onCancel() }
-					>
+					<AuiButton variant="danger-outline" disabled={ ! onCancel || busy } onClick={ () => onCancel && onCancel() }>
 						{ __( 'Cancel run', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				</div>
 			) }
 		</div>
@@ -367,19 +382,19 @@ function UsageCeilings( { usage } ) {
 	return (
 		<div className="specflux-site-agent-usage-ceilings">
 			{ Number.isInteger( usage.toolCalls.max ) && (
-				<span className="specflux-site-agent-usage-ceiling">
+				<AuiBadge className="specflux-site-agent-usage-ceiling">
 					{ /* translators: 1: number of tool calls used, 2: tool call ceiling. */ sprintf( __( 'Tool calls %1$d/%2$d', 'specflux-site-agent' ), usage.toolCalls.used, usage.toolCalls.max ) }
-				</span>
+				</AuiBadge>
 			) }
 			{ Number.isInteger( usage.questions.max ) && (
-				<span className="specflux-site-agent-usage-ceiling">
+				<AuiBadge className="specflux-site-agent-usage-ceiling">
 					{ /* translators: 1: number of questions used, 2: question ceiling. */ sprintf( __( 'Questions %1$d/%2$d', 'specflux-site-agent' ), usage.questions.used, usage.questions.max ) }
-				</span>
+				</AuiBadge>
 			) }
 			{ Number.isInteger( usage.tokens.max ) && (
-				<span className="specflux-site-agent-usage-ceiling">
+				<AuiBadge className="specflux-site-agent-usage-ceiling">
 					{ /* translators: 1: number of tokens used, 2: token ceiling. */ sprintf( __( 'Tokens %1$d/%2$d', 'specflux-site-agent' ), usage.tokens.used, usage.tokens.max ) }
-				</span>
+				</AuiBadge>
 			) }
 		</div>
 	);

@@ -2,6 +2,7 @@ import { useState } from '@wordpress/element';
 import { Modal } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import { previewUndo, undoChanges } from '../api';
+import { AuiButton, AuiNotice } from './ui';
 
 /** The object's own name when the server knows it, else its type and id (both data). */
 function changeName( item ) {
@@ -43,7 +44,7 @@ function outcomeLabel( status ) {
 /** The three-way difference for a drifted field: before the run, after it, and now. */
 function DriftTable( { drift } ) {
 	return (
-		<table className="specflux-site-agent-drift-table">
+		<table className="aui-table specflux-site-agent-drift-table">
 			<caption>{ __( 'Changed since the run', 'specflux-site-agent' ) }</caption>
 			<thead>
 				<tr>
@@ -97,11 +98,15 @@ function ItemList( { items } ) {
 function UndoOutcome( { result } ) {
 	const items = Array.isArray( result.items ) ? result.items : [];
 	return (
-		<div className="specflux-site-agent-undo-result" role="status">
+		<AuiNotice
+			tone={ 'complete' === result.status ? 'success' : [ 'partial', 'refused', 'forbidden' ].includes( result.status ) ? 'warning' : 'info' }
+			className="specflux-site-agent-undo-result"
+			role="status"
+		>
 			<p className="specflux-site-agent-undo-result-line">{ outcomeLabel( result.status ) }</p>
 			{ result.message && <p className="specflux-site-agent-undo-result-reason">{ result.message }</p> }
 			{ items.length > 0 && <ItemList items={ items } /> }
-		</div>
+		</AuiNotice>
 	);
 }
 
@@ -111,7 +116,7 @@ function DiffTable( { diff } ) {
 		return null;
 	}
 	return (
-		<table className="specflux-site-agent-changes-diff">
+		<table className="aui-table specflux-site-agent-changes-diff">
 			<thead>
 				<tr>
 					<th scope="col">{ __( 'Field', 'specflux-site-agent' ) }</th>
@@ -161,7 +166,7 @@ export default function ChangesSection( { runId, section: initial } ) {
 	}
 	if ( 'undo' !== section.mode ) {
 		return section.note ? (
-			<p className="specflux-site-agent-changes-note" dir="auto">
+			<p className="aui-muted specflux-site-agent-changes-note" dir="auto">
 				{ section.note }
 			</p>
 		) : null;
@@ -217,16 +222,16 @@ export default function ChangesSection( { runId, section: initial } ) {
 								{ ! change.restored && ! change.restorable && change.reason_label }
 							</span>
 							{ change.restorable && ! change.restored && (
-								<button
-									type="button"
-									className="button button-small specflux-site-agent-changes-undo"
+								<AuiButton
+									size="sm"
+									className="specflux-site-agent-changes-undo"
 									disabled={ busy }
 									/* translators: %s: the name of the object whose change would be undone. */
 									aria-label={ sprintf( __( 'Undo %s', 'specflux-site-agent' ), changeName( change ) ) }
 									onClick={ () => askPreview( change.id ) }
 								>
 									{ __( 'Undo', 'specflux-site-agent' ) }
-								</button>
+								</AuiButton>
 							) }
 						</div>
 						<DiffTable diff={ change.diff } />
@@ -234,14 +239,14 @@ export default function ChangesSection( { runId, section: initial } ) {
 				) ) }
 			</ul>
 			{ undoable && (
-				<button type="button" className="button specflux-site-agent-changes-undo-run" disabled={ busy } onClick={ () => askPreview( null ) }>
+				<AuiButton className="specflux-site-agent-changes-undo-run" disabled={ busy } onClick={ () => askPreview( null ) }>
 					{ __( 'Undo this run', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			) }
 			{ error && (
-				<p className="specflux-site-agent-changes-error" role="alert" dir="auto">
+				<AuiNotice tone="error" className="specflux-site-agent-changes-error" role="alert" dir="auto">
 					{ error }
-				</p>
+				</AuiNotice>
 			) }
 			{ result && <UndoOutcome result={ result } /> }
 			{ pending && (
@@ -250,19 +255,21 @@ export default function ChangesSection( { runId, section: initial } ) {
 					onRequestClose={ () => setPending( null ) }
 					className="specflux-site-agent-undo-dialog"
 				>
-					<p>{ __( 'This is what an undo would do right now. Anything changed since the run is left alone and shown to you.', 'specflux-site-agent' ) }</p>
-					{ pending.items.length > 0 ? (
-						<ItemList items={ pending.items } />
-					) : (
-						<p>{ __( 'There is nothing to restore.', 'specflux-site-agent' ) }</p>
-					) }
-					<div className="specflux-site-agent-undo-dialog-actions">
-						<button type="button" className="button" onClick={ () => setPending( null ) }>
-							{ __( 'Cancel', 'specflux-site-agent' ) }
-						</button>
-						<button type="button" className="button button-primary" disabled={ busy } onClick={ confirm }>
-							{ __( 'Confirm undo', 'specflux-site-agent' ) }
-						</button>
+					<div className="aui specflux-site-agent-undo-scope" data-brand="specflux">
+						<p>{ __( 'This is what an undo would do right now. Anything changed since the run is left alone and shown to you.', 'specflux-site-agent' ) }</p>
+						{ pending.items.length > 0 ? (
+							<ItemList items={ pending.items } />
+						) : (
+							<p>{ __( 'There is nothing to restore.', 'specflux-site-agent' ) }</p>
+						) }
+						<div className="specflux-site-agent-undo-dialog-actions">
+							<AuiButton onClick={ () => setPending( null ) }>
+								{ __( 'Cancel', 'specflux-site-agent' ) }
+							</AuiButton>
+							<AuiButton variant="primary" disabled={ busy } onClick={ confirm }>
+								{ __( 'Confirm undo', 'specflux-site-agent' ) }
+							</AuiButton>
+						</div>
 					</div>
 				</Modal>
 			) }

@@ -22,16 +22,18 @@ describe( 'an in-flight tick on one run does not disable the park card of anothe
 		listRuns.mockResolvedValue( [ { ...thinA }, { ...parkedB } ] );
 		fetchSetupState.mockResolvedValue( { html: '', start_enabled: true, packs: [ { name: 'pages', label: 'pages' } ], unavailable_packs: [] } );
 		startRun.mockResolvedValue( { run: thinA, new_steps: [] } );
+		const detailB = {
+			run: parkedB,
+			steps: [ { seq: 3, kind: 'plan', message: { goal: 'B', steps: [ { text: 'Do it', verbs: [ 'pages/create' ], tier: 1 } ], assumptions: [] } } ],
+			ui: { plan: { step_id: 3, remaining_plans: 1, preapprove_available: false, review_url: '' } },
+		};
+		// The list auto-selects run B (it needs the viewer). Its FIRST detail
+		// load stays pending, so the message box is still idle when run A is
+		// started; the load made when the viewer switches back to B resolves.
+		// (Without this the test raced the auto-selected park for the box.)
+		let bLoads = 0;
 		getRun.mockImplementation( ( id ) =>
-			Promise.resolve(
-				5 === Number( id )
-					? {
-							run: parkedB,
-							steps: [ { seq: 3, kind: 'plan', message: { goal: 'B', steps: [ { text: 'Do it', verbs: [ 'pages/create' ], tier: 1 } ], assumptions: [] } } ],
-							ui: { plan: { step_id: 3, remaining_plans: 1, preapprove_available: false, review_url: '' } },
-					  }
-					: { run: thinA, steps: [] }
-			)
+			5 === Number( id ) ? ( 0 === bLoads++ ? new Promise( () => {} ) : Promise.resolve( detailB ) ) : Promise.resolve( { run: thinA, steps: [] } )
 		);
 		// Run A's tick never returns during this test.
 		tickRun.mockReturnValue( new Promise( () => {} ) );

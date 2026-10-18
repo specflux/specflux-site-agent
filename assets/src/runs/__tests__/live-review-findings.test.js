@@ -18,6 +18,9 @@ import RunList from '../components/RunList';
 const CSS_PATH = path.join( __dirname, '..', 'style.css' );
 const CSS_SOURCE = fs.readFileSync( CSS_PATH, 'utf8' );
 
+// Every rule in style.css sits under the kit's `.aui` scope, which PHP prints.
+const inAui = ( ui ) => <div className="aui">{ ui }</div>;
+
 function injectRealStylesheet() {
 	const style = document.createElement( 'style' );
 	style.textContent = CSS_SOURCE;
@@ -32,13 +35,15 @@ describe( 'long goal titles wrap, they do not run off the viewport', () => {
 			const longGoal =
 				'Build a landing page for our spring workshops with a hero, three workshop cards with dates, a short FAQ and a signup button that goes to /register and publish it when it looks right';
 			render(
-				<RunList
-					runs={ [ { id: 1, goal: longGoal, status: 'running', pack: 'pages' } ] }
-					activeTab="all"
-					onTabChange={ () => {} }
-					selectedRunId={ null }
-					onSelectRun={ () => {} }
-				/>
+				inAui(
+					<RunList
+						runs={ [ { id: 1, goal: longGoal, status: 'running', pack: 'pages' } ] }
+						activeTab="all"
+						onTabChange={ () => {} }
+						selectedRunId={ null }
+						onSelectRun={ () => {} }
+					/>
+				)
 			);
 
 			const title = screen.getByText( longGoal );
@@ -69,11 +74,13 @@ describe( 'approval-card arguments wrap and show in full', () => {
 			const longArg =
 				'A very long single-word-style-argument-value-that-would-otherwise-overflow-the-card-horizontally-if-it-were-allowed-to-do-so-instead-of-wrapping-anywhere';
 			render(
-				<ParkCard
-					kind="approval"
-					gateMode="agent_safety"
-					payload={ { verb: 'specflux/publish-page', tier: 2, args: { prompt: longArg } } }
-				/>
+				inAui(
+					<ParkCard
+						kind="approval"
+						gateMode="agent_safety"
+						payload={ { verb: 'specflux/publish-page', tier: 2, args: { prompt: longArg } } }
+					/>
+				)
 			);
 
 			const pre = screen.getByText( ( _content, node ) => node?.tagName === 'PRE' );
@@ -117,15 +124,21 @@ describe( 'Approve and Reject need spacing between them', () => {
 		const removeStyle = injectRealStylesheet();
 		try {
 			render(
-				<ParkCard
-					kind="approval"
-					gateMode="built_in"
-					payload={ { verb: 'specflux/publish-page', tier: 2, args: {} } }
-				/>
+				inAui(
+					<ParkCard
+						kind="approval"
+						gateMode="built_in"
+						payload={ { verb: 'specflux/publish-page', tier: 2, args: {} } }
+					/>
+				)
 			);
 			const approve = screen.getByRole( 'button', { name: 'Approve' } );
 			const gapContainer = approve.parentElement;
-			expect( getComputedStyle( gapContainer ).gap ).toBe( '10px' );
+			// jsdom cannot resolve `var( --aui-s2 )`, so the spacing token is
+			// asserted from the rule's source above; here only that the real
+			// stylesheet matches this container and that Approve/Reject share it.
+			expect( gapContainer ).toHaveClass( 'specflux-site-agent-park-actions' );
+			expect( screen.getByRole( 'button', { name: 'Reject' } ).parentElement ).toBe( gapContainer );
 		} finally {
 			removeStyle();
 		}

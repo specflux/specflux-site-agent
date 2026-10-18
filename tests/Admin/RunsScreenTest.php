@@ -241,7 +241,7 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'admin.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 		};
 
@@ -357,7 +357,7 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'admin.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 		};
 
@@ -719,18 +719,16 @@ final class RunsScreenTest extends TestCase {
 		);
 	}
 
-	public function test_register_wires_menu_assets_and_all_post_endpoints(): void {
+	public function test_register_wires_assets_and_all_post_endpoints(): void {
 		( new RunsScreen() )->register();
 
 		$hooks = array_keys( $GLOBALS['specflux_site_agent_test_actions'] );
-		$this->assertContains( 'admin_menu', $hooks );
 		$this->assertContains( 'admin_enqueue_scripts', $hooks );
 		$this->assertContains( 'admin_post_specflux_site_agent_cancel_run', $hooks );
 		$this->assertContains( 'admin_post_specflux_site_agent_new_run', $hooks );
 		$this->assertContains( 'admin_post_specflux_site_agent_answer', $hooks );
 		$this->assertContains( 'admin_post_specflux_site_agent_plan_decision', $hooks );
 		$this->assertContains( 'admin_post_specflux_site_agent_approval_decision', $hooks );
-		$this->assertContains( 'admin_init', $hooks, 'the old tools.php URL redirect (S10)' );
 		$this->assertContains( 'wp_ajax_specflux_site_agent_setup_panel', $hooks );
 		$this->assertContains( 'wp_ajax_specflux_site_agent_setup_brief', $hooks );
 		$this->assertContains( 'admin_notices', $hooks, 'the one-time activation notice (S10)' );
@@ -739,85 +737,6 @@ final class RunsScreenTest extends TestCase {
 	// ------------------------------------------------------------------
 	// S10: old tools.php URL redirect + the Plugins-screen activation notice
 	// ------------------------------------------------------------------
-
-	private function redirectingScreen(): RunsScreen {
-		return new class() extends RunsScreen {
-			public ?string $redirectedUrl = null;
-
-			protected function redirectAndExit( string $url ): void {
-				$this->redirectedUrl = $url;
-			}
-		};
-	}
-
-	public function test_the_old_tools_url_redirects_to_the_top_level_menu(): void {
-		global $pagenow;
-		$pagenow = 'tools.php';
-		$_GET    = array(
-			'page'   => 'specflux-site-agent-runs',
-			'run_id' => '7',
-		);
-
-		$screen = $this->redirectingScreen();
-		$screen->redirectOldToolsUrl();
-
-		$this->assertNotNull( $screen->redirectedUrl );
-		$this->assertStringContainsString( 'admin.php', $screen->redirectedUrl );
-		$this->assertStringContainsString( 'page=specflux-site-agent-runs', $screen->redirectedUrl );
-		$this->assertStringContainsString( 'run_id=7', $screen->redirectedUrl );
-
-		unset( $_GET );
-	}
-
-	public function test_the_redirect_carries_only_allowlisted_scalar_keys(): void {
-		global $pagenow;
-		$pagenow = 'tools.php';
-		$_GET    = array(
-			'page'    => 'specflux-site-agent-runs',
-			'goal'    => 'Publish the spring page',
-			'run_id'  => '7',
-			'unknown' => 'x',
-			'run'     => array( '1' ),
-		);
-
-		$screen = $this->redirectingScreen();
-		$screen->redirectOldToolsUrl();
-
-		$this->assertNotNull( $screen->redirectedUrl );
-		$this->assertStringContainsString( 'run_id=7', $screen->redirectedUrl );
-		$this->assertStringContainsString( 'goal=', $screen->redirectedUrl );
-		$this->assertStringNotContainsString( 'unknown', $screen->redirectedUrl );
-		$this->assertStringNotContainsString( 'run%5B', $screen->redirectedUrl );
-		$this->assertStringNotContainsString( 'run=', str_replace( 'run_id=', '', $screen->redirectedUrl ) );
-
-		unset( $_GET );
-	}
-
-	public function test_a_different_tools_page_is_left_alone(): void {
-		global $pagenow;
-		$pagenow = 'tools.php';
-		$_GET    = array( 'page' => 'something-else' );
-
-		$screen = $this->redirectingScreen();
-		$screen->redirectOldToolsUrl();
-
-		$this->assertNull( $screen->redirectedUrl );
-
-		unset( $_GET );
-	}
-
-	public function test_a_non_tools_page_is_left_alone(): void {
-		global $pagenow;
-		$pagenow = 'admin.php';
-		$_GET    = array( 'page' => 'specflux-site-agent-runs' );
-
-		$screen = $this->redirectingScreen();
-		$screen->redirectOldToolsUrl();
-
-		$this->assertNull( $screen->redirectedUrl );
-
-		unset( $_GET );
-	}
 
 	public function test_the_activation_notice_shows_once_on_the_plugins_screen_only(): void {
 		global $pagenow;
@@ -877,24 +796,20 @@ final class RunsScreenTest extends TestCase {
 	}
 
 	/**
-	 * Defect 3 (0.3 live run + S11): WordPress core's admin JS relocates
-	 * every `.wrap .notice` element below the page heading EXCEPT
-	 * `.notice.inline` — a setup-check notice left as a bare `.notice`
-	 * therefore gets pulled out of `#specflux-site-agent-setup-panel` and shown a
-	 * second time. The advisory notices still rendered server-side keep it.
+	 * The setup checks render as the kit's notices (not WordPress `.notice`, which core's
+	 * admin JS relocates out of the panel), keeping the hooks the screen script and the
+	 * e2e specs find a check by.
 	 */
-	public function test_setup_check_notices_carry_the_inline_class_core_skips(): void {
+	public function test_setup_check_notices_are_kit_notices_with_their_hooks(): void {
 		$advisory = new SetupCheck( 'specflux/passthrough-review', SetupCheck::ADVISORY, false, 'Review abilities.', null, null, 'Ask an administrator.', 'x' );
 		$method   = new \ReflectionMethod( RunsScreen::class, 'renderSetupCheckNotice' );
 		$method->setAccessible( true );
 
 		$html = (string) $method->invoke( new RunsScreen(), $advisory, 1 );
 
-		$this->assertMatchesRegularExpression(
-			'/<div class="notice [^"]*\binline\b[^"]*specflux-site-agent-setup-check"/',
-			$html,
-			'a setup-check notice must carry the "inline" class core skips when relocating .wrap .notice elements'
-		);
+		$this->assertStringContainsString( 'class="aui-notice aui-notice--warning specflux-site-agent-setup-check"', $html );
+		$this->assertStringContainsString( 'data-check-id="specflux/passthrough-review"', $html );
+		$this->assertStringNotContainsString( 'class="notice', $html, 'a bare WordPress .notice would be relocated by core admin JS' );
 	}
 
 	public function test_the_setup_panel_is_empty_when_everything_is_clear(): void {
@@ -1096,12 +1011,12 @@ final class RunsScreenTest extends TestCase {
 			protected function redirectBack( int $run_id, ?string $error_code = null ): void {
 				$this->redirectedRunId = $run_id;
 				$this->redirectedError = $error_code;
-				$this->redirectedTo    = admin_url( 'tools.php?page=specflux-site-agent-runs&run_id=' . $run_id );
+				$this->redirectedTo    = admin_url( 'admin.php?page=specflux-site-agent-runs&run_id=' . $run_id );
 			}
 
 			protected function redirectList( string $error_code ): void {
 				$this->redirectedListError = $error_code;
-				$this->redirectedTo        = admin_url( 'tools.php?page=specflux-site-agent-runs' );
+				$this->redirectedTo        = admin_url( 'admin.php?page=specflux-site-agent-runs' );
 			}
 		};
 	}

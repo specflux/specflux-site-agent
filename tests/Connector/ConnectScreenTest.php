@@ -1,6 +1,6 @@
 <?php
 /**
- * The Connect screen: creating, listing, re-scoping and revoking connections.
+ * The AI apps tab's connections: creating, listing, re-scoping and revoking connections.
  *
  * @package Specflux Site Agent
  */
@@ -52,21 +52,6 @@ final class ConnectScreenTest extends ConnectorTestCase {
 	/** @return list<array<string,mixed>> */
 	private function passwords(): array {
 		return array_values( WP_Application_Passwords::get_user_application_passwords( self::USER ) );
-	}
-
-	public function test_the_submenu_is_added_after_the_specflux_site_agent_parent_menu(): void {
-		$GLOBALS['specflux_site_agent_test_action_priorities'] = array();
-		ConnectScreen::register();
-
-		$priorities = array();
-		foreach ( $GLOBALS['specflux_site_agent_test_action_priorities']['admin_menu'] ?? array() as $entry ) {
-			if ( array( ConnectScreen::class, 'menu' ) === $entry[0] ) {
-				$priorities[] = $entry[1];
-			}
-		}
-
-		// RunsScreen adds the parent at the default 10.
-		$this->assertSame( array( 20 ), $priorities );
 	}
 
 	public function test_the_screen_explains_each_missing_requirement(): void {
@@ -161,11 +146,11 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 		$this->assertStringContainsString( 'Claude (web, desktop and mobile)', $html );
 		$this->assertStringContainsString( 'ChatGPT', $html );
-		$this->assertSame( 2, substr_count( $html, esc_html( ConnectScreen::serverUrl() ) . '</code>' ) );
+		$this->assertSame( 3, substr_count( $html, 'value="' . esc_attr( ConnectScreen::serverUrl() ) . '"' ), 'one copy field per sign-in card, one in the right rail' );
 		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
 		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
 		$this->assertStringContainsString( 'Plugins, open the Add menu, then Add custom MCP server', $html );
-		$this->assertStringContainsString( 'page=' . \Specflux\SiteAgent\Connector\OAuth\SignedInApps::SLUG, $html );
+		$this->assertStringContainsString( '#specflux-site-agent-signed-in', $html );
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}
 

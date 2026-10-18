@@ -191,7 +191,9 @@ final class ActivityTest extends ConnectorTestCase {
 		$this->assertStringContainsString( 'Recent activity', $html );
 		$this->assertStringContainsString( self::WRITE, $html );
 		$this->assertStringContainsString( 'Waiting for approval', $html );
-		$this->assertStringNotContainsString( 'hunter2', $html );
+		// The waiting-calls section shows the arguments to the person who has to approve them; the activity log never does.
+		$this->assertStringContainsString( 'id="specflux-site-agent-activity"', $html );
+		$this->assertStringNotContainsString( 'hunter2', substr( $html, (int) strpos( $html, 'id="specflux-site-agent-activity"' ) ) );
 	}
 
 	public function test_the_uuid_column_fits_an_oauth_connection_id(): void {

@@ -1,5 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
+import { AuiBadge, AuiButton } from './ui';
 
 const KNOWN_TYPES = [ 'post', 'link', 'media', 'product', 'coupon', 'list', 'table', 'error' ];
 
@@ -68,7 +69,7 @@ function Fields( { fields } ) {
 		return null;
 	}
 	return (
-		<dl className="specflux-site-agent-card-fields">
+		<dl className="aui-kv specflux-site-agent-card-fields">
 			{ rows.map( ( f, i ) => (
 				<div key={ i } className="specflux-site-agent-card-field">
 					<dt>{ text( f.label ) }</dt>
@@ -91,27 +92,62 @@ function More( { count } ) {
 	);
 }
 
-function Body( { display } ) {
+/** Card header: the title (and status badge), per display type. */
+function Head( { display } ) {
 	const status = text( display.status );
 	switch ( display.type ) {
 		case 'error':
 			return (
-				<div className="specflux-site-agent-card-error">
-					<p className="specflux-site-agent-card-title">
+				<div className="aui-result-h specflux-site-agent-card-error">
+					<span className="specflux-site-agent-card-title">
 						<span aria-hidden="true">{ '⚠ ' }</span>
 						<span className="specflux-site-agent-card-errorlabel">{ __( 'Error', 'specflux-site-agent' ) }</span>
 						{ text( display.title ) && <span data-specflux-site-agent-content>{ ': ' + text( display.title ) }</span> }
-					</p>
-					{ text( display.message ) && <p className="specflux-site-agent-card-message" data-specflux-site-agent-content>{ text( display.message ) }</p> }
+					</span>
 				</div>
 			);
 		case 'list':
 			return (
-				<>
-					<p className="specflux-site-agent-card-title">
+				<div className="aui-result-h">
+					<span className="specflux-site-agent-card-title">
 						<span data-specflux-site-agent-content>{ text( display.title ) }</span>{ ' ' }
 						{ /* translators: %d: number of items in the list. */ sprintf( _n( '(%d item)', '(%d items)', Number( display.count ) || 0, 'specflux-site-agent' ), Number( display.count ) || 0 ) }
-					</p>
+					</span>
+				</div>
+			);
+		case 'table':
+			return text( display.title ) ? (
+				<div className="aui-result-h">
+					<span className="specflux-site-agent-card-title" data-specflux-site-agent-content>{ text( display.title ) }</span>
+				</div>
+			) : null;
+		default:
+			// post, link, media, product, coupon.
+			return (
+				<div className="aui-result-h">
+					<span className="specflux-site-agent-card-title" data-specflux-site-agent-content>{ text( display.title ) }</span>
+					{ status && (
+						<AuiBadge className="specflux-site-agent-card-status" data-specflux-site-agent-content>
+							{ status }
+						</AuiBadge>
+					) }
+				</div>
+			);
+	}
+}
+
+/** Card body: the details under the header; null when a type has none. */
+function Body( { display } ) {
+	switch ( display.type ) {
+		case 'error':
+			return text( display.message ) ? (
+				<div className="aui-result-b specflux-site-agent-card-error">
+					<p className="specflux-site-agent-card-message" data-specflux-site-agent-content>{ text( display.message ) }</p>
+				</div>
+			) : null;
+		case 'list':
+			return (
+				<div className="aui-result-b">
 					<ul className="specflux-site-agent-card-list">
 						{ ( Array.isArray( display.items ) ? display.items : [] ).map( ( item, i ) => (
 							<li key={ i }>
@@ -122,15 +158,14 @@ function Body( { display } ) {
 						) ) }
 					</ul>
 					<More count={ display.more } />
-				</>
+				</div>
 			);
 		case 'table': {
 			const columns = Array.isArray( display.columns ) ? display.columns : [];
 			const rows = Array.isArray( display.rows ) ? display.rows : [];
 			return (
-				<>
-					{ text( display.title ) && <p className="specflux-site-agent-card-title" data-specflux-site-agent-content>{ text( display.title ) }</p> }
-					<table className="specflux-site-agent-card-table">
+				<div className="aui-result-b">
+					<table className="aui-table specflux-site-agent-card-table">
 						<thead>
 							<tr>
 								{ columns.map( ( c, i ) => (
@@ -149,21 +184,17 @@ function Body( { display } ) {
 						</tbody>
 					</table>
 					<More count={ display.more } />
-				</>
+				</div>
 			);
 		}
 		default:
 			// post, link, media, product, coupon.
 			return (
-				<>
+				<div className="aui-result-b">
 					{ 'media' === display.type && <Thumb url={ display.thumbnail_url } alt={ display.alt } /> }
-					<p className="specflux-site-agent-card-title">
-						<span data-specflux-site-agent-content>{ text( display.title ) }</span>
-						{ status && <span className="specflux-site-agent-card-status" data-specflux-site-agent-content>{ status }</span> }
-					</p>
 					<Fields fields={ display.fields } />
 					<Links links={ display.links } />
-				</>
+				</div>
 			);
 	}
 }
@@ -183,21 +214,23 @@ export default function ResultCard( { display, raw } ) {
 		return <span data-specflux-site-agent-content>{ raw }</span>;
 	}
 	return (
-		<div className="specflux-site-agent-card" data-card-type={ display.type }>
+		<div className="aui-result specflux-site-agent-card" data-card-type={ display.type }>
+			<Head display={ display } />
 			<Body display={ display } />
 			{ raw && (
-				<>
-					<button
-						type="button"
-						className="specflux-site-agent-card-raw-toggle button-link"
+				<div className="aui-result-f">
+					<AuiButton
+						variant="ghost"
+						size="sm"
+						className="specflux-site-agent-card-raw-toggle"
 						aria-expanded={ showRaw }
 						onClick={ () => setShowRaw( ! showRaw ) }
 					>
 						{ showRaw ? __( 'Hide raw', 'specflux-site-agent' ) : __( 'Show raw', 'specflux-site-agent' ) }
-					</button>
-					{ showRaw && <pre className="specflux-site-agent-card-raw" data-specflux-site-agent-content>{ raw }</pre> }
-				</>
+					</AuiButton>
+				</div>
 			) }
+			{ raw && showRaw && <pre className="aui-mono specflux-site-agent-card-raw" data-specflux-site-agent-content>{ raw }</pre> }
 		</div>
 	);
 }

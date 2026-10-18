@@ -4,6 +4,7 @@ import TierBadge from './TierBadge';
 import ApprovalSummary from './ApprovalSummary';
 import ApprovalDiff from './ApprovalDiff';
 import { humanizeVerb, planApprovalCount } from '../utils';
+import { AuiButton, AuiIcon, AuiNotice } from './ui';
 
 const HEADINGS = {
 	question: __( 'Question for you', 'specflux-site-agent' ),
@@ -13,6 +14,13 @@ const HEADINGS = {
 };
 
 /** Longest wait between automatic retries of a held call, in seconds. */
+const PARK_ICONS = {
+	question: 'chat',
+	plan: 'file-text',
+	approval: 'shield',
+	hold: 'clock',
+};
+
 const HOLD_MAX_POLL_SECONDS = 60;
 /** Shortest wait, and the poll interval when no reset time is known. */
 const HOLD_MIN_POLL_SECONDS = 5;
@@ -56,15 +64,18 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 	}, [ kind, 'hold' === kind ? null : payload ] );
 
 	return (
-		<section className="specflux-site-agent-park-card" aria-labelledby="specflux-site-agent-park-heading">
-			<h3
-				id="specflux-site-agent-park-heading"
-				className="specflux-site-agent-park-heading"
-				tabIndex={ -1 }
-				ref={ headingRef }
-			>
-				{ HEADINGS[ kind ] || HEADINGS.approval }
-			</h3>
+		<section className="aui-card aui-approval specflux-site-agent-park-card" aria-labelledby="specflux-site-agent-park-heading">
+			<div className="aui-approval-h">
+				<AuiIcon name={ PARK_ICONS[ kind ] || PARK_ICONS.approval } />
+				<h3
+					id="specflux-site-agent-park-heading"
+					className="specflux-site-agent-park-heading"
+					tabIndex={ -1 }
+					ref={ headingRef }
+				>
+					{ HEADINGS[ kind ] || HEADINGS.approval }
+				</h3>
+			</div>
 			{ 'question' === kind && <QuestionBody payload={ payload } onResolve={ onResolve } busy={ busy } /> }
 			{ 'plan' === kind && (
 				<PlanBody payload={ payload } gateMode={ gateMode } onResolve={ onResolve } busy={ busy } />
@@ -107,7 +118,7 @@ function QuestionBody( { payload, onResolve, busy } ) {
 			 * hook to exclude it by — `data-specflux-site-agent-content` marks it as
 			 * NOT translatable chrome. */ }
 			<p data-specflux-site-agent-content dir="auto">{ payload.text }</p>
-			{ payload.rationale && <p className="specflux-site-agent-rationale">{ payload.rationale }</p> }
+			{ payload.rationale && <p className="aui-muted specflux-site-agent-rationale">{ payload.rationale }</p> }
 			{ hasChoices ? (
 				<div className="specflux-site-agent-answer-choices" role="radiogroup" aria-label={ __( 'Answer', 'specflux-site-agent' ) }>
 					{ choices.map( ( option ) => (
@@ -136,7 +147,7 @@ function QuestionBody( { payload, onResolve, busy } ) {
 					</label>
 					{ '__other__' === choice && (
 						<textarea
-							className="specflux-site-agent-answer-other"
+							className="aui-textarea specflux-site-agent-answer-other"
 							value={ text }
 							onChange={ ( e ) => setText( e.target.value ) }
 							disabled={ busy }
@@ -146,17 +157,16 @@ function QuestionBody( { payload, onResolve, busy } ) {
 				</div>
 			) : (
 				<textarea
-					className="specflux-site-agent-answer-text"
+					className="aui-textarea specflux-site-agent-answer-text"
 					value={ text }
 					onChange={ ( e ) => setText( e.target.value ) }
 					disabled={ busy }
 					aria-label={ __( 'Your answer', 'specflux-site-agent' ) }
 				/>
 			) }
-			<div className="specflux-site-agent-park-actions">
-				<button
-					type="button"
-					className="button button-primary"
+			<div className="aui-approval-f specflux-site-agent-park-actions">
+				<AuiButton
+					variant="primary"
 					disabled={ ! onResolve || busy || ! canAnswer }
 					onClick={ () => {
 						if ( hasChoices && '__other__' !== choice ) {
@@ -167,15 +177,13 @@ function QuestionBody( { payload, onResolve, busy } ) {
 					} }
 				>
 					{ __( 'Answer', 'specflux-site-agent' ) }
-				</button>
-				<button
-					type="button"
-					className="button"
+				</AuiButton>
+				<AuiButton
 					disabled={ ! onResolve || busy }
 					onClick={ () => submit( { skip: true } ) }
 				>
 					{ __( 'Skip', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			</div>
 		</div>
 	);
@@ -304,7 +312,7 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 			 * defect this exact count was the fix for.
 			 */ }
 			{ null !== approvalCount && (
-				<p className="specflux-site-agent-plan-approval-count">
+				<p className="aui-approval-sum specflux-site-agent-plan-approval-count">
 					{ sprintf(
 						/* translators: %d: number of approvals this plan will ask for. */
 						_n(
@@ -369,7 +377,7 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 			</div>
 			{ 'veto' === action && (
 				<textarea
-					className="specflux-site-agent-plan-veto-note"
+					className="aui-textarea specflux-site-agent-plan-veto-note"
 					value={ note }
 					onChange={ ( e ) => setNote( e.target.value ) }
 					placeholder={ __( 'Say why (required)', 'specflux-site-agent' ) }
@@ -377,15 +385,14 @@ function PlanBody( { payload, gateMode, onResolve, busy } ) {
 					aria-label={ __( 'Veto note', 'specflux-site-agent' ) }
 				/>
 			) }
-			<div className="specflux-site-agent-park-actions">
-				<button
-					type="button"
-					className={ 'veto' === action ? 'button specflux-site-agent-button-danger' : 'button button-primary' }
+			<div className="aui-approval-f specflux-site-agent-park-actions">
+				<AuiButton
+					variant={ 'veto' === action ? 'danger-outline' : 'primary' }
 					disabled={ ! onResolve || busy || ! canSubmit }
 					onClick={ submit }
 				>
 					{ 'veto' === action ? __( 'Veto', 'specflux-site-agent' ) : __( 'Accept plan', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			</div>
 		</div>
 	);
@@ -404,9 +411,9 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 			</p>
 			<TierBadge gateMode={ gateMode } tier={ payload.tier } />
 			{ 'string' === typeof payload.notice && '' !== payload.notice && (
-				<p className="specflux-site-agent-approval-notice" role="status">
+				<AuiNotice tone="warning" className="specflux-site-agent-approval-notice" role="status">
 					{ payload.notice }
-				</p>
+				</AuiNotice>
 			) }
 			{ hasSummary && (
 				<div className="specflux-site-agent-approval-summary-block">
@@ -419,7 +426,7 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 					 * marker; the labels around it stay translatable chrome.
 					 * Plain text, so it reads without colour.
 					 */ }
-					<p className="specflux-site-agent-approval-summary" data-specflux-site-agent-content>
+					<p className="aui-approval-sum specflux-site-agent-approval-summary" data-specflux-site-agent-content>
 						<ApprovalSummary html={ payload.summary } />
 					</p>
 				</div>
@@ -441,23 +448,21 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 					</pre>
 				</details>
 			) }
-			<div className="specflux-site-agent-park-actions">
-				<button
-					type="button"
-					className="button button-primary"
+			<div className="aui-approval-f specflux-site-agent-park-actions">
+				<AuiButton
+					variant="primary"
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( { action: 'approve' } ) }
 				>
 					{ __( 'Approve', 'specflux-site-agent' ) }
-				</button>
-				<button
-					type="button"
-					className="button specflux-site-agent-button-danger"
+				</AuiButton>
+				<AuiButton
+					variant="danger-outline"
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( { action: 'reject' } ) }
 				>
 					{ __( 'Reject', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			</div>
 		</div>
 	);
@@ -486,19 +491,17 @@ function HoldBody( { payload, onResolve, busy } ) {
 
 	return (
 		<div className="specflux-site-agent-park-body">
-			<p className="specflux-site-agent-hold-message" role="status" dir="auto">
+			<AuiNotice tone="warning" className="specflux-site-agent-hold-message" role="status" dir="auto">
 				{ holdMessage( hold ) }
-			</p>
+			</AuiNotice>
 			<p>{ __( 'This run is not failing. It continues on its own as soon as the wait is over.', 'specflux-site-agent' ) }</p>
-			<div className="specflux-site-agent-park-actions">
-				<button
-					type="button"
-					className="button"
+			<div className="aui-approval-f specflux-site-agent-park-actions">
+				<AuiButton
 					disabled={ ! onResolve || busy }
 					onClick={ () => onResolve && onResolve( null ) }
 				>
 					{ __( 'Check again', 'specflux-site-agent' ) }
-				</button>
+				</AuiButton>
 			</div>
 		</div>
 	);

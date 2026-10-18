@@ -62,7 +62,8 @@ describe( 'ApprovalDiff', () => {
 
 	it( 'styles with logical properties only, so it is RTL-safe', () => {
 		const css = fs.readFileSync( path.join( __dirname, '..', 'style.css' ), 'utf8' );
-		const block = css.slice( css.indexOf( 'Approve with a diff (0.4 S4)' ) );
+		const start = css.indexOf( 'Approve with a diff' );
+		const block = css.slice( start, css.indexOf( '/* Suggestion cards', start ) );
 		expect( block ).not.toMatch( /\b(margin|padding|border)-(left|right)\b|\b(left|right)\s*:|text-align/ );
 		expect( block ).toMatch( /border-inline-start/ );
 	} );

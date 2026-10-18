@@ -1,5 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { AuiButton, AuiIcon } from './ui';
 
 /** S20: a suggestion's own per-line cap — {@see \Specflux\SiteAgent\Tools\SuggestBriefTool::MAX_TEXT_CHARS}. */
 const MAX_TEXT_CHARS = 200;
@@ -50,11 +51,14 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 	};
 
 	return (
-		<div className="specflux-site-agent-suggestion-card">
-			<h4 className="specflux-site-agent-suggestion-heading">{ __( 'Suggested addition to the site brief', 'specflux-site-agent' ) }</h4>
+		<div className="aui-card aui-approval specflux-site-agent-suggestion-card">
+			<div className="aui-approval-h">
+				<AuiIcon name="pencil" />
+				<h4 className="specflux-site-agent-suggestion-heading">{ __( 'Suggested addition to the site brief', 'specflux-site-agent' ) }</h4>
+			</div>
 
 			{ ! pending && (
-				<p className="specflux-site-agent-suggestion-status">
+				<p className="aui-muted specflux-site-agent-suggestion-status">
 					{ 'saved' === suggestion.status
 						? __( 'Saved to the site brief.', 'specflux-site-agent' )
 						: __( 'Dismissed.', 'specflux-site-agent' ) }
@@ -65,7 +69,7 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 				pending ? (
 					<>
 						<textarea
-							className="specflux-site-agent-suggestion-text"
+							className="aui-textarea specflux-site-agent-suggestion-text"
 							value={ text }
 							onChange={ ( e ) => setText( e.target.value ) }
 							maxLength={ MAX_TEXT_CHARS }
@@ -73,23 +77,13 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 							aria-label={ __( 'Suggested brief text', 'specflux-site-agent' ) }
 						/>
 						{ error && <p className="specflux-site-agent-suggestion-error">{ error }</p> }
-						<div className="specflux-site-agent-suggestion-actions">
-							<button
-								type="button"
-								className="button button-primary"
-								disabled={ busy || '' === text.trim() }
-								onClick={ () => submit( 'save' ) }
-							>
+						<div className="aui-approval-f specflux-site-agent-suggestion-actions">
+							<AuiButton variant="primary" disabled={ busy || '' === text.trim() } onClick={ () => submit( 'save' ) }>
 								{ __( 'Save', 'specflux-site-agent' ) }
-							</button>
-							<button
-								type="button"
-								className="button"
-								disabled={ busy }
-								onClick={ () => submit( 'dismiss' ) }
-							>
+							</AuiButton>
+							<AuiButton disabled={ busy } onClick={ () => submit( 'dismiss' ) }>
 								{ __( 'Dismiss', 'specflux-site-agent' ) }
-							</button>
+							</AuiButton>
 						</div>
 					</>
 				) : (
@@ -101,7 +95,7 @@ export default function SuggestionCard( { suggestion, canManageBrief, onResolve 
 						{ suggestion.text }
 					</pre>
 					{ pending && (
-						<p className="specflux-site-agent-suggestion-admin-only">
+						<p className="aui-muted specflux-site-agent-suggestion-admin-only">
 							{ __( 'An administrator can add this to the site brief.', 'specflux-site-agent' ) }
 						</p>
 					) }

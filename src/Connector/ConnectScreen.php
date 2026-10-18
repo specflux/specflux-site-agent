@@ -1,6 +1,11 @@
 <?php
 /**
- * The "Connect an AI app" screen (K3).
+ * Connections for the AI apps tab (K3): creation, the one-time config view,
+ * revoke and re-scope, and the app cards and tables the tab prints.
+ *
+ * The page itself (header, connector switch, signed-in apps, waiting calls, the
+ * right rail) is {@see AppsScreen}; this class keeps the connection logic and
+ * handlers exactly as they were.
  *
  * @package Specflux Site Agent
  */
@@ -9,9 +14,11 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Connector;
 
-use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Admin\Ui\Kit;
+use Specflux\SiteAgent\Admin\Ui\Shell;
+use Specflux\SiteAgent\Connector\OAuth\Clients;
 use Specflux\SiteAgent\Connector\OAuth\OAuth;
-use Specflux\SiteAgent\Connector\OAuth\SignedInApps;
+use Specflux\SiteAgent\Connector\OAuth\Store;
 use Specflux\SiteAgent\MultisiteGuard;
 use WP_Application_Passwords;
 use WP_Error;
@@ -28,8 +35,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ConnectScreen {
 
-	/** Submenu slug. */
-	public const SLUG = 'specflux-site-agent-connect';
+	/** The old submenu slug; it redirects to the AI apps tab ({@see Shell::redirectLegacy()}). */
+	public const SLUG = Shell::LEGACY_CONNECT;
 
 	/** Nonce action for the create / test forms. */
 	public const NONCE_FORM = 'specflux_site_agent_connect_form';
@@ -37,30 +44,15 @@ final class ConnectScreen {
 	/** Nonce action prefix for the per-connection buttons; the UUID is appended. */
 	public const NONCE_CONNECTION = 'specflux_site_agent_connection_';
 
-	/** Hook the menu and the two admin-post handlers. */
+	/** Hook the two admin-post handlers. */
 	public static function register(): void {
-		// After RunsScreen adds the Specflux Site Agent parent at 10: a submenu added before its
-		// parent gets a bare-slug URL and becomes the parent's own link.
-		add_action( 'admin_menu', array( self::class, 'menu' ), 20 );
 		add_action( 'admin_post_specflux_site_agent_connection_scope', array( self::class, 'handleScope' ) );
 		add_action( 'admin_post_specflux_site_agent_connection_revoke', array( self::class, 'handleRevoke' ) );
 	}
 
-	/** The submenu under Specflux Site Agent. */
-	public static function menu(): void {
-		add_submenu_page(
-			RunsScreen::SLUG,
-			__( 'Connect an AI app', 'specflux-site-agent' ),
-			__( 'Connect an AI app', 'specflux-site-agent' ),
-			Connector::capability(),
-			self::SLUG,
-			array( self::class, 'render' )
-		);
-	}
-
-	/** This screen's URL. */
+	/** This screen's URL: the AI apps tab. */
 	public static function url(): string {
-		return admin_url( 'admin.php?page=' . self::SLUG );
+		return Shell::url( 'apps' );
 	}
 
 	/** The connector's server URL. */
@@ -112,11 +104,7 @@ final class ConnectScreen {
 			return __( 'Specflux Site Agent does not support WordPress multisite, so AI apps cannot connect to this site.', 'specflux-site-agent' );
 		}
 		if ( ! Connector::stored() ) {
-			return sprintf(
-				/* translators: %s: link to the settings screen. */
-				__( 'AI apps are switched off. Turn on "Allow AI apps to connect" under %s first.', 'specflux-site-agent' ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=specflux-site-agent-settings' ) ) . '">' . esc_html__( 'Specflux Site Agent Settings', 'specflux-site-agent' ) . '</a>'
-			);
+			return __( 'AI apps are switched off. Turn on "Let AI apps connect to this site" first.', 'specflux-site-agent' );
 		}
 		$version = Connector::adapterVersion();
 		if ( null === $version ) {
@@ -138,41 +126,17 @@ final class ConnectScreen {
 		return null;
 	}
 
-	/** Render the screen. */
+	/** Render the AI apps tab (the old Connect screen's address now lands there). */
 	public static function render(): void {
-		if ( ! current_user_can( Connector::capability() ) ) {
-			return;
-		}
-
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Connect an AI app', 'specflux-site-agent' ) . '</h1>';
-
-		$reason = self::unavailableReason();
-		if ( null !== $reason ) {
-			echo '<div class="notice notice-warning inline"><p>' . wp_kses( $reason, array( 'a' => array( 'href' => array() ) ) ) . '</p></div></div>';
-
-			return;
-		}
-
-		$shown = self::handlePost();
-		if ( is_array( $shown ) ) {
-			self::renderCreated( $shown );
-		} elseif ( $shown instanceof WP_Error ) {
-			echo '<div class="notice notice-error inline"><p>' . esc_html( $shown->get_error_message() ) . '</p></div>';
-		}
-
-		self::renderCards();
-		self::renderConnections();
-		self::renderActivity();
-		echo '</div>';
+		AppsScreen::render();
 	}
 
 	/**
-	 * Handle the create / test POST done by this page itself.
+	 * Handle the create / test POST done by the AI apps tab itself.
 	 *
 	 * @return array{client:string,uuid:string,password:string,scope:string,test:?array{ok:bool,category:string,message:string,tools:int}}|WP_Error|null
 	 */
-	private static function handlePost(): array|WP_Error|null {
+	public static function handlePost(): array|WP_Error|null {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified by check_admin_referer() just below.
 		$action = isset( $_POST['specflux_site_agent_connect_action'] ) && is_string( $_POST['specflux_site_agent_connect_action'] )
 			? sanitize_key( wp_unslash( $_POST['specflux_site_agent_connect_action'] ) )
@@ -249,85 +213,182 @@ final class ConnectScreen {
 	 *
 	 * @param array{client:string,uuid:string,password:string,scope:string,test:?array{ok:bool,category:string,message:string,tools:int}} $shown What to show.
 	 */
-	private static function renderCreated( array $shown ): void {
+	public static function renderCreated( array $shown ): void {
 		$user   = get_userdata( get_current_user_id() );
 		$login  = is_object( $user ) ? (string) $user->user_login : '';
 		$config = ClientConfig::render( $shown['client'], self::serverUrl(), $login, $shown['password'] );
 
-		echo '<div class="notice notice-success inline"><p><strong>' . esc_html__( 'Connection created.', 'specflux-site-agent' ) . '</strong> ';
-		echo esc_html__( 'The password below is shown once. Copy the config now: it cannot be shown again, only replaced by a new connection.', 'specflux-site-agent' ) . '</p></div>';
+		echo '<div class="aui-notice aui-notice--success" role="status">' . Kit::icon( 'check' ) . '<div><strong>' . esc_html__( 'Connection created.', 'specflux-site-agent' ) . '</strong> '; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Kit::icon() is escaped markup.
+		echo esc_html__( 'The password below is shown once. Copy the config now: it cannot be shown again, only replaced by a new connection.', 'specflux-site-agent' ) . '</div></div>';
+
+		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html( self::clientLabels()[ $shown['client'] ] ?? $shown['client'] ) . '</h2></div><div class="aui-card-b" style="display:flex;flex-direction:column;gap:12px">';
 		echo '<p>' . esc_html( $config['where'] ) . '</p>';
-		echo '<pre id="specflux-site-agent-config" style="background:#fff;border:1px solid #c3c4c7;padding:12px;white-space:pre-wrap;word-break:break-all">' . esc_html( $config['text'] ) . '</pre>';
-		echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'specflux-site-agent-config\').textContent)">' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</button></p>';
+		echo '<pre id="specflux-site-agent-config" class="specflux-site-agent-pre">' . esc_html( $config['text'] ) . '</pre>';
+		echo '<p><button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#specflux-site-agent-config" data-copied="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</span></button></p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Kit::icon() is escaped markup.
 
 		if ( is_array( $shown['test'] ) ) {
 			printf(
-				'<div class="notice %s inline"><p>%s</p></div>',
-				$shown['test']['ok'] ? 'notice-success' : 'notice-error',
+				'<div class="aui-notice %s" role="%s">%s<div>%s</div></div>',
+				$shown['test']['ok'] ? 'aui-notice--success' : 'aui-notice--error',
+				$shown['test']['ok'] ? 'status' : 'alert',
+				Kit::icon( $shown['test']['ok'] ? 'check' : 'x' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 				esc_html( $shown['test']['message'] )
 			);
 		}
 
-		echo '<form method="post" action="' . esc_url( self::url() ) . '">';
+		echo '<form method="post" action="' . esc_url( self::url() ) . '" class="aui-row-flex">';
 		wp_nonce_field( self::NONCE_FORM );
 		echo '<input type="hidden" name="specflux_site_agent_connect_action" value="test">';
 		printf( '<input type="hidden" name="client" value="%s">', esc_attr( $shown['client'] ) );
 		printf( '<input type="hidden" name="uuid" value="%s">', esc_attr( $shown['uuid'] ) );
 		printf( '<input type="hidden" name="password" value="%s">', esc_attr( $shown['password'] ) );
-		echo '<button type="submit" class="button">' . esc_html__( 'Test connection', 'specflux-site-agent' ) . '</button> ';
-		echo '<span class="description">' . esc_html__( 'Makes two requests from this site to its own address, with this connection\'s password.', 'specflux-site-agent' ) . '</span>';
-		echo '</form><hr>';
+		echo '<button type="submit" class="aui-btn aui-btn--secondary aui-btn--sm">' . esc_html__( 'Test connection', 'specflux-site-agent' ) . '</button> ';
+		echo '<span class="aui-help">' . esc_html__( 'Makes two requests from this site to its own address, with this connection\'s password.', 'specflux-site-agent' ) . '</span>';
+		echo '</form></div></section>';
 	}
 
-	/** The client cards. */
-	private static function renderCards(): void {
-		echo '<p>' . esc_html__( 'Pick the app you use. Specflux Site Agent makes a WordPress application password for you, named after the app, and shows the exact setup text to paste in. Read only is the safe default: the app can look but not change anything.', 'specflux-site-agent' ) . '</p>';
-		echo '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;max-width:1000px">';
+	/**
+	 * The vendor docs each app card links to. Every one of these was read when
+	 * the card copy below was checked (2026-10-09); a client without a page of
+	 * its own has no link.
+	 *
+	 * @return array<string,string> card key => docs URL.
+	 */
+	private static function docsLinks(): array {
+		return array(
+			'claude'                     => 'https://claude.com/docs/connectors/custom/remote-mcp',
+			'chatgpt'                    => 'https://developers.openai.com/apps-sdk/deploy/connect-chatgpt',
+			ClientConfig::CURSOR         => 'https://cursor.com/docs/context/mcp',
+			ClientConfig::VS_CODE        => 'https://code.visualstudio.com/docs/agents/reference/mcp-configuration',
+			ClientConfig::CLAUDE_CODE    => 'https://code.claude.com/docs/en/mcp',
+			ClientConfig::CLAUDE_DESKTOP => 'https://github.com/Automattic/mcp-wordpress-remote',
+		);
+	}
 
+	/** One card's header: initial tile, title, optional badge. */
+	private static function cardHeader( string $title, string $badge_html ): string {
+		$words   = preg_split( '/[\s(]+/', $title );
+		$initial = strtoupper( substr( (string) ( is_array( $words ) ? $words[0] : $title ), 0, 1 ) );
+
+		return '<div class="aui-card-h"><span class="aui-tile aui-tile--sm"><b aria-hidden="true">' . esc_html( $initial ) . '</b></span><h3 class="aui-card-t">' . esc_html( $title ) . '</h3>' . $badge_html . '</div>';
+	}
+
+	/**
+	 * How many of the current user's connections were made from each app card.
+	 *
+	 * @return array<string,int> client id => count.
+	 */
+	private static function connectionCountsByClient(): array {
+		$counts   = array();
+		$registry = Connections::forUser( get_current_user_id() );
+		foreach ( WP_Application_Passwords::get_user_application_passwords( get_current_user_id() ) as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['uuid'] ) || ! isset( $registry[ (string) $item['uuid'] ] ) ) {
+				continue;
+			}
+			foreach ( self::clientLabels() as $client => $label ) {
+				if ( (string) ( $item['name'] ?? '' ) === 'Specflux Site Agent – ' . $label ) {
+					$counts[ $client ] = ( $counts[ $client ] ?? 0 ) + 1;
+				}
+			}
+		}
+
+		return $counts;
+	}
+
+	/** Is a signed-in (OAuth) app whose name contains one of these words connected? */
+	private static function signedInMatches( string ...$needles ): bool {
+		foreach ( array_keys( Store::grantIndex() ) as $id ) {
+			$grant = Store::grant( (string) $id );
+			if ( null === $grant ) {
+				continue;
+			}
+			$name = strtolower( Clients::resolveStoredName( (string) $grant['client'] ) );
+			foreach ( $needles as $needle ) {
+				if ( str_contains( $name, $needle ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/** The app cards: the two sign-in apps, then every application-password client. */
+	public static function renderCards(): void {
+		$blocker = self::oauthBlocker();
+		$url     = self::serverUrl();
+		$docs    = self::docsLinks();
+
+		echo '<div><h2 class="aui-card-t">' . esc_html__( 'Connect an app', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="aui-card-d">' . esc_html__( 'Pick the app you use. Specflux Site Agent makes a WordPress application password for you, named after the app, and shows the exact setup text to paste in. Read only is the safe default: the app can look but not change anything.', 'specflux-site-agent' ) . '</p></div>';
+
+		$sign_in = array(
+			'claude'  => array(
+				// Menu labels checked against https://claude.com/docs/connectors/custom/remote-mcp
+				// (Customize > Connectors > Add custom connector).
+				'label' => __( 'Claude (web, desktop and mobile)', 'specflux-site-agent' ),
+				'steps' => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ),
+				'on'    => self::signedInMatches( 'claude' ),
+				'open'  => __( 'Claude setup guide', 'specflux-site-agent' ),
+			),
+			'chatgpt' => array(
+				// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
+				// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
+				// Seen live 2026-10-09 on a Free account: Plugins > Add > Add custom MCP server, no developer mode.
+				'label' => __( 'ChatGPT', 'specflux-site-agent' ),
+				'steps' => __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'specflux-site-agent' ),
+				'on'    => self::signedInMatches( 'chatgpt', 'openai' ),
+				'open'  => __( 'ChatGPT setup guide', 'specflux-site-agent' ),
+			),
+		);
+
+		echo '<div class="aui-grid-2">';
+		foreach ( $sign_in as $key => $card ) {
+			$badge = $card['on'] ? '<span class="aui-badge aui-badge--ok aui-end">' . esc_html__( 'Connected', 'specflux-site-agent' ) . '</span>' : '';
+			echo '<section class="aui-card">' . self::cardHeader( $card['label'], $badge ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+			echo '<div class="aui-card-b" style="display:flex;flex-direction:column;gap:12px">';
+			if ( null !== $blocker ) {
+				echo '<div class="aui-notice aui-notice--warning" role="status">' . Kit::icon( 'warning' ) . '<div>' . esc_html( $blocker ) . '</div></div></div></section>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+				continue;
+			}
+			$id = 'specflux-site-agent-oauth-url-' . $key;
+			echo '<div class="aui-copy"><label class="aui-sr" for="' . esc_attr( $id ) . '">' . esc_html__( 'MCP URL', 'specflux-site-agent' ) . '</label>';
+			echo '<input class="aui-input" id="' . esc_attr( $id ) . '" readonly value="' . esc_attr( $url ) . '" title="' . esc_attr( $url ) . '">';
+			echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#' . esc_attr( $id ) . '" data-copied="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+			echo '<p>' . esc_html( $card['steps'] ) . '</p></div>';
+			echo '<div class="aui-card-f"><a class="aui-btn aui-btn--ghost aui-btn--sm" href="#' . esc_attr( Shell::SECTION_SIGNED_IN ) . '">' . esc_html__( 'Signed-in apps: see or revoke these sign-ins', 'specflux-site-agent' ) . '</a>';
+			echo '<a class="aui-btn aui-btn--ghost aui-btn--sm aui-end" href="' . esc_url( $docs[ $key ] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $card['open'] ) . Kit::icon( 'arrow-square-out' ) . '</a></div></section>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+		}
+		echo '</div>';
+
+		echo '<div><h3 class="aui-card-t">' . esc_html__( 'Apps that use an application password', 'specflux-site-agent' ) . '</h3></div>';
+		$counts = self::connectionCountsByClient();
+		echo '<div class="aui-grid-2">';
 		foreach ( self::clientLabels() as $client => $label ) {
-			echo '<div class="card" style="margin:0"><h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
+			$count = $counts[ $client ] ?? 0;
+			$badge = $count > 0
+				? '<span class="aui-badge aui-badge--ok aui-end">' . esc_html( sprintf( /* translators: %d: number of connections made for this app. */ _n( '%d connection', '%d connections', $count, 'specflux-site-agent' ), $count ) ) . '</span>'
+				: '';
+			echo '<section class="aui-card">' . self::cardHeader( $label, $badge ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
 			echo '<form method="post" action="' . esc_url( self::url() ) . '">';
 			wp_nonce_field( self::NONCE_FORM );
 			echo '<input type="hidden" name="specflux_site_agent_connect_action" value="create">';
 			printf( '<input type="hidden" name="client" value="%s">', esc_attr( $client ) );
-			echo '<p><label>' . esc_html__( 'Access', 'specflux-site-agent' ) . ' <select name="scope">';
+			echo '<div class="aui-card-b"><div class="aui-field"><label class="aui-label" for="specflux-site-agent-scope-' . esc_attr( $client ) . '">' . esc_html__( 'Access', 'specflux-site-agent' ) . '</label><select class="aui-select" name="scope" id="specflux-site-agent-scope-' . esc_attr( $client ) . '">';
 			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ ), esc_html__( 'Read only', 'specflux-site-agent' ) );
 			printf( '<option value="%s">%s</option>', esc_attr( Connection::SCOPE_READ_WRITE ), esc_html__( 'Read and write', 'specflux-site-agent' ) );
-			echo '</select></label></p>';
-			echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Create connection', 'specflux-site-agent' ) . '</button></p>';
-			echo '</form></div>';
-		}
-
-		$blocker = self::oauthBlocker();
-		$url     = self::serverUrl();
-		$cards   = array(
-			// Menu labels checked against https://claude.com/docs/connectors/custom/remote-mcp
-			// (Customize > Connectors > Add custom connector).
-			__( 'Claude (web, desktop and mobile)', 'specflux-site-agent' ) => __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ),
-			// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
-			// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
-			// Seen live 2026-10-09 on a Free account: Plugins > Add > Add custom MCP server, no developer mode.
-			__( 'ChatGPT', 'specflux-site-agent' ) => __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'specflux-site-agent' ),
-		);
-
-		foreach ( $cards as $label => $steps ) {
-			echo '<div class="card" style="margin:0"><h2 style="margin-top:0">' . esc_html( $label ) . '</h2>';
-			if ( null !== $blocker ) {
-				echo '<p>' . esc_html( $blocker ) . '</p></div>';
-				continue;
+			echo '</select></div></div>';
+			echo '<div class="aui-card-f"><button type="submit" class="aui-btn aui-btn--primary aui-btn--sm">' . esc_html__( 'Create connection', 'specflux-site-agent' ) . '</button>';
+			if ( isset( $docs[ $client ] ) ) {
+				echo '<a class="aui-btn aui-btn--ghost aui-btn--sm aui-end" href="' . esc_url( $docs[ $client ] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Setup guide', 'specflux-site-agent' ) . Kit::icon( 'arrow-square-out' ) . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 			}
-			$id = 'specflux-site-agent-oauth-url-' . substr( md5( $label ), 0, 6 );
-			echo '<p><code id="' . esc_attr( $id ) . '" style="word-break:break-all">' . esc_html( $url ) . '</code></p>';
-			echo '<p><button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById(\'' . esc_attr( $id ) . '\').textContent)">' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</button></p>';
-			echo '<p>' . esc_html( $steps ) . '</p>';
-			echo '<p><a href="' . esc_url( SignedInApps::url() ) . '">' . esc_html__( 'Signed-in apps: see or revoke these sign-ins', 'specflux-site-agent' ) . '</a></p></div>';
+			echo '</div></form></section>';
 		}
-
 		echo '</div>';
 	}
 
 	/** The current user's connections. */
-	private static function renderConnections(): void {
+	public static function renderConnections(): void {
 		$user_id  = get_current_user_id();
 		$registry = Connections::forUser( $user_id );
 		$core     = array();
@@ -337,100 +398,147 @@ final class ConnectScreen {
 			}
 		}
 
-		echo '<h2>' . esc_html__( 'Your connections', 'specflux-site-agent' ) . '</h2>';
 		$rows = array_intersect_key( $registry, $core );
+		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html__( 'Your connections', 'specflux-site-agent' ) . '</h2>';
+		if ( array() !== $rows ) {
+			echo '<span class="aui-count">' . esc_html( (string) count( $rows ) ) . '</span>';
+		}
+		echo '</div>';
 		if ( array() === $rows ) {
-			echo '<p>' . esc_html__( 'No connections yet.', 'specflux-site-agent' ) . '</p>';
+			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'No connections yet.', 'specflux-site-agent' ) . '</p></div></section>';
 
 			return;
 		}
 
-		echo '<table class="widefat striped"><thead><tr>';
-		foreach ( array( __( 'Connection', 'specflux-site-agent' ), __( 'Access', 'specflux-site-agent' ), __( 'Created', 'specflux-site-agent' ), __( 'Last used', 'specflux-site-agent' ), '' ) as $heading ) {
-			echo '<th>' . esc_html( $heading ) . '</th>';
+		echo '<div class="aui-table-wrap"><table class="aui-table"><thead><tr>';
+		foreach ( array( __( 'Connection', 'specflux-site-agent' ), __( 'Access', 'specflux-site-agent' ), __( 'Created', 'specflux-site-agent' ), __( 'Last used', 'specflux-site-agent' ) ) as $heading ) {
+			echo '<th scope="col">' . esc_html( $heading ) . '</th>';
 		}
-		echo '</tr></thead><tbody>';
+		echo '<th scope="col"><span class="aui-sr">' . esc_html__( 'Actions', 'specflux-site-agent' ) . '</span></th></tr></thead><tbody>';
 		foreach ( $rows as $uuid => $entry ) {
-			$item = $core[ $uuid ];
+			$item  = $core[ $uuid ];
+			$write = Connection::SCOPE_READ_WRITE === $entry['scope'];
 			echo '<tr>';
-			echo '<td>' . esc_html( (string) ( $item['name'] ?? '' ) ) . ' <code>' . esc_html( substr( $uuid, 0, 8 ) ) . '</code></td>';
-			echo '<td>' . esc_html( Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Read and write', 'specflux-site-agent' ) : __( 'Read only', 'specflux-site-agent' ) ) . '</td>';
-			echo '<td>' . esc_html( (string) wp_date( 'Y-m-d H:i', (int) ( $item['created'] ?? 0 ) ) ) . '</td>';
+			echo '<td><strong>' . esc_html( (string) ( $item['name'] ?? '' ) ) . '</strong> <span class="aui-mono aui-muted">' . esc_html( substr( $uuid, 0, 8 ) ) . '</span></td>';
+			$access = $write
+				? '<span class="aui-badge aui-badge--info">' . Kit::icon( 'pencil' ) . esc_html__( 'Read and write', 'specflux-site-agent' ) . '</span>'
+				: '<span class="aui-badge">' . Kit::icon( 'book' ) . esc_html__( 'Read only', 'specflux-site-agent' ) . '</span>';
+			echo '<td>' . $access . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup built above.
+			echo '<td class="aui-mono">' . esc_html( (string) wp_date( 'Y-m-d H:i', (int) ( $item['created'] ?? 0 ) ) ) . '</td>';
 			$used = (int) ( $item['last_used'] ?? 0 );
-			echo '<td>' . esc_html( $used > 0 ? (string) wp_date( 'Y-m-d H:i', $used ) : __( 'Never', 'specflux-site-agent' ) ) . '</td>';
-			echo '<td>';
-			self::renderConnectionForm( 'specflux_site_agent_connection_scope', $uuid, Connection::SCOPE_READ_WRITE === $entry['scope'] ? Connection::SCOPE_READ : Connection::SCOPE_READ_WRITE, Connection::SCOPE_READ_WRITE === $entry['scope'] ? __( 'Make read only', 'specflux-site-agent' ) : __( 'Allow writes', 'specflux-site-agent' ) );
-			self::renderConnectionForm( 'specflux_site_agent_connection_revoke', $uuid, '', __( 'Revoke', 'specflux-site-agent' ) );
-			echo '</td></tr>';
+			echo '<td class="aui-mono">' . esc_html( $used > 0 ? (string) wp_date( 'Y-m-d H:i', $used ) : __( 'Never', 'specflux-site-agent' ) ) . '</td>';
+			echo '<td><div class="aui-actions">';
+			self::renderConnectionForm( 'specflux_site_agent_connection_scope', $uuid, $write ? Connection::SCOPE_READ : Connection::SCOPE_READ_WRITE, $write ? __( 'Make read only', 'specflux-site-agent' ) : __( 'Allow writes', 'specflux-site-agent' ), 'aui-btn--secondary' );
+			self::renderConnectionForm( 'specflux_site_agent_connection_revoke', $uuid, '', __( 'Revoke', 'specflux-site-agent' ), 'aui-btn--danger-outline' );
+			echo '</div></td></tr>';
 		}
-		echo '</tbody></table>';
+		echo '</tbody></table></div></section>';
 	}
 
-	/** The last 50 calls, optionally for one connection. */
-	private static function renderActivity(): void {
-		$user_id  = get_current_user_id();
-		$registry = Connections::forUser( $user_id );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
-		$filter = isset( $_GET['connection'] ) && is_string( $_GET['connection'] ) ? sanitize_text_field( wp_unslash( $_GET['connection'] ) ) : '';
-		$filter = isset( $registry[ $filter ] ) ? $filter : '';
-		$names  = array();
-		foreach ( WP_Application_Passwords::get_user_application_passwords( $user_id ) as $item ) {
+	/**
+	 * Connection uuid => name for the current user's live connections.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function connectionNames(): array {
+		$names = array();
+		foreach ( WP_Application_Passwords::get_user_application_passwords( get_current_user_id() ) as $item ) {
 			if ( is_array( $item ) && isset( $item['uuid'] ) ) {
 				$names[ (string) $item['uuid'] ] = (string) ( $item['name'] ?? '' );
 			}
 		}
 
-		echo '<h2>' . esc_html__( 'Recent activity', 'specflux-site-agent' ) . '</h2>';
-		echo '<p class="description">' . esc_html__( 'The last 50 calls from AI apps, kept for 30 days. Only what was called and how it ended is kept, never the details of the request or its result.', 'specflux-site-agent' ) . '</p>';
-		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) ) . '"><input type="hidden" name="page" value="' . esc_attr( self::SLUG ) . '">';
-		echo '<p><label>' . esc_html__( 'Connection', 'specflux-site-agent' ) . ' <select name="connection">';
+		return $names;
+	}
+
+	/**
+	 * Outcome => [label, badge modifier, dot modifier].
+	 *
+	 * @return array<string,array{0:string,1:string,2:string}>
+	 */
+	private static function outcomes(): array {
+		return array(
+			ActivityLog::RAN     => array( __( 'Ran', 'specflux-site-agent' ), 'aui-badge--ok', 'ok' ),
+			ActivityLog::WAITING => array( __( 'Waiting for approval', 'specflux-site-agent' ), 'aui-badge--warn', 'warn' ),
+			ActivityLog::REFUSED => array( __( 'Refused', 'specflux-site-agent' ), 'aui-badge--bad', 'bad' ),
+			ActivityLog::ERROR   => array( __( 'Error', 'specflux-site-agent' ), 'aui-badge--bad', 'bad' ),
+		);
+	}
+
+	/** The right-rail feed: the latest few calls. */
+	public static function renderFeed(): void {
+		$rows = ActivityLog::recent( 6 );
+		if ( array() === $rows ) {
+			echo '<p class="aui-muted">' . esc_html__( 'No calls yet.', 'specflux-site-agent' ) . '</p>';
+
+			return;
+		}
+		$outcomes = self::outcomes();
+		echo '<ul class="aui-feed">';
+		foreach ( $rows as $row ) {
+			$tone = $outcomes[ $row['outcome'] ][2] ?? 'info';
+			$when = (string) wp_date( 'M j, H:i', (int) strtotime( $row['created_at'] . ' UTC' ) );
+			echo '<li><span class="aui-dot aui-dot--' . esc_attr( $tone ) . '"></span><div><span class="aui-mono">' . esc_html( $row['ability'] ) . '</span> · ' . esc_html( $outcomes[ $row['outcome'] ][0] ?? $row['outcome'] ) . '<time>' . esc_html( $when ) . '</time></div></li>';
+		}
+		echo '</ul><p style="margin-top:12px"><a href="#' . esc_attr( Shell::SECTION_ACTIVITY ) . '">' . esc_html__( 'View all activity', 'specflux-site-agent' ) . '</a></p>';
+	}
+
+	/** The last 50 calls, optionally for one connection. */
+	public static function renderActivity(): void {
+		$user_id  = get_current_user_id();
+		$registry = Connections::forUser( $user_id );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
+		$filter = isset( $_GET['connection'] ) && is_string( $_GET['connection'] ) ? sanitize_text_field( wp_unslash( $_GET['connection'] ) ) : '';
+		$filter = isset( $registry[ $filter ] ) ? $filter : '';
+		$names  = self::connectionNames();
+
+		echo '<section class="aui-card" id="' . esc_attr( Shell::SECTION_ACTIVITY ) . '"><div class="aui-card-h"><div><h2 class="aui-card-t">' . esc_html__( 'Recent activity', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="aui-card-d">' . esc_html__( 'The last 50 calls from AI apps, kept for 30 days. Only what was called and how it ended is kept, never the details of the request or its result.', 'specflux-site-agent' ) . '</p></div></div>';
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin.php' ) . '#' . Shell::SECTION_ACTIVITY ) . '" class="aui-toolbar"><input type="hidden" name="page" value="' . esc_attr( Shell::APPS ) . '">';
+		echo '<label class="aui-label" for="specflux-site-agent-activity-filter">' . esc_html__( 'Connection', 'specflux-site-agent' ) . '</label><div style="width:240px"><select class="aui-select" name="connection" id="specflux-site-agent-activity-filter">';
 		printf( '<option value="">%s</option>', esc_html__( 'All', 'specflux-site-agent' ) );
 		foreach ( array_intersect_key( $names, $registry ) as $uuid => $name ) {
 			printf( '<option value="%s"%s>%s</option>', esc_attr( $uuid ), selected( $filter, $uuid, false ), esc_html( $name ) );
 		}
-		echo '</select></label> <button type="submit" class="button">' . esc_html__( 'Filter', 'specflux-site-agent' ) . '</button></p></form>';
+		echo '</select></div><button type="submit" class="aui-btn aui-btn--secondary aui-btn--sm">' . esc_html__( 'Filter', 'specflux-site-agent' ) . '</button></form>';
 
 		$rows = ActivityLog::recent( 50, '' === $filter ? null : $filter );
 		if ( array() === $rows ) {
-			echo '<p>' . esc_html__( 'No calls yet.', 'specflux-site-agent' ) . '</p>';
+			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'No calls yet.', 'specflux-site-agent' ) . '</p></div></section>';
 
 			return;
 		}
 
-		$outcomes = array(
-			ActivityLog::RAN     => __( 'Ran', 'specflux-site-agent' ),
-			ActivityLog::WAITING => __( 'Waiting for approval', 'specflux-site-agent' ),
-			ActivityLog::REFUSED => __( 'Refused', 'specflux-site-agent' ),
-			ActivityLog::ERROR   => __( 'Error', 'specflux-site-agent' ),
-		);
-		echo '<table class="widefat striped"><thead><tr>';
+		$outcomes = self::outcomes();
+		echo '<div class="aui-table-wrap"><table class="aui-table"><thead><tr>';
 		foreach ( array( __( 'Time', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Outcome', 'specflux-site-agent' ) ) as $heading ) {
-			echo '<th>' . esc_html( $heading ) . '</th>';
+			echo '<th scope="col">' . esc_html( $heading ) . '</th>';
 		}
 		echo '</tr></thead><tbody>';
 		foreach ( $rows as $row ) {
 			$user = get_userdata( $row['user_id'] );
+			$out  = $outcomes[ $row['outcome'] ] ?? array( $row['outcome'], '', 'info' );
 			echo '<tr>';
-			echo '<td>' . esc_html( (string) wp_date( 'Y-m-d H:i:s', (int) strtotime( $row['created_at'] . ' UTC' ) ) ) . '</td>';
-			echo '<td>' . esc_html( $names[ $row['uuid'] ] ?? '' ) . ' <code>' . esc_html( substr( $row['uuid'], 0, 8 ) ) . '</code></td>';
+			echo '<td class="aui-mono">' . esc_html( (string) wp_date( 'Y-m-d H:i:s', (int) strtotime( $row['created_at'] . ' UTC' ) ) ) . '</td>';
+			echo '<td>' . esc_html( $names[ $row['uuid'] ] ?? '' ) . ' <span class="aui-mono aui-muted">' . esc_html( substr( $row['uuid'], 0, 8 ) ) . '</span></td>';
 			echo '<td>' . esc_html( is_object( $user ) && isset( $user->user_login ) ? (string) $user->user_login : '#' . $row['user_id'] ) . '</td>';
-			echo '<td><code>' . esc_html( $row['ability'] ) . '</code></td>';
-			echo '<td>' . esc_html( $outcomes[ $row['outcome'] ] ?? $row['outcome'] ) . '</td>';
+			echo '<td class="aui-mono">' . esc_html( $row['ability'] ) . '</td>';
+			echo '<td><span class="aui-badge ' . esc_attr( $out[1] ) . '">' . esc_html( $out[0] ) . '</span></td>';
 			echo '</tr>';
 		}
-		echo '</tbody></table>';
+		echo '</tbody></table></div></section>';
 	}
 
 	/** One per-connection button. */
-	private static function renderConnectionForm( string $action, string $uuid, string $scope, string $label ): void {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-right:4px">';
+	private static function renderConnectionForm( string $action, string $uuid, string $scope, string $label, string $variant ): void {
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="' . esc_attr( $action ) . '">';
 		echo '<input type="hidden" name="uuid" value="' . esc_attr( $uuid ) . '">';
 		if ( '' !== $scope ) {
 			echo '<input type="hidden" name="scope" value="' . esc_attr( $scope ) . '">';
 		}
 		wp_nonce_field( self::NONCE_CONNECTION . $uuid );
-		printf( '<button type="submit" class="button">%s</button>', esc_html( $label ) );
+		printf( '<button type="submit" class="aui-btn aui-btn--sm %s">%s</button>', esc_attr( $variant ), esc_html( $label ) );
 		echo '</form>';
 	}
 

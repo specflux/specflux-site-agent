@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Connector\OAuth;
 
+use Specflux\SiteAgent\Admin\Ui\Kit;
 use Specflux\SiteAgent\Connector\Connector;
 use Specflux\SiteAgent\Run\Clock;
 
@@ -212,29 +213,29 @@ final class Authorize {
 
 		$notes = '';
 		if ( RedirectUri::isLoopback( $redirect ) ) {
-			$notes .= '<p class="warn">' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'specflux-site-agent' ) . '</p>';
+			$notes .= '<div class="aui-notice aui-notice--warning warn" role="alert">' . Kit::icon( 'warning' ) . '<div>' . esc_html__( 'This app runs on the computer you are using right now. Only continue if you just started this connection yourself.', 'specflux-site-agent' ) . '</div></div>';
 		}
-		$write = '<label><input type="radio" name="grant" value="write"> <strong>' . esc_html__( 'Read and write', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'specflux-site-agent' ) . '</label>';
+		$write = '<label class="consent-choice"><input type="radio" name="grant" value="write"> <span><strong>' . esc_html__( 'Read and write', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can also ask to change things. Changes still follow this site\'s approval rules.', 'specflux-site-agent' ) . '</span></label>';
 
 		// A dynamically registered client picks its own name, so the name proves nothing: say so, and
 		// make the redirect host (which the client cannot choose freely) the dominant line.
 		$identity = $client->document
-			? '<p class="meta">' . esc_html( sprintf( /* translators: %s: host name of the app's verified client metadata document. */ __( 'Verified by %s', 'specflux-site-agent' ), (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) ) . '</p>'
-			: '<p class="meta unverified">' . esc_html__( 'Not verified. This name was chosen by the app itself.', 'specflux-site-agent' ) . '</p>';
+			? '<p class="meta"><span class="aui-badge aui-badge--ok">' . Kit::icon( 'shield' ) . esc_html( sprintf( /* translators: %s: host name of the app's verified client metadata document. */ __( 'Verified by %s', 'specflux-site-agent' ), (string) wp_parse_url( $client->id, PHP_URL_HOST ) ) ) . '</span></p>'
+			: '<p class="meta unverified"><span class="aui-badge aui-badge--warn">' . Kit::icon( 'warning' ) . esc_html__( 'Not verified. This name was chosen by the app itself.', 'specflux-site-agent' ) . '</span></p>';
 
 		$body = '<h1>' . esc_html( sprintf( /* translators: %s: name of the app asking to connect. */ __( 'Connect %s?', 'specflux-site-agent' ), $client->name ) ) . '</h1>'
 			. $identity
 			. '<div class="host">' . esc_html__( 'After you approve, you\'ll be sent to', 'specflux-site-agent' ) . '<br><strong>' . esc_html( $host ) . '</strong></div>'
-			. '<p>' . esc_html__( 'This app is asking to use Specflux Site Agent on this site.', 'specflux-site-agent' ) . '</p>'
+			. '<p class="lede">' . esc_html__( 'This app is asking to use Specflux Site Agent on this site.', 'specflux-site-agent' ) . '</p>'
 			. $notes
 			. '<form method="post" action="' . esc_url( OAuth::authorizeUrl() ) . '">'
 			. $hidden
 			. '<fieldset><legend>' . esc_html__( 'What may it do?', 'specflux-site-agent' ) . '</legend>'
-			. '<label><input type="radio" name="grant" value="read" checked> <strong>' . esc_html__( 'Read only', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can look at pages, posts, media and settings.', 'specflux-site-agent' ) . '</label>'
+			. '<label class="consent-choice"><input type="radio" name="grant" value="read" checked> <span><strong>' . esc_html__( 'Read only', 'specflux-site-agent' ) . '</strong> ' . esc_html__( 'It can look at pages, posts, media and settings.', 'specflux-site-agent' ) . '</span></label>'
 			. $write
 			. '</fieldset>'
-			. '<p><button type="submit" name="decision" value="approve" class="primary">' . esc_html__( 'Approve', 'specflux-site-agent' ) . '</button> '
-			. '<button type="submit" name="decision" value="deny">' . esc_html__( 'Deny', 'specflux-site-agent' ) . '</button></p>'
+			. '<div class="consent-actions"><button type="submit" name="decision" value="approve" class="aui-btn aui-btn--primary aui-btn--lg">' . esc_html__( 'Approve', 'specflux-site-agent' ) . '</button> '
+			. '<button type="submit" name="decision" value="deny" class="aui-btn aui-btn--secondary aui-btn--lg">' . esc_html__( 'Deny', 'specflux-site-agent' ) . '</button></div>'
 			. '</form>';
 
 		return new Page( 200, self::document( __( 'Connect an app', 'specflux-site-agent' ), $body ), null, self::securityHeaders() );
@@ -257,15 +258,37 @@ final class Authorize {
 	}
 
 	private static function document( string $title, string $body ): string {
+		// The kit is inlined (the page's CSP allows inline styles and nothing else) and the standalone
+		// layout is a few rules on top of it: no wp-admin chrome, one centred card.
 		return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">'
-			. '<title>' . esc_html( $title ) . '</title><style>'
-			. 'body{font:16px/1.5 system-ui,sans-serif;background:#f0f0f1;color:#1d2327;margin:0;padding:2rem}'
-			. 'main{max-width:30rem;margin:0 auto;background:#fff;padding:2rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.15)}'
-			. 'h1{font-size:1.3rem;margin-top:0}.host{background:#f6f7f7;border:1px solid #c3c4c7;padding:.75rem 1rem;border-radius:6px;margin:1rem 0}'
-			. '.host strong{font-size:1.5rem;word-break:break-all}.warn{background:#fcf0f1;border-left:4px solid #d63638;padding:.5rem .75rem}.meta{color:#50575e;font-size:.9rem}'
-			. 'fieldset{border:0;padding:0;margin:1rem 0}label{display:block;margin:.5rem 0}'
-			. 'button{font:inherit;padding:.5rem 1.25rem;border-radius:4px;border:1px solid #2271b1;background:#fff;color:#2271b1;cursor:pointer}'
-			. 'button.primary{background:#2271b1;color:#fff}</style></head><body><main>' . $body . '</main></body></html>';
+			. '<title>' . esc_html( $title ) . '</title><style>' . Kit::inlineCss() . self::standaloneCss() . '</style></head><body>'
+			. Kit::sprite()
+			. '<div class="aui consent" data-brand="specflux"><main class="aui-card consent-card">'
+			. '<div class="consent-brand"><span class="aui-mark">' . Kit::icon( 'gear', 'aui-i--lg' ) . '</span><span>' . esc_html__( 'Site Agent', 'specflux-site-agent' ) . '</span></div>'
+			. $body
+			. '</main></div></body></html>';
+	}
+
+	/** The layout rules for the standalone consent page, on top of the kit. */
+	private static function standaloneCss(): string {
+		return 'html,body{margin:0;background:#F6F7F9}'
+			. '.aui.consent{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-size:14px;line-height:22px}'
+			. '.consent-card{width:100%;max-width:480px;padding:32px;display:flex;flex-direction:column;gap:16px}'
+			. '.consent-brand{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--aui-text-2)}'
+			. '.aui.consent h1{font-size:22px;line-height:28px}'
+			. '.consent .meta{margin:-8px 0 0}'
+			. '.consent .host{padding:12px 16px;border:1px solid var(--aui-border-strong);border-radius:var(--aui-r-lg);background:var(--aui-inset);color:var(--aui-text-2)}'
+			. '.consent .host strong{display:block;margin-top:4px;font-family:var(--aui-mono);font-size:20px;line-height:28px;color:var(--aui-text);word-break:break-all}'
+			. '.consent .lede{color:var(--aui-text-2)}'
+			. '.consent fieldset{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px}'
+			. '.consent legend{padding:0;margin-bottom:8px;font-weight:600}'
+			. '.consent-choice{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border:1px solid var(--aui-border-strong);border-radius:var(--aui-r-lg);background:var(--aui-surface);cursor:pointer}'
+			. '.consent-choice:has(input:checked){border-color:var(--aui-accent);background:var(--aui-accent-tint)}'
+			. '.consent-choice input{margin-top:3px}'
+			. '.consent-choice strong{display:block}'
+			. '.consent-actions{display:flex;gap:12px;margin-top:16px}'
+			. '.consent-actions .aui-btn{flex:1 1 0}'
+			. '@media (max-width:480px){.consent-card{padding:20px}.aui.consent{padding:12px}}';
 	}
 
 	/** Send a {@see Page}. */

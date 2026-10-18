@@ -1,6 +1,6 @@
 <?php
 /**
- * Tools → Specflux Site Agent Runs: the observation + standalone-start screen (S10/S13).
+ * Site Agent → Runs: the observation + standalone-start screen (S10/S13).
  *
  * TARGET REPO PATH: src/Admin/RunsScreen.php
  *
@@ -14,9 +14,9 @@
  *     the ONE tick path `specflux_site_agent()->tick()` (S5 resume objects);
  *   - the existing list, cancel, and complete-without-JS behaviour.
  *
- * Progressive enhancement: every mutation is a plain admin-post form that works
- * with JS disabled; `assets/runs.js` only polls for new steps, swaps the status
- * badge, and announces status transitions in an aria-live region.
+ * The mutations below are plain admin-post handlers. Since 0.3 the screen itself
+ * is the React app in `assets/src/runs/`; the server renders the shared app
+ * header (see {@see Shell}), the setup notices and the mount point.
  *
  * @package Specflux Site Agent
  */
@@ -26,8 +26,9 @@ declare ( strict_types = 1 );
 namespace Specflux\SiteAgent\Admin;
 
 use Specflux\SiteAgent\Plugin;
+use Specflux\SiteAgent\Admin\Ui\Kit;
+use Specflux\SiteAgent\Admin\Ui\Shell;
 use Specflux\SiteAgent\Approval\GrantBridge;
-use Specflux\SiteAgent\Connector\ApprovalsScreen;
 use Specflux\SiteAgent\Http\ConsumerPolicy;
 use Specflux\SiteAgent\Model\ModelChoice;
 use Specflux\SiteAgent\Packs\Pack;
@@ -68,7 +69,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class RunsScreen {
 
-	public const SLUG = 'specflux-site-agent-runs';
+	public const SLUG = Shell::RUNS;
 
 	/**
 	 * The consumer id label for admin-started runs (S13). Public (0.3 S3): the
@@ -84,10 +85,8 @@ class RunsScreen {
 	/** Transient set on activation, cleared the first time the Plugins-screen notice renders (S10). */
 	public const ACTIVATION_NOTICE_TRANSIENT = 'specflux_site_agent_activation_notice';
 
-	/** Register on admin_menu (+ posts + assets). */
+	/** Register the assets, the admin-post/ajax handlers and the admin consumer. The menu and the legacy-URL redirects live in {@see Shell}. */
 	public function register(): void {
-		add_action( 'admin_menu', array( $this, 'menu' ) );
-		add_action( 'admin_init', array( $this, 'redirectOldToolsUrl' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'commandPaletteAssets' ) );
 		add_action( 'admin_post_specflux_site_agent_cancel_run', array( $this, 'handleCancel' ) );
@@ -166,57 +165,12 @@ class RunsScreen {
 	}
 
 	/**
-	 * The top-level "Specflux Site Agent" menu (0.3 S10 — moved out of Tools).
+	 * This screen's URL, with any extra query arguments (`run_id`, `goal`, error flags).
 	 *
-	 * The capability is computed fresh on every `admin_menu` call
-	 * ({@see ScreenCapability::current()}: the first registered pack's run
-	 * capability the CURRENT viewer holds, else `do_not_allow`), so a
-	 * Subscriber never sees the menu item at all while an editor who can run
-	 * one pack does.
+	 * @param array<string,string|int|bool> $args Extra query arguments.
 	 */
-	public function menu(): void {
-		add_menu_page(
-			__( 'Specflux Site Agent', 'specflux-site-agent' ),
-			__( 'Specflux Site Agent', 'specflux-site-agent' ),
-			$this->capability(),
-			self::SLUG,
-			array( $this, 'render' ),
-			'dashicons-format-chat'
-		);
-	}
-
-	/**
-	 * 0.3 S10 `[assumed]`: the old Tools submenu URL
-	 * (`tools.php?page=specflux-site-agent-runs`) redirects to the new top-level one,
-	 * preserving `run_id`/`specflux_site_agent_filter` so a bookmarked review link keeps
-	 * working.
-	 */
-	public function redirectOldToolsUrl(): void {
-		global $pagenow;
-
-		if ( 'tools.php' !== $pagenow ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only redirect, no state change.
-		$page = sanitize_key( wp_unslash( $_GET['page'] ?? '' ) );
-		if ( self::SLUG !== $page ) {
-			return;
-		}
-
-		// The only keys the screen reads (`run_id`/`run` open a run, `goal`
-		// pre-fills the message box); anything else is dropped.
-		$query = array();
-		foreach ( array( 'run_id', 'run', 'goal' ) as $key ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only redirect.
-			if ( isset( $_GET[ $key ] ) && is_string( $_GET[ $key ] ) ) {
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only redirect.
-				$query[ $key ] = sanitize_text_field( wp_unslash( $_GET[ $key ] ) );
-			}
-		}
-		$query = array( 'page' => self::SLUG ) + $query;
-
-		$this->redirectAndExit( add_query_arg( $query, admin_url( 'admin.php' ) ) );
+	public static function url( array $args = array() ): string {
+		return Shell::url( 'runs', $args );
 	}
 
 	/**
@@ -232,8 +186,8 @@ class RunsScreen {
 	/**
 	 * Enqueue the React screen's build output only on this page (0.3 S10/S17).
 	 *
-	 * `assets/runs.js`/`assets/runs.css` (0.2's server-rendered screen) are no
-	 * longer enqueued here — the cards they drove are retired. The build's
+	 * The kit's stylesheet is a dependency of the React stylesheet, so the kit
+	 * classes the React tree renders are always defined. The build's
 	 * own `index.asset.php` (generated by `@wordpress/scripts`) supplies the
 	 * dependency list and a content-hash version, so this never hand-lists
 	 * `@wordpress/*` handles that could drift from what actually got bundled.
@@ -242,6 +196,9 @@ class RunsScreen {
 		if ( ! str_contains( $hook, self::SLUG ) ) {
 			return;
 		}
+
+		// The React stylesheet depends on the kit's (Shell enqueues it on the same hook; enqueueing is idempotent).
+		Kit::enqueue();
 
 		$asset_file = SPECFLUX_SITE_AGENT_PATH . 'build/runs/index.asset.php';
 		if ( ! file_exists( $asset_file ) ) {
@@ -256,7 +213,7 @@ class RunsScreen {
 		// re-checked (fail closed) rather than trusted blindly from disk.
 		$dependencies = array_values( array_filter( $asset['dependencies'], static fn ( string $handle ): bool => '' !== $handle ) );
 
-		wp_enqueue_style( 'specflux-site-agent-runs', SPECFLUX_SITE_AGENT_URL . 'build/runs/style-index.css', array(), $asset['version'] );
+		wp_enqueue_style( 'specflux-site-agent-runs', SPECFLUX_SITE_AGENT_URL . 'build/runs/style-index.css', array( Kit::HANDLE_STYLE ), $asset['version'] );
 		// S22 RTL gate: `wp-scripts build` emits a `style-index-rtl.css`
 		// alongside the LTR stylesheet, but nothing loads it unless the
 		// handle is told an RTL replacement exists — `wp_style_add_data()`
@@ -391,7 +348,7 @@ class RunsScreen {
 			'specflux-site-agent-commands',
 			'specfluxSiteAgentCommandsConfig',
 			array(
-				'runsUrl' => admin_url( 'admin.php?page=' . self::SLUG ),
+				'runsUrl' => Shell::url( 'runs' ),
 			)
 		);
 	}
@@ -818,20 +775,18 @@ class RunsScreen {
 
 	/** Redirect to the detail view and stop processing (test-observable). */
 	protected function redirectBack( int $run_id, ?string $error_code = null ): void {
-		$url = admin_url( 'tools.php?page=' . self::SLUG . '&run_id=' . $run_id );
+		$args = array( 'run_id' => $run_id );
 		if ( null !== $error_code && '' !== $error_code ) {
-			$url .= '&specflux_site_agent_run_error=' . rawurlencode( $error_code );
+			$args['specflux_site_agent_run_error'] = $error_code;
 		}
-		wp_safe_redirect( $url );
+		wp_safe_redirect( self::url( $args ) );
 
 		exit;
 	}
 
 	/** Redirect back to the list (used by start-failure / missing input). */
 	protected function redirectList( string $error_code ): void {
-		wp_safe_redirect(
-			admin_url( 'tools.php?page=' . self::SLUG . '&specflux_site_agent_start_error=' . rawurlencode( $error_code ) )
-		);
+		wp_safe_redirect( self::url( array( 'specflux_site_agent_start_error' => $error_code ) ) );
 
 		exit;
 	}
@@ -858,27 +813,17 @@ class RunsScreen {
 			return;
 		}
 
-		echo '<div class="wrap">';
-		printf( '<h1>%s</h1>', esc_html__( 'Specflux Site Agent', 'specflux-site-agent' ) );
-
-		// K2: the "From AI apps" tab (calls parked by the MCP connector in built-in mode).
-		ApprovalsScreen::renderTabs();
-		if ( ApprovalsScreen::requested() ) {
-			ApprovalsScreen::render();
-			echo '</div>';
-
-			return;
-		}
+		Shell::open( 'runs' );
 
 		echo $this->renderSetupPanel( get_current_user_id() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-escaped fragment.
 
-		echo '<noscript><div class="notice notice-warning"><p>'
+		echo '<noscript><div class="aui-notice aui-notice--warning" role="status">' . Kit::icon( 'warning' ) . '<div>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 			. esc_html__( 'The Specflux Site Agent Runs screen needs JavaScript to be enabled in your browser.', 'specflux-site-agent' )
-			. '</p></div></noscript>';
+			. '</div></div></noscript>';
 
 		echo '<div id="specflux-site-agent-runs-root"></div>';
 
-		echo '</div>';
+		Shell::close();
 	}
 
 	// ------------------------------------------------------------------
@@ -911,9 +856,9 @@ class RunsScreen {
 
 	/** One check's notice: an error for a failing blocking check, a warning for an advisory. */
 	private function renderSetupCheckNotice( SetupCheck $check, int $user_id ): string {
-		$css_class = $check->isBlocking() ? 'notice-error' : 'notice-warning';
-		$message   = $check->messageFor( $user_id );
-		$link      = '';
+		$tone    = $check->isBlocking() ? 'error' : 'warning';
+		$message = $check->messageFor( $user_id );
+		$link    = '';
 
 		if ( $check->fixVisibleFor( $user_id ) && null !== $check->fixUrl() ) {
 			$link = sprintf(
@@ -923,18 +868,16 @@ class RunsScreen {
 			);
 		}
 
-		// The "inline" class matters as much as "notice" does: it keeps the
-		// warning/error look core's own CSS gives `.notice`, but core's own
-		// admin JS skips `.notice.inline` when it relocates every other
-		// `.wrap .notice` below the page heading (0.3 defect 3) — without
-		// it, one copy of every check ends up duplicated outside this panel,
-		// and a stale copy can linger there after the panel re-renders.
+		// `specflux-site-agent-setup-check` and `data-check-id` are what the
+		// screen's script and the e2e specs find a check by.
 		return sprintf(
-			'<div class="notice %1$s inline specflux-site-agent-setup-check" data-check-id="%2$s"><p>%3$s%4$s</p></div>',
-			esc_attr( $css_class ),
+			'<div class="aui-notice aui-notice--%1$s specflux-site-agent-setup-check" role="%5$s" data-check-id="%2$s">%6$s<div>%3$s%4$s</div></div>',
+			esc_attr( $tone ),
 			esc_attr( $check->id() ),
 			esc_html( $message ),
-			$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
+			$link, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_url()/esc_html() above.
+			'error' === $tone ? 'alert' : 'status',
+			Kit::icon( 'error' === $tone ? 'x' : 'warning' ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 		);
 	}
 
@@ -1027,7 +970,7 @@ class RunsScreen {
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
 			esc_html__( 'Specflux Site Agent is active.', 'specflux-site-agent' ),
-			esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ),
+			esc_url( Shell::url( 'runs' ) ),
 			esc_html__( 'Start a run', 'specflux-site-agent' )
 		);
 	}
@@ -1127,8 +1070,7 @@ class RunsScreen {
 	 *
 	 * The enum VALUES stay machine-stable everywhere they matter (the CSS
 	 * class, `data-status`, the poll payload); only what a human READS is
-	 * translated. The same map is handed to `runs.js` so a JS-swapped badge
-	 * reads identically to a server-rendered one.
+	 * translated.
 	 *
 	 * @return array<string,string>
 	 */

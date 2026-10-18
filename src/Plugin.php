@@ -464,8 +464,10 @@ final class Plugin {
 
 		// Observation screen (S10).
 		if ( function_exists( 'is_admin' ) && is_admin() ) {
+			// 0.4 D3: the one top-level menu, its three tabs, the kit enqueue and the old-URL redirects.
+			( new \Specflux\SiteAgent\Admin\Ui\Shell() )->register();
 			( new \Specflux\SiteAgent\Admin\RunsScreen() )->register();
-			// 0.3 S20: the site-brief settings submenu.
+			// 0.3 S20: the site-brief settings tab.
 			( new \Specflux\SiteAgent\Admin\SettingsScreen() )->register();
 			( new \Specflux\SiteAgent\Admin\PrivacyPolicy() )->register();
 		}

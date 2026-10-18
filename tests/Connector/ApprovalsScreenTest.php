@@ -1,6 +1,6 @@
 <?php
 /**
- * The "From AI apps" tab and its approve / deny handlers.
+ * The waiting-calls section of the AI apps tab and its approve / deny handlers.
  *
  * @package Specflux Site Agent
  */
@@ -41,7 +41,8 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 
 		$this->assertSame( array(), Approvals::pending() );
 		$this->assertTrue( Approvals::consume( $hash ) );
-		$this->assertStringContainsString( 'tab=ai-apps', $GLOBALS['specflux_site_agent_test_redirect'] );
+		$this->assertStringContainsString( 'page=specflux-site-agent-apps', $GLOBALS['specflux_site_agent_test_redirect'] );
+		$this->assertStringContainsString( '#specflux-site-agent-waiting', $GLOBALS['specflux_site_agent_test_redirect'] );
 	}
 
 	public function test_deny_removes_the_call(): void {
@@ -124,26 +125,25 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 		$this->assertStringNotContainsString( '<table', $html );
 	}
 
-	public function test_the_runs_screen_shows_the_tab_when_asked_and_not_otherwise(): void {
+	public function test_the_ai_apps_tab_shows_the_waiting_calls_and_counts_them_in_its_tab(): void {
 		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
 		add_filter( 'specflux_site_agent_runs_capability', static fn (): string => 'manage_options' );
 		$this->park();
 		update_option( 'specflux_site_agent_connector_enabled', '1' );
 
-		$_GET = array( 'tab' => 'ai-apps' );
 		ob_start();
-		( new \Specflux\SiteAgent\Admin\RunsScreen() )->render();
-		$tab = (string) ob_get_clean();
+		\Specflux\SiteAgent\Connector\AppsScreen::render();
+		$apps = (string) ob_get_clean();
 
-		$_GET = array();
 		ob_start();
 		( new \Specflux\SiteAgent\Admin\RunsScreen() )->render();
 		$runs = (string) ob_get_clean();
 
-		$this->assertStringNotContainsString( 'specflux-site-agent-runs-root', $tab );
-		$this->assertStringContainsString( 'specflux/write-thing', $tab );
+		$this->assertStringContainsString( 'specflux/write-thing', $apps );
+		$this->assertStringContainsString( 'id="specflux-site-agent-waiting"', $apps );
+		$this->assertStringContainsString( '1 call waiting for approval', $apps, 'the AI apps tab carries the count' );
+		$this->assertStringContainsString( '1 call waiting for approval', $runs, 'and so does the header on the Runs screen' );
 		$this->assertStringNotContainsString( 'specflux/write-thing', $runs );
 		$this->assertStringContainsString( 'specflux-site-agent-runs-root', $runs );
-		$this->assertStringContainsString( 'From AI apps (1)', $runs );
 	}
 }

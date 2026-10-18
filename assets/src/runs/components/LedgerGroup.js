@@ -2,6 +2,7 @@ import { useState } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 import TierBadge from './TierBadge';
 import ResultCard from './ResultCard';
+import { AuiBadge } from './ui';
 import { stepLabel, stepResult, stepVerb, stepTier, ledgerLabels } from '../utils';
 
 /**
@@ -29,19 +30,19 @@ export default function LedgerGroup( { calls, gateMode } ) {
 				 * chrome — data-specflux-site-agent-content marks it as data. */ }
 				{ summaryLabels && <span data-specflux-site-agent-content>{ `: ${ summaryLabels }` }</span> }
 			</summary>
-			<ol className="specflux-site-agent-ledger">
+			<ol className="aui-card specflux-site-agent-ledger">
 				{ calls.map( ( call, index ) => (
 					<li key={ index } className="specflux-site-agent-ledger-row">
 						<span className="specflux-site-agent-ledger-status">{ 'rejected' === call.step.status ? '✕' : '✓' }</span>
-						<span className="specflux-site-agent-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
+						<span className="aui-mono specflux-site-agent-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
 						<span className="specflux-site-agent-ledger-verb">{ stepVerb( call.step ) }</span>
 						<TierBadge gateMode={ gateMode } tier={ stepTier( call.step ) } />
 						{ call.approvedByViewer && (
-							<span className="specflux-site-agent-ledger-you">{ __( 'Approved by you', 'specflux-site-agent' ) }</span>
+							<AuiBadge tone="info" className="specflux-site-agent-ledger-you">{ __( 'Approved by you', 'specflux-site-agent' ) }</AuiBadge>
 						) }
 						<span className="specflux-site-agent-ledger-result">
 							{ 'rejected' === call.step.status ? (
-								<span className="specflux-site-agent-ledger-you">{ __( 'Rejected by you, not done', 'specflux-site-agent' ) }</span>
+								<AuiBadge tone="bad" className="specflux-site-agent-ledger-you">{ __( 'Rejected by you, not done', 'specflux-site-agent' ) }</AuiBadge>
 							) : (
 								/* S22 pseudo-locale: raw tool-result data (often
 								 * a JSON dump), never chrome. */

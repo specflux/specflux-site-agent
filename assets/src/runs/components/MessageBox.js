@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { SelectControl } from '@wordpress/components';
+import { AuiButton, AuiIcon } from './ui';
 
 /** Automatic sentinel value for the model `<select>`. */
 const AUTOMATIC_VALUE = '';
@@ -254,21 +254,19 @@ export default function MessageBox( {
 						__( 'Follow-up to run #%d. It keeps the same pack and starts from the objects that run changed; it re-reads each before changing it.', 'specflux-site-agent' ),
 						followUp.runId
 					) }{ ' ' }
-					<button type="button" className="button-link" onClick={ () => onCancelFollowUp && onCancelFollowUp() }>
+					<AuiButton variant="ghost" size="sm" onClick={ () => onCancelFollowUp && onCancelFollowUp() }>
 						{ __( 'Cancel follow-up', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				</p>
 			) }
-			<div className="specflux-site-agent-message-box">
+			<div className="aui-composer specflux-site-agent-message-box">
 				{ packList.length > 0 && (
-					<SelectControl
-						className="specflux-site-agent-message-box-pack"
-						label={ __( 'Pack', 'specflux-site-agent' ) }
-						hideLabelFromVision
-						__next40pxDefaultSize
+					<select
+						className="aui-select specflux-site-agent-message-box-pack"
+						aria-label={ __( 'Pack', 'specflux-site-agent' ) }
 						disabled={ boxDisabled || Boolean( followUp ) }
 						value={ effectivePack }
-						onChange={ setPack }
+						onChange={ ( e ) => setPack( e.target.value ) }
 					>
 						{ 1 !== packList.length && (
 							<option value="" disabled dir="auto">
@@ -281,17 +279,15 @@ export default function MessageBox( {
 								{ p.label }
 							</option>
 						) ) }
-					</SelectControl>
+					</select>
 				) }
 				{ flatModels.length > 0 && (
-					<SelectControl
-						className="specflux-site-agent-message-box-model"
-						label={ __( 'Model', 'specflux-site-agent' ) }
-						hideLabelFromVision
+					<select
+						className="aui-select specflux-site-agent-message-box-model"
+						aria-label={ __( 'Model', 'specflux-site-agent' ) }
 						disabled={ boxDisabled }
 						value={ modelIndex }
-						onChange={ setModelIndex }
-						__next40pxDefaultSize
+						onChange={ ( e ) => setModelIndex( e.target.value ) }
 					>
 						<option value={ AUTOMATIC_VALUE }>
 							{ __( 'Automatic (let WordPress choose)', 'specflux-site-agent' ) }
@@ -305,7 +301,7 @@ export default function MessageBox( {
 								) ) }
 							</optgroup>
 						) ) }
-					</SelectControl>
+					</select>
 				) }
 				<textarea
 					ref={ textRef }
@@ -323,16 +319,16 @@ export default function MessageBox( {
 				/>
 				{ /* A disabled button swallows hover, so the tooltip rides on a wrapper too. */ }
 				<span className="specflux-site-agent-start-wrap" title={ blockedReason || undefined }>
-					<button
-						type="button"
-						className="button button-primary"
+					<AuiButton
+						variant="primary"
 						disabled={ startDisabled || '' === text.trim() }
 						title={ blockedReason || undefined }
 						aria-describedby={ startBlocked || blockedBySetup ? 'specflux-site-agent-start-blocked' : undefined }
 						onClick={ submit }
 					>
+						<AuiIcon name="send" />
 						{ __( 'Start run', 'specflux-site-agent' ) }
-					</button>
+					</AuiButton>
 				</span>
 			</div>
 			{ ( startBlocked || blockedBySetup ) && (
