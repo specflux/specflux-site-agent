@@ -19,6 +19,14 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) || empty( $GLOBALS['wpdb'] ) ) {
 
 global $wpdb;
 
+// Queued background ticks and the sweep die with the plugin whether or not the
+// site opts into deleting data: their callbacks are gone. (The queue's own
+// functions exist only if another plugin, e.g. WooCommerce, has loaded it.)
+if ( function_exists( 'as_unschedule_all_actions' ) ) {
+	as_unschedule_all_actions( '', array(), 'specflux-site-agent' );
+}
+wp_clear_scheduled_hook( 'specflux_site_agent_background_sweep' );
+
 $specflux_site_agent_delete_data = get_option( 'specflux_site_agent_uninstall_delete_data' );
 
 if ( true !== $specflux_site_agent_delete_data && '1' !== $specflux_site_agent_delete_data ) {
@@ -53,7 +61,7 @@ foreach ( array( 'specflux_site_agent_activation_notice', 'specflux_site_agent_i
 // Per-user and per-run keys: one pending-brief transient per user id, one legacy
 // tick lock per run id (pre-schema-11 installs; the lock is a run-row claim now). Transients live in the options table unless an external
 // object cache holds them (those expire on their own).
-foreach ( array( 'specflux_site_agent_brief_pending_', 'specflux_site_agent_lock_', 'specflux_site_agent_rl_', 'specflux_site_agent_oauth_rl_', 'specflux_site_agent_oauth_cimd_', 'specflux_site_agent_oac_', 'specflux_site_agent_oau_', 'specflux_site_agent_oat_' ) as $specflux_site_agent_prefix ) {
+foreach ( array( 'specflux_site_agent_brief_pending_', 'specflux_site_agent_lock_', 'specflux_site_agent_bgconf_', 'specflux_site_agent_rl_', 'specflux_site_agent_oauth_rl_', 'specflux_site_agent_oauth_cimd_', 'specflux_site_agent_oac_', 'specflux_site_agent_oau_', 'specflux_site_agent_oat_' ) as $specflux_site_agent_prefix ) {
 	foreach ( array( '_transient_', '_transient_timeout_' ) as $specflux_site_agent_kind ) {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- opt-in uninstall removing this plugin's own prefixed transients; nothing to cache.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $specflux_site_agent_kind . $specflux_site_agent_prefix ) . '%' ) );

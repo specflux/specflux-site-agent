@@ -334,6 +334,25 @@ final class WpdbRunStore implements RunStore {
 		);
 	}
 
+	/** {@inheritDoc} */
+	public function findStalled( string $tick_before, string $now, int $limit ): array {
+		$table = Schema::runsTable( $this->db );
+
+		return $this->runsFromRows(
+			$this->db->get_results(
+				$this->db->prepare(
+					"SELECT * FROM %i WHERE status IN ('pending','running') AND ( last_tick_at < %s OR ( last_tick_at IS NULL AND created_at < %s ) ) AND ( lock_until IS NULL OR lock_until < %s ) ORDER BY id ASC LIMIT %d",
+					$table,
+					$tick_before,
+					$tick_before,
+					$now,
+					max( 1, $limit )
+				),
+				ARRAY_A
+			)
+		);
+	}
+
 	/**
 	 * @param mixed $rows get_results() output.
 	 * @return list<Run>

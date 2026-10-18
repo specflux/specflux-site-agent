@@ -62,6 +62,9 @@ final class Plugin {
 	/** Lazily built runner. */
 	private ?Runner $runner = null;
 
+	/** Lazily built background driver (0.4 U2). */
+	private ?\Specflux\SiteAgent\Background\BackgroundDriver $background = null;
+
 	/** The one pages-pack instance this request shares. */
 	private ?\Specflux\SiteAgent\Packs\Pages\PagesPack $pages_pack = null;
 
@@ -233,6 +236,37 @@ final class Plugin {
 		// K1: the MCP connector's server and gate hooks. Inert unless an admin
 		// turns the connector on and the mcp-adapter plugin is present.
 		\Specflux\SiteAgent\Connector\Connector::register();
+		// 0.4 U2: the queue callbacks for background runs. Resolved lazily so
+		// a request that never reaches the queue never builds the runner;
+		// Availability decides at run time whether the queue is usable.
+		add_action(
+			\Specflux\SiteAgent\Background\BackgroundDriver::HOOK,
+			function ( mixed ...$args ): void {
+				if ( $this->ready() ) {
+					$this->background()->handle( ...$args );
+				}
+			},
+			10,
+			1
+		);
+		add_action(
+			\Specflux\SiteAgent\Background\BackgroundDriver::SWEEP_HOOK,
+			function (): void {
+				if ( $this->ready() ) {
+					$this->background()->sweep();
+				}
+			}
+		);
+		add_action(
+			'init',
+			static function (): void {
+				// Admin and cron requests only: a front-end hit never pays for the lookup.
+				if ( is_admin() || wp_doing_cron() ) {
+					\Specflux\SiteAgent\Background\BackgroundDriver::ensureSweepScheduled();
+				}
+			},
+			20
+		);
 		// 0.3 S3: Agent Safety is no longer a hard dependency — its absence
 		// only decides the gate mode a run starts in (GateMode::BuiltIn), so
 		// boot wires the runtime either way. `available()` still reports
@@ -795,6 +829,12 @@ final class Plugin {
 		try {
 			$result = $this->runner()->tick( $run_id, $expected_step_count, $resume, $driver );
 
+			// 0.4 U2 hand-off: the ONE place every tick (ajax, REST and the
+			// background driver itself) passes through. A tick that leaves the
+			// run still running, or hold-parked, queues the next background
+			// tick; polls reach the queue only through here.
+			$this->background()->handOff( $run_id, $result );
+
 			return $result;
 		} finally {
 			\Specflux\SiteAgent\Packs\Pages\PublishSummary::forgetRunContext();
@@ -1226,6 +1266,19 @@ final class Plugin {
 			__( 'Specflux Site Agent cannot govern this run: either it is not fully installed, or a built-in-mode run may only be driven from the Specflux Site Agent Runs screen.', 'specflux-site-agent' ),
 			array( 'status' => 409 )
 		);
+	}
+
+	/** The background driver, built lazily over the shared runner. */
+	private function background(): \Specflux\SiteAgent\Background\BackgroundDriver {
+		if ( null === $this->background ) {
+			$this->background = new \Specflux\SiteAgent\Background\BackgroundDriver(
+				$this->runner()->store(),
+				$this->runner(),
+				fn ( int $run_id, int $step_count, string $driver ): array|WP_Error => $this->tick( $run_id, $step_count, null, $driver )
+			);
+		}
+
+		return $this->background;
 	}
 
 	/**

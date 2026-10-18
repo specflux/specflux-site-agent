@@ -149,4 +149,16 @@ interface RunStore {
 	 * @return list<Run>
 	 */
 	public function listRecentForUser( int $user_id, int $limit = 50 ): array;
+
+	/**
+	 * Active runs nobody is driving: status pending/running, no tick since
+	 * `$tick_before` (or never ticked and created before it), and no live claim
+	 * at `$now`. Oldest id first.
+	 *
+	 * @param string $tick_before UTC `Y-m-d H:i:s` cutoff.
+	 * @param string $now         UTC `Y-m-d H:i:s` for the claim-expiry test.
+	 * @param int    $limit       Max rows.
+	 * @return list<Run>
+	 */
+	public function findStalled( string $tick_before, string $now, int $limit ): array;
 }

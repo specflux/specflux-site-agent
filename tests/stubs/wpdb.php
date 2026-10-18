@@ -229,6 +229,25 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				return array_slice( $rows, 0, max( 1, (int) $m[3] ) );
 			}
 
+			// Stalled-run sweep (0.4 U2): active, un-ticked, un-claimed rows.
+			if (
+				$this->emulateRows
+				&& null !== $query
+				&& preg_match( "/SELECT \\* FROM (\\S+) WHERE status IN \\('pending','running'\\) AND \\( last_tick_at < '([^']*)' OR \\( last_tick_at IS NULL AND created_at < '([^']*)' \\) \\) AND \\( lock_until IS NULL OR lock_until < '([^']*)' \\) ORDER BY id ASC LIMIT (\\d+)/", $query, $m )
+			) {
+				$rows = array_values(
+					array_filter(
+						$this->tables[ $m[1] ] ?? array(),
+						static fn ( array $row ): bool => in_array( $row['status'] ?? '', array( 'pending', 'running' ), true )
+							&& ( isset( $row['last_tick_at'] ) ? (string) $row['last_tick_at'] < $m[2] : (string) ( $row['created_at'] ?? '' ) < $m[3] )
+							&& ( ! isset( $row['lock_until'] ) || (string) $row['lock_until'] < $m[4] )
+					)
+				);
+				usort( $rows, static fn ( array $a, array $b ): int => (int) $a['id'] <=> (int) $b['id'] );
+
+				return array_slice( $rows, 0, (int) $m[5] );
+			}
+
 			// Connector activity (K4): newest first, optionally one connection.
 			if (
 				$this->emulateRows

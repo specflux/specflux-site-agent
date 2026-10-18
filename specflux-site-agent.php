@@ -120,6 +120,18 @@ function specflux_site_agent_deactivate(): void {
 	if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
 		wp_clear_scheduled_hook( 'specflux_site_agent_oauth_gc' );
 	}
+	// 0.4 U2: every queued background tick and the hourly sweep.
+	if ( class_exists( \Specflux\SiteAgent\Background\BackgroundDriver::class ) ) {
+		\Specflux\SiteAgent\Background\BackgroundDriver::unscheduleAll();
+	}
+}
+
+// 0.4 U2: Action Scheduler, bundled for background runs. Loaded the documented
+// way, before plugins_loaded: it registers its own version and the newest copy
+// on the site wins arbitration at plugins_loaded priority 1. A dev checkout
+// without `composer install` simply has no queue (Availability reports it).
+if ( is_readable( __DIR__ . '/vendor/woocommerce/action-scheduler/action-scheduler.php' ) ) {
+	require_once __DIR__ . '/vendor/woocommerce/action-scheduler/action-scheduler.php';
 }
 
 // Runtime autoloader for THIS PLUGIN'S OWN CLASSES ONLY (S2): deliberately a

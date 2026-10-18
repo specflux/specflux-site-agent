@@ -91,6 +91,9 @@ final class Runner {
 	/** The driver recorded on a tick when the caller names none. */
 	public const DRIVER_SCREEN = 'screen';
 
+	/** The driver recorded for a tick the background queue runs. */
+	public const DRIVER_BACKGROUND = 'background';
+
 	/** Error code of a tick refused because another correlation id is in effect (run NOT failed). */
 	public const CORRELATION_CONFLICT = 'specflux_site_agent_correlation_conflict';
 
