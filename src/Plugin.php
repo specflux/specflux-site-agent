@@ -236,6 +236,8 @@ final class Plugin {
 		// K1: the MCP connector's server and gate hooks. Inert unless an admin
 		// turns the connector on and the mcp-adapter plugin is present.
 		\Specflux\SiteAgent\Connector\Connector::register();
+		// 0.4 M1: new/deleted site hooks (multisite only; a no-op elsewhere).
+		\Specflux\SiteAgent\SiteLifecycle::register();
 		// 0.4 U2: the queue callbacks for background runs. Resolved lazily so
 		// a request that never reaches the queue never builds the runner;
 		// Availability decides at run time whether the queue is usable.
@@ -289,8 +291,9 @@ final class Plugin {
 			static function (): void {
 				// Admin and cron requests only: a front-end hit never pays for the lookup.
 				if ( is_admin() || wp_doing_cron() ) {
-					\Specflux\SiteAgent\Background\BackgroundDriver::ensureSweepScheduled();
-					\Specflux\SiteAgent\Run\RunLifecycle::schedule();
+					// Every cron, idempotently: also how a site a network
+					// activation did not touch gets its schedule (SiteLifecycle).
+					\Specflux\SiteAgent\SiteLifecycle::ensureCronsScheduled();
 				}
 			},
 			20

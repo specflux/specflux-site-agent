@@ -22,9 +22,11 @@
  * Specflux Site Agent falls back to a built-in minimal gate: every call that changes
  * the site still stops for a person to approve it on Specflux Site Agent's own Runs
  * screen before it runs. A run's mode is pinned at start and never changes
- * underneath it. Multisite is refused outright (specflux_site_agent_ungoverned is
+ * underneath it. (specflux_site_agent_ungoverned is
  * reserved for "no WordPress session" and third-party HTTP consumers
- * starting/ticking a built-in-mode run).
+ * starting/ticking a built-in-mode run.) Multisite is supported from 0.4, one
+ * independent install per site; the filter specflux_site_agent_allow_multisite
+ * (false) restores the old refusal.
  *
  * @package Specflux Site Agent
  */
@@ -34,6 +36,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SiteAgent;
 
 use Specflux\SiteAgent\MultisiteGuard;
+use Specflux\SiteAgent\SiteLifecycle;
 use Specflux\SiteAgent\Plugin;
 
 // Bail on direct access (must precede any other runtime code so static
@@ -76,34 +79,30 @@ register_deactivation_hook( __FILE__, __NAMESPACE__ . '\specflux_site_agent_deac
  *
  * @return void
  */
-function specflux_site_agent_activate(): void {
-	// Multisite is refused (0.3 S2). Checked inline as well as through the
-	// guard class so a broken autoloader cannot let activation through.
+function specflux_site_agent_activate( bool $network_wide = false ): void {
+	// Network activation installs this site only too; the rest install lazily.
+	unset( $network_wide );
+
+	// Multisite is allowed from 0.4. A host can restore the 0.3 refusal with the
+	// `specflux_site_agent_allow_multisite` filter (false). Checked inline as well
+	// as through the guard class so a broken autoloader cannot let activation through.
 	if ( function_exists( 'is_multisite' ) && is_multisite() ) {
-		if ( class_exists( MultisiteGuard::class ) ) {
-			MultisiteGuard::refuse_activation( __FILE__ );
+		$allowed = ! function_exists( 'apply_filters' ) || false !== apply_filters( 'specflux_site_agent_allow_multisite', true );
+		if ( ! $allowed ) {
+			if ( class_exists( MultisiteGuard::class ) ) {
+				MultisiteGuard::refuse_activation( __FILE__ );
+			}
+			wp_die( esc_html__( 'Specflux Site Agent does not support WordPress multisite. It was not activated.', 'specflux-site-agent' ) );
 		}
-		wp_die( esc_html__( 'Specflux Site Agent does not support WordPress multisite. It was not activated.', 'specflux-site-agent' ) );
 	}
 
 	if ( ! class_exists( Schema::class ) ) {
 		return;
 	}
 
-	global $wpdb;
-	if ( isset( $wpdb ) ) {
-		Schema::maybe_upgrade( $wpdb );
-	}
-
-	// 0.4 K4: the daily prune of the connector activity list.
-	if ( class_exists( \Specflux\SiteAgent\Connector\ActivityLog::class ) ) {
-		\Specflux\SiteAgent\Connector\ActivityLog::schedule();
-	}
-
-	// 0.4 U3: the daily wall-clock expiry and run-retention events.
-	if ( class_exists( \Specflux\SiteAgent\Run\RunLifecycle::class ) ) {
-		\Specflux\SiteAgent\Run\RunLifecycle::schedule();
-	}
+	// Installs THIS site only, even on network activation: every other site
+	// installs lazily on its first request (see SiteLifecycle).
+	SiteLifecycle::installCurrentSite();
 
 	// 0.3 S10: no redirect, no site-wide notice — one one-time notice on the
 	// Plugins screen only, rendered by RunsScreen::maybeRenderActivationNotice()
@@ -114,24 +113,22 @@ function specflux_site_agent_activate(): void {
 }
 
 /**
- * Stop the connector's daily activity prune.
+ * Stop the plugin's crons and queued actions: on every site for a network
+ * deactivation (batched, see SiteLifecycle), otherwise on this site.
  *
+ * @param bool $network_wide Whether this is a network-wide deactivation.
  * @return void
  */
-function specflux_site_agent_deactivate(): void {
-	if ( class_exists( \Specflux\SiteAgent\Connector\ActivityLog::class ) ) {
-		\Specflux\SiteAgent\Connector\ActivityLog::unschedule();
+function specflux_site_agent_deactivate( bool $network_wide = false ): void {
+	if ( ! class_exists( SiteLifecycle::class ) ) {
+		return;
 	}
-	if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
-		wp_clear_scheduled_hook( 'specflux_site_agent_oauth_gc' );
+	if ( $network_wide && function_exists( 'is_multisite' ) && is_multisite() ) {
+		SiteLifecycle::unscheduleNetwork();
+
+		return;
 	}
-	if ( class_exists( \Specflux\SiteAgent\Run\RunLifecycle::class ) ) {
-		\Specflux\SiteAgent\Run\RunLifecycle::unschedule();
-	}
-	// 0.4 U2: every queued background tick and the hourly sweep.
-	if ( class_exists( \Specflux\SiteAgent\Background\BackgroundDriver::class ) ) {
-		\Specflux\SiteAgent\Background\BackgroundDriver::unscheduleAll();
-	}
+	SiteLifecycle::unscheduleCurrentSite();
 }
 
 // 0.4 U2: Action Scheduler, bundled for background runs. Loaded the documented

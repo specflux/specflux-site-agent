@@ -13,11 +13,24 @@ namespace Specflux\SiteAgent;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Specflux Site Agent does not support multisite. Activation is refused whether it is
- * per site or network-wide, and a copy that is somehow active on a multisite
- * install (a site converted after activation) boots nothing.
+ * Multisite is supported from 0.4 (see {@see SiteLifecycle}). This guard keeps
+ * the old refusal behind the `specflux_site_agent_allow_multisite` filter: a
+ * host that returns false gets exactly the 0.3 behaviour. Activation is then
+ * refused whether it is per site or network-wide, and a copy that is somehow
+ * active on a multisite install (a site converted after activation) boots
+ * nothing.
  */
 final class MultisiteGuard {
+
+	/**
+	 * Whether multisite is allowed. Filter `specflux_site_agent_allow_multisite`
+	 * (bool, default true); return false to restore the 0.3 refusal.
+	 *
+	 * @return bool
+	 */
+	public static function allowed(): bool {
+		return ! function_exists( 'apply_filters' ) || false !== apply_filters( 'specflux_site_agent_allow_multisite', true );
+	}
 
 	/**
 	 * Whether this install must be refused.
@@ -25,7 +38,7 @@ final class MultisiteGuard {
 	 * @return bool
 	 */
 	public static function refused(): bool {
-		return function_exists( 'is_multisite' ) && is_multisite();
+		return function_exists( 'is_multisite' ) && is_multisite() && ! self::allowed();
 	}
 
 	/**

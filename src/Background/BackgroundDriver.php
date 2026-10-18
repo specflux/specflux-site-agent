@@ -254,7 +254,8 @@ final class BackgroundDriver {
 			// one tick only, and ALWAYS stop being them (Action Scheduler runs
 			// many actions in one process).
 			wp_set_current_user( $run->userId );
-			if ( false === get_userdata( $run->userId ) || ! ScreenCapability::held() ) {
+			$member = ! function_exists( 'is_multisite' ) || ! is_multisite() || ! function_exists( 'is_user_member_of_blog' ) || is_user_member_of_blog( $run->userId, get_current_blog_id() );
+			if ( false === get_userdata( $run->userId ) || ! $member || ! ScreenCapability::held() ) {
 				$this->runner->failRun(
 					$run,
 					'owner_unavailable',

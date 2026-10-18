@@ -19,7 +19,12 @@ use Specflux\SiteAgent\MultisiteGuard;
  */
 final class MultisiteGuardTest extends TestCase {
 
+	protected function setUp(): void {
+		$GLOBALS['specflux_site_agent_test_deactivated_plugins'] = array();
+	}
+
 	protected function tearDown(): void {
+		remove_all_filters();
 		unset( $GLOBALS['specflux_site_agent_test_multisite'] );
 		unset( $GLOBALS['specflux_site_agent_test_deactivated_plugins'] );
 	}
@@ -35,6 +40,7 @@ final class MultisiteGuardTest extends TestCase {
 
 	public function test_multisite_activation_deactivates_and_dies_with_the_refusal(): void {
 		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+		add_filter( 'specflux_site_agent_allow_multisite', static fn (): bool => false );
 
 		$this->assertTrue( MultisiteGuard::refused() );
 		$this->expectException( RuntimeException::class );
@@ -49,11 +55,22 @@ final class MultisiteGuardTest extends TestCase {
 
 	public function test_multisite_runtime_guard_deactivates_and_notices(): void {
 		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+		add_filter( 'specflux_site_agent_allow_multisite', static fn (): bool => false );
 
 		MultisiteGuard::refuse_runtime( '/plugins/specflux-site-agent/specflux-site-agent.php' );
 
 		$this->assertSame( array( 'specflux-site-agent/specflux-site-agent.php' ), $GLOBALS['specflux_site_agent_test_deactivated_plugins'] ?? array() );
 		$this->assertNotEmpty( $GLOBALS['specflux_site_agent_test_actions']['admin_notices'] ?? array() );
+	}
+
+	public function test_multisite_is_allowed_by_default(): void {
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+
+		$this->assertTrue( MultisiteGuard::allowed() );
+		$this->assertFalse( MultisiteGuard::refused() );
+		MultisiteGuard::refuse_activation( '/plugins/specflux-site-agent/specflux-site-agent.php' );
+		MultisiteGuard::refuse_runtime( '/plugins/specflux-site-agent/specflux-site-agent.php' );
+		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_deactivated_plugins'] ?? array() );
 	}
 
 	public function test_runtime_notice_names_multisite(): void {

@@ -383,12 +383,15 @@ final class RunLifecycleTest extends TestCase {
 	public function test_activation_deactivation_and_uninstall_handle_both_crons(): void {
 		$root = dirname( __DIR__, 2 );
 		$main = (string) file_get_contents( $root . '/specflux-site-agent.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
-		$this->assertSame( 1, preg_match( '/function specflux_site_agent_activate\(.*?RunLifecycle::schedule\(\)/s', $main ), 'activation schedules' );
-		$this->assertSame( 1, preg_match( '/function specflux_site_agent_deactivate\(.*?RunLifecycle::unschedule\(\)/s', $main ), 'deactivation clears' );
+		$this->assertSame( 1, preg_match( '/function specflux_site_agent_activate\(.*?SiteLifecycle::installCurrentSite\(\)/s', $main ), 'activation schedules' );
+		$this->assertSame( 1, preg_match( '/function specflux_site_agent_deactivate\(.*?SiteLifecycle::unscheduleCurrentSite\(\)/s', $main ), 'deactivation clears' );
+		$lifecycle = (string) file_get_contents( $root . '/src/SiteLifecycle.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
+		$this->assertStringContainsString( 'RunLifecycle::schedule()', $lifecycle );
+		$this->assertStringContainsString( 'RunLifecycle::unschedule()', $lifecycle );
 
-		$uninstall = (string) file_get_contents( $root . '/uninstall.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
-		$this->assertStringContainsString( "wp_clear_scheduled_hook( 'specflux_site_agent_expire_runs' )", $uninstall );
-		$this->assertStringContainsString( "wp_clear_scheduled_hook( 'specflux_site_agent_prune_runs' )", $uninstall );
+		$uninstall = (string) file_get_contents( $root . '/src/Uninstaller.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
+		$this->assertStringContainsString( "'specflux_site_agent_expire_runs'", $uninstall );
+		$this->assertStringContainsString( "'specflux_site_agent_prune_runs'", $uninstall );
 		$this->assertSame( 'specflux_site_agent_expire_runs', RunLifecycle::EXPIRE_HOOK );
 		$this->assertSame( 'specflux_site_agent_prune_runs', RunLifecycle::PRUNE_HOOK );
 	}

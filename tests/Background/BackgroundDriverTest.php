@@ -355,6 +355,52 @@ final class BackgroundDriverTest extends TestCase {
 		$this->assertSame( 0, get_current_user_id() );
 	}
 
+	public function test_an_owner_who_is_not_a_member_of_this_blog_fails_the_run(): void {
+		specflux_site_agent_test_network( array( 1, 2 ) );
+		$GLOBALS['specflux_site_agent_test_blog_members'] = array(
+			1 => array( 1 ),
+			2 => array(),
+		);
+		switch_to_blog( 2 );
+		$GLOBALS['specflux_site_agent_test_users']     = array( 1 => (object) array( 'ID' => 1 ) );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		try {
+			$run_id = $this->createRun();
+
+			$this->driver->handle( run_id: $run_id );
+
+			$run = $this->store->getRun( $run_id );
+			$this->assertSame( RunStatus::Failed, $run->status );
+			$this->assertSame( 'owner_unavailable', $run->error['code'] ?? '' );
+			$this->assertSame( array(), $this->ticks );
+			$this->assertSame( 0, get_current_user_id() );
+		} finally {
+			restore_current_blog();
+			specflux_site_agent_test_network_reset();
+		}
+	}
+
+	public function test_a_member_owner_on_multisite_still_runs(): void {
+		specflux_site_agent_test_network( array( 1, 2 ) );
+		$GLOBALS['specflux_site_agent_test_blog_members'] = array(
+			1 => array( 1 ),
+			2 => array( 1 ),
+		);
+		switch_to_blog( 2 );
+		$GLOBALS['specflux_site_agent_test_users']     = array( 1 => (object) array( 'ID' => 1 ) );
+		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => true );
+		try {
+			$run_id = $this->createRun();
+
+			$this->driver->handle( run_id: $run_id );
+
+			$this->assertCount( 1, $this->ticks );
+		} finally {
+			restore_current_blog();
+			specflux_site_agent_test_network_reset();
+		}
+	}
+
 	public function test_an_owner_without_the_screen_capability_fails_the_run(): void {
 		$GLOBALS['specflux_site_agent_test_user_caps'] = array( 'manage_options' => false );
 		$run_id                                        = $this->createRun();
