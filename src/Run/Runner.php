@@ -91,6 +91,9 @@ final class Runner {
 	/** The driver recorded on a tick when the caller names none. */
 	public const DRIVER_SCREEN = 'screen';
 
+	/** Error code of a tick refused because another correlation id is in effect (run NOT failed). */
+	public const CORRELATION_CONFLICT = 'specflux_site_agent_correlation_conflict';
+
 	/**
 	 * The run claim's lifetime, re-extended before every model and tool call. A
 	 * tick can run for minutes; a lock that lapsed mid-tick let a second tick
@@ -196,7 +199,7 @@ final class Runner {
 	 *                                         field outright.
 	 * @return array<string,mixed>|WP_Error RunState or WP_Error codes:
 	 *   specflux_site_agent_not_found | specflux_site_agent_forbidden | specflux_site_agent_conflict |
-	 *   specflux_site_agent_ungoverned | resume_mismatch.
+	 *   specflux_site_agent_ungoverned | specflux_site_agent_correlation_conflict | resume_mismatch.
 	 */
 	public function tick( int $run_id, int $expected_step_count, ?array $resume = null, string $driver = self::DRIVER_SCREEN ): array|WP_Error {
 		$run = $this->store->getRun( $run_id );
@@ -295,10 +298,21 @@ final class Runner {
 				return $this->state( $run, array(), null );
 			}
 
-			// S14: "a notice is not a stop" — a tick that cannot own its
-			// correlation id would run ungoverned under someone else's scope,
-			// so the run fails and the reason is recorded.
-			return $this->failCorrelation( $run );
+			// S14 precondition: another plugin already memoized a different
+			// correlation id in THIS PHP process (typically an earlier action in
+			// the same queue batch). Running now would be ungoverned under
+			// someone else's scope, so the body does not run, but nothing about
+			// the RUN is wrong: it is not failed. The caller retries in a
+			// fresh scope. 503, not 409: the pollers read 409 as "the run
+			// advanced, refresh", which would hot-loop on this.
+			return new WP_Error(
+				self::CORRELATION_CONFLICT,
+				__( 'Another correlation id is already in effect for this request; the run was not changed. Try again shortly.', 'specflux-site-agent' ),
+				array(
+					'status'      => 503,
+					'retry_after' => 60,
+				)
+			);
 		} finally {
 			GrantEligibility::forgetRun();
 			$this->releaseLock( $run_id ); // Idempotent safety net.
@@ -1579,18 +1593,18 @@ final class Runner {
 	}
 
 	/**
-	 * S14: the tick could not take ownership of its correlation id, because a
-	 * different one was already memoized in this request. Fail the run rather
-	 * than proceed under a scope whose grants are not this run's.
+	 * Fail a run from outside a tick (the background driver's owner and
+	 * conflict-cap refusals) through the same path every harness failure uses,
+	 * so status, error and report agree. A terminal run is left untouched.
 	 *
-	 * @return array<string,mixed> RunState carrying the partial report.
+	 * @return array<string,mixed> RunState of the (now failed) run.
 	 */
-	private function failCorrelation( Run $run ): array {
-		$report = $this->failError(
-			$run,
-			'correlation_conflict',
-			'Another correlation id is already in effect for this request.'
-		);
+	public function failRun( Run $run, string $code, string $message ): array {
+		if ( $run->status->isTerminal() ) {
+			return $this->state( $run, array(), null );
+		}
+
+		$report = $this->failError( $run, $code, $message );
 
 		return $this->state( $this->refresh( $run ), array(), array( 'report' => $report ) );
 	}

@@ -224,10 +224,10 @@ final class GrantsTest extends TestCase {
 	}
 
 	// ------------------------------------------------------------------
-	// (b) a correlation conflict FAILS the tick (a notice is not a stop)
+	// (b) a correlation conflict REFUSES the tick without failing the run
 	// ------------------------------------------------------------------
 
-	public function test_tick_fails_the_run_when_the_correlation_scope_throws(): void {
+	public function test_tick_is_refused_but_the_run_survives_when_the_correlation_scope_throws(): void {
 		$run_id                  = $this->createRun();
 		$this->gateway->script[] = self::textTurn( 'Should never be reached.' );
 
@@ -235,14 +235,19 @@ final class GrantsTest extends TestCase {
 
 		$result = $this->runner->tick( $run_id, 0, null );
 
-		$this->assertIsArray( $result );
-		$this->assertSame( 'failed', $result['run']['status'] );
-		$this->assertArrayHasKey( 'report', $result['ui'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'specflux_site_agent_correlation_conflict', $result->get_error_code() );
+		$this->assertSame( 503, $result->get_error_data()['status'] );
 
 		$run = $this->store->getRun( $run_id );
-		$this->assertSame( RunStatus::Failed, $run->status );
-		$this->assertSame( 'correlation_conflict', $run->error['code'] ?? '' );
+		$this->assertSame( RunStatus::Pending, $run->status, 'the run is untouched: not failed, not finished' );
+		$this->assertNull( $run->error );
 		$this->assertSame( array(), $this->gateway->calls, 'the model must never be called outside the scope' );
+		$this->assertNull( $run->lockUntilUtc, 'the claim is released' );
+
+		RequestContext::$conflict = false;
+		$retry                    = $this->runner->tick( $run_id, $run->stepCount, null );
+		$this->assertIsArray( $retry, 'a later tick in a clean scope proceeds' );
 	}
 
 	public function test_a_conflict_never_rewrites_the_outcome_of_a_finished_run(): void {
@@ -1061,13 +1066,13 @@ final class GrantsTest extends TestCase {
 		$this->assertContains( self::correlationFor( $run_id ), $this->grants->revoked );
 	}
 
-	public function test_a_correlation_conflict_revokes_the_runs_grants(): void {
+	public function test_a_correlation_conflict_does_not_revoke_the_runs_grants(): void {
 		$run_id                   = $this->createRun();
 		RequestContext::$conflict = true;
 
 		$this->runner->tick( $run_id, 0, null );
 
-		$this->assertContains( self::correlationFor( $run_id ), $this->grants->revoked );
+		$this->assertNotContains( self::correlationFor( $run_id ), $this->grants->revoked );
 	}
 
 	public function test_a_plan_rejected_cancel_revokes_the_runs_grants(): void {
