@@ -28,6 +28,7 @@ final class BudgetTest extends TestCase {
 				'max_plans'      => 3,
 				'images'         => 6,
 				'refunds'        => 1,
+				'max_days'       => 14,
 			),
 			Budget::defaults()
 		);
@@ -75,6 +76,7 @@ final class BudgetTest extends TestCase {
 				'max_plans'      => 2,
 				'images'         => 6,
 				'refunds'        => 1,
+				'max_days'       => 14,
 			),
 			$sanitized
 		);
@@ -89,6 +91,7 @@ final class BudgetTest extends TestCase {
 			'max_plans'      => 3,
 			'images'         => 6,
 			'refunds'        => 1,
+			'max_days'       => 14,
 		);
 
 		$this->assertSame( $ceiling, Budget::clamp( 'junk', $ceiling ) );
@@ -101,6 +104,7 @@ final class BudgetTest extends TestCase {
 				'max_plans'      => 3,
 				'images'         => 1,
 				'refunds'        => 1,
+				'max_days'       => 14,
 			),
 			Budget::clamp(
 				array(
@@ -257,7 +261,10 @@ final class BudgetTest extends TestCase {
 		// still comes through at its shipped default (1) — same rule as any
 		// other key the pack override doesn't name.
 		$this->assertSame(
-			$this->sitePackOverrides() + array( 'refunds' => 1 ),
+			$this->sitePackOverrides() + array(
+				'refunds'  => 1,
+				'max_days' => 14,
+			),
 			Budget::defaults( $this->sitePackOverrides() )
 		);
 	}

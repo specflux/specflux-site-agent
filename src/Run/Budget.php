@@ -42,6 +42,7 @@ final class Budget {
 	public const MAX_PLANS      = 'max_plans';
 	public const IMAGES         = 'images';
 	public const REFUNDS        = 'refunds';
+	public const MAX_DAYS       = 'max_days';
 
 	/**
 	 * The shipped defaults (S4 as amended by 0.2 S4). Exhausting questions or
@@ -52,7 +53,7 @@ final class Budget {
 	 * @param array<string,int> $pack_overrides Pack-declared overrides (S7),
 	 *                                          applied over the shipped table
 	 *                                          BEFORE the site-wide filter.
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	public static function defaults( array $pack_overrides = array() ): array {
 		// 0.3 S7: a pack's own default table (e.g. the site pack's flat-and-high
@@ -64,7 +65,7 @@ final class Budget {
 		/**
 		 * Filters the default budget for new runs. `@api` (S23).
 		 *
-		 * @param array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int} $defaults
+		 * @param array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int,max_days:int} $defaults
 		 */
 		$filtered = apply_filters( 'specflux_site_agent_default_budget', $base );
 
@@ -104,7 +105,7 @@ final class Budget {
 	 * scales to roughly 150k over 60, so 250000 leaves it non-binding while
 	 * still capping the damage.
 	 *
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	private static function shipped(): array {
 		return array(
@@ -124,6 +125,10 @@ final class Budget {
 			// (the commerce pack's refund ability, stage 12/13) — never a
 			// word this class itself knows.
 			self::REFUNDS        => 1,
+			// 0.4 U3: a wall-clock ceiling in days, lower-only like every key.
+			// A daily sweep cancels a run older than this (`run_expired`), so a
+			// run parked on a person who never comes back cannot live forever.
+			self::MAX_DAYS       => 14,
 		);
 	}
 
@@ -139,7 +144,7 @@ final class Budget {
 	 *
 	 * @param mixed             $raw            Raw budget-ish input.
 	 * @param array<string,int> $pack_overrides Pack-declared overrides (S7).
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	public static function sanitize( mixed $raw, array $pack_overrides = array() ): array {
 		$base = self::defaults( $pack_overrides );
@@ -161,9 +166,9 @@ final class Budget {
 	 * default (S7) is `images: 0` — "no image generation in this run" — which
 	 * a positive-only rule could never represent.
 	 *
-	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int} $base Starting table.
+	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int} $base Starting table.
 	 * @param mixed                                                                                                       $raw  Raw budget-ish input.
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	private static function mergeOver( array $base, mixed $raw ): array {
 		if ( ! is_array( $raw ) ) {
@@ -206,9 +211,9 @@ final class Budget {
 	 * `$base`'s own value (S7 lower-only rule): `$raw` may only pull a key
 	 * DOWN from `$base`, never past it.
 	 *
-	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int} $base Ceiling table.
+	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int} $base Ceiling table.
 	 * @param mixed                                                                                                       $raw  Raw budget-ish input.
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	private static function mergeOverCapped( array $base, mixed $raw ): array {
 		$merged = self::mergeOver( $base, $raw );
@@ -225,8 +230,8 @@ final class Budget {
 	 * cannot raise its own limits.
 	 *
 	 * @param mixed                                                                 $requested Raw budget-ish input.
-	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int} $ceiling   Upper bound per key.
-	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int}
+	 * @param array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int} $ceiling   Upper bound per key.
+	 * @return array{max_steps: int, max_tool_calls: int, max_tokens: int, max_questions: int, max_plans: int, images: int, refunds: int, max_days: int}
 	 */
 	public static function clamp( mixed $requested, array $ceiling ): array {
 		$ceiling = self::sanitize( $ceiling );

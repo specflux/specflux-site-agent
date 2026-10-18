@@ -49,7 +49,7 @@ final class PublicSurfaceTest extends TestCase {
 			'specflux_site_agent_run_skills'        => array( 'list<Skill>', 'Pack|null', 'string', 'string' ),
 			'specflux_site_agent_result_presenters' => array( 'list<Presenter>' ),
 			'specflux_site_agent_default_budget'    => array(
-				'array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int}',
+				'array{max_steps:int,max_tool_calls:int,max_tokens:int,max_questions:int,max_plans:int,images:int,refunds:int,max_days:int}',
 			),
 		);
 	}
