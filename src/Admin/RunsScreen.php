@@ -297,6 +297,9 @@ class RunsScreen {
 				// read this, never a per-run value, since no run may be
 				// selected yet.
 				'gateMode'           => Plugin::currentGateMode()->value,
+				// 0.4 U2: whether a run keeps going with the page closed, and
+				// if not, why ('disabled' | 'missing' | 'too_old').
+				'background'         => \Specflux\SiteAgent\Background\Availability::status(),
 				'examples'           => $this->exampleGoals(),
 				// 0.3 S10 (runs-pack fix): the packs the CURRENT viewer's
 				// preflight allows — the same set `exampleGoals()` already

@@ -286,6 +286,12 @@ export default function App( { config } ) {
 	// the tab forever calling tick().
 	const MAX_AUTO_TICKS = 60;
 
+	// The tick error code for a stale step_count or a run claimed by another
+	// driver (admin-ajax answers it with HTTP 409), and how long to wait before
+	// ticking again after refreshing from it.
+	const CONFLICT_CODE = 'specflux_site_agent_conflict';
+	const CONFLICT_REFRESH_MS = 3000;
+
 	const driveTicks = useCallback(
 		( runId, stepCount, resume ) => {
 			setBusyRunId( runId );
@@ -293,34 +299,63 @@ export default function App( { config } ) {
 
 			const step = ( id, count, body, iteration ) => {
 				setTickCount( ( n ) => n + 1 );
-				return tickRun( id, count, body, ajaxConfig ).then( ( state ) => {
+				return tickRun( id, count, body, ajaxConfig ).then( onState( id, iteration ), onTickError( id, iteration ) );
+			};
+
+			// A tick that came back with a RunState.
+			const onState = ( id, iteration ) => ( state ) => {
+				if ( ! aliveRef.current || ! sameRunId( id, activeRunRef.current ) ) {
+					return undefined;
+				}
+				applyRunState( id, state );
+				const status = state.run.status;
+				if (
+					! isParkedStatus( status ) &&
+					! isTerminalStatus( status ) &&
+					iteration < MAX_AUTO_TICKS
+				) {
+					// A bounded slice or a transient model error returns the run
+					// still running; `retry_after` (seconds) is the server asking
+					// us to wait before the next tick instead of sleeping itself.
+					const wait = Math.max( 0, Number( state.retry_after ) || 0 ) * 1000;
+					const next = () => step( id, state.run.step_count, null, iteration + 1 );
+					if ( 0 === wait ) {
+						return next();
+					}
+					return pause( wait, id ).then( ( stillHere ) => ( stillHere ? next() : undefined ) );
+				}
+				return undefined;
+			};
+
+			// A tick that was refused. A 409 (`specflux_site_agent_conflict`) is not a
+			// failure: the background driver advanced the run (or holds its claim), so
+			// re-read the run, adopt its step count and keep ticking.
+			const onTickError = ( id, iteration ) => ( error ) => {
+				if ( CONFLICT_CODE !== error.code || iteration >= MAX_AUTO_TICKS ) {
+					throw error;
+				}
+				return getRun( id ).then( ( detail ) => {
 					if ( ! aliveRef.current || ! sameRunId( id, activeRunRef.current ) ) {
-						return;
+						return undefined;
 					}
-					applyRunState( id, state );
-					const status = state.run.status;
-					if (
-						! isParkedStatus( status ) &&
-						! isTerminalStatus( status ) &&
-						iteration < MAX_AUTO_TICKS
-					) {
-						// A bounded slice or a transient model error returns the run
-						// still running; `retry_after` (seconds) is the server asking
-						// us to wait before the next tick instead of sleeping itself.
-						const wait = Math.max( 0, Number( state.retry_after ) || 0 ) * 1000;
-						const next = () => step( id, state.run.step_count, null, iteration + 1 );
-						if ( 0 === wait ) {
-							return next();
-						}
-						return new Promise( ( resolve ) => setTimeout( resolve, wait ) ).then( () => {
-							if ( ! aliveRef.current || ! sameRunId( id, activeRunRef.current ) ) {
-								return undefined;
-							}
-							return next();
-						} );
+					ticksAppliedRef.current += 1;
+					setRunDetail( detail );
+					refreshList();
+					const status = detail.run.status;
+					if ( isParkedStatus( status ) || isTerminalStatus( status ) ) {
+						return undefined;
 					}
+					return pause( CONFLICT_REFRESH_MS, id ).then( ( stillHere ) =>
+						stillHere ? step( id, detail.run.step_count, null, iteration + 1 ) : undefined
+					);
 				} );
 			};
+
+			// Wait, then say whether this run is still the one on screen.
+			const pause = ( ms, id ) =>
+				new Promise( ( resolve ) => setTimeout( resolve, ms ) ).then(
+					() => aliveRef.current && sameRunId( id, activeRunRef.current )
+				);
 
 			return step( runId, stepCount, resume, 1 )
 				.catch( ( error ) => {
@@ -483,6 +518,7 @@ export default function App( { config } ) {
 						planUi={ runDetail.ui && runDetail.ui.plan }
 						approvalUi={ runDetail.ui && runDetail.ui.approval }
 						holdUi={ runDetail.ui && runDetail.ui.hold }
+						background={ config.background }
 						canManageBrief={ Boolean( config.canManageSiteBrief ) }
 						modelChoices={ config.modelChoices || {} }
 						onResolvePark={ handleResolvePark }

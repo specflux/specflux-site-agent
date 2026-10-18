@@ -210,13 +210,14 @@
 		body.append( 'run_id', String( runId ) );
 		body.append( 'step_count', String( stepCount ) );
 
-		window.fetch( settings.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			body: body
-		} )
-			.then( function ( res ) { return res.json(); } )
+		postAction( body )
 			.then( function ( json ) {
+				if ( isConflict( json ) ) {
+					// The background driver advanced the run under us (or still holds
+					// its claim): not an error. Re-read the run, adopt its step count
+					// and carry on polling. Steps it drove appear on the next reload.
+					return refreshAfterConflict();
+				}
 				if ( ! json || ! json.success || ! json.data || ! json.data.run ) {
 					// A refusal (403/400) used to stop the poll SILENTLY, so the
 					// page just froze. Say so in the aria-live region instead.
@@ -225,40 +226,77 @@
 					return;
 				}
 
-				var state = json.data;
-				var status = ( state.run.status || '' ).toLowerCase();
-
-				appendSteps( state.new_steps );
-				stepCount = parseInt( state.run.step_count, 10 );
-				detail.setAttribute( 'data-step-count', String( stepCount ) );
-				setBadge( status );
-				announce( status );
-
-				if ( isTerminal( status ) ) {
-					// Terminal: stop, drop the now-stale Cancel button (defect
-					// C), and let the server render the report on next load.
-					stopPolling();
-					hideCancelLink();
-					return;
-				}
-				if ( isParked( status ) ) {
-					// Park: the SERVER has to render the park card, so a reload
-					// is still the honest move — but reloading IMMEDIATELY tore
-					// down the aria-live region before the announcement above
-					// was read out. Wait for it, then reload; on the new page
-					// `focusParkHeading()` takes over (S15).
-					stopPolling();
-					window.setTimeout( function () {
-						window.location.reload();
-					}, parkAnnounceMs );
-					return;
-				}
-				schedulePoll( state.retry_after );
+				applyState( json.data, true );
 			} )
 			.catch( function () {
 				stopPolling();
 				announcePollFailure();
 			} );
+	}
+
+	function postAction( body ) {
+		return window.fetch( settings.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: body
+		} ).then( function ( res ) { return res.json(); } );
+	}
+
+	// 409 `specflux_site_agent_conflict`: the step_count echo was stale, or a
+	// background tick holds the run's claim.
+	function isConflict( json ) {
+		return !! json && ! json.success && !! json.data && json.data.code === 'specflux_site_agent_conflict';
+	}
+
+	function refreshAfterConflict() {
+		var body = new URLSearchParams();
+		body.append( 'action', 'specflux_site_agent_get' );
+		body.append( 'nonce', settings.nonce );
+		body.append( 'run_id', String( runId ) );
+
+		return postAction( body ).then( function ( json ) {
+			if ( ! json || ! json.success || ! json.data || ! json.data.run ) {
+				stopPolling();
+				announcePollFailure();
+				return;
+			}
+			applyState( json.data, false );
+		} );
+	}
+
+	// Shared tail of a tick result and of a conflict refresh. `withSteps` is
+	// false for the refresh: a read has no per-tick `new_steps`.
+	function applyState( state, withSteps ) {
+		var status = ( state.run.status || '' ).toLowerCase();
+
+		if ( withSteps ) {
+			appendSteps( state.new_steps );
+		}
+		stepCount = parseInt( state.run.step_count, 10 );
+		detail.setAttribute( 'data-step-count', String( stepCount ) );
+		setBadge( status );
+		announce( status );
+
+		if ( isTerminal( status ) ) {
+			// Terminal: stop, drop the now-stale Cancel button (defect
+			// C), and let the server render the report on next load.
+			stopPolling();
+			hideCancelLink();
+			return;
+		}
+		if ( isParked( status ) ) {
+			// Park: the SERVER has to render the park card, so a reload
+			// is still the honest move — but reloading IMMEDIATELY tore
+			// down the aria-live region before the announcement above
+			// was read out. Wait for it, then reload; on the new page
+			// `focusParkHeading()` takes over (S15).
+			stopPolling();
+			window.setTimeout( function () {
+				window.location.reload();
+			}, parkAnnounceMs );
+			return;
+		}
+		schedulePoll( state.retry_after );
 	}
 
 	// ------------------------------------------------------------------

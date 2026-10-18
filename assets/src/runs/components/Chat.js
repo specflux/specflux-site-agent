@@ -6,6 +6,7 @@ import LedgerGroup from './LedgerGroup';
 import ParkCard from './ParkCard';
 import SuggestionCard from './SuggestionCard';
 import ReportView from './ReportView';
+import BackgroundNote from './BackgroundNote';
 
 /**
  * The newest step of the kind matching the run's OWN park status. A question
@@ -110,6 +111,7 @@ function modelLabel( run, modelChoices ) {
  * @param {Function} [props.onResolveSuggestion] `( seq, action, text ) => Promise` (S20).
  * @param {Function} [props.onCancel]            `() => Promise` for the Cancel button.
  * @param {boolean}  [props.busy]                True while a tick/cancel is in flight.
+ * @param {Object}   [props.background]         `{ available, reason }` from `specfluxSiteAgentRunsConfig.background` (0.4 U2): drives the "keeps running" line.
  * @param {number}   [props.tickCount]           How many tick round-trips this run has sent this page-load (the "Tick N" bubble).
  * @param {Object}   [props.modelChoices]        `specfluxSiteAgentRunsConfig.modelChoices`, used only to resolve `run.model`'s display name.
  * @param {boolean}  [props.canFollowUp]         The viewer holds the run's pack capability (S20); offers "Start a follow-up" on a terminal run.
@@ -157,6 +159,7 @@ export default function Chat( {
 	planUi,
 	approvalUi,
 	holdUi,
+	background,
 } ) {
 	const entries = groupSteps( steps );
 	const park = openPark( run, steps );
@@ -313,6 +316,8 @@ export default function Chat( {
 					</div>
 				) }
 			</div>
+			{ /* 0.4 U2: whether closing the page stops this run. */ }
+			{ ( 'running' === run.status || 'pending' === run.status ) && <BackgroundNote background={ background } /> }
 			{ /* A failed run says why (e.g. the model went silent twice), when the server gave a reason. */ }
 			{ 'failed' === run.status && run.error && 'string' === typeof run.error.message && '' !== run.error.message && (
 				<p className="specflux-site-agent-run-error" role="alert" dir="auto">
