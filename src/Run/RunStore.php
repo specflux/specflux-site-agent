@@ -91,6 +91,29 @@ interface RunStore {
 	public function updateRun( int $run_id, array $fields ): void;
 
 	/**
+	 * Atomically claim a run for one tick: succeeds only when the run has no
+	 * live claim (`lock_until` NULL or in the past), so of any number of
+	 * concurrent claims exactly one wins.
+	 *
+	 * @param string $token   Random per-tick token that identifies the owner.
+	 * @param int    $seconds How long the claim lives unless extended.
+	 * @return bool True when this caller now owns the run.
+	 */
+	public function claimRun( int $run_id, string $token, int $seconds ): bool;
+
+	/**
+	 * Push the claim's `lock_until` out again; a no-op (false) unless $token
+	 * still owns the claim.
+	 */
+	public function extendClaim( int $run_id, string $token, int $seconds ): bool;
+
+	/**
+	 * Release the claim; a no-op (false) unless $token still owns it, so a
+	 * tick whose claim lapsed and was re-taken never frees the new owner's.
+	 */
+	public function releaseClaim( int $run_id, string $token ): bool;
+
+	/**
 	 * Persist the seq-0 system step (the rendered system instruction's audit
 	 * record, 0.2 S8). Seq 0 is reserved: it precedes the goal step and does
 	 * NOT bump step_count — the optimistic lock counts only steps the

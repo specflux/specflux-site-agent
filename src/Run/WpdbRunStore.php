@@ -188,6 +188,11 @@ final class WpdbRunStore implements RunStore {
 			'accepted_plan_step_id' => '%d',
 			'conversation_locale'   => '%s',
 			'content_locale'        => '%s',
+			// Unattended-run bookkeeping (schema 11). The claim columns are
+			// NOT writable here: only claimRun/extendClaim/releaseClaim touch them.
+			'last_driver'           => '%s',
+			'last_tick_at'          => '%s',
+			'notified_park_step'    => '%d',
 		);
 
 		$data   = array();
@@ -207,6 +212,54 @@ final class WpdbRunStore implements RunStore {
 		$format[]           = '%s';
 
 		$this->db->update( Schema::runsTable( $this->db ), $data, array( 'id' => $run_id ), $format, array( '%d' ) );
+	}
+
+	/** {@inheritDoc} */
+	public function claimRun( int $run_id, string $token, int $seconds ): bool {
+		$now = Clock::now();
+
+		return $this->claimQuery(
+			'UPDATE %i SET lock_token = %s, lock_until = %s WHERE id = %d AND (lock_until IS NULL OR lock_until < %s)',
+			$token,
+			gmdate( 'Y-m-d H:i:s', $now + max( 1, $seconds ) ),
+			$run_id,
+			gmdate( 'Y-m-d H:i:s', $now )
+		);
+	}
+
+	/** {@inheritDoc} */
+	public function extendClaim( int $run_id, string $token, int $seconds ): bool {
+		return $this->claimQuery(
+			'UPDATE %i SET lock_until = %s WHERE id = %d AND lock_token = %s',
+			gmdate( 'Y-m-d H:i:s', Clock::now() + max( 1, $seconds ) ),
+			$run_id,
+			$token
+		);
+	}
+
+	/** {@inheritDoc} */
+	public function releaseClaim( int $run_id, string $token ): bool {
+		return $this->claimQuery(
+			'UPDATE %i SET lock_token = NULL, lock_until = NULL WHERE id = %d AND lock_token = %s',
+			$run_id,
+			$token
+		);
+	}
+
+	/**
+	 * Run one claim UPDATE against the runs table (bound as the `%i` identifier
+	 * placeholder) and report whether exactly one row matched.
+	 *
+	 * @param literal-string $sql  Template whose first placeholder is the table.
+	 * @param int|string     ...$args Remaining bound values.
+	 */
+	private function claimQuery( string $sql, int|string ...$args ): bool {
+		$prepared = $this->db->prepare( $sql, Schema::runsTable( $this->db ), ...$args );
+		if ( ! is_string( $prepared ) ) {
+			return false;
+		}
+
+		return 1 === (int) $this->db->query( $prepared );
 	}
 
 	/** {@inheritDoc} */

@@ -24,6 +24,8 @@ if ( ! class_exists( 'wpdb', false ) ) {
 
 		public string $prefix = 'wp_';
 
+		public string $options = 'wp_options';
+
 		/** @var list<string> Every SQL string passed through this class, in order. */
 		public array $queries = array();
 
@@ -96,6 +98,45 @@ if ( ! class_exists( 'wpdb', false ) ) {
 				}
 
 				return 1;
+			}
+
+			// Emulate the atomic run claim (schema 11): claim / extend / release.
+			// Rows affected is real: 1 on a matching row, 0 otherwise.
+			if ( preg_match( "/^UPDATE (\\S+) SET lock_token = '([^']*)', lock_until = '([^']*)' WHERE id = (\\d+) AND \\(lock_until IS NULL OR lock_until < '([^']*)'\\)$/", $query, $m ) ) {
+				foreach ( $this->tables[ $m[1] ] ?? array() as $i => $row ) {
+					if ( (int) $row['id'] === (int) $m[4]
+						&& ( empty( $row['lock_until'] ) || (string) $row['lock_until'] < $m[5] ) ) {
+						$this->tables[ $m[1] ][ $i ]['lock_token'] = $m[2];
+						$this->tables[ $m[1] ][ $i ]['lock_until'] = $m[3];
+
+						return 1;
+					}
+				}
+
+				return 0;
+			}
+			if ( preg_match( "/^UPDATE (\\S+) SET lock_until = '([^']*)' WHERE id = (\\d+) AND lock_token = '([^']*)'$/", $query, $m ) ) {
+				foreach ( $this->tables[ $m[1] ] ?? array() as $i => $row ) {
+					if ( (int) $row['id'] === (int) $m[3] && ( $row['lock_token'] ?? null ) === $m[4] ) {
+						$this->tables[ $m[1] ][ $i ]['lock_until'] = $m[2];
+
+						return 1;
+					}
+				}
+
+				return 0;
+			}
+			if ( preg_match( "/^UPDATE (\\S+) SET lock_token = NULL, lock_until = NULL WHERE id = (\\d+) AND lock_token = '([^']*)'$/", $query, $m ) ) {
+				foreach ( $this->tables[ $m[1] ] ?? array() as $i => $row ) {
+					if ( (int) $row['id'] === (int) $m[2] && ( $row['lock_token'] ?? null ) === $m[3] ) {
+						$this->tables[ $m[1] ][ $i ]['lock_token'] = null;
+						$this->tables[ $m[1] ][ $i ]['lock_until'] = null;
+
+						return 1;
+					}
+				}
+
+				return 0;
 			}
 
 			// Emulate the connector activity prune (K4): DELETE ... WHERE created_at < 'ts'.
