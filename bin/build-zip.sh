@@ -3,8 +3,8 @@
 # build-zip.sh — the single allowlisted build for the Specflux Site Agent plugin.
 #
 # Unlike agent-safety's build-zip.sh (two-package layout, path-repo mirror),
-# Specflux Site Agent is one composer package with no runtime dependencies (composer.json
-# `require` is just `php: >=8.1`), so the build is a straight DENYLIST copy
+# Specflux Site Agent is one composer package whose only runtime dependency is
+# the bundled Action Scheduler (0.4 U2), so the build is a DENYLIST copy
 # driven by the same .distignore the plugin-check CI job already used inline
 # (ci.yml's old `Assemble distribution copy` step) — this script replaces
 # that inline step so release.yml and ci.yml can share exactly one build.
@@ -49,13 +49,22 @@ ZIP_PATH="$REPO_ROOT/specflux-site-agent-${VERSION}.zip"
 
 # ---------------------------------------------------------------------------
 # 2. Stage a distribution-shaped copy: everything EXCEPT .distignore's list
-#    (dev tooling, tests, vendor — the plugin ships no vendor/ since it has
-#    no runtime composer deps).
+#    (dev tooling, tests, vendor — then the bundled Action Scheduler is added
+#    back by hand, below).
 # ---------------------------------------------------------------------------
 log "staging dist/specflux-site-agent/"
 rm -rf "$BUILD_DIR" "$ZIP_PATH"
 mkdir -p "$STAGE_DIR"
 rsync -a --exclude-from="$REPO_ROOT/.distignore" "$REPO_ROOT/" "$STAGE_DIR/"
+
+# 0.4 U2: the one runtime dependency. .distignore drops vendor/ wholesale (dev
+# tooling), so ship ONLY the bundled Action Scheduler, minus its docs (the
+# release verification below forbids README.md and friends).
+AS_SRC="$REPO_ROOT/vendor/woocommerce/action-scheduler"
+[ -f "$AS_SRC/action-scheduler.php" ] || fail "Action Scheduler is not installed — run composer install first"
+mkdir -p "$STAGE_DIR/vendor/woocommerce"
+rsync -a --exclude='.*' --exclude='README.md' --exclude='CLAUDE.md' --exclude='AGENTS.md' --exclude='tests' \
+	"$AS_SRC" "$STAGE_DIR/vendor/woocommerce/"
 
 [ -f "$STAGE_DIR/specflux-site-agent.php" ] || fail "staged copy is missing specflux-site-agent.php — .distignore excluded a required file"
 
@@ -78,7 +87,8 @@ DENY_RE='(^|/)\.git(/|$)'
 DENY_RE="$DENY_RE|(^|/)\.github(/|$)"
 DENY_RE="$DENY_RE|(^|/)node_modules(/|$)"
 DENY_RE="$DENY_RE|(^|/)[Tt]ests(/|$)"
-DENY_RE="$DENY_RE|(^|/)vendor(/|$)"
+# vendor/ is denied EXCEPT the bundled Action Scheduler (see step 2).
+DENY_RE="$DENY_RE|(^|/)vendor/(autoload|bin|composer)|(^|/)vendor/[^w]|(^|/)vendor/woocommerce/[^a]"
 DENY_RE="$DENY_RE|(^|/)dist(/|$)"
 DENY_RE="$DENY_RE|(^|/)bin(/|$)"
 DENY_RE="$DENY_RE|(^|/)assets/src(/|$)"
