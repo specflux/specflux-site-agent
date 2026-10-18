@@ -84,6 +84,14 @@ final class Run {
 		 * changed afterwards — like {@see $gateMode}. Null = none pinned.
 		 */
 		public readonly ?string $storePlatform = null,
+		/** Atomic tick claim: the owning token, and when it lapses (UTC). Both null = unclaimed. */
+		public readonly ?string $lockToken = null,
+		public readonly ?string $lockUntilUtc = null,
+		/** Which driver last ticked the run: 'screen' (browser) or 'background'. */
+		public readonly string $lastDriver = 'screen',
+		public readonly ?string $lastTickAtUtc = null,
+		/** The park step id an unattended-run notice was last sent for, or null. */
+		public readonly ?int $notifiedParkStep = null,
 	) {
 	}
 
@@ -132,6 +140,11 @@ final class Run {
 			modelProvider: isset( $row['model_provider'] ) && is_string( $row['model_provider'] ) && '' !== $row['model_provider'] ? $row['model_provider'] : null,
 			modelId: isset( $row['model_id'] ) && is_string( $row['model_id'] ) && '' !== $row['model_id'] ? $row['model_id'] : null,
 			storePlatform: isset( $row['store_platform'] ) && is_string( $row['store_platform'] ) && '' !== $row['store_platform'] ? $row['store_platform'] : null,
+			lockToken: isset( $row['lock_token'] ) && is_string( $row['lock_token'] ) && '' !== $row['lock_token'] ? $row['lock_token'] : null,
+			lockUntilUtc: isset( $row['lock_until'] ) && is_string( $row['lock_until'] ) && '' !== $row['lock_until'] ? $row['lock_until'] : null,
+			lastDriver: isset( $row['last_driver'] ) && is_string( $row['last_driver'] ) && '' !== $row['last_driver'] ? $row['last_driver'] : 'screen',
+			lastTickAtUtc: isset( $row['last_tick_at'] ) && is_string( $row['last_tick_at'] ) && '' !== $row['last_tick_at'] ? $row['last_tick_at'] : null,
+			notifiedParkStep: isset( $row['notified_park_step'] ) && '' !== (string) $row['notified_park_step'] ? (int) $row['notified_park_step'] : null,
 		);
 	}
 
@@ -170,6 +183,11 @@ final class Run {
 			'model_provider'        => $this->modelProvider,
 			'model_id'              => $this->modelId,
 			'store_platform'        => $this->storePlatform,
+			'lock_token'            => $this->lockToken,
+			'lock_until'            => $this->lockUntilUtc,
+			'last_driver'           => $this->lastDriver,
+			'last_tick_at'          => $this->lastTickAtUtc,
+			'notified_park_step'    => $this->notifiedParkStep,
 		);
 	}
 }

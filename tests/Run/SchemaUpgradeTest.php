@@ -24,8 +24,8 @@ final class SchemaUpgradeTest extends TestCase {
 		$GLOBALS['specflux_site_agent_test_dbdelta_queries'] = array();
 	}
 
-	public function test_schema_version_is_five(): void {
-		$this->assertSame( 10, Schema::DB_VERSION );
+	public function test_schema_version_is_eleven(): void {
+		$this->assertSame( 11, Schema::DB_VERSION );
 	}
 
 	/** @return list<string> The 0.2-0.3 columns every current runs table carries. */
@@ -45,6 +45,11 @@ final class SchemaUpgradeTest extends TestCase {
 			'model_provider VARCHAR(64) NULL',
 			'model_id VARCHAR(191) NULL',
 			'store_platform VARCHAR(64) NULL',
+			'lock_token VARCHAR(64) NULL',
+			'lock_until DATETIME NULL',
+			'last_driver VARCHAR(16) NOT NULL DEFAULT \'screen\'',
+			'last_tick_at DATETIME NULL',
+			'notified_park_step BIGINT(20) UNSIGNED NULL',
 		);
 	}
 
@@ -65,13 +70,13 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 10, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['specflux_site_agent_test_dbdelta_queries'], 'runs + steps + activity statements' );
 	}
 
 	public function test_maybe_upgrade_is_idempotent_at_the_current_version(): void {
 		$db = new wpdb();
-		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 10;
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 11;
 
 		Schema::maybe_upgrade( $db );
 
@@ -84,7 +89,7 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 10, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['specflux_site_agent_test_dbdelta_queries'] );
 
 		// dbDelta is idempotent by design: re-running the SAME statements is
@@ -143,13 +148,13 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 10, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertStringContainsString( 'uuid VARCHAR(64) NOT NULL', implode( "\n", $GLOBALS['specflux_site_agent_test_dbdelta_queries'] ) );
 	}
 
 	public function test_an_already_current_install_writes_no_watermark_and_does_not_rerun_dbdelta(): void {
 		$db = new wpdb();
-		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 10;
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 11;
 		$db->varQueue = array( 5, 99 );
 
 		Schema::maybe_upgrade( $db );
@@ -169,5 +174,26 @@ final class SchemaUpgradeTest extends TestCase {
 		Schema::maybe_upgrade( $db );
 
 		$this->assertSame( 10, get_option( 'specflux_site_agent_legacy_run_watermark' ), 'an existing watermark is never overwritten' );
+	}
+
+	public function test_upgrading_from_ten_deletes_the_legacy_lock_transients(): void {
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 10;
+		$db = new wpdb();
+
+		Schema::maybe_upgrade( $db );
+
+		$deletes = array_values( array_filter( $db->queries, static fn ( string $q ): bool => str_contains( $q, 'DELETE FROM wp_options' ) ) );
+		$this->assertCount( 2, $deletes, 'the transient and its timeout row' );
+		foreach ( $deletes as $query ) {
+			$this->assertStringContainsString( 'specflux\\_site\\_agent\\_lock\\_%', $query );
+		}
+	}
+
+	public function test_a_fresh_install_has_no_legacy_lock_transients_to_delete(): void {
+		$db = new wpdb();
+
+		Schema::maybe_upgrade( $db );
+
+		$this->assertSame( array(), array_values( array_filter( $db->queries, static fn ( string $q ): bool => str_contains( $q, 'DELETE FROM' ) ) ) );
 	}
 }

@@ -42,9 +42,11 @@ final class Schema {
 	 * never updated afterwards, like `gate_mode`; both NULL means automatic
 	 * selection, which is also what every older row reads back as; 9 adds the
 	 * connector activity table (0.4 K4); 10 widens its `uuid` to fit an OAuth
-	 * connection's `oauth:<grant id>` (38 characters).
+	 * connection's `oauth:<grant id>` (38 characters); 11 adds the runs table's
+	 * atomic claim (`lock_token`, `lock_until`) and the unattended-run
+	 * bookkeeping (`last_driver`, `last_tick_at`, `notified_park_step`).
 	 */
-	public const DB_VERSION = 10;
+	public const DB_VERSION = 11;
 
 	/**
 	 * Runs table name for this site.
@@ -115,8 +117,28 @@ final class Schema {
 
 		self::install( $db );
 
+		if ( $installed > 0 ) {
+			self::delete_legacy_lock_transients( $db );
+		}
+
 		if ( function_exists( 'update_option' ) ) {
 			update_option( 'specflux_site_agent_db_version', self::DB_VERSION, false );
+		}
+	}
+
+	/**
+	 * Schema 11 replaced the per-run `specflux_site_agent_lock_{id}` transient
+	 * with a claim on the run row. Drop any the old code left in the options
+	 * table so they don't linger for up to five minutes (or forever, with a
+	 * persistent object cache absent and a crashed tick).
+	 */
+	private static function delete_legacy_lock_transients( wpdb $db ): void {
+		foreach ( array( '\\_transient\\_', '\\_transient\\_timeout\\_' ) as $kind ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off upgrade cleanup of this plugin's own transients.
+			$sql = $db->prepare( 'DELETE FROM %i WHERE option_name LIKE %s', $db->options, $kind . 'specflux\\_site\\_agent\\_lock\\_%' );
+			if ( is_string( $sql ) ) {
+				$db->query( $sql );
+			}
 		}
 	}
 
@@ -238,6 +260,13 @@ final class Schema {
 				// Commerce store platform id, pinned at start, never updated
 				// afterwards; NULL = no platform pinned (every non-commerce run).
 				'store_platform VARCHAR(64) NULL',
+				// Schema 11 (unattended runs): the atomic tick claim, which
+				// driver last ticked, when, and the park step a notice went out for.
+				'lock_token VARCHAR(64) NULL',
+				'lock_until DATETIME NULL',
+				'last_driver VARCHAR(16) NOT NULL DEFAULT \'screen\'',
+				'last_tick_at DATETIME NULL',
+				'notified_park_step BIGINT(20) UNSIGNED NULL',
 				'PRIMARY KEY  (id)',
 				'KEY user_id (user_id)',
 				'KEY status (status)',

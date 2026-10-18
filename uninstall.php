@@ -50,8 +50,8 @@ foreach ( array( 'specflux_site_agent_activation_notice', 'specflux_site_agent_i
 	delete_transient( $specflux_site_agent_transient );
 }
 
-// Per-user and per-run keys: one pending-brief transient per user id, one tick
-// lock per run id. Transients live in the options table unless an external
+// Per-user and per-run keys: one pending-brief transient per user id, one legacy
+// tick lock per run id (pre-schema-11 installs; the lock is a run-row claim now). Transients live in the options table unless an external
 // object cache holds them (those expire on their own).
 foreach ( array( 'specflux_site_agent_brief_pending_', 'specflux_site_agent_lock_', 'specflux_site_agent_rl_', 'specflux_site_agent_oauth_rl_', 'specflux_site_agent_oauth_cimd_', 'specflux_site_agent_oac_', 'specflux_site_agent_oau_', 'specflux_site_agent_oat_' ) as $specflux_site_agent_prefix ) {
 	foreach ( array( '_transient_', '_transient_timeout_' ) as $specflux_site_agent_kind ) {
