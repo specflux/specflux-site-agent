@@ -80,6 +80,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 		$this->enableConnector();
 		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+		add_filter( 'specflux_site_agent_allow_multisite', static fn (): bool => false );
 		$this->assertStringContainsString( 'multisite', $this->html() );
 	}
 

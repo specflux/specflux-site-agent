@@ -10,6 +10,7 @@ declare ( strict_types = 1 );
 namespace Specflux\SiteAgent\Connector;
 
 use Specflux\SiteAgent\Admin\RunsScreen;
+use Specflux\SiteAgent\Connector\OAuth\OAuth;
 use Specflux\SiteAgent\Connector\OAuth\SignedInApps;
 use Specflux\SiteAgent\MultisiteGuard;
 use WP_Application_Passwords;
@@ -77,6 +78,10 @@ final class ConnectScreen {
 	public static function oauthBlocker(): ?string {
 		if ( '' === (string) get_option( 'permalink_structure', '' ) ) {
 			return __( 'Sign-in is not available on this site: it uses plain permalinks. Choose any other structure under Settings > Permalinks, then come back.', 'specflux-site-agent' );
+		}
+
+		if ( ! OAuth::availableOnThisSite() ) {
+			return __( 'Sign-in is not available on this site: it is a subsite of a subdirectory multisite network, and sign-in needs the domain root. Use an application-password connection above instead.', 'specflux-site-agent' );
 		}
 
 		$home = untrailingslashit( (string) wp_parse_url( home_url(), PHP_URL_PATH ) );

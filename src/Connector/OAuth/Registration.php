@@ -64,7 +64,7 @@ final class Registration {
 	 * @return array{status:int,body:array<string,mixed>}
 	 */
 	public static function handle( array $params, string $ip ): array {
-		if ( ! Connector::enabled() ) {
+		if ( ! OAuth::serving() ) {
 			return Http::error( 'not_found', 404 );
 		}
 		if ( ! RateLimit::hit( 'dcr:' . $ip, self::LIMIT_PER_HOUR, HOUR_IN_SECONDS ) ) {

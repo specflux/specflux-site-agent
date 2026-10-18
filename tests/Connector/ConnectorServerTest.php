@@ -59,7 +59,8 @@ final class ConnectorServerTest extends ConnectorTestCase {
 	public function test_multisite_is_refused_even_with_everything_else_in_place(): void {
 		$this->enableConnector();
 		$GLOBALS['specflux_site_agent_test_multisite'] = true;
-		$adapter                                       = new SpecfluxSiteAgent_Test_Fake_Mcp_Adapter();
+		add_filter( 'specflux_site_agent_allow_multisite', static fn (): bool => false );
+		$adapter = new SpecfluxSiteAgent_Test_Fake_Mcp_Adapter();
 
 		Connector::createServer( $adapter );
 

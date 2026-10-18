@@ -44,6 +44,25 @@ final class OAuth {
 	/** Cron hook that prunes grants whose refresh token has expired. */
 	public const GC_HOOK = 'specflux_site_agent_oauth_gc';
 
+	/**
+	 * Can this site serve OAuth at all? False on a subsite of a SUBDIRECTORY
+	 * multisite network: the `.well-known` routes only exist at the domain root,
+	 * which belongs to the main site. App-password clients are unaffected.
+	 *
+	 * Assumption, not yet proven live: subdomain and domain-mapped subsites each
+	 * own a domain root, so they keep OAuth. Verified in the multisite smoke.
+	 */
+	public static function availableOnThisSite(): bool {
+		return ! ( function_exists( 'is_multisite' ) && is_multisite()
+			&& function_exists( 'is_subdomain_install' ) && ! is_subdomain_install()
+			&& function_exists( 'is_main_site' ) && ! is_main_site() );
+	}
+
+	/** The OAuth endpoints answer only when the connector is on and this site can host them. */
+	public static function serving(): bool {
+		return Connector::enabled() && self::availableOnThisSite();
+	}
+
 	/** Hook everything. Cheap: no storage is touched until a matching request arrives. */
 	public static function register(): void {
 		Discovery::register();

@@ -120,7 +120,7 @@ final class Discovery {
 
 	/** `parse_request` (priority 0): answer a well-known path and stop; ignore everything else. */
 	public static function maybeServe(): void {
-		if ( ! Connector::enabled() || ! isset( $_SERVER['REQUEST_URI'] ) || ! is_string( $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! OAuth::serving() || ! isset( $_SERVER['REQUEST_URI'] ) || ! is_string( $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed, compared, never output.
@@ -190,12 +190,12 @@ final class Discovery {
 
 	/** REST callback. */
 	public static function restResource(): mixed {
-		return Connector::enabled() ? rest_ensure_response( self::protectedResource() ) : new \WP_Error( 'not_found', 'Not found.', array( 'status' => 404 ) );
+		return OAuth::serving() ? rest_ensure_response( self::protectedResource() ) : new \WP_Error( 'not_found', 'Not found.', array( 'status' => 404 ) );
 	}
 
 	/** REST callback. */
 	public static function restServer(): mixed {
-		return Connector::enabled() ? rest_ensure_response( self::authorizationServer() ) : new \WP_Error( 'not_found', 'Not found.', array( 'status' => 404 ) );
+		return OAuth::serving() ? rest_ensure_response( self::authorizationServer() ) : new \WP_Error( 'not_found', 'Not found.', array( 'status' => 404 ) );
 	}
 
 	/**

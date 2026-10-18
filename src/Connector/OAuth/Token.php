@@ -59,7 +59,7 @@ final class Token {
 	 * @return array{status:int,body:array<string,mixed>}
 	 */
 	public static function handle( array $params ): array {
-		if ( ! Connector::enabled() ) {
+		if ( ! OAuth::serving() ) {
 			return Http::error( 'not_found', 404 );
 		}
 		// Scalars only: an array-valued parameter is never legitimate and is a common type-juggling probe.

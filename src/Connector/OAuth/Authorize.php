@@ -54,7 +54,7 @@ final class Authorize {
 	 * @param array<string,mixed> $in     Unslashed request parameters.
 	 */
 	public static function run( string $method, array $in ): Page {
-		if ( ! Connector::enabled() ) {
+		if ( ! OAuth::serving() ) {
 			return self::error( __( 'This site is not accepting app connections.', 'specflux-site-agent' ), 404 );
 		}
 		if ( ! is_user_logged_in() ) {

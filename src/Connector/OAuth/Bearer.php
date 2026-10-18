@@ -64,7 +64,7 @@ final class Bearer {
 		}
 		// Not Connector::enabled(): this runs before plugins finish loading; the MCP route's own
 		// permission check still requires the full enabled() and the capability.
-		if ( ! Connector::stored() || MultisiteGuard::refused() || ! self::onMcpRoute() ) {
+		if ( ! Connector::stored() || MultisiteGuard::refused() || ! OAuth::availableOnThisSite() || ! self::onMcpRoute() ) {
 			return $user_id;
 		}
 		$token = self::bearerToken();
