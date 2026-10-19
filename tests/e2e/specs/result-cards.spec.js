@@ -95,11 +95,7 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		await expect( pane.locator( 'iframe' ) ).toHaveCount( 0 );
 	} );
 
-	// PRODUCT BUG (d3-ui): hiding the pane does nothing visible. The kit's delegated click handler
-	// (assets/vendor/admin-ui-kit/aui.js:92-94) also toggles any [aria-expanded][aria-controls] button,
-	// undoing React's own aria-expanded/hidden update on the same click. Cause: PreviewPane.js:48-55
-	// (the toggle carries aria-controls). Observed after the click: class is-collapsed, aria-expanded="true", body not hidden.
-	test.fixme( 'the pane can be hidden and remembers it is hidden', async ( { page } ) => {
+	test( 'the pane can be hidden and remembers it is hidden', async ( { page } ) => {
 		const runId = await runAndOpen( page );
 		const pane = page.locator( '.specflux-site-agent-preview-pane' );
 		const body = pane.locator( '#specflux-site-agent-preview-body' );
