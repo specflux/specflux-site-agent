@@ -52,6 +52,16 @@ jobs:
             exit 1
           fi
 
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+          coverage: none
+
+      # The zip bundles Action Scheduler from vendor/; runtime dependencies only.
+      - name: Install runtime dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction
+
       - name: Build the zip (bin/build-zip.sh, the single allowlisted build)
         run: bin/build-zip.sh
 
