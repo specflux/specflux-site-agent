@@ -281,6 +281,8 @@ final class Plugin {
 			10,
 			2
 		);
+		// Belayline's Overview map asks who an unrecognised identity token is; answer for signed-in AI apps.
+		add_filter( 'belayline_map_who', array( \Specflux\SiteAgent\Connector\BelaylineWho::class, 'name' ), 10, 2 );
 		add_filter( 'belayline_pending_ttl_seconds', array( \Specflux\SiteAgent\Background\ApprovalEvents::class, 'pendingTtl' ), 10, 3 );
 		// 0.4 U3: wall-clock expiry and run retention (daily WP-Cron).
 		\Specflux\SiteAgent\Run\RunLifecycle::register(
