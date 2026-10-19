@@ -194,3 +194,50 @@ function retitlePost( postId, title ) {
 }
 
 module.exports.retitlePost = retitlePost;
+
+/**
+ * E2: a run with many model turns and NO parks, so it is still mid-flight when
+ * the page closes and can only finish if the queue drives it. Each turn is a
+ * distinct Tier-0 read; the closing text is what the reopened run must show.
+ */
+const BACKGROUND_DONE = 'Checked everything in the background.';
+
+/** A slow model turn: the fake provider sleeps this long first, so one turn fills a (shortened) tick slice. */
+const SLOW_TURN_SECONDS = 11;
+const slow = ( step ) => ( { ...step, delay: SLOW_TURN_SECONDS } );
+
+function longReads() {
+	return [
+		slow( call( 'wpab__specflux-e2e__read-thing', { id: 'thing-1' } ) ),
+		slow( call( 'wpab__specflux-e2e__search-things', { query: 'alpha' } ) ),
+		slow( call( 'wpab__specflux-e2e__read-thing', { id: 'thing-2' } ) ),
+		slow( call( 'wpab__specflux-e2e__search-things', { query: 'beta' } ) ),
+		text( BACKGROUND_DONE ),
+	];
+}
+
+/**
+ * E2: plan (a screen park, answered on screen), a few Tier-0 reads the queue
+ * will drive after the page closes, then a Tier-1 write that parks for approval.
+ * Built-in gate: the park email. Belayline gate: a pending Belayline approval.
+ */
+function planReadsWrite() {
+	return [
+		call( 'specflux__propose-plan', {
+			goal: PLAN_GOAL,
+			steps: [ { text: 'Create the launch post', verbs: [ 'specflux-e2e/create-thing' ] } ],
+			assumptions: [],
+		} ),
+		slow( call( 'wpab__specflux-e2e__read-thing', { id: 'thing-1' } ) ),
+		slow( call( 'wpab__specflux-e2e__search-things', { query: 'alpha' } ) ),
+		slow( call( 'wpab__specflux-e2e__read-thing', { id: 'thing-2' } ) ),
+		call( 'wpab__specflux-e2e__create-thing', { title: 'Launch Day' } ),
+		call( 'wpab__specflux-e2e__read-thing', { id: 'thing-3' } ),
+		text( 'Created the launch post.' ),
+		text( 'Done.' ),
+	];
+}
+
+module.exports.BACKGROUND_DONE = BACKGROUND_DONE;
+module.exports.longReads = longReads;
+module.exports.planReadsWrite = planReadsWrite;

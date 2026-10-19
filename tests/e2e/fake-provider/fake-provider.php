@@ -32,7 +32,8 @@
  * step per generateTextResult() call (S9: a tick never makes more than one
  * model turn). Every consumed step is also appended to
  * `specflux_site_agent_e2e_calls` so a test can assert how many turns a scenario
- * actually took. Never never ship.
+ * actually took. A step may also carry `"delay": <seconds>` (stage E2) to make that turn slow.
+ * Never never ship.
  */
 
 declare( strict_types = 1 );
@@ -144,6 +145,13 @@ class SpecfluxSiteAgent_E2E_Model implements ModelInterface, TextGenerationModel
 		}
 		$step = array_shift( $script );
 		update_option( 'specflux_site_agent_e2e_script', (string) wp_json_encode( $script ), false );
+
+		// Stage E2: a step may carry `delay` (seconds), a model that takes its time. With the tick
+		// slice shortened (see mu-specflux-e2e-extras.php) one such turn fills a tick's slice, so a
+		// run takes many ticks and a browser that goes away leaves real work for the queue.
+		if ( is_array( $step ) && ! empty( $step['delay'] ) ) {
+			sleep( min( 30, (int) $step['delay'] ) );
+		}
 
 		$consumed   = (array) get_option( 'specflux_site_agent_e2e_calls', array() );
 		$consumed[] = $step ?? array( 'type' => 'empty' );
