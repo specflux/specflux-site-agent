@@ -22,6 +22,7 @@ assets/src
 .wp-env.json
 .wp-env.override.json
 .scratch
+docs
 playwright.config.js
 playwright-report
 test-results
