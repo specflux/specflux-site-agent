@@ -45,6 +45,22 @@ async function waitPastGrace() {
 	await sleep( ( GRACE_SECONDS + 3 ) * 1000 );
 }
 
+let migrated = false;
+
+/**
+ * A fresh install starts Action Scheduler on its hybrid store until its one-off
+ * migration action has run; the hybrid store cannot look up a group, so
+ * `action-scheduler run --group=...` refuses. Run that migration once first
+ * (a no-op when it is already done).
+ */
+function ensureQueueMigrated() {
+	if ( migrated ) {
+		return;
+	}
+	wpCli( [ 'action-scheduler', 'run', '--hooks=action_scheduler/migration_hook' ] );
+	migrated = true;
+}
+
 /**
  * Run our plugin's queued actions, as WP-Cron / a real runner would, until
  * `done( row )` is true or `maxRounds` have run.
@@ -55,6 +71,7 @@ async function waitPastGrace() {
  * @return {object} The final run row.
  */
 function driveQueueUntil( id, done, maxRounds = 25 ) {
+	ensureQueueMigrated();
 	let row = runRow( id );
 	for ( let i = 0; i < maxRounds && ! done( row ); i++ ) {
 		wpCli( [ 'action-scheduler', 'run', '--group=specflux-site-agent', '--batch-size=20' ] );
