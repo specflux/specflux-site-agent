@@ -9,6 +9,8 @@ parameters:
     scanFiles:
         # WordPress core symbols referenced from src (declarations only).
         - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+        # Belayline's identity interface (not installed here), declaration only.
+        - tests/stubs/belayline-identity-provider.php
 
     # Justified, scoped suppressions for known wordpress-stubs false positives
     # (stub-signature limitations, not defects). Each entry is pinned to an

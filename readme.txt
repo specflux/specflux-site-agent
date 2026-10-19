@@ -401,6 +401,9 @@ the public repository, https://github.com/specflux/specflux-site-agent. To rebui
 
 New:
 
+* With Belayline Agent Governance 0.5 or newer, a call from an AI app signed in through the connector
+  is recorded and bound to a pack as that app, not as the person who signed it in. Apps appear under
+  Belayline's Packs; an app with no pack of its own uses the pack of the person who signed it in.
 * Runs finish with the page closed. A run carries on in the background through Action Scheduler
   (bundled), as the person who started it, and stops to wait when it needs an approval, a
   question or a plan. Background steps need WP-Cron to fire; see the FAQ on real cron for quiet sites.

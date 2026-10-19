@@ -46,6 +46,18 @@ final class Bearer {
 		add_filter( 'rest_post_dispatch', array( self::class, 'challenge' ), 10, 3 );
 	}
 
+	/**
+	 * The grant id this request authenticated with, or null. Set only by a validated bearer
+	 * token on the MCP route and only while the resolved user is still that grant's user.
+	 */
+	public static function activeGrant(): ?string {
+		if ( null === self::$active || (int) get_current_user_id() !== self::$active['user'] ) {
+			return null;
+		}
+
+		return self::$active['grant'];
+	}
+
 	/** Test seam: forget per-request state. */
 	public static function reset(): void {
 		self::$active   = null;

@@ -9,6 +9,7 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Connector\OAuth;
 
+use Specflux\SiteAgent\Connector\BelaylineWho;
 use Specflux\SiteAgent\Connector\Connector;
 use Specflux\SiteAgent\Run\Clock;
 
@@ -71,6 +72,11 @@ final class OAuth {
 		Authorize::register();
 		Bearer::register();
 		SignedInApps::register();
+
+		// Belayline sees an AI app's call as its own credential (the class is loaded only when
+		// Belayline's interface exists, checked when the filter runs so load order is irrelevant).
+		add_filter( 'belayline_identity_providers', array( BelaylineSeam::class, 'contribute' ) );
+		add_filter( 'belayline_map_who', array( BelaylineWho::class, 'name' ), 10, 2 );
 
 		add_action( 'delete_user', array( Store::class, 'revokeForUser' ) );
 		add_action( self::GC_HOOK, array( Store::class, 'gc' ) );
