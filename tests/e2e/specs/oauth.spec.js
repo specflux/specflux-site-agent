@@ -58,24 +58,28 @@ test.describe( 'E1 OAuth 2.1 sign-in for AI apps', () => {
 
 	// Regression: OAuth::serverUrl() ran before $wp_rewrite existed when WooCommerce hit
 	// determine_current_user during plugins_loaded (fixed in Site Agent c418d06).
-	test( 'both discovery documents are served, at the root and under the resource path', async () => {
-		const paths = [
-			'/.well-known/oauth-protected-resource',
-			`/.well-known/oauth-protected-resource${ MCP_PATH }`,
-		];
+	// The bare root documents belong to whatever owns the site root (on beta, Easy MCP AI
+	// answered them and clients registered there): only the path-inserted forms are ours.
+	test( 'discovery documents are served under the resource and issuer paths, not the bare root', async () => {
+		for ( const path of [ '/.well-known/oauth-protected-resource', '/.well-known/oauth-authorization-server', '/.well-known/openid-configuration' ] ) {
+			expect( ( await api.get( path ) ).status, path ).toBe( 404 );
+		}
+
+		const paths = [ `/.well-known/oauth-protected-resource${ MCP_PATH }` ];
 		for ( const path of paths ) {
 			const res = await api.get( path );
 			expect( res.status, path ).toBe( 200 );
 			const doc = res.json;
 			expect( doc.resource, path ).toBe( MCP_URL );
-			expect( doc.authorization_servers, path ).toHaveLength( 1 );
+			expect( doc.authorization_servers, path ).toEqual( [ `${ BASE_URL }${ OAUTH }` ] );
 			expect( doc.scopes_supported, path ).toEqual( expect.arrayContaining( [ 'specflux:read', 'specflux:write' ] ) );
 		}
 
-		for ( const path of [ '/.well-known/oauth-authorization-server', '/.well-known/openid-configuration' ] ) {
+		for ( const path of [ `/.well-known/oauth-authorization-server${ OAUTH }`, `/.well-known/openid-configuration${ OAUTH }`, `${ OAUTH }/.well-known/openid-configuration` ] ) {
 			const res = await api.get( path );
 			expect( res.status, path ).toBe( 200 );
 			const doc = res.json;
+			expect( doc.issuer, path ).toBe( `${ BASE_URL }${ OAUTH }` );
 			expect( doc.token_endpoint, path ).toBe( `${ BASE_URL }${ OAUTH }/token` );
 			expect( doc.registration_endpoint, path ).toBe( `${ BASE_URL }${ OAUTH }/register` );
 			expect( doc.authorization_endpoint, path ).toContain( 'action=specflux_site_agent_oauth_authorize' );

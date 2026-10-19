@@ -22,17 +22,19 @@ final class DiscoveryTest extends OAuthTestCase {
 
 	private const MCP = 'http://example.test/wp-json/specflux-site-agent/mcp';
 
+	private const ISSUER = 'http://example.test/wp-json/specflux-site-agent/oauth';
+
 	protected function setUp(): void {
 		parent::setUp();
 		update_option( 'permalink_structure', '/%postname%/' );
 	}
 
 	public function test_protected_resource_names_the_exact_server_url(): void {
-		$doc = Discovery::documentFor( '/.well-known/oauth-protected-resource' );
+		$doc = Discovery::documentFor( '/.well-known/oauth-protected-resource/wp-json/specflux-site-agent/mcp' );
 
 		$this->assertSame( self::MCP, $doc['resource'] );
 		$this->assertSame( OAuth::serverUrl(), $doc['resource'] );
-		$this->assertSame( array( 'http://example.test' ), $doc['authorization_servers'] );
+		$this->assertSame( array( self::ISSUER ), $doc['authorization_servers'] );
 		$this->assertSame( array( 'specflux:read', 'specflux:write' ), $doc['scopes_supported'] );
 		$this->assertSame( array( 'header' ), $doc['bearer_methods_supported'] );
 	}
@@ -45,9 +47,9 @@ final class DiscoveryTest extends OAuthTestCase {
 	}
 
 	public function test_authorization_server_metadata_advertises_only_what_is_implemented(): void {
-		$doc = Discovery::documentFor( '/.well-known/oauth-authorization-server' );
+		$doc = Discovery::documentFor( '/.well-known/oauth-authorization-server/wp-json/specflux-site-agent/oauth' );
 
-		$this->assertSame( 'http://example.test', $doc['issuer'] );
+		$this->assertSame( self::ISSUER, $doc['issuer'] );
 		$this->assertSame( array( 'S256' ), $doc['code_challenge_methods_supported'] );
 		$this->assertSame( array( 'authorization_code', 'refresh_token' ), $doc['grant_types_supported'] );
 		$this->assertSame( array( 'code' ), $doc['response_types_supported'] );
@@ -58,6 +60,28 @@ final class DiscoveryTest extends OAuthTestCase {
 		$this->assertStringContainsString( 'admin-post.php?action=specflux_site_agent_oauth_authorize', $doc['authorization_endpoint'] );
 		$this->assertSame( OAuth::SCOPE_READ, $doc['scopes_supported'][0] );
 		$this->assertArrayNotHasKey( 'revocation_endpoint', $doc );
+	}
+
+	/**
+	 * Regression: beta.specflux.com runs Easy MCP AI, which answers the bare root
+	 * documents. With the site root as issuer, a client read that plugin's token and
+	 * registration endpoints and never reached ours.
+	 */
+	public function test_the_bare_root_documents_are_left_to_whoever_owns_the_site_root(): void {
+		$this->assertNull( Discovery::documentFor( '/.well-known/oauth-protected-resource' ) );
+		$this->assertNull( Discovery::documentFor( '/.well-known/oauth-authorization-server' ) );
+		$this->assertNull( Discovery::documentFor( '/.well-known/openid-configuration' ) );
+	}
+
+	public function test_the_issuer_is_namespaced_and_its_metadata_is_found_by_every_discovery_form(): void {
+		$this->assertTrue( Discovery::rootServed() );
+		$this->assertSame( self::ISSUER, Discovery::issuer() );
+		foreach ( array( '/.well-known/oauth-authorization-server/wp-json/specflux-site-agent/oauth', '/.well-known/openid-configuration/wp-json/specflux-site-agent/oauth' ) as $path ) {
+			$this->assertSame( self::ISSUER, Discovery::documentFor( $path )['issuer'] ?? null, $path );
+		}
+		// The third form, `{issuer}/.well-known/openid-configuration`, is a REST route.
+		$rest = Discovery::restServer();
+		$this->assertSame( self::ISSUER, ( is_array( $rest ) ? $rest : $rest->get_data() )['issuer'] );
 	}
 
 	public function test_challenge_without_credential_points_at_the_resource_metadata(): void {

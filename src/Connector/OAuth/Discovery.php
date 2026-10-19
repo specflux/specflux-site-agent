@@ -20,6 +20,11 @@ defined( 'ABSPATH' ) || exit;
  * owns the root with pretty permalinks, and always through REST as a fallback
  * that the 401 `WWW-Authenticate` header points at when the root is not ours.
  *
+ * The issuer is always the REST namespace URL and only the path-inserted
+ * documents for this resource and issuer are answered: the bare root documents
+ * belong to whatever owns the site root (another MCP or OAuth plugin, the host),
+ * and a client that read theirs would register and fetch tokens there.
+ *
  * Limitation: with WordPress in a subdirectory, or plain permalinks, the
  * root `/.well-known/` paths belong to the web server, not WordPress. Then
  * the 401 points at the REST copy of the resource metadata and the issuer is
@@ -46,7 +51,7 @@ final class Discovery {
 
 	/** The authorization server identifier. */
 	public static function issuer(): string {
-		return self::rootServed() ? untrailingslashit( home_url() ) : untrailingslashit( rest_url( OAuth::REST_NAMESPACE ) );
+		return untrailingslashit( rest_url( OAuth::REST_NAMESPACE ) );
 	}
 
 	/** The URL the 401 challenge hands to clients. */
@@ -107,11 +112,11 @@ final class Discovery {
 	 */
 	public static function documentFor( string $path ): ?array {
 		$path = '/' . trim( $path, '/' );
-		if ( self::PRM_PATH === $path || self::PRM_PATH . self::resourcePath() === $path ) {
+		if ( self::PRM_PATH . self::resourcePath() === $path ) {
 			return self::protectedResource();
 		}
 		$issuer_path = (string) wp_parse_url( self::issuer(), PHP_URL_PATH );
-		if ( self::AS_PATH === $path || self::OIDC === $path || ( '' !== $issuer_path && self::AS_PATH . $issuer_path === $path ) ) {
+		if ( '' !== $issuer_path && ( self::AS_PATH . $issuer_path === $path || self::OIDC . $issuer_path === $path ) ) {
 			return self::authorizationServer();
 		}
 
