@@ -13,6 +13,9 @@ const { gotoRuns, waitLoaded, startRun, waitForPark, acceptPlan, approveCall, wa
  * right-hand pane offers the preview, which the person can hide and which
  * stays hidden after a reload.
  */
+// Each wp-cli round trip costs several seconds in Docker; these specs make many.
+test.describe.configure( { timeout: 300000 } );
+
 const TITLE = 'E1 card post (retitled)';
 
 test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
@@ -43,6 +46,12 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		await approveCall( page );
 		await waitSettled( page );
 		await expect( page.locator( '.specflux-site-agent-report' ) ).toBeVisible( { timeout: 30000 } );
+
+		// Cards come from the server's read of the run (the live tick responses carry
+		// raw steps only), so open the finished run the way a person returning to it would.
+		const runId = wpCli( [ 'db', 'query', 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] ).trim();
+		await gotoRuns( page, `&run_id=${ Number( runId ) }` );
+		await waitLoaded( page );
 
 		// --- The card in the conversation -------------------------------------
 		// Consecutive tool calls collapse into a ledger group; open the one holding the retitle.
@@ -84,7 +93,6 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		await expect( pane ).toHaveClass( /is-collapsed/ );
 
 		// A fresh load of the same run keeps the pane hidden (remembered per user).
-		const runId = wpCli( [ 'db', 'query', 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] ).trim();
 		await gotoRuns( page, `&run_id=${ Number( runId ) }` );
 		await waitLoaded( page );
 		const reloaded = page.locator( '.specflux-site-agent-preview-pane' );

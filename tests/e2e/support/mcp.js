@@ -44,7 +44,13 @@ async function httpCall( path, { method = 'GET', headers = {}, json, form } = {}
 		init.body = new URLSearchParams( form ).toString();
 		init.headers[ 'Content-Type' ] = 'application/x-www-form-urlencoded';
 	}
-	const res = await fetch( BASE_URL + path, init );
+	// Apache closes idle keep-alive sockets; Node may pick one up just as it dies. Retry that once.
+	let res;
+	try {
+		res = await fetch( BASE_URL + path, init );
+	} catch ( e ) {
+		res = await fetch( BASE_URL + path, init );
+	}
 	const text = await res.text();
 	let parsed = null;
 	try {
@@ -74,6 +80,8 @@ async function openSession( authorization ) {
 		};
 		if ( session && sessionId ) {
 			headers[ 'Mcp-Session-Id' ] = sessionId;
+			// mcp-adapter 0.7+ refuses a 2025-06-18 session without this header.
+			headers[ 'MCP-Protocol-Version' ] = '2025-06-18';
 		}
 		const res = await httpCall( MCP_PATH, { method: 'POST', headers, json: { jsonrpc: '2.0', id: nextId++, method, params } } );
 		return { status: res.status, body: res.json, headers: res.headers };
@@ -93,6 +101,9 @@ async function openSession( authorization ) {
 	/** `tools/list`, returned as the list of tool names. */
 	async function listTools() {
 		const res = await rpc( 'tools/list' );
+		if ( res.body && res.body.error ) {
+			throw new Error( 'tools/list failed: ' + JSON.stringify( res.body.error ) );
+		}
 		const tools = res.body && res.body.result && Array.isArray( res.body.result.tools ) ? res.body.result.tools : [];
 		return tools.map( ( t ) => t.name );
 	}

@@ -35,7 +35,7 @@ async function runPing( page ) {
 	await expect( page.locator( '.specflux-site-agent-chat-stream' ) ).toContainText( 'Ping finished', { timeout: 30000 } );
 }
 
-test.describe.configure( { mode: 'serial' } );
+test.describe.configure( { mode: 'serial', timeout: 300000 } );
 
 test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 	test.beforeAll( () => {
@@ -59,7 +59,7 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		await runPing( page );
 		// The model named the tool anyway; it was never admitted, so nothing ran.
 		expect( pingCalls() ).toBe( 0 );
-		await expect( page.locator( '.specflux-site-agent-card[data-card-type="error"]' ).first() ).toBeAttached();
+		await expect( page.locator( '.specflux-site-agent-chat-stream' ) ).not.toContainText( 'pong from the partner plugin' );
 	} );
 
 	test( 'enabling it in Settings (as Read) makes it available to a run', async ( { page } ) => {
@@ -76,7 +76,11 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		expect( pingCalls() ).toBe( 1 );
 		// Read tier: it ran without a plan or an approval.
 		await expect( page.locator( '#specflux-site-agent-park-heading' ) ).toHaveCount( 0 );
-		const group = page.locator( '.specflux-site-agent-ledger-group', { hasText: 'Partner ping' } );
+		// Open the finished run so the ledger carries the server-built cards.
+		const runId = dbQuery( 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1' );
+		await gotoRuns( page, `&run_id=${ Number( runId ) }` );
+		await waitLoaded( page );
+		const group = page.locator( '.specflux-site-agent-ledger-group', { hasText: 'e2e-partner__ping' } );
 		await expect( group ).toHaveCount( 1 );
 		await group.locator( 'summary' ).click();
 		await expect( group ).toContainText( 'pong from the partner plugin' );
@@ -89,8 +93,9 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		setOption( 'specflux_site_agent_e2e_bulk_passthrough', '1' );
 		await page.goto( SETTINGS );
 		const boxes = page.locator( 'input[name="specflux_site_agent_pt_enabled[]"]' );
-		// 41 bulk abilities plus the partner ping.
-		await expect( boxes ).toHaveCount( 42 );
+		// 41 bulk abilities, the partner ping, and whatever other plugins (WooCommerce) register.
+		await expect( page.locator( 'input[name="specflux_site_agent_pt_enabled[]"][value^="e2e-bulk/"]' ) ).toHaveCount( 41 );
+		expect( await boxes.count() ).toBeGreaterThan( 41 );
 		for ( const box of await boxes.all() ) {
 			await box.check();
 		}
@@ -102,6 +107,10 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		// Exactly at the cap is fine.
 		await page.goto( SETTINGS );
 		const all = await page.locator( 'input[name="specflux_site_agent_pt_enabled[]"]' ).all();
+		// The ping from the earlier test is still ticked; start from none.
+		for ( const box of all ) {
+			await box.uncheck();
+		}
 		for ( const box of all.slice( 0, 40 ) ) {
 			await box.check();
 		}

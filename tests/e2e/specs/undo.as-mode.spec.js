@@ -17,6 +17,9 @@ const { gotoRuns, waitLoaded, startRun, waitForPark, acceptPlan, approveCall, wa
  * spec skips itself against a build without it (the report then shows the
  * one "Undo needs Belayline Agent Governance" line, which is asserted instead).
  */
+// Each wp-cli round trip costs several seconds in Docker; these specs make many.
+test.describe.configure( { timeout: 300000 } );
+
 const ORIGINAL = 'E1 original title';
 const CHANGED = 'E1 changed by the agent';
 
