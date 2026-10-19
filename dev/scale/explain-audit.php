@@ -18,9 +18,17 @@ $reader        = new AuditReader( $wpdb );
 $filter        = AuditFilter::fromRequest( array() );
 $reader->countFiltered( $filter, time() );
 $reader->filtered( $filter, 50, 0, time() );
+// Optional second argument: a query string, e.g. "outcome=refused&pack=commerce", to EXPLAIN a filtered page instead.
+if ( ! empty( $args[0] ) ) {
+	parse_str( $args[0], $q );
+	$wpdb->queries = array();
+	$filter        = AuditFilter::fromRequest( $q );
+	$reader->countFiltered( $filter, time() );
+	$reader->filtered( $filter, 50, 0, time() );
+}
 $out = array( 'indexes' => $wpdb->get_results( "SHOW INDEX FROM {$reader->table()}", ARRAY_A ) );
 foreach ( $wpdb->queries as $q ) {
-	if ( stripos( $q[0], 'belayline_audit_log' ) !== false && stripos( ltrim( $q[0] ), 'SELECT' ) === 0 && stripos( $q[0], 'LEFT JOIN' ) !== false ) {
+	if ( stripos( $q[0], 'belayline_audit_log' ) !== false && stripos( ltrim( $q[0] ), 'SELECT' ) === 0 ) {
 		$out['sql'][]     = preg_replace( '/\s+/', ' ', $q[0] );
 		$out['explain'][] = $wpdb->get_results( 'EXPLAIN ' . $q[0], ARRAY_A );
 	}

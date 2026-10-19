@@ -1,0 +1,12 @@
+Key_name Column_name
+PRIMARY id
+approval_id approval_id
+status status
+verb_args verb
+verb_args args_hash
+ref key_id
+ref verb
+ref args_hash
+token_hash token_hash
+audit_event_id audit_event_id
+ 

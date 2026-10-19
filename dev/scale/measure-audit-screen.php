@@ -34,6 +34,20 @@ $out['count_star']      = $time( static fn () => $reader->total() );
 $out['latest_50']       = $time( static fn () => $reader->latest( 50 ) );
 $out['countFiltered']   = $time( static fn () => $reader->countFiltered( $filter, $now ) );
 $out['filtered_50']     = $time( static fn () => $reader->filtered( $filter, 50, 0, $now ) );
+// Filtered cases (added after the S1 run, for the Calls fix): the outcome filter takes the join
+// path; the pack-only filter does not. Same pairs of countFiltered + filtered(50) as the screen.
+foreach ( array(
+	'outcome_refused'         => array( 'outcome' => 'refused' ),
+	'outcome_ran_pack'        => array( 'outcome' => 'ran', 'pack' => 'specflux-e2e-pack' ),
+	'outcome_waiting'         => array( 'outcome' => 'waiting' ),
+	'pack_only'               => array( 'pack' => 'specflux-e2e-pack' ),
+	'days_7'                  => array( 'days' => '7' ),
+) as $name => $query ) {
+	$f                            = AuditFilter::fromRequest( $query );
+	$out[ 'count_' . $name ]      = $time( static fn () => $reader->countFiltered( $f, $now ) );
+	$out[ 'filtered_' . $name ]   = $time( static fn () => $reader->filtered( $f, 50, 0, $now ) );
+	$out[ 'rows_' . $name ]       = $reader->countFiltered( $f, $now );
+}
 $status                 = new ChainStatus( $reader );
 $t                      = microtime( true );
 $status->get( $now, true );

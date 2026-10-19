@@ -1,0 +1,115 @@
+{
+    "indexes": [
+        "PRIMARY(id)",
+        "correlation_id(correlation_id)",
+        "ability(ability)",
+        "ts(ts)",
+        "approval_id(approval_id)"
+    ],
+    "sql": [
+        "SELECT COUNT(*) FROM `wp_belayline_audit_log` l LEFT JOIN `wp_belayline_approvals` a ON a.audit_event_id = l.event_id WHERE CASE WHEN l.decision = 'allowed' THEN (CASE WHEN l.approval_id IS NOT NULL AND l.id <> (SELECT MAX(x.id) FROM `wp_belayline_audit_log` x WHERE x.approval_id = l.approval_id AND x.decision = 'allowed') THEN '' WHEN l.approval_id IS NOT NULL THEN (CASE WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'approved' ELSE 'failed' END) WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'ran' ELSE 'failed' END) WHEN l.decision IN ('denied', 'pending') AND SUBSTRING(SUBSTRING_INDEX(l.record_json, '\"dry_run\":', -1), 1, 5) = 'true,' THEN 'would' WHEN l.decision = 'denied' THEN 'refused' WHEN l.decision = 'pending' AND a.approval_id IS NOT NULL AND EXISTS (SELECT 1 FROM `wp_belayline_audit_log` y WHERE y.approval_id = a.approval_id AND y.decision = 'allowed') THEN '' WHEN l.decision = 'pending' THEN (CASE a.status WHEN 'pending' THEN 'waiting' WHEN 'approved' THEN 'approved' WHEN 'in_flight' THEN 'approved' WHEN 'rejected' THEN 'refused' WHEN 'consumed' THEN '' ELSE 'expired' END) ELSE '' END = 'refused'",
+        "SELECT l.* FROM `wp_belayline_audit_log` l LEFT JOIN `wp_belayline_approvals` a ON a.audit_event_id = l.event_id WHERE CASE WHEN l.decision = 'allowed' THEN (CASE WHEN l.approval_id IS NOT NULL AND l.id <> (SELECT MAX(x.id) FROM `wp_belayline_audit_log` x WHERE x.approval_id = l.approval_id AND x.decision = 'allowed') THEN '' WHEN l.approval_id IS NOT NULL THEN (CASE WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'approved' ELSE 'failed' END) WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'ran' ELSE 'failed' END) WHEN l.decision IN ('denied', 'pending') AND SUBSTRING(SUBSTRING_INDEX(l.record_json, '\"dry_run\":', -1), 1, 5) = 'true,' THEN 'would' WHEN l.decision = 'denied' THEN 'refused' WHEN l.decision = 'pending' AND a.approval_id IS NOT NULL AND EXISTS (SELECT 1 FROM `wp_belayline_audit_log` y WHERE y.approval_id = a.approval_id AND y.decision = 'allowed') THEN '' WHEN l.decision = 'pending' THEN (CASE a.status WHEN 'pending' THEN 'waiting' WHEN 'approved' THEN 'approved' WHEN 'in_flight' THEN 'approved' WHEN 'rejected' THEN 'refused' WHEN 'consumed' THEN '' ELSE 'expired' END) ELSE '' END = 'refused' ORDER BY l.id DESC LIMIT 50 OFFSET 0"
+    ],
+    "explain": [
+        [
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "l",
+                "type": "ALL",
+                "possible_keys": null,
+                "key": null,
+                "key_len": null,
+                "ref": null,
+                "rows": "96574",
+                "Extra": ""
+            },
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "a",
+                "type": "ref",
+                "possible_keys": "audit_event_id",
+                "key": "audit_event_id",
+                "key_len": "259",
+                "ref": "wordpress.l.event_id",
+                "rows": "1",
+                "Extra": "Using where"
+            },
+            {
+                "id": "3",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "y",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.a.approval_id",
+                "rows": "7428",
+                "Extra": "Using where"
+            },
+            {
+                "id": "2",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "x",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.l.approval_id",
+                "rows": "7428",
+                "Extra": "Using where"
+            }
+        ],
+        [
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "l",
+                "type": "index",
+                "possible_keys": null,
+                "key": "PRIMARY",
+                "key_len": "8",
+                "ref": null,
+                "rows": "50",
+                "Extra": ""
+            },
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "a",
+                "type": "ref",
+                "possible_keys": "audit_event_id",
+                "key": "audit_event_id",
+                "key_len": "259",
+                "ref": "wordpress.l.event_id",
+                "rows": "1",
+                "Extra": "Using where"
+            },
+            {
+                "id": "3",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "y",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.a.approval_id",
+                "rows": "7428",
+                "Extra": "Using where"
+            },
+            {
+                "id": "2",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "x",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.l.approval_id",
+                "rows": "7428",
+                "Extra": "Using where"
+            }
+        ]
+    ]
+}
