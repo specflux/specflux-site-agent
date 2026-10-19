@@ -83,6 +83,7 @@ final class Uninstaller {
 			'specflux_site_agent_setup_brief_skipped',
 			'specflux_site_agent_use_theme_patterns',
 			'specflux_site_agent_connector_enabled',
+			'specflux_site_agent_background_used',
 			'specflux_site_agent_connector_approvals',
 			'specflux_site_agent_oauth_clients',
 			'specflux_site_agent_oauth_grants',
@@ -112,6 +113,7 @@ final class Uninstaller {
 		}
 
 		delete_metadata( 'user', 0, 'specflux_site_agent_agent_safety_check_dismissed', '', true );
+		delete_metadata( 'user', 0, $db->get_blog_prefix() . 'specflux_site_agent_cron_hint_dismissed', '', true );
 		// Connections: the per-site user option (Connector\Connections::siteKey(), not loaded at
 		// uninstall), plus the bare pre-0.4 network-wide key (inert on multisite).
 		delete_metadata( 'user', 0, $db->get_blog_prefix() . 'specflux_site_agent_connections', '', true );

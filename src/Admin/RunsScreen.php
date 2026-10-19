@@ -97,6 +97,7 @@ class RunsScreen {
 		add_action( 'admin_post_specflux_site_agent_suggestion_decision', array( $this, 'handleSuggestionDecision' ) );
 		add_action( 'wp_ajax_specflux_site_agent_setup_panel', array( $this, 'handleSetupPanel' ) );
 		add_action( 'wp_ajax_specflux_site_agent_setup_brief', array( $this, 'handleSetupBrief' ) );
+		add_action( 'wp_ajax_specflux_site_agent_dismiss_cron_hint', array( $this, 'handleDismissCronHint' ) );
 		add_action( 'admin_notices', array( $this, 'maybeRenderActivationNotice' ) );
 		add_filter( ConsumerPolicy::FILTER, array( $this, 'registerAdminConsumer' ) );
 	}
@@ -257,6 +258,10 @@ class RunsScreen {
 				// 0.4 U2: whether a run keeps going with the page closed, and
 				// if not, why ('disabled' | 'missing' | 'too_old').
 				'background'         => \Specflux\SiteAgent\Background\Availability::status(),
+				// Real-cron hint: true only on a default WP-Cron site that has
+				// queued a background run and where this person has not dismissed it.
+				'cronHint'           => \Specflux\SiteAgent\Background\CronHint::shouldShow( get_current_user_id() ),
+				'cronHelpUrl'        => \Specflux\SiteAgent\Background\CronHint::HELP_URL,
 				'examples'           => $this->exampleGoals(),
 				// 0.3 S10 (runs-pack fix): the packs the CURRENT viewer's
 				// preflight allows — the same set `exampleGoals()` already
@@ -946,6 +951,22 @@ class RunsScreen {
 		}
 
 		wp_send_json_success( array( 'steps' => Onboarding::steps( get_current_user_id() ) ) );
+	}
+
+	/**
+	 * admin-ajax `specflux_site_agent_dismiss_cron_hint`: hide the real-cron
+	 * hint for the current user on this site. Same nonce as every Runs-screen
+	 * write; anyone who can see the screen may dismiss their own hint.
+	 */
+	public function handleDismissCronHint(): void {
+		check_ajax_referer( 'specflux_site_agent_run', 'nonce' );
+
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'specflux-site-agent' ) ), 403 );
+		}
+
+		\Specflux\SiteAgent\Background\CronHint::dismiss( get_current_user_id() );
+		wp_send_json_success( array( 'dismissed' => true ) );
 	}
 
 	/**

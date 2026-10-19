@@ -7,6 +7,7 @@ import Chat from './Chat';
 import EmptyState from './EmptyState';
 import MessageBox from './MessageBox';
 import PreviewPane from './PreviewPane';
+import CronHintNotice from './CronHintNotice';
 import SetupPanel, { firstBlockingStep } from './SetupPanel';
 import { AuiCard, AuiNotice } from './ui';
 
@@ -503,6 +504,7 @@ export default function App( { config } ) {
 			onSkipBrief={ handleSkipBrief }
 			onPickGoal={ handlePickGoal }
 		/>
+		<CronHintNotice config={ config } />
 		<div className={ 'specflux-site-agent-runs-app' + ( hasPreview ? ' specflux-site-agent-runs-app--with-preview' : '' ) }>
 			<RunList
 				runs={ runs }

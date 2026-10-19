@@ -30,6 +30,10 @@
 
 .aui .specflux-site-agent-action-error { margin: var(--aui-s3) var(--aui-s5) 0; }
 
+.aui .specflux-site-agent-cron-hint { margin-block-end: var(--aui-s3); }
+.aui .specflux-site-agent-cron-hint .specflux-site-agent-notice-body { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--aui-s3); }
+.aui .specflux-site-agent-cron-hint p { margin: 0; }
+
 .aui .specflux-site-agent-notice-body { min-inline-size: 0; overflow-wrap: anywhere; }
 
 @media ( max-width: 1100px ) {

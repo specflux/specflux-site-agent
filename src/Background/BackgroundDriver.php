@@ -140,10 +140,20 @@ final class BackgroundDriver {
 				}
 			}
 
-			return 0 !== as_schedule_single_action( $when, self::HOOK, $args, self::GROUP, false );
+			$queued = 0 !== as_schedule_single_action( $when, self::HOOK, $args, self::GROUP, false );
+			if ( $queued ) {
+				CronHint::markBackgroundUsed();
+			}
+
+			return $queued;
 		}
 
-		return 0 !== as_schedule_single_action( $when, self::HOOK, $args, self::GROUP, true );
+		$queued = 0 !== as_schedule_single_action( $when, self::HOOK, $args, self::GROUP, true );
+		if ( $queued ) {
+			CronHint::markBackgroundUsed();
+		}
+
+		return $queued;
 	}
 
 	/**

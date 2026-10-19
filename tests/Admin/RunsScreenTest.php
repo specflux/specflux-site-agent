@@ -731,6 +731,7 @@ final class RunsScreenTest extends TestCase {
 		$this->assertContains( 'admin_post_specflux_site_agent_approval_decision', $hooks );
 		$this->assertContains( 'wp_ajax_specflux_site_agent_setup_panel', $hooks );
 		$this->assertContains( 'wp_ajax_specflux_site_agent_setup_brief', $hooks );
+		$this->assertContains( 'wp_ajax_specflux_site_agent_dismiss_cron_hint', $hooks );
 		$this->assertContains( 'admin_notices', $hooks, 'the one-time activation notice (S10)' );
 	}
 
@@ -901,6 +902,29 @@ final class RunsScreenTest extends TestCase {
 				)
 			);
 		}
+	}
+
+	public function test_cron_hint_flag_in_config_and_dismiss_endpoint(): void {
+		$GLOBALS['specflux_site_agent_test_options']   = array();
+		$GLOBALS['specflux_site_agent_test_user_meta'] = array();
+		$config                                        = static fn (): array => $GLOBALS['specflux_site_agent_test_localized']['specfluxSiteAgentRunsConfig'];
+
+		( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
+		$this->assertFalse( $config()['cronHint'], 'no background run yet' );
+
+		\Specflux\SiteAgent\Background\CronHint::markBackgroundUsed();
+		( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
+		$this->assertSame( ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ), $config()['cronHint'] );
+
+		$_POST = array( 'nonce' => 'x' );
+		try {
+			( new RunsScreen() )->handleDismissCronHint();
+			$this->fail( 'no JSON response.' );
+		} catch ( SpecfluxSiteAgentJsonResponse $json ) {
+			$this->assertTrue( $json->success );
+		}
+		( new RunsScreen() )->assets( 'toplevel_page_specflux-site-agent-runs' );
+		$this->assertFalse( $config()['cronHint'], 'dismissed for this user' );
 	}
 
 	public function test_handle_setup_brief_saves_and_skips_for_an_admin(): void {

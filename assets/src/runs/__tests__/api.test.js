@@ -4,7 +4,7 @@
  * looked for a `pack` field before this fix).
  */
 
-import { startRun, fetchSetupState, tickRun, saveSetupBrief } from '../api';
+import { startRun, fetchSetupState, tickRun, saveSetupBrief, dismissCronHint } from '../api';
 
 describe( 'startRun', () => {
 	const config = { consumer: 'specflux-site-agent-admin', nonce: 'abc123', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' };
@@ -179,5 +179,15 @@ describe( 'an expired session', () => {
 			code: 'specflux_site_agent_conflict',
 			message: 'The run advanced.',
 		} );
+	} );
+} );
+
+describe( 'dismissCronHint', () => {
+	it( 'posts the dismiss action with the nonce', async () => {
+		global.fetch = jest.fn().mockResolvedValue( { json: () => Promise.resolve( { success: true, data: { dismissed: true } } ) } );
+		await dismissCronHint( { nonce: 'abc', ajaxUrl: 'https://example.test/wp-admin/admin-ajax.php' } );
+		const body = new URLSearchParams( global.fetch.mock.calls[ 0 ][ 1 ].body.toString() );
+		expect( body.get( 'action' ) ).toBe( 'specflux_site_agent_dismiss_cron_hint' );
+		expect( body.get( 'nonce' ) ).toBe( 'abc' );
 	} );
 } );

@@ -122,6 +122,11 @@ export function saveSetupBrief( action, brief, config ) {
 	return postAjax( 'specflux_site_agent_setup_brief', { brief_action: action, brief }, config );
 }
 
+/** admin-ajax `specflux_site_agent_dismiss_cron_hint`: hide the real-cron hint for this user on this site. */
+export function dismissCronHint( config ) {
+	return postAjax( 'specflux_site_agent_dismiss_cron_hint', {}, config );
+}
+
 /** admin-ajax `specflux_site_agent_tick`: {run_id, step_count, resume?} -> RunState. */
 export function tickRun( runId, stepCount, resume, config ) {
 	return postAjax( 'specflux_site_agent_tick', { run_id: runId, step_count: stepCount, resume: resume || undefined }, config );
