@@ -4,7 +4,7 @@
  */
 
 import domReady from '@wordpress/dom-ready';
-import { render } from '@wordpress/element';
+import { createRoot } from '@wordpress/element';
 import App from './components/App';
 
 import './style.css';
@@ -16,5 +16,5 @@ domReady( () => {
 	}
 
 	const config = window.specfluxSiteAgentRunsConfig || {};
-	render( <App config={ config } />, root );
+	createRoot( root ).render( <App config={ config } /> );
 } );
