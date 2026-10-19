@@ -24,8 +24,8 @@ final class SchemaUpgradeTest extends TestCase {
 		$GLOBALS['specflux_site_agent_test_dbdelta_queries'] = array();
 	}
 
-	public function test_schema_version_is_eleven(): void {
-		$this->assertSame( 11, Schema::DB_VERSION );
+	public function test_schema_version_is_twelve(): void {
+		$this->assertSame( 12, Schema::DB_VERSION );
 	}
 
 	/** @return list<string> The 0.2-0.3 columns every current runs table carries. */
@@ -70,13 +70,13 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 12, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['specflux_site_agent_test_dbdelta_queries'], 'runs + steps + activity statements' );
 	}
 
 	public function test_maybe_upgrade_is_idempotent_at_the_current_version(): void {
 		$db = new wpdb();
-		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 11;
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 12;
 
 		Schema::maybe_upgrade( $db );
 
@@ -89,7 +89,7 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 12, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertCount( 3, $GLOBALS['specflux_site_agent_test_dbdelta_queries'] );
 
 		// dbDelta is idempotent by design: re-running the SAME statements is
@@ -148,13 +148,26 @@ final class SchemaUpgradeTest extends TestCase {
 
 		Schema::maybe_upgrade( $db );
 
-		$this->assertSame( 11, get_option( 'specflux_site_agent_db_version' ) );
+		$this->assertSame( 12, get_option( 'specflux_site_agent_db_version' ) );
 		$this->assertStringContainsString( 'uuid VARCHAR(64) NOT NULL', implode( "\n", $GLOBALS['specflux_site_agent_test_dbdelta_queries'] ) );
+	}
+
+	public function test_a_version_11_install_gains_the_runs_list_indexes(): void {
+		$db = new wpdb();
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 11;
+
+		Schema::maybe_upgrade( $db );
+
+		$this->assertSame( 12, get_option( 'specflux_site_agent_db_version' ) );
+		$sql = implode( "\n", $GLOBALS['specflux_site_agent_test_dbdelta_queries'] );
+		// The Runs list sorts by updated_at (all runs) or filters by user then sorts (one user's runs).
+		$this->assertStringContainsString( 'KEY updated_at (updated_at, id)', $sql );
+		$this->assertStringContainsString( 'KEY user_updated (user_id, updated_at, id)', $sql );
 	}
 
 	public function test_an_already_current_install_writes_no_watermark_and_does_not_rerun_dbdelta(): void {
 		$db = new wpdb();
-		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 11;
+		$GLOBALS['specflux_site_agent_test_options']['specflux_site_agent_db_version'] = 12;
 		$db->varQueue = array( 5, 99 );
 
 		Schema::maybe_upgrade( $db );

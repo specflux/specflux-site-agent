@@ -44,9 +44,10 @@ final class Schema {
 	 * connector activity table (0.4 K4); 10 widens its `uuid` to fit an OAuth
 	 * connection's `oauth:<grant id>` (38 characters); 11 adds the runs table's
 	 * atomic claim (`lock_token`, `lock_until`) and the unattended-run
-	 * bookkeeping (`last_driver`, `last_tick_at`, `notified_park_step`).
+	 * bookkeeping (`last_driver`, `last_tick_at`, `notified_park_step`); 12 adds
+	 * the runs table's `updated_at` indexes the Runs list sorts by.
 	 */
-	public const DB_VERSION = 11;
+	public const DB_VERSION = 12;
 
 	/** Option holding the UTC timestamp schema 11 first ran (never overwritten). */
 	public const WALLCLOCK_OPTION = 'specflux_site_agent_wallclock_since';
@@ -279,6 +280,10 @@ final class Schema {
 				'PRIMARY KEY  (id)',
 				'KEY user_id (user_id)',
 				'KEY status (status)',
+				// Schema 12: the Runs list is ORDER BY updated_at DESC, id DESC
+				// (all runs, or WHERE user_id = N), a full scan plus filesort without these.
+				'KEY updated_at (updated_at, id)',
+				'KEY user_updated (user_id, updated_at, id)',
 			)
 		);
 	}
