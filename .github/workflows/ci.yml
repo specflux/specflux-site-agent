@@ -192,14 +192,22 @@ jobs:
           ref: 5f64910b74bdb8c41a0c444fdd9939523859f325
           path: research/abilities-api
 
-      # .wp-env.json maps this path too, so without the checkout Docker bind-
-      # mounts an empty directory and `wp plugin activate mcp-adapter` fails
-      # outright. Pinned for the same reason as abilities-api.
-      - uses: actions/checkout@v4
-        with:
-          repository: WordPress/mcp-adapter
-          ref: 07c9912ebe4a6cfed4050d30d9d4c5831f688fd4
-          path: research/mcp-adapter
+      # .wp-env.json maps this path too, so without it Docker bind-mounts an
+      # empty directory and `wp plugin activate mcp-adapter` fails outright.
+      # The connector refuses adapters older than 0.7.0 ("adapter too old"),
+      # and the old pinned git SHA (07c9912, 0.6.1+) was one of them, so the
+      # e2e job takes the published WordPress.org release instead. That zip
+      # already contains vendor/ (the Jetpack autoloader), so no composer
+      # step is needed. Pinned to an exact version for the same reason
+      # abilities-api is pinned: bumping it is a deliberate decision.
+      - name: Download mcp-adapter 0.7.1 from WordPress.org
+        run: |
+          mkdir -p research
+          curl -fsSL -o /tmp/mcp-adapter.zip https://downloads.wordpress.org/plugin/mcp-adapter.0.7.1.zip
+          unzip -q /tmp/mcp-adapter.zip -d /tmp/mcp-adapter-unzipped
+          mv /tmp/mcp-adapter-unzipped/mcp-adapter research/mcp-adapter
+          test -f research/mcp-adapter/mcp-adapter.php
+          test -f research/mcp-adapter/vendor/autoload_packages.php
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -219,13 +227,6 @@ jobs:
           composer install --prefer-dist --no-interaction
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
-
-      # mcp-adapter.php returns early unless the Jetpack autoloader it requires
-      # is present, so a bare checkout would activate into a plugin that loads
-      # nothing. abilities-api needs no equivalent step — it ships no vendor/.
-      - name: Install mcp-adapter runtime dependencies
-        working-directory: research/mcp-adapter
-        run: composer install --no-dev --prefer-dist --no-interaction
 
       # Same trap for Agent Safety: without vendor/ its bootstrap bails, the
       # plugin still lists as active, and Specflux Site Agent quietly falls back to its
