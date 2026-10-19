@@ -1,0 +1,37 @@
+{
+    "runs": 10000,
+    "store": {
+        "p50_ms": 7.6,
+        "p95_ms": 10.8,
+        "max_ms": 11.6,
+        "n": 15
+    },
+    "plugin": {
+        "p50_ms": 7.4,
+        "p95_ms": 10.2,
+        "max_ms": 10.4,
+        "n": 15
+    },
+    "rest": {
+        "p50_ms": 8,
+        "p95_ms": 10.1,
+        "max_ms": 13.7,
+        "n": 15
+    },
+    "rest_status": 200,
+    "explain": [
+        {
+            "id": "1",
+            "select_type": "SIMPLE",
+            "table": "wp_specflux_site_agent_runs",
+            "type": "ALL",
+            "possible_keys": null,
+            "key": null,
+            "key_len": null,
+            "ref": null,
+            "rows": "8974",
+            "Extra": "Using filesort"
+        }
+    ],
+    "data_mb": 14.55
+}

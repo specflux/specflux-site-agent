@@ -1,0 +1,116 @@
+
+{
+    "indexes": [
+        "PRIMARY(id)",
+        "correlation_id(correlation_id)",
+        "ability(ability)",
+        "ts(ts)",
+        "approval_id(approval_id)"
+    ],
+    "sql": [
+        "SELECT COUNT(*) FROM `wp_belayline_audit_log` l LEFT JOIN `wp_belayline_approvals` a ON a.audit_event_id = l.event_id WHERE l.ts >= '' AND (0 = 0 OR l.pack = '') AND (0 = 0 OR l.ability LIKE '\/%') AND (0 = 0 OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '') AND (0 = 0 OR CASE WHEN l.decision = 'allowed' THEN (CASE WHEN l.approval_id IS NOT NULL AND l.id <> (SELECT MAX(x.id) FROM `wp_belayline_audit_log` x WHERE x.approval_id = l.approval_id AND x.decision = 'allowed') THEN '' WHEN l.approval_id IS NOT NULL THEN (CASE WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'approved' ELSE 'failed' END) WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'ran' ELSE 'failed' END) WHEN l.decision IN ('denied', 'pending') AND SUBSTRING(SUBSTRING_INDEX(l.record_json, '\"dry_run\":', -1), 1, 5) = 'true,' THEN 'would' WHEN l.decision = 'denied' THEN 'refused' WHEN l.decision = 'pending' AND a.approval_id IS NOT NULL AND EXISTS (SELECT 1 FROM `wp_belayline_audit_log` y WHERE y.approval_id = a.approval_id AND y.decision = 'allowed') THEN '' WHEN l.decision = 'pending' THEN (CASE a.status WHEN 'pending' THEN 'waiting' WHEN 'approved' THEN 'approved' WHEN 'in_flight' THEN 'approved' WHEN 'rejected' THEN 'refused' WHEN 'consumed' THEN '' ELSE 'expired' END) ELSE '' END = '')",
+        "SELECT l.* FROM `wp_belayline_audit_log` l LEFT JOIN `wp_belayline_approvals` a ON a.audit_event_id = l.event_id WHERE l.ts >= '' AND (0 = 0 OR l.pack = '') AND (0 = 0 OR l.ability LIKE '\/%') AND (0 = 0 OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '' OR l.record_json LIKE '') AND (0 = 0 OR CASE WHEN l.decision = 'allowed' THEN (CASE WHEN l.approval_id IS NOT NULL AND l.id <> (SELECT MAX(x.id) FROM `wp_belayline_audit_log` x WHERE x.approval_id = l.approval_id AND x.decision = 'allowed') THEN '' WHEN l.approval_id IS NOT NULL THEN (CASE WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'approved' ELSE 'failed' END) WHEN l.result IS NULL OR l.result = '' OR l.result = 'success' THEN 'ran' ELSE 'failed' END) WHEN l.decision IN ('denied', 'pending') AND SUBSTRING(SUBSTRING_INDEX(l.record_json, '\"dry_run\":', -1), 1, 5) = 'true,' THEN 'would' WHEN l.decision = 'denied' THEN 'refused' WHEN l.decision = 'pending' AND a.approval_id IS NOT NULL AND EXISTS (SELECT 1 FROM `wp_belayline_audit_log` y WHERE y.approval_id = a.approval_id AND y.decision = 'allowed') THEN '' WHEN l.decision = 'pending' THEN (CASE a.status WHEN 'pending' THEN 'waiting' WHEN 'approved' THEN 'approved' WHEN 'in_flight' THEN 'approved' WHEN 'rejected' THEN 'refused' WHEN 'consumed' THEN '' ELSE 'expired' END) ELSE '' END = '') ORDER BY l.id DESC LIMIT 50 OFFSET 0"
+    ],
+    "explain": [
+        [
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "l",
+                "type": "ALL",
+                "possible_keys": "ts",
+                "key": null,
+                "key_len": null,
+                "ref": null,
+                "rows": "95556",
+                "Extra": "Using where"
+            },
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "a",
+                "type": "ALL",
+                "possible_keys": null,
+                "key": null,
+                "key_len": null,
+                "ref": null,
+                "rows": "14",
+                "Extra": "Using where; Using join buffer (flat, BNL join)"
+            },
+            {
+                "id": "3",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "y",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.a.approval_id",
+                "rows": "7350",
+                "Extra": "Using where"
+            },
+            {
+                "id": "2",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "x",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.l.approval_id",
+                "rows": "7350",
+                "Extra": "Using where"
+            }
+        ],
+        [
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "l",
+                "type": "range",
+                "possible_keys": "ts",
+                "key": "ts",
+                "key_len": "162",
+                "ref": null,
+                "rows": "95556",
+                "Extra": "Using index condition; Using temporary; Using filesort"
+            },
+            {
+                "id": "1",
+                "select_type": "PRIMARY",
+                "table": "a",
+                "type": "ALL",
+                "possible_keys": null,
+                "key": null,
+                "key_len": null,
+                "ref": null,
+                "rows": "14",
+                "Extra": "Using where; Using join buffer (flat, BNL join)"
+            },
+            {
+                "id": "3",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "y",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.a.approval_id",
+                "rows": "7350",
+                "Extra": "Using where"
+            },
+            {
+                "id": "2",
+                "select_type": "DEPENDENT SUBQUERY",
+                "table": "x",
+                "type": "ref",
+                "possible_keys": "approval_id",
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": "wordpress.l.approval_id",
+                "rows": "7350",
+                "Extra": "Using where"
+            }
+        ]
+    ]
+}

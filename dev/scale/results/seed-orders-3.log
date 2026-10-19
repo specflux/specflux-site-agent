@@ -1,0 +1,8 @@
+orders 10500/20000 (138s)
+orders 11000/20000 (368s)
+orders 11500/20000 (601s)
+orders 12000/20000 (840s)
+orders 12500/20000 (1086s)
+orders 13000/20000 (1335s)
+Success: orders seeded: 19971 shop_order rows, 1570s
+

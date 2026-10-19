@@ -1,0 +1,9 @@
+{
+    "audit_rows": 4057,
+    "chain_valid": true,
+    "verify_ms": [
+        71
+    ],
+    "verify_ms_med": 71,
+    "mem_peak_mb": 135.8
+}

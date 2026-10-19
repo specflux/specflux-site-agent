@@ -1,0 +1,9 @@
+orders 7000/20000 (40s)
+orders 7500/20000 (259s)
+orders 8000/20000 (491s)
+orders 8500/20000 (730s)
+orders 9000/20000 (972s)
+orders 9500/20000 (1222s)
+orders 10000/20000 (1477s)
+Success: orders seeded: 19984 shop_order rows, 1571s
+
