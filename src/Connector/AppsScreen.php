@@ -63,18 +63,14 @@ final class AppsScreen {
 			}
 		}
 
-		$waiting = Approvals::pending();
-		if ( array() !== $waiting ) {
+		if ( array() !== Approvals::pending() ) {
 			ApprovalsScreen::render();
 		}
 		if ( null === $reason ) {
 			ConnectScreen::renderCards();
 		}
-		ConnectScreen::renderConnections();
+		ConnectScreen::renderConnected();
 		SignedInApps::render();
-		if ( array() === $waiting ) {
-			ApprovalsScreen::render();
-		}
 		ConnectScreen::renderActivity();
 
 		echo '</div>';

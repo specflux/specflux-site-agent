@@ -34,8 +34,8 @@ export default function LedgerGroup( { calls, gateMode } ) {
 				{ calls.map( ( call, index ) => (
 					<li key={ index } className="specflux-site-agent-ledger-row">
 						<span className="specflux-site-agent-ledger-status">{ 'rejected' === call.step.status ? '✕' : '✓' }</span>
-						<span className="aui-mono specflux-site-agent-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
-						<span className="specflux-site-agent-ledger-verb">{ stepVerb( call.step ) }</span>
+						<span className="specflux-site-agent-ledger-label">{ stepLabel( call.step, toolCallFallback ) }</span>
+						<span className="aui-mono specflux-site-agent-ledger-verb">{ stepVerb( call.step ) }</span>
 						<TierBadge gateMode={ gateMode } tier={ stepTier( call.step ) } />
 						{ call.approvedByViewer && (
 							<AuiBadge tone="info" className="specflux-site-agent-ledger-you">{ __( 'Approved by you', 'specflux-site-agent' ) }</AuiBadge>

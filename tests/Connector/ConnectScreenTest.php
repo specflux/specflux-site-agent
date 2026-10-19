@@ -150,7 +150,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
 		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
 		$this->assertStringContainsString( 'Plugins, open the Add menu, then Add custom MCP server', $html );
-		$this->assertStringContainsString( '#specflux-site-agent-signed-in', $html );
+		$this->assertStringContainsString( 'id="specflux-site-agent-signed-in"', $html );
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}
 
@@ -281,5 +281,49 @@ final class ConnectScreenTest extends ConnectorTestCase {
 
 		$this->assertStringContainsString( 'no longer exists', $html );
 		$this->assertSame( array(), $GLOBALS['specflux_site_agent_test_remote_post_calls'] );
+	}
+
+	public function test_the_apps_are_one_grid_of_six_cards_with_a_dialog_for_the_password_apps(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
+
+		$html = $this->html();
+
+		$this->assertSame( 6, substr_count( $html, 'specflux-site-agent-app-card"' ) );
+		$this->assertStringNotContainsString( '<select class="aui-select" name="scope"', $html, 'access is chosen in a dialog, not a dropdown per card' );
+		foreach ( array( 'claude-code', 'cursor', 'vscode', 'other', 'claude-desktop' ) as $client ) {
+			$this->assertStringContainsString( 'id="specflux-site-agent-dlg-' . $client . '"', $html );
+			$this->assertStringContainsString( 'data-aui-open="specflux-site-agent-dlg-' . $client . '"', $html );
+		}
+		$this->assertSame( 5, substr_count( $html, 'name="specflux_site_agent_connect_action" value="create"' ) );
+		$this->assertSame( 5, substr_count( $html, 'name="scope" value="read" checked' ) );
+		$this->assertSame( 5, substr_count( $html, 'name="scope" value="read_write"' ) );
+		$this->assertStringContainsString( 'Claude Desktop (local proxy)', $html, 'folded into the Other card' );
+	}
+
+	public function test_connections_and_sign_ins_share_one_connected_table_with_a_type_column(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
+		$made = ConnectScreen::create( self::USER, ClientConfig::CURSOR, Connection::SCOPE_READ_WRITE );
+		$this->assertIsArray( $made );
+		\Specflux\SiteAgent\Connector\OAuth\Store::saveClient(
+			array(
+				'id'            => 'claudeclient01',
+				'name'          => 'Claude',
+				'redirect_uris' => array( 'https://claude.ai/cb' ),
+				'created'       => 1,
+			)
+		);
+		\Specflux\SiteAgent\Connector\OAuth\Store::createGrant( self::USER, 'claudeclient01', 'specflux:read', 'http://example.test/x', 'h' );
+
+		$html = $this->html();
+
+		$this->assertSame( 1, substr_count( $html, '>Connected</h2>' ) );
+		$this->assertStringContainsString( '>Password</span>', $html );
+		$this->assertStringContainsString( '>Sign-in</span>', $html );
+		$this->assertStringContainsString( 'specflux_site_agent_connection_revoke', $html );
+		$this->assertStringContainsString( 'specflux_site_agent_oauth_revoke', $html );
+		$this->assertMatchesRegularExpression( '#<details class="specflux-site-agent-disclosure"><summary[^>]*><div><h2 class="aui-card-t">Advanced: registered apps#', $html, 'registered apps are collapsed' );
+		$this->assertDoesNotMatchRegularExpression( '#<details class="specflux-site-agent-disclosure" open#', $html );
 	}
 }

@@ -68,3 +68,96 @@
 .aui .aui-card-f {
 	flex-wrap: wrap;
 }
+
+/* Collapsed sections: a card whose header is the summary. */
+.aui .specflux-site-agent-disclosure > summary {
+	cursor: pointer;
+	list-style: none;
+}
+
+.aui .specflux-site-agent-disclosure > summary::-webkit-details-marker {
+	display: none;
+}
+
+.aui .specflux-site-agent-disclosure > summary .aui-i {
+	margin-inline-start: auto;
+	color: var(--aui-text-3);
+	transition: transform var(--aui-fast) var(--aui-ease);
+}
+
+.aui .specflux-site-agent-disclosure[open] > summary .aui-i {
+	transform: rotate(180deg);
+}
+
+.aui .specflux-site-agent-disclosure[open] > summary {
+	border-bottom: 1px solid var(--aui-border);
+}
+
+.aui .specflux-site-agent-details > summary {
+	cursor: pointer;
+	color: var(--aui-accent);
+	font-weight: 500;
+}
+
+.aui .specflux-site-agent-details .specflux-site-agent-pre {
+	margin-top: 8px;
+}
+
+.aui .specflux-site-agent-waiting {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.aui .specflux-site-agent-apps-grid .aui-card-b {
+	flex: 1 1 auto;
+}
+
+.aui .specflux-site-agent-apps-grid .specflux-site-agent-app-card {
+	display: flex;
+	flex-direction: column;
+}
+
+.aui .specflux-site-agent-app-body {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.aui .specflux-site-agent-choices {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.aui .specflux-site-agent-choice {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px;
+	border: 1px solid var(--aui-border-strong);
+	border-radius: var(--aui-r-lg);
+	cursor: pointer;
+}
+
+.aui .specflux-site-agent-choice:has(input:checked) {
+	border-color: var(--aui-accent);
+	background: var(--aui-accent-tint);
+}
+
+.aui .specflux-site-agent-choice strong {
+	display: block;
+}
+
+.aui .specflux-site-agent-dialog-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.aui .aui-grid-3.specflux-site-agent-apps-grid {
+	align-items: stretch;
+}

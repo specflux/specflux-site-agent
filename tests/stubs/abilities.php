@@ -35,6 +35,10 @@ if ( ! class_exists( 'SpecfluxSiteAgent_Test_Fake_Ability' ) ) {
 			return $this->name;
 		}
 
+		public function get_label(): string {
+			return '';
+		}
+
 		public function get_description(): string {
 			return $this->description;
 		}

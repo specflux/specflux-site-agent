@@ -2645,7 +2645,7 @@ final class Runner {
 	 */
 	private function state( Run $run, array $new_steps, ?array $ui, int $retry_after = 0 ): array {
 		return array(
-			'run'         => array(
+			'run'            => array(
 				'id'           => $run->id,
 				'user_id'      => $run->userId,
 				'consumer'     => $run->consumer,
@@ -2660,15 +2660,16 @@ final class Runner {
 				// 0.3 S20: the source run id when this run is a follow-up.
 				'follow_up_of' => $run->followUpOf,
 			),
-			'new_steps'   => $new_steps,
-			'ui'          => $ui ?? array(),
+			'new_steps'      => $new_steps,
+			'ability_labels' => \Specflux\SiteAgent\Tools\AbilityLabels::forSteps( $new_steps, $ui ),
+			'ui'             => $ui ?? array(),
 			// Seconds the driver must wait before the next tick (0 = tick again
 			// now). Only a transient model error sets it; nothing sleeps here.
-			'retry_after' => $retry_after,
+			'retry_after'    => $retry_after,
 			// True while the run is neither parked nor finished: the driver
 			// should tick again (after retry_after). A bounded slice ends this
 			// way, so does a nudge or a transient-error retry.
-			'continue'    => in_array( $run->status, array( RunStatus::Pending, RunStatus::Running ), true ),
+			'continue'       => in_array( $run->status, array( RunStatus::Pending, RunStatus::Running ), true ),
 		);
 	}
 

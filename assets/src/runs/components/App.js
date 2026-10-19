@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { listRuns, getRun, startRun, tickRun, cancelRun, resolveSuggestion, fetchSetupState, saveSetupBrief } from '../api';
-import { isParkedStatus, isTerminalStatus, latestPreviewable, runsForTab, sameRunId } from '../utils';
+import { isParkedStatus, isTerminalStatus, latestPreviewable, runsForTab, sameRunId, setAbilityLabels } from '../utils';
 import RunList from './RunList';
 import Chat from './Chat';
 import EmptyState from './EmptyState';
@@ -196,6 +196,7 @@ export default function App( { config } ) {
 		}
 		const ticksBefore = ticksAppliedRef.current;
 		getRun( selectedRunId ).then( ( detail ) => {
+			setAbilityLabels( detail && detail.ability_labels );
 			if ( aliveRef.current && sameRunId( selectedRunId, activeRunRef.current ) ) {
 				const tickLanded = ticksAppliedRef.current !== ticksBefore;
 				setRunDetail( ( previous ) => ( tickLanded ? underNewerTick( previous, detail ) : detail ) );
@@ -236,6 +237,7 @@ export default function App( { config } ) {
 			return;
 		}
 		ticksAppliedRef.current += 1;
+		setAbilityLabels( state.ability_labels );
 		setRunDetail( ( previous ) => {
 			const same = previous && sameRunId( previous.run.id, runId );
 			const previousSteps = same ? previous.steps : [];

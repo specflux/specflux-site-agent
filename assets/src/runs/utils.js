@@ -193,6 +193,28 @@ export function stepText( step ) {
 	return '' === text.trim() ? '' : text;
 }
 
+/**
+ * Labels the registering plugins gave their abilities (`ability_labels` on the
+ * run reads and tick results), keyed by the id as written. Display only.
+ */
+const ABILITY_LABELS = {};
+
+/** Remember server-supplied ability labels. */
+export function setAbilityLabels( labels ) {
+	if ( labels && 'object' === typeof labels ) {
+		Object.keys( labels ).forEach( ( key ) => {
+			if ( 'string' === typeof labels[ key ] && '' !== labels[ key ] ) {
+				ABILITY_LABELS[ key ] = labels[ key ];
+			}
+		} );
+	}
+}
+
+/** The registered label for a verb, or '' when the server sent none. */
+export function registeredLabel( verb ) {
+	return 'string' === typeof verb && Object.prototype.hasOwnProperty.call( ABILITY_LABELS, verb ) ? ABILITY_LABELS[ verb ] : '';
+}
+
 /** The verb/ability id carried by a step, whichever shape produced it. */
 export function stepVerb( step ) {
 	if ( step.message && 'object' === typeof step.message && step.message.verb ) {
@@ -349,6 +371,9 @@ export function stepLabel( step, fallbackLabel ) {
 	if ( ! verb ) {
 		return undefined !== fallbackLabel ? fallbackLabel : 'Tool call';
 	}
+	if ( registeredLabel( verb ) ) {
+		return registeredLabel( verb );
+	}
 	const segments = verb.split( '__' );
 	const slug = segments[ segments.length - 1 ];
 	if ( ! slug || slug === verb ) {
@@ -373,6 +398,9 @@ export function stepLabel( step, fallbackLabel ) {
 export function humanizeVerb( verb ) {
 	if ( 'string' !== typeof verb || '' === verb ) {
 		return '';
+	}
+	if ( registeredLabel( verb ) ) {
+		return registeredLabel( verb );
 	}
 	const slug = verb.split( /\/|__/ ).pop();
 	const words = ( slug || '' ).replace( /[-_]+/g, ' ' ).trim();

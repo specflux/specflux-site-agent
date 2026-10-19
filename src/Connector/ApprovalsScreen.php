@@ -10,7 +10,9 @@ declare ( strict_types = 1 );
 
 namespace Specflux\SiteAgent\Connector;
 
+use Specflux\SiteAgent\Admin\Ui\Kit;
 use Specflux\SiteAgent\Admin\Ui\Shell;
+use Specflux\SiteAgent\Tools\AbilityLabels;
 
 // Bail on direct access.
 defined( 'ABSPATH' ) || exit;
@@ -70,55 +72,62 @@ final class ApprovalsScreen {
 		wp_safe_redirect( self::url() );
 	}
 
-	/** Render the section: a card, with a table of the waiting calls. */
+	/** Render the section: one card per waiting call, with who, what, why and the two buttons. */
 	public static function render(): void {
 		$pending = Approvals::pending();
 
-		echo '<section class="aui-card" id="' . esc_attr( Shell::SECTION_WAITING ) . '"><div class="aui-card-h"><div><h2 class="aui-card-t">' . esc_html__( 'Waiting for approval', 'specflux-site-agent' ) . '</h2>';
+		echo '<section id="' . esc_attr( Shell::SECTION_WAITING ) . '" class="specflux-site-agent-waiting" aria-labelledby="specflux-site-agent-waiting-t"><div class="aui-row-flex"><div class="aui-grow"><h2 class="aui-card-t" id="specflux-site-agent-waiting-t">' . esc_html__( 'Waiting for approval', 'specflux-site-agent' ) . '</h2>';
 		echo '<p class="aui-card-d">' . esc_html__( 'Changes that AI apps asked for and are waiting on you. Approve one and the app can repeat the same request within 15 minutes; it runs once.', 'specflux-site-agent' ) . '</p></div>';
 		if ( array() !== $pending ) {
-			echo '<span class="aui-count aui-count--warn aui-end">' . esc_html( (string) count( $pending ) ) . '</span>';
+			echo '<span class="aui-count aui-count--warn">' . esc_html( (string) count( $pending ) ) . '</span>';
 		}
 		echo '</div>';
 
 		if ( array() === $pending ) {
-			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'Nothing is waiting.', 'specflux-site-agent' ) . '</p></div></section>';
+			echo '<p class="aui-muted">' . esc_html__( 'Nothing is waiting.', 'specflux-site-agent' ) . '</p></section>';
 
 			return;
 		}
 
-		echo '<div class="aui-table-wrap"><table class="aui-table"><thead><tr>';
-		foreach ( array( __( 'Asked', 'specflux-site-agent' ), __( 'User', 'specflux-site-agent' ), __( 'Connection', 'specflux-site-agent' ), __( 'Tool', 'specflux-site-agent' ), __( 'Arguments', 'specflux-site-agent' ) ) as $heading ) {
-			echo '<th scope="col">' . esc_html( $heading ) . '</th>';
-		}
-		echo '<th scope="col"><span class="aui-sr">' . esc_html__( 'Actions', 'specflux-site-agent' ) . '</span></th></tr></thead><tbody>';
 		foreach ( $pending as $hash => $entry ) {
-			self::renderRow( $hash, $entry );
+			self::renderCard( $hash, $entry );
 		}
-		echo '</tbody></table></div></section>';
+		echo '</section>';
 	}
 
 	/**
-	 * One pending call.
+	 * One pending call as a card.
 	 *
 	 * @param string                                                                                                  $hash  The call's hash.
 	 * @param array{created:int,user:int,uuid:string,ability:string,args:array<string,mixed>,approved:int} $entry The entry.
 	 */
-	private static function renderRow( string $hash, array $entry ): void {
-		$user = get_userdata( $entry['user'] );
-		$name = is_object( $user ) && isset( $user->user_login ) ? (string) $user->user_login : '#' . $entry['user'];
-		$args = (string) wp_json_encode( $entry['args'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	private static function renderCard( string $hash, array $entry ): void {
+		$user  = get_userdata( $entry['user'] );
+		$name  = is_object( $user ) && isset( $user->user_login ) ? (string) $user->user_login : '#' . $entry['user'];
+		$app   = ConnectScreen::connectionLabel( $entry['uuid'] );
+		$label = AbilityLabels::display( $entry['ability'] );
+		$args  = (string) wp_json_encode( $entry['args'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
-		echo '<tr>';
-		echo '<td class="aui-mono">' . esc_html( (string) wp_date( 'Y-m-d H:i', $entry['created'] ) ) . '</td>';
-		echo '<td>' . esc_html( $name ) . '</td>';
-		echo '<td class="aui-mono">' . esc_html( substr( $entry['uuid'], 0, 8 ) ) . '</td>';
-		echo '<td class="aui-mono">' . esc_html( $entry['ability'] ) . '</td>';
-		echo '<td><pre class="specflux-site-agent-pre">' . esc_html( $args ) . '</pre></td>';
-		echo '<td><div class="aui-actions">';
+		echo '<article class="aui-card specflux-site-agent-waiting-card"><div class="aui-card-b" style="display:flex;flex-direction:column;gap:12px">';
+		echo '<div class="aui-row-flex"><span class="aui-tile aui-tile--warn">' . Kit::icon( 'clock', 'aui-i--lg' ) . '</span><div class="aui-grow">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+		echo '<h3 class="aui-approval-sum">' . esc_html( $label ) . '</h3>';
+		echo '<span class="aui-mono aui-muted">' . esc_html( $entry['ability'] ) . '</span></div>';
+		echo '<span class="aui-badge aui-badge--warn">' . esc_html__( 'Needs approval', 'specflux-site-agent' ) . '</span></div>';
+		echo '<p>' . esc_html(
+			sprintf(
+				/* translators: 1: app name, 2: WordPress user name, 3: ability label. */
+				__( '%1$s, signed in as %2$s, wants to: %3$s.', 'specflux-site-agent' ),
+				$app,
+				$name,
+				$label
+			)
+		) . '</p>';
+		echo '<p class="aui-muted">' . esc_html__( 'Held because it can change your site. Nothing happens unless you approve.', 'specflux-site-agent' ) . ' <span class="aui-mono">' . esc_html( (string) wp_date( 'Y-m-d H:i', $entry['created'] ) ) . '</span></p>';
+		echo '<details class="specflux-site-agent-details"><summary>' . esc_html__( 'Details', 'specflux-site-agent' ) . '</summary><pre class="specflux-site-agent-pre">' . esc_html( $args ) . '</pre></details>';
+		echo '</div><div class="aui-card-f">';
 		self::renderButton( 'specflux_site_agent_connector_approve', __( 'Approve', 'specflux-site-agent' ), $hash, true );
 		self::renderButton( 'specflux_site_agent_connector_deny', __( 'Deny', 'specflux-site-agent' ), $hash, false );
-		echo '</div></td></tr>';
+		echo '</div></article>';
 	}
 
 	/** One admin-post button. */

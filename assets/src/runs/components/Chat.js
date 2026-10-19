@@ -194,7 +194,7 @@ export default function Chat( {
 	return (
 		<div className="specflux-site-agent-chat">
 			<div className="specflux-site-agent-chat-header">
-				<h1 className="specflux-site-agent-run-heading" dir="auto">{ run.goal }</h1>
+				<h2 className="specflux-site-agent-run-heading" dir="auto">{ run.goal }</h2>
 				{ /* S22 pseudo-locale: the model NAME half of this line is
 				 * data (mechanically resolved from `run.model`, same as
 				 * `LedgerGroup`'s ability labels), so only that half carries

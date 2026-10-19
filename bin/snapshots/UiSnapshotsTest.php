@@ -26,6 +26,7 @@ use Specflux\SiteAgent\Connector\Connector;
 use Specflux\SiteAgent\Connector\OAuth\Authorize;
 use Specflux\SiteAgent\Connector\OAuth\Client;
 use Specflux\SiteAgent\Connector\OAuth\Store;
+use Specflux\SiteAgent\Passthrough\GroupNames;
 use Specflux\SiteAgent\Passthrough\Passthrough;
 use Specflux\SiteAgent\Run\Clock;
 use Specflux\SiteAgent\Run\SiteBrief;
@@ -74,7 +75,7 @@ final class UiSnapshotsTest extends OAuthTestCase {
 		return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlspecialchars( $title ) . '</title>'
 			. '<link rel="stylesheet" href="' . $assets . 'vendor/admin-ui-kit/tokens.css"><link rel="stylesheet" href="' . $assets . 'vendor/admin-ui-kit/components.css"><link rel="stylesheet" href="' . $assets . 'admin/site-agent-ui.css">'
 			. ( str_contains( $scripts, 'runs-bundle' ) ? '<link rel="stylesheet" href="runs-bundle.css">' : '' )
-			. '<style>.screen-reader-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}html{background:#f0f0f1}body{margin:0;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1d2327}'
+			. '<style>.screen-reader-text{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}hr.wp-header-end{border:0;margin:-1px 0 0;height:0;visibility:hidden}html{background:#f0f0f1}body{margin:0;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1d2327}'
 			. '.wp{display:grid;grid-template-columns:160px minmax(0,1fr);grid-template-rows:32px 1fr;width:100%;max-width:1440px;min-height:900px;background:#f0f0f1}'
 			. '.wp-adminbar{grid-column:1/3;display:flex;align-items:center;gap:20px;padding:0 12px;background:#1d2327;color:#f0f0f1;font-size:13px}.wp-adminbar .logo{width:16px;height:16px;border-radius:50%;background:#a7aaad}.wp-adminbar .r{margin-left:auto}'
 			. '.wp-menu{margin:0;padding:8px 0 0;list-style:none;background:#1d2327}.wp-menu li{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;color:#f0f0f1;font-size:14px}.wp-menu li.cur{background:#2271b1;color:#fff;font-weight:600}'
@@ -109,6 +110,16 @@ final class UiSnapshotsTest extends OAuthTestCase {
 	public function test_render_every_screen(): void {
 		update_option( 'permalink_structure', '/%postname%/' );
 		Connector::set_adapter_version_probe( '0.7.0' );
+		GroupNames::set_plugins_probe(
+			array(
+				'advanced-custom-fields/acf.php' => array( 'Name' => 'Advanced Custom Fields', 'TextDomain' => 'acf' ),
+				'wp-mail-smtp/wp_mail_smtp.php'  => array( 'Name' => 'WP Mail SMTP', 'TextDomain' => 'wp-mail-smtp' ),
+			)
+		);
+		$GLOBALS['specflux_site_agent_test_abilities']['content/publish-page'] = $this->fakeAbility( 'content/publish-page', 'Publish page', 'Publishes a page.', false );
+		$GLOBALS['specflux_site_agent_test_abilities']['content/update-page']  = $this->fakeAbility( 'content/update-page', 'Update page', 'Edits a page.', false );
+		$GLOBALS['specflux_site_agent_test_abilities']['commerce/order-refund'] = $this->fakeAbility( 'commerce/order-refund', 'Refund an order', 'Refunds an order.', false );
+		$GLOBALS['specflux_site_agent_test_abilities']['content/list-posts']   = $this->fakeAbility( 'content/list-posts', 'List posts', 'Lists posts.', true );
 
 		// ---- AI apps data
 		$cursor = ConnectScreen::create( self::USER, 'cursor', Connection::SCOPE_READ_WRITE );
@@ -165,16 +176,16 @@ final class UiSnapshotsTest extends OAuthTestCase {
 			array( 'acf/values-get', 'Read field values', 'Reads the saved values of one post.', true ),
 			array( 'acf/values-set', 'Update field values', 'Changes saved field values on a post.', false ),
 			array( 'acf/group-create', 'Create a field group', 'Adds a new field group.', false ),
-			array( 'smtp/log', 'Show the email log', 'Lists recent outgoing emails.', true ),
-			array( 'smtp/resend', 'Resend a failed email', 'Sends a failed message again.', false ),
-			array( 'smtp/test-send', 'Send a test email', 'Sends a test message to you.', false ),
-			array( 'smtp/settings-get', 'Read mail settings', 'Reads the mail settings.', true ),
+			array( 'wp-mail-smtp/log', 'Show the email log', 'Lists recent outgoing emails.', true ),
+			array( 'wp-mail-smtp/resend', 'Resend a failed email', 'Sends a failed message again.', false ),
+			array( 'wp-mail-smtp/test-send', 'Send a test email', 'Sends a test message to you.', false ),
+			array( 'wp-mail-smtp/settings-get', 'Read mail settings', 'Reads the mail settings.', true ),
 			array( 'seo/audit', 'Audit a page', 'Checks one page for SEO problems.', true ),
 		);
 		foreach ( $names as $n ) {
 			$GLOBALS['specflux_site_agent_test_abilities'][ $n[0] ] = $this->fakeAbility( $n[0], $n[1], $n[2], $n[3] );
 		}
-		Passthrough::save( array( 'acf/groups-list', 'acf/values-get', 'smtp/log', 'smtp/settings-get' ), array( 'acf/groups-list' => 'read', 'acf/values-get' => 'read', 'smtp/log' => 'read', 'smtp/settings-get' => 'read' ) );
+		Passthrough::save( array( 'acf/groups-list', 'acf/values-get', 'wp-mail-smtp/log', 'wp-mail-smtp/settings-get' ), array( 'acf/groups-list' => 'read', 'acf/values-get' => 'read', 'wp-mail-smtp/log' => 'read', 'wp-mail-smtp/settings-get' => 'read' ) );
 		$this->write( 'settings', $this->chrome( 'Settings', 'settings', $this->capture( array( new SettingsScreen(), 'render' ) ), $this->kitScripts() ) );
 
 		$_GET = array( 'specflux_site_agent_pt_error' => 'too_many' );

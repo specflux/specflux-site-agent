@@ -30,6 +30,7 @@ use Specflux\SiteAgent\Packs\Commerce\Platforms\PlatformSelection;
 use Specflux\SiteAgent\Packs\Commerce\Platforms\StorePlatforms;
 use Specflux\SiteAgent\Packs\Pages\ThemePatterns;
 use Specflux\SiteAgent\Passthrough\AbilityReviewProbe;
+use Specflux\SiteAgent\Passthrough\GroupNames;
 use Specflux\SiteAgent\Passthrough\Passthrough;
 use Specflux\SiteAgent\Plugin;
 use Specflux\SiteAgent\Run\GateMode;
@@ -550,11 +551,11 @@ class SettingsScreen {
 		printf(
 			'<div class="aui-group"><div class="aui-group-h"><input type="checkbox" aria-label="%1$s" data-group="%2$s"%3$s><button type="button" class="aui-group-toggle" aria-expanded="%4$s" aria-controls="%2$s"><span class="aui-group-name">%5$s</span><span class="aui-leader"></span><span class="aui-group-meta" data-meta>%6$s</span>%7$s</button></div><div class="aui-group-b" id="%2$s"%8$s>%9$s</div></div>',
 			/* translators: %s: plugin namespace. */
-			esc_attr( sprintf( __( 'Turn on all %s abilities', 'specflux-site-agent' ), $plugin_ns ) ),
+			esc_attr( sprintf( __( 'Turn on all %s abilities', 'specflux-site-agent' ), GroupNames::label( $plugin_ns ) ) ),
 			esc_attr( $gid ),
 			checked( $enabled === $total, true, false ),
 			$enabled > 0 || $total <= 4 ? 'true' : 'false',
-			esc_html( $plugin_ns . '/' ),
+			esc_html( GroupNames::label( $plugin_ns ) ),
 			esc_html(
 				sprintf(
 					/* translators: 1: enabled, 2: total, 3: read abilities, 4: abilities that change things. */

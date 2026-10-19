@@ -1052,7 +1052,7 @@ final class Plugin {
 		$hold_ui         = $this->runner()->parkedHoldUi( $run );
 
 		return array(
-			'run'         => array(
+			'run'            => array(
 				'id'                  => $run->id,
 				'user_id'             => $run->userId,
 				'consumer'            => $run->consumer,
@@ -1092,13 +1092,15 @@ final class Plugin {
 				// every read so a terminal run carries its changes list.
 				'report'              => $run->result,
 			) + ( null !== $changes_section ? array( 'changes_section' => $changes_section ) : array() ),
-			'steps'       => $steps,
+			'steps'          => $steps,
+			// Registered labels for every ability the steps mention (display only).
+			'ability_labels' => \Specflux\SiteAgent\Tools\AbilityLabels::forSteps( $steps, array( 'approval' => $approval_ui ) ),
 			// 0.3 S20: keyed by seq in $suggestions above; re-indexed for the caller.
-			'suggestions' => array_values( $suggestions ),
+			'suggestions'    => array_values( $suggestions ),
 			// A run parked on a plan carries the plan card's UI facts (e.g.
 			// `preapprove_available`), fresh, so the card survives a reload.
 			// Likewise a run parked on an approval carries the pack's summary.
-			'ui'          => array_filter(
+			'ui'             => array_filter(
 				array(
 					'plan'     => $plan_ui,
 					'approval' => $approval_ui,

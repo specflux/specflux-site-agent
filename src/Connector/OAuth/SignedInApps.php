@@ -59,49 +59,45 @@ final class SignedInApps {
 		wp_safe_redirect( self::url() );
 	}
 
-	/** Render the two cards: apps signed in now, and apps that registered. */
+	/**
+	 * The apps signed in now, for the AI apps tab's Connected table.
+	 *
+	 * @return list<array{id:string,client:string,user:string,write:bool,created:int}>
+	 */
+	public static function grantRows(): array {
+		$rows = array();
+		foreach ( array_keys( Store::grantIndex() ) as $id ) {
+			$grant = Store::grant( (string) $id );
+			if ( null === $grant ) {
+				continue;
+			}
+			$user   = function_exists( 'get_userdata' ) ? get_userdata( (int) $grant['user'] ) : false;
+			$rows[] = array(
+				'id'      => (string) $id,
+				'client'  => Clients::resolveStoredName( (string) $grant['client'] ),
+				'user'    => $user ? (string) $user->user_login : '#' . (int) $grant['user'],
+				'write'   => OAuth::allowsWrite( (string) $grant['scope'] ),
+				'created' => (int) $grant['created'],
+			);
+		}
+
+		return $rows;
+	}
+
+	/** Render the registered apps, collapsed: an advanced view most owners never need. */
 	public static function render(): void {
 		if ( ! current_user_can( Connector::capability() ) ) {
 			wp_die( esc_html__( 'Insufficient permissions.', 'specflux-site-agent' ) );
 		}
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- every value is escaped inline; button() and Kit::icon() return escaped markup.
-		$grants = Store::grantIndex();
-		echo '<section class="aui-card" id="' . esc_attr( Shell::SECTION_SIGNED_IN ) . '"><div class="aui-card-h"><div><h2 class="aui-card-t">' . esc_html__( 'Signed-in apps', 'specflux-site-agent' ) . '</h2>';
-		echo '<p class="aui-card-d">' . esc_html__( 'Apps such as Claude or ChatGPT that signed in to this site with your WordPress account. Revoking stops an app at once.', 'specflux-site-agent' ) . '</p></div>';
-		if ( array() !== $grants ) {
-			echo '<span class="aui-count aui-end">' . esc_html( (string) count( $grants ) ) . '</span>';
-		}
-		echo '</div>';
-		if ( array() === $grants ) {
-			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'No apps are signed in.', 'specflux-site-agent' ) . '</p></div>';
-		} else {
-			echo '<div class="aui-table-wrap"><table class="aui-table"><thead><tr><th scope="col">' . esc_html__( 'App', 'specflux-site-agent' ) . '</th><th scope="col">' . esc_html__( 'User', 'specflux-site-agent' ) . '</th><th scope="col">' . esc_html__( 'Access', 'specflux-site-agent' ) . '</th><th scope="col">' . esc_html__( 'Signed in', 'specflux-site-agent' ) . '</th><th scope="col"><span class="aui-sr">' . esc_html__( 'Actions', 'specflux-site-agent' ) . '</span></th></tr></thead><tbody>';
-			foreach ( array_keys( $grants ) as $id ) {
-				$grant = Store::grant( (string) $id );
-				if ( null === $grant ) {
-					continue;
-				}
-				$client = Clients::resolveStoredName( (string) $grant['client'] );
-				$user   = function_exists( 'get_userdata' ) ? get_userdata( (int) $grant['user'] ) : false;
-				$write  = OAuth::allowsWrite( (string) $grant['scope'] );
-				echo '<tr><td><strong>' . esc_html( $client ) . '</strong></td><td>' . esc_html( $user ? (string) $user->user_login : '#' . (int) $grant['user'] ) . '</td><td>'
-					. ( $write
-						? '<span class="aui-badge aui-badge--info">' . Kit::icon( 'pencil' ) . esc_html__( 'Read and write', 'specflux-site-agent' ) . '</span>'
-						: '<span class="aui-badge">' . Kit::icon( 'book' ) . esc_html__( 'Read only', 'specflux-site-agent' ) . '</span>' )
-					. '</td><td class="aui-mono">' . esc_html( gmdate( 'Y-m-d H:i', (int) $grant['created'] ) . ' UTC' ) . '</td><td><div class="aui-actions">'
-					. self::button( 'specflux_site_agent_oauth_revoke', 'grant', (string) $id, self::NONCE_REVOKE . $id, __( 'Revoke', 'specflux-site-agent' ), 'aui-btn--danger-outline' ) . '</div></td></tr>';
-			}
-			echo '</tbody></table></div>';
-		}
-		echo '</section>';
-
 		$clients = Store::clientIndex();
-		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html__( 'Registered apps', 'specflux-site-agent' ) . '</h2>';
+		echo '<section class="aui-card"><details class="specflux-site-agent-disclosure"><summary class="aui-card-h"><div><h2 class="aui-card-t">' . esc_html__( 'Advanced: registered apps', 'specflux-site-agent' ) . '</h2>';
+		echo '<p class="aui-card-d">' . esc_html__( 'Apps that registered themselves with this site. Removing one also signs out everything that signed in through it.', 'specflux-site-agent' ) . '</p></div>';
 		if ( array() !== $clients ) {
 			echo '<span class="aui-count aui-end">' . esc_html( (string) count( $clients ) ) . '</span>';
 		}
-		echo '</div>';
+		echo Kit::icon( 'caret-down' ) . '</summary>';
 		if ( array() === $clients ) {
 			echo '<div class="aui-card-b"><p class="aui-muted">' . esc_html__( 'No apps have registered.', 'specflux-site-agent' ) . '</p></div>';
 		} else {
@@ -117,11 +113,11 @@ final class SignedInApps {
 			}
 			echo '</tbody></table></div>';
 		}
-		echo '</section>';
+		echo '</details></section>';
 		// phpcs:enable
 	}
 
-	private static function button( string $action, string $field, string $value, string $nonce_action, string $label, string $variant ): string {
+	public static function button( string $action, string $field, string $value, string $nonce_action, string $label, string $variant ): string {
 		return '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'
 			. '<input type="hidden" name="action" value="' . esc_attr( $action ) . '">'
 			. '<input type="hidden" name="' . esc_attr( $field ) . '" value="' . esc_attr( $value ) . '">'

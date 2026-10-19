@@ -114,6 +114,9 @@ final class ApprovalsScreenTest extends ConnectorTestCase {
 		$this->assertStringContainsString( 'value="specflux_site_agent_connector_approve"', $html );
 		$this->assertStringContainsString( 'value="specflux_site_agent_connector_deny"', $html );
 		$this->assertStringContainsString( 'value="' . $hash . '"', $html );
+		$this->assertStringContainsString( '<details class="specflux-site-agent-details"><summary>Details</summary>', $html, 'arguments sit behind a Details disclosure' );
+		$this->assertStringContainsString( 'Write thing', $html, 'the ability is named in words, the id is secondary' );
+		$this->assertStringNotContainsString( '<table', $html );
 	}
 
 	public function test_an_empty_tab_says_so(): void {

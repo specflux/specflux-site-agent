@@ -55,6 +55,9 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 
 	useEffect( () => {
 		if ( headingRef.current ) {
+			// Moved here so a screen reader announces the new card: not a keyboard
+			// focus, so the CSS draws no ring until the user presses a key.
+			headingRef.current.setAttribute( 'data-programmatic', '' );
 			headingRef.current.focus();
 		}
 		// Only re-focus when the park itself changes, not on every re-render.
@@ -72,6 +75,7 @@ export default function ParkCard( { kind, payload, gateMode, onResolve, busy } )
 					className="specflux-site-agent-park-heading"
 					tabIndex={ -1 }
 					ref={ headingRef }
+					onBlur={ ( event ) => event.currentTarget.removeAttribute( 'data-programmatic' ) }
 				>
 					{ HEADINGS[ kind ] || HEADINGS.approval }
 				</h3>
@@ -407,7 +411,9 @@ function ApprovalBody( { payload, gateMode, onResolve, busy } ) {
 	return (
 		<div className="specflux-site-agent-park-body">
 			<p>
-				<strong>{ __( 'Requested action', 'specflux-site-agent' ) }:</strong> <code>{ payload.verb }</code>
+				<strong>{ __( 'Requested action', 'specflux-site-agent' ) }:</strong>{ ' ' }
+				{ humanizeVerb( payload.verb ) && <span data-specflux-site-agent-content>{ humanizeVerb( payload.verb ) } </span> }
+				<code>{ payload.verb }</code>
 			</p>
 			<TierBadge gateMode={ gateMode } tier={ payload.tier } />
 			{ 'string' === typeof payload.notice && '' !== payload.notice && (
