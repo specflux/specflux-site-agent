@@ -25,7 +25,7 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 		await waitLoaded( page );
 
 		await expect( page.locator( '.specflux-site-agent-setup-check[data-check-id="specflux/agent-safety"]' ) ).toHaveCount( 0 );
-		await expect( page.locator( '#specflux-site-agent-setup-panel' ) ).toHaveCount( 1 );
+		await expect( page.locator( '#specflux-site-agent-setup-panel' ) ).toBeAttached();
 
 		const panel = page.locator( '.specflux-site-agent-setup-steps, .specflux-site-agent-setup-collapsed' );
 		await expect( panel ).toBeVisible();
@@ -34,5 +34,11 @@ test.describe( 'S10 empty state (built-in mode)', () => {
 		}
 		await expect( page.getByText( 'Use Belayline Agent Governance rules' ) ).toBeVisible();
 		await expect( page.getByText( 'Approve every change here' ) ).toBeVisible();
+	} );
+
+	test( 'the setup panel container is emitted once', async ( { page } ) => {
+		await gotoRuns( page );
+		await waitLoaded( page );
+		await expect( page.locator( '#specflux-site-agent-setup-panel' ) ).toHaveCount( 1 );
 	} );
 } );

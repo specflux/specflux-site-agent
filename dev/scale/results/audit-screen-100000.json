@@ -1,0 +1,26 @@
+{
+    "audit_rows": 100000,
+    "default_filter_days": 0,
+    "count_star": {
+        "p50_ms": 20.2,
+        "p95_ms": 20.9,
+        "max_ms": 22.6
+    },
+    "latest_50": {
+        "p50_ms": 0.4,
+        "p95_ms": 0.6,
+        "max_ms": 0.6
+    },
+    "countFiltered": {
+        "p50_ms": 460.8,
+        "p95_ms": 519.6,
+        "max_ms": 544.1
+    },
+    "filtered_50": {
+        "p50_ms": 997.6,
+        "p95_ms": 1041.7,
+        "max_ms": 1086
+    },
+    "chain_status_miss_ms": 796,
+    "chain_status_hit_ms": 0.04
+}

@@ -1,0 +1,3 @@
+cold (cache miss, full verify): 2.994194 200 232545
+warm: p50=2165 ms p95=2274 ms max=2377 ms n=10
+status/bytes: 2.158323 200 232545

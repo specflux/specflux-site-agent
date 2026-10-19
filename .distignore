@@ -35,3 +35,4 @@ dist
 # S22: the release build's own tooling — dev-only, never ships.
 bin
 build/ui-snapshots
+dev

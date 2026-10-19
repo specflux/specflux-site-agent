@@ -1,0 +1,164 @@
+{
+    "db_total_mb": 331.6,
+    "exact_rows": {
+        "specflux_site_agent_runs": 10550,
+        "specflux_site_agent_steps": 126601,
+        "belayline_audit_log": 101650,
+        "actionscheduler_actions": 1654,
+        "actionscheduler_logs": 4902,
+        "posts": 32884,
+        "wc_orders": 22845
+    },
+    "tables": [
+        {
+            "t": "wp_actionscheduler_actions",
+            "approx_rows": "1637",
+            "data_kb": "512",
+            "index_kb": "944"
+        },
+        {
+            "t": "wp_actionscheduler_claims",
+            "approx_rows": "31",
+            "data_kb": "16",
+            "index_kb": "16"
+        },
+        {
+            "t": "wp_actionscheduler_groups",
+            "approx_rows": "5",
+            "data_kb": "16",
+            "index_kb": "16"
+        },
+        {
+            "t": "wp_actionscheduler_logs",
+            "approx_rows": "4995",
+            "data_kb": "368",
+            "index_kb": "320"
+        },
+        {
+            "t": "wp_belayline_approvals",
+            "approx_rows": "14",
+            "data_kb": "16",
+            "index_kb": "80"
+        },
+        {
+            "t": "wp_belayline_audit_checkpoint",
+            "approx_rows": "0",
+            "data_kb": "16",
+            "index_kb": "0"
+        },
+        {
+            "t": "wp_belayline_audit_log",
+            "approx_rows": "97206",
+            "data_kb": "71280",
+            "index_kb": "12352"
+        },
+        {
+            "t": "wp_belayline_changes",
+            "approx_rows": "2",
+            "data_kb": "16",
+            "index_kb": "48"
+        },
+        {
+            "t": "wp_belayline_counters",
+            "approx_rows": "9",
+            "data_kb": "16",
+            "index_kb": "16"
+        },
+        {
+            "t": "wp_belayline_grants",
+            "approx_rows": "2",
+            "data_kb": "16",
+            "index_kb": "32"
+        },
+        {
+            "t": "wp_options",
+            "approx_rows": "452",
+            "data_kb": "2528",
+            "index_kb": "64"
+        },
+        {
+            "t": "wp_postmeta",
+            "approx_rows": "30792",
+            "data_kb": "1552",
+            "index_kb": "3104"
+        },
+        {
+            "t": "wp_posts",
+            "approx_rows": "30650",
+            "data_kb": "27200",
+            "index_kb": "7760"
+        },
+        {
+            "t": "wp_specflux_site_agent_connector_activity",
+            "approx_rows": "6",
+            "data_kb": "16",
+            "index_kb": "32"
+        },
+        {
+            "t": "wp_specflux_site_agent_runs",
+            "approx_rows": "9722",
+            "data_kb": "17968",
+            "index_kb": "528"
+        },
+        {
+            "t": "wp_specflux_site_agent_steps",
+            "approx_rows": "120408",
+            "data_kb": "79488",
+            "index_kb": "6176"
+        },
+        {
+            "t": "wp_wc_orders",
+            "approx_rows": "22966",
+            "data_kb": "4624",
+            "index_kb": "14800"
+        },
+        {
+            "t": "wp_wc_orders_meta",
+            "approx_rows": "55763",
+            "data_kb": "4624",
+            "index_kb": "9264"
+        },
+        {
+            "t": "wp_wc_order_addresses",
+            "approx_rows": "19960",
+            "data_kb": "2576",
+            "index_kb": "3856"
+        },
+        {
+            "t": "wp_wc_order_coupon_lookup",
+            "approx_rows": "0",
+            "data_kb": "16",
+            "index_kb": "32"
+        },
+        {
+            "t": "wp_wc_order_operational_data",
+            "approx_rows": "23233",
+            "data_kb": "3600",
+            "index_kb": "2080"
+        },
+        {
+            "t": "wp_wc_order_product_lookup",
+            "approx_rows": "0",
+            "data_kb": "16",
+            "index_kb": "80"
+        },
+        {
+            "t": "wp_wc_order_stats",
+            "approx_rows": "0",
+            "data_kb": "16",
+            "index_kb": "64"
+        },
+        {
+            "t": "wp_wc_order_tax_lookup",
+            "approx_rows": "0",
+            "data_kb": "16",
+            "index_kb": "32"
+        },
+        {
+            "t": "wp_woocommerce_order_items",
+            "approx_rows": "19723",
+            "data_kb": "1552",
+            "index_kb": "432"
+        }
+    ]
+}

@@ -29,7 +29,8 @@ module.exports = defineConfig( {
 	// developer laptop run 16-37s and the slowest cleared the old 45s
 	// ceiling by 8s. A CI runner is slower still. 120s keeps a genuine
 	// hang from blocking the whole run while leaving honest work room.
-	timeout: 120000,
+	// SPECFLUX_E2E_TIMEOUT: a slow Docker host (each wp-cli round trip can take 7s) needs more.
+	timeout: Number( process.env.SPECFLUX_E2E_TIMEOUT ) || 120000,
 	use: {
 		baseURL: BASE_URL,
 		trace: 'retain-on-failure',

@@ -1,0 +1,32 @@
+disk free: 17 GB
+posts 1000/10000 (9s)
+posts 2000/10000 (27s)
+posts 3000/10000 (45s)
+posts 4000/10000 (60s)
+posts 5000/10000 (76s)
+posts 6000/10000 (93s)
+posts 7000/10000 (109s)
+posts 8000/10000 (125s)
+posts 9000/10000 (141s)
+posts 10000/10000 (158s)
+Success: posts seeded: 10000 total tagged, 158s
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-0.log <==
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-1.log <==
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-2.log <==
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-3.log <==
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-4.log <==
+
+
+==> /Users/stephenpaulsamynathan/Code/web/automattic-hire-plan/worktrees/site-agent-e1/dev/scale/results/seed-orders-5.log <==
+
+disk free: 19 GB

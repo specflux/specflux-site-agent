@@ -1,0 +1,81 @@
+{
+    "audit_rows": 101650,
+    "default_filter_days": 0,
+    "count_star": {
+        "p50_ms": 21.4,
+        "p95_ms": 24.9,
+        "max_ms": 25.4
+    },
+    "latest_50": {
+        "p50_ms": 0.5,
+        "p95_ms": 0.7,
+        "max_ms": 0.8
+    },
+    "countFiltered": {
+        "p50_ms": 510.9,
+        "p95_ms": 520,
+        "max_ms": 572.2
+    },
+    "filtered_50": {
+        "p50_ms": 1126.1,
+        "p95_ms": 1173.7,
+        "max_ms": 1181.8
+    },
+    "count_outcome_refused": {
+        "p50_ms": 555.5,
+        "p95_ms": 596.1,
+        "max_ms": 597
+    },
+    "filtered_outcome_refused": {
+        "p50_ms": 832.9,
+        "p95_ms": 878.1,
+        "max_ms": 895.8
+    },
+    "rows_outcome_refused": 0,
+    "count_outcome_ran_pack": {
+        "p50_ms": 504.6,
+        "p95_ms": 549,
+        "max_ms": 562.8
+    },
+    "filtered_outcome_ran_pack": {
+        "p50_ms": 1190.9,
+        "p95_ms": 1268.7,
+        "max_ms": 1277.5
+    },
+    "rows_outcome_ran_pack": 101607,
+    "count_outcome_waiting": {
+        "p50_ms": 561.1,
+        "p95_ms": 567.7,
+        "max_ms": 591.7
+    },
+    "filtered_outcome_waiting": {
+        "p50_ms": 929.7,
+        "p95_ms": 946.8,
+        "max_ms": 974.1
+    },
+    "rows_outcome_waiting": 0,
+    "count_pack_only": {
+        "p50_ms": 507.3,
+        "p95_ms": 529.7,
+        "max_ms": 580.5
+    },
+    "filtered_pack_only": {
+        "p50_ms": 1065.5,
+        "p95_ms": 1091.1,
+        "max_ms": 1120.5
+    },
+    "rows_pack_only": 101641,
+    "count_days_7": {
+        "p50_ms": 475.1,
+        "p95_ms": 482.3,
+        "max_ms": 538.8
+    },
+    "filtered_days_7": {
+        "p50_ms": 1018.7,
+        "p95_ms": 1083.1,
+        "max_ms": 1106.2
+    },
+    "rows_days_7": 101650,
+    "chain_status_miss_ms": 843,
+    "chain_status_hit_ms": 0.04
+}

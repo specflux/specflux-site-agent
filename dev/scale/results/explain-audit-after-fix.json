@@ -1,0 +1,43 @@
+{
+    "indexes": [
+        "PRIMARY(id)",
+        "correlation_id(correlation_id)",
+        "ability(ability)",
+        "ts(ts)",
+        "approval_id(approval_id)"
+    ],
+    "sql": [
+        "SELECT COUNT(*) FROM `wp_belayline_audit_log` l",
+        "SELECT l.* FROM `wp_belayline_audit_log` l ORDER BY l.id DESC LIMIT 50 OFFSET 0"
+    ],
+    "explain": [
+        [
+            {
+                "id": "1",
+                "select_type": "SIMPLE",
+                "table": "l",
+                "type": "index",
+                "possible_keys": null,
+                "key": "approval_id",
+                "key_len": "259",
+                "ref": null,
+                "rows": "96574",
+                "Extra": "Using index"
+            }
+        ],
+        [
+            {
+                "id": "1",
+                "select_type": "SIMPLE",
+                "table": "l",
+                "type": "index",
+                "possible_keys": null,
+                "key": "PRIMARY",
+                "key_len": "8",
+                "ref": null,
+                "rows": "50",
+                "Extra": ""
+            }
+        ]
+    ]
+}

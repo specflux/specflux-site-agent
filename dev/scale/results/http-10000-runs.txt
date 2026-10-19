@@ -1,0 +1,9 @@
+== GET /wp-admin/admin.php?page=specflux-site-agent-runs
+0.343303 200 229113
+p50=427 ms p95=677 ms max=708 ms n=15
+status/bytes: 200 229113
+== GET /wp-json/specflux-site-agent/v1/runs?limit=50
+p50=205 ms p95=467 ms max=520 ms n=15
+status/bytes: 200 13848
+== control: GET /wp-admin/options-general.php (a core page, no Site Agent involvement)
+p50=413 ms p95=637 ms max=838 ms n=15

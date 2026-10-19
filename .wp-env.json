@@ -9,7 +9,8 @@
 		"wp-content/plugins/mcp-adapter": "../research/mcp-adapter",
 		"wp-content/plugins/abilities-api": "../research/abilities-api",
 		"wp-content/mu-plugins/specflux-e2e-fake-provider.php": "./tests/e2e/fake-provider/fake-provider.php",
-		"wp-content/mu-plugins/specflux-e2e-pseudo-locale.php": "./tests/e2e/pseudo-locale/mu-specflux-site-agent-pseudo-locale.php"
+		"wp-content/mu-plugins/specflux-e2e-pseudo-locale.php": "./tests/e2e/pseudo-locale/mu-specflux-site-agent-pseudo-locale.php",
+		"wp-content/mu-plugins/specflux-e2e-extras.php": "./tests/e2e/fixtures/mu-specflux-e2e-extras.php"
 	},
 	"config": {
 		"WP_DEBUG": true,
