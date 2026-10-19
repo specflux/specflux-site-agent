@@ -82,7 +82,6 @@ final class Uninstaller {
 			'specflux_site_agent_site_brief',
 			'specflux_site_agent_setup_brief_skipped',
 			'specflux_site_agent_use_theme_patterns',
-			'specflux_site_agent_uninstall_delete_data',
 			'specflux_site_agent_connector_enabled',
 			'specflux_site_agent_connector_approvals',
 			'specflux_site_agent_oauth_clients',
@@ -113,10 +112,14 @@ final class Uninstaller {
 		}
 
 		delete_metadata( 'user', 0, 'specflux_site_agent_agent_safety_check_dismissed', '', true );
-		// Connections: the per-site user option, plus the bare pre-0.4 network-wide key (inert on multisite).
-		delete_metadata( 'user', 0, \Specflux\SiteAgent\Connector\Connections::siteKey(), '', true );
+		// Connections: the per-site user option (Connector\Connections::siteKey(), not loaded at
+		// uninstall), plus the bare pre-0.4 network-wide key (inert on multisite).
+		delete_metadata( 'user', 0, $db->get_blog_prefix() . 'specflux_site_agent_connections', '', true );
 		delete_metadata( 'user', 0, 'specflux_site_agent_connections', '', true );
 		delete_post_meta_by_key( '_specflux_site_agent_stock_source_id' );
 		delete_post_meta_by_key( '_specflux_site_agent_style_variation' );
+
+		// Last: a purge that dies part-way stays opted in, so a rerun finishes it.
+		delete_option( 'specflux_site_agent_uninstall_delete_data' );
 	}
 }

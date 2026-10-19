@@ -294,6 +294,21 @@ final class SiteLifecycleTest extends TestCase {
 		$this->assertSame( 1, get_current_blog_id() );
 	}
 
+	public function test_the_uninstaller_needs_no_other_plugin_class(): void {
+		// uninstall.php loads only this file; the plugin's autoloader isn't there at uninstall.
+		$source = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Uninstaller.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
+		preg_match_all( '/\\\\?Specflux\\\\SiteAgent\\\\[A-Za-z\\\\]+/', $source, $refs );
+
+		$this->assertSame( array(), array_values( array_diff( array_unique( array_map( static fn ( string $r ): string => ltrim( $r, '\\' ), $refs[0] ) ), array( 'Specflux\\SiteAgent\\Uninstaller' ) ) ) );
+	}
+
+	public function test_an_opted_in_purge_keeps_the_opt_in_until_everything_else_is_gone(): void {
+		$source = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Uninstaller.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local source file in a test.
+		$purge  = substr( $source, (int) strpos( $source, 'function purge(' ) );
+
+		$this->assertGreaterThan( strrpos( $purge, 'delete_post_meta_by_key' ), strrpos( $purge, "'specflux_site_agent_uninstall_delete_data'" ), 'a purge that dies part-way stays opted in, so a rerun finishes it' );
+	}
+
 	private function runUninstall(): void {
 		include dirname( __DIR__, 2 ) . '/uninstall.php';
 	}
