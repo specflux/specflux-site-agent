@@ -655,9 +655,31 @@ if ( ! function_exists( 'rest_get_authenticated_app_password' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_Rewrite' ) ) {
+	/** Stand-in for core's rewrite object; only its presence matters. */
+	class WP_Rewrite {} // phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace,Generic.Files.OneObjectStructurePerFile.MultipleFound -- core class name.
+}
+
+if ( ! function_exists( 'rest_get_url_prefix' ) ) {
+	/** Core's default prefix. */
+	function rest_get_url_prefix(): string {
+		return 'wp-json';
+	}
+}
+
 if ( ! function_exists( 'rest_url' ) ) {
-	/** Identity-ish shim. */
+	/**
+	 * Like core: pretty permalinks deref $wp_rewrite, so with
+	 * $GLOBALS['specflux_site_agent_test_strict_rewrite'] set it fails exactly as core does
+	 * when called before wp-settings.php creates it. Honours the home URL and index permalinks.
+	 */
 	function rest_url( string $path = '' ): string {
-		return 'http://example.test/wp-json/' . ltrim( $path, '/' );
+		if ( ! empty( $GLOBALS['specflux_site_agent_test_strict_rewrite'] ) && ! ( ( $GLOBALS['wp_rewrite'] ?? null ) instanceof WP_Rewrite ) ) {
+			throw new Error( 'Call to a member function using_index_permalinks() on null' );
+		}
+		$home  = rtrim( (string) ( $GLOBALS['specflux_site_agent_test_home_url'] ?? 'http://example.test' ), '/' );
+		$index = 1 === preg_match( '#^/*index.php#', (string) get_option( 'permalink_structure', '' ) ) ? '/index.php' : '';
+
+		return $home . $index . '/wp-json/' . ltrim( $path, '/' );
 	}
 }

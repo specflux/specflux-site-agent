@@ -142,6 +142,61 @@ final class BearerTest extends OAuthTestCase {
 		$this->assertSame( self::USER, $user, 'POSTed rest_route on the front controller.' );
 	}
 
+	/**
+	 * Issue a token the normal way, then drop `$wp_rewrite` so the next call is "early". Core caches
+	 * the user after the first `determine_current_user`, so that early answer must match the normal one.
+	 */
+	private function earlyToken( string $structure = '/%postname%/', string $home = 'http://example.test' ): string {
+		$GLOBALS['specflux_site_agent_test_home_url']                       = $home;
+		$GLOBALS['specflux_site_agent_test_options']['permalink_structure'] = $structure;
+		$GLOBALS['wp_rewrite'] = new \WP_Rewrite();
+		$t                     = $this->tokens();
+		unset( $GLOBALS['wp_rewrite'] );
+		$GLOBALS['specflux_site_agent_test_strict_rewrite'] = true;
+
+		return $t['body']['access_token'];
+	}
+
+	protected function tearDown(): void {
+		unset( $GLOBALS['wp_rewrite'], $GLOBALS['specflux_site_agent_test_strict_rewrite'], $GLOBALS['specflux_site_agent_test_home_url'], $GLOBALS['specflux_site_agent_test_options']['permalink_structure'] );
+		parent::tearDown();
+	}
+
+	public function test_early_call_before_wp_rewrite_exists_authenticates_on_the_mcp_route(): void {
+		$token = $this->earlyToken();
+		$this->asMcpRequest( $token );
+
+		$this->assertSame( self::USER, Bearer::authenticate( 0 ) );
+	}
+
+	public function test_early_call_before_wp_rewrite_exists_ignores_other_routes(): void {
+		$token = $this->earlyToken();
+		$this->asMcpRequest( $token, '/' );
+		$this->assertSame( 0, Bearer::authenticate( 0 ), 'Front page.' );
+
+		$this->asMcpRequest( $token, '/.well-known/oauth-protected-resource/wp-json/specflux-site-agent/mcp' );
+		$this->assertSame( 0, Bearer::authenticate( 0 ), 'Discovery document.' );
+		$this->assertSame( 7, Bearer::authenticate( 7 ), 'Existing user untouched.' );
+	}
+
+	public function test_early_call_matches_index_permalinks(): void {
+		$token = $this->earlyToken( '/index.php/%postname%/' );
+		$this->asMcpRequest( $token, '/index.php/wp-json/specflux-site-agent/mcp' );
+		$this->assertSame( self::USER, Bearer::authenticate( 0 ) );
+
+		$this->asMcpRequest( $token );
+		$this->assertSame( 0, Bearer::authenticate( 0 ), 'Without index.php the path is another route.' );
+	}
+
+	public function test_early_call_matches_a_subdirectory_home_url(): void {
+		$token = $this->earlyToken( '/%postname%/', 'http://example.test/blog' );
+		$this->asMcpRequest( $token, '/blog/wp-json/specflux-site-agent/mcp' );
+		$this->assertSame( self::USER, Bearer::authenticate( 0 ) );
+
+		$this->asMcpRequest( $token );
+		$this->assertSame( 0, Bearer::authenticate( 0 ), 'Root path is not the subdirectory route.' );
+	}
+
 	public function test_garbage_and_wrong_shapes_authenticate_nobody(): void {
 		$t = $this->tokens();
 		foreach ( array(

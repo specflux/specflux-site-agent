@@ -81,7 +81,19 @@ final class OAuth {
 
 	/** The one protected resource's identifier: the exact MCP server URL (RFC 8707 §2, MCP auth "Canonical Server URI"). */
 	public static function serverUrl(): string {
-		return rest_url( Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE );
+		$route = Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE;
+		if ( ( $GLOBALS['wp_rewrite'] ?? null ) instanceof \WP_Rewrite ) {
+			return rest_url( $route );
+		}
+
+		// Reached from `determine_current_user` during `plugins_loaded`, before core creates $wp_rewrite,
+		// where rest_url() would fatal. The first answer is cached for the request, so build core's URL by hand.
+		$structure = (string) get_option( 'permalink_structure' );
+		if ( '' === $structure ) {
+			return home_url( '/index.php' ) . '?rest_route=' . rawurlencode( '/' . $route );
+		}
+
+		return untrailingslashit( home_url() ) . ( 1 === preg_match( '#^/*index.php#', $structure ) ? '/index.php/' : '/' ) . rest_get_url_prefix() . '/' . $route;
 	}
 
 	/** Where the browser is sent to authorize. */

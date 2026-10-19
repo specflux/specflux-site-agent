@@ -30,6 +30,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$GLOBALS['specflux_site_agent_test_transients']           = array();
+		$GLOBALS['wp_rewrite']                                    = new \WP_Rewrite(); // After init, as in a real request; the early-call tests drop it.
 		$GLOBALS['specflux_site_agent_test_logged_in']            = true;
 		$GLOBALS['specflux_site_agent_test_remote_get_calls']     = array();
 		$GLOBALS['specflux_site_agent_test_remote_get_responses'] = array();
@@ -48,7 +49,7 @@ abstract class OAuthTestCase extends ConnectorTestCase {
 		$_GET = array();
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REQUEST_URI'] );
 		$GLOBALS['specflux_site_agent_test_logged_in'] = true;
-		unset( $GLOBALS['specflux_site_agent_test_is_admin'], $GLOBALS['specflux_site_agent_test_doing_ajax'], $GLOBALS['specflux_site_agent_test_doing_cron'], $GLOBALS['pagenow'], $_SERVER['SCRIPT_FILENAME'] );
+		unset( $GLOBALS['wp_rewrite'], $GLOBALS['specflux_site_agent_test_is_admin'], $GLOBALS['specflux_site_agent_test_doing_ajax'], $GLOBALS['specflux_site_agent_test_doing_cron'], $GLOBALS['pagenow'], $_SERVER['SCRIPT_FILENAME'] );
 		parent::tearDown();
 	}
 
