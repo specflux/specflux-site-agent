@@ -15,7 +15,7 @@ use Specflux\SiteAgent\Tools\AbilityLabels;
 final class AbilityLabelsTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['specflux_site_agent_test_abilities']       = array();
+		$GLOBALS['specflux_site_agent_test_abilities']      = array();
 		$GLOBALS['specflux_site_agent_test_doing_it_wrong'] = array();
 	}
 

@@ -134,8 +134,8 @@ final class ConnectionsTest extends ConnectorTestCase {
 	}
 
 	public function test_on_multisite_the_legacy_unprefixed_registry_grants_nothing(): void {
-		$GLOBALS['specflux_site_agent_test_multisite']                                        = true;
-		$GLOBALS['wpdb']->prefix                                                              = 'wp_2_';
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+		$GLOBALS['wpdb']->prefix                       = 'wp_2_';
 		$GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ][ Connections::META_KEY ] = array( self::UUID => array( 'scope' => Connection::SCOPE_READ_WRITE ) );
 		$GLOBALS['specflux_site_agent_test_app_password']                                     = self::UUID;
 

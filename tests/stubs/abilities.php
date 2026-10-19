@@ -158,7 +158,7 @@ if ( ! function_exists( 'wp_get_ability' ) ) {
 		$ability = $GLOBALS['specflux_site_agent_test_abilities'][ $name ] ?? null;
 		if ( null === $ability && function_exists( '_doing_it_wrong' ) ) {
 			// Like WordPress 7.1: asking for an unregistered ability is a developer notice.
-			_doing_it_wrong( __FUNCTION__, sprintf( 'Ability "%s" not found.', $name ), '6.9.0' );
+			_doing_it_wrong( __FUNCTION__, sprintf( 'Ability "%s" not found.', $name ), '6.9.0' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- test shim, never rendered.
 		}
 
 		return $ability;

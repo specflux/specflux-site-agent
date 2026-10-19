@@ -337,8 +337,8 @@ if ( ! function_exists( 'update_user_meta' ) ) {
 
 if ( ! function_exists( 'update_user_option' ) ) {
 	/** Per-blog write like core (global=false): key becomes "{$wpdb->get_blog_prefix()}{$key}". */
-	function update_user_option( int $user_id, string $key, $value, bool $global = false ) {
-		$prefix = $global ? '' : $GLOBALS['wpdb']->get_blog_prefix();
+	function update_user_option( int $user_id, string $key, $value, bool $network_wide = false ) {
+		$prefix = $network_wide ? '' : $GLOBALS['wpdb']->get_blog_prefix();
 
 		return update_user_meta( $user_id, $prefix . $key, $value );
 	}
@@ -346,8 +346,8 @@ if ( ! function_exists( 'update_user_option' ) ) {
 
 if ( ! function_exists( 'delete_user_option' ) ) {
 	/** Per-blog delete like core. */
-	function delete_user_option( int $user_id, string $key, bool $global = false ) {
-		$prefix = $global ? '' : $GLOBALS['wpdb']->get_blog_prefix();
+	function delete_user_option( int $user_id, string $key, bool $network_wide = false ) {
+		$prefix = $network_wide ? '' : $GLOBALS['wpdb']->get_blog_prefix();
 
 		return delete_user_meta( $user_id, $prefix . $key );
 	}
