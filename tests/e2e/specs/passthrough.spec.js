@@ -35,6 +35,24 @@ async function runPing( page ) {
 	await expect( page.locator( '.specflux-site-agent-chat-stream' ) ).toContainText( 'Ping finished', { timeout: 30000 } );
 }
 
+/** The Settings form that carries the other-plugin abilities (the page has several forms). */
+const abilitiesForm = ( page ) => page.locator( 'form', { has: page.locator( 'input[name="specflux_site_agent_pt_enabled[]"]' ) } );
+
+/** Save it: the save bar's button is the form's own "Save changes". */
+const saveAbilities = ( page ) => abilitiesForm( page ).getByRole( 'button', { name: 'Save changes' } ).click();
+
+/**
+ * Tick or untick boxes directly. Big groups (WooCommerce, the 41 bulk fixtures) start
+ * collapsed, so a person would open each one first; this sets the same form values.
+ */
+const setChecked = ( boxes, checked ) =>
+	boxes.evaluateAll( ( els, value ) => {
+		els.forEach( ( el ) => {
+			el.checked = value;
+			el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+		} );
+	}, checked );
+
 test.describe.configure( { mode: 'serial', timeout: 300000 } );
 
 test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
@@ -69,7 +87,7 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		const box = page.locator( `input[name="specflux_site_agent_pt_enabled[]"][value="${ PING }"]` );
 		await box.check();
 		await page.locator( `select[name="specflux_site_agent_pt_mode[${ PING }]"]` ).selectOption( 'read' );
-		await page.getByRole( 'button', { name: 'Save abilities' } ).click();
+		await saveAbilities( page );
 
 		await expect( page.locator( '[data-specflux-site-agent-notice]' ) ).toContainText( 'Abilities saved.' );
 		await expect( box ).toBeChecked();
@@ -98,25 +116,24 @@ test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 		// 41 bulk abilities, the partner ping, and whatever other plugins (WooCommerce) register.
 		await expect( page.locator( 'input[name="specflux_site_agent_pt_enabled[]"][value^="e2e-bulk/"]' ) ).toHaveCount( 41 );
 		expect( await boxes.count() ).toBeGreaterThan( 41 );
-		for ( const box of await boxes.all() ) {
-			await box.check();
-		}
-		await page.getByRole( 'button', { name: 'Save abilities' } ).click();
+		await setChecked( boxes, true );
+		await saveAbilities( page );
 
-		await expect( page.locator( '[data-specflux-site-agent-notice].notice-error' ) ).toContainText( 'At most 40 abilities from other plugins can be enabled. Nothing was saved' );
+		await expect( page.locator( '[data-specflux-site-agent-notice].aui-notice--error' ) ).toContainText( 'At most 40 abilities from other plugins can be enabled. Nothing was saved' );
 		expect( dbQuery( "SELECT option_value FROM wp_options WHERE option_name = 'specflux_site_agent_passthrough'" ), 'nothing was saved' ).toBe( before );
 
 		// Exactly at the cap is fine.
 		await page.goto( SETTINGS );
-		const all = await page.locator( 'input[name="specflux_site_agent_pt_enabled[]"]' ).all();
+		const all = page.locator( 'input[name="specflux_site_agent_pt_enabled[]"]' );
 		// The ping from the earlier test is still ticked; start from none.
-		for ( const box of all ) {
-			await box.uncheck();
-		}
-		for ( const box of all.slice( 0, 40 ) ) {
-			await box.check();
-		}
-		await page.getByRole( 'button', { name: 'Save abilities' } ).click();
+		await setChecked( all, false );
+		await all.evaluateAll( ( els ) => {
+			els.slice( 0, 40 ).forEach( ( el ) => {
+				el.checked = true;
+				el.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			} );
+		} );
+		await saveAbilities( page );
 		await expect( page.locator( '[data-specflux-site-agent-notice]' ) ).toContainText( 'Abilities saved.' );
 		expect( Number( wpCli( [ 'eval', 'echo count( array_filter( (array) get_option( "specflux_site_agent_passthrough" ), static fn ( $e ) => ! empty( $e["enabled"] ) ) );' ] ).trim() ) ).toBe( 40 );
 	} );

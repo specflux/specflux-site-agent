@@ -111,13 +111,8 @@ test.describe( 'E1 undo a run from its report (Belayline Agent Governance mode)'
 		expect( postTitle( postId ), 'cancel leaves the change in place' ).toBe( CHANGED );
 	} );
 
-	// KNOWN PRODUCT/INTEGRATION BUG (found by this spec): confirming the undo is refused with "An undo
-	// must come from a person, not an agent." (src/Approval/ChangesBridge.php:210). Belayline's
-	// UndoService::undo() (belayline-beta plugin/src/Changes/UndoService.php:60) refuses when
-	// RequestContext::tokenId() is non-null, and with the pack bound to `role:administrator` (the
-	// suite's seed, tests/e2e/support/global-setup.js) the logged-in human admin's own role token
-	// counts as an agent credential. A site that binds a role to a pack therefore cannot undo.
-	test.fixme( 'confirming the undo restores the previous title', async ( { page } ) => {
+	// Regression: Belayline treated a role-bound human admin as an agent token (fixed in Belayline c754219).
+	test( 'confirming the undo restores the previous title', async ( { page } ) => {
 		const changes = await runAndOpenReport( page );
 		await changes.locator( '.specflux-site-agent-changes-undo-run' ).click();
 		await page.getByRole( 'dialog' ).getByRole( 'button', { name: 'Confirm undo' } ).click();

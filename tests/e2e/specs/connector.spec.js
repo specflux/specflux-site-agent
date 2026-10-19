@@ -7,14 +7,14 @@ const { httpCall, openSession, toolFor, MCP_PATH, ensurePrettyPermalinks } = req
  * Stage E1: the AI-app connector (0.4 K1-K4), end to end over real HTTP.
  *
  * Built-in gate mode (this file is not an `.as-mode` spec): reads run, a
- * write parks until a site admin approves that exact call, then runs once.
+ *   write parks until a site admin approves that exact call, then runs once.
  *
  * The flow is one story, so the tests share state and run in order:
- *   switch the connector on (Settings) -> create a read-only and a
- *   read-and-write connection (Connect screen) -> speak MCP with each ->
- *   see the parked write in the activity list -> approve it on the
- *   "From AI apps" tab -> the repeat runs exactly once -> an identical
- *   repeat parks again.
+ *   switch the connector on (AI apps tab) -> create a read-only and a
+ *   read-and-write connection (AI apps tab) -> speak MCP with each ->
+ *   see the parked write in the activity list -> approve it in the AI apps
+ *   tab's "Waiting for approval" section -> the repeat runs exactly once ->
+ *   an identical repeat parks again.
  *
  * Environment note: the mounted mcp-adapter reports a version below the
  * connector's minimum; tests/e2e/fixtures/mu-specflux-e2e-extras.php fixes
@@ -34,20 +34,30 @@ function thingsCreated() {
 	return '' === raw ? 0 : Number( raw );
 }
 
+const APPS_URL = '/wp-admin/admin.php?page=specflux-site-agent-apps';
+
+/** Open the collapsed "All activity" disclosure and return its table body rows. */
+async function openActivity( page ) {
+	await page.locator( 'summary', { hasText: 'All activity' } ).click();
+	return page.locator( 'table', { has: page.getByRole( 'columnheader', { name: 'Outcome' } ) } ).locator( 'tbody tr' );
+}
+
 /**
- * Make one connection on the Connect screen and read the one-time config back.
+ * Make one connection on the AI apps tab and read the one-time config back.
  *
  * @param {import('@playwright/test').Page} page
  * @param {'read'|'read_write'} scope
  * @return {Promise<string>} The `Authorization` header value the config shows.
  */
 async function createConnection( page, scope ) {
-	await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
-	const card = page.locator( '.card', { has: page.getByRole( 'heading', { name: 'Other (copy the URL)' } ) } );
-	await card.locator( 'select[name="scope"]' ).selectOption( scope );
+	await page.goto( APPS_URL );
+	const card = page.locator( '.specflux-site-agent-app-card', { has: page.getByRole( 'heading', { name: 'Other (copy the URL)' } ) } );
 	await card.getByRole( 'button', { name: 'Create connection' } ).click();
+	const dialog = page.getByRole( 'dialog', { name: /Connect Other/ } );
+	await dialog.getByRole( 'radio', { name: 'read' === scope ? /Read only/ : /Read and write/ } ).check();
+	await dialog.getByRole( 'button', { name: 'Create connection' } ).click();
 
-	await expect( page.locator( '.notice-success' ).first() ).toContainText( 'Connection created.' );
+	await expect( page.locator( '.aui-notice--success' ).first() ).toContainText( 'Connection created.' );
 	const config = await page.locator( '#specflux-site-agent-config' ).textContent();
 	const match = /Header: Authorization: (Basic \S+)/.exec( config || '' );
 	expect( match, 'the one-time config shows the Authorization header' ).not.toBeNull();
@@ -79,20 +89,19 @@ test.describe( 'E1 AI-app connector (built-in mode)', () => {
 		setOption( 'specflux_site_agent_connector_enabled', '0' );
 	} );
 
-	test( 'the Connect screen explains itself while AI apps are switched off', async ( { page } ) => {
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
-		await expect( page.locator( '.wrap' ) ).toContainText( 'AI apps are switched off' );
+	test( 'the AI apps tab explains itself while AI apps are switched off', async ( { page } ) => {
+		await page.goto( APPS_URL );
+		await expect( page.getByRole( 'heading', { name: 'No AI apps connected yet' } ) ).toBeVisible();
+		await expect( page.getByRole( 'button', { name: 'Let AI apps connect to this site' } ) ).toHaveAttribute( 'aria-pressed', 'false' );
 		await expect( page.getByRole( 'button', { name: 'Create connection' } ) ).toHaveCount( 0 );
 	} );
 
-	test( 'an admin switches the connector on in Settings', async ( { page } ) => {
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-settings' );
-		const form = page.locator( 'form', { has: page.locator( 'input[name="specflux_site_agent_connector_enabled"]' ) } );
-		const box = form.locator( 'input[name="specflux_site_agent_connector_enabled"]' );
-		await expect( box, 'the mounted adapter counts as ready' ).toBeEnabled();
-		await box.check();
-		await form.getByRole( 'button', { name: 'Save' } ).click();
-		await page.waitForURL( /specflux_site_agent_pt_saved=1/ );
+	test( 'an admin switches the connector on from the AI apps tab', async ( { page } ) => {
+		await page.goto( APPS_URL );
+		const turnOn = page.getByRole( 'button', { name: 'Turn on connector' } );
+		await expect( turnOn, 'the mounted adapter counts as ready' ).toBeEnabled();
+		await turnOn.click();
+		await expect( page.getByRole( 'button', { name: 'Let AI apps connect to this site' } ) ).toHaveAttribute( 'aria-pressed', 'true' );
 		expect( dbQuery( "SELECT option_value FROM wp_options WHERE option_name = 'specflux_site_agent_connector_enabled'" ) ).toBe( '1' );
 	} );
 
@@ -101,8 +110,12 @@ test.describe( 'E1 AI-app connector (built-in mode)', () => {
 		auth.readWrite = await createConnection( page, 'read_write' );
 		expect( auth.readOnly ).not.toBe( auth.readWrite );
 
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
-		const rows = page.locator( 'table', { has: page.getByRole( 'columnheader', { name: 'Last used' } ) } ).locator( 'tbody tr' );
+		await page.goto( APPS_URL );
+		// The Connected table also lists sign-in apps (the OAuth spec's); this story is about passwords.
+		const rows = page
+			.locator( 'table', { has: page.getByRole( 'columnheader', { name: 'Last used' } ) } )
+			.locator( 'tbody tr' )
+			.filter( { has: page.getByRole( 'cell', { name: 'Password', exact: true } ) } );
 		await expect( rows ).toHaveCount( 2 );
 		await expect( rows.filter( { has: page.getByRole( 'cell', { name: 'Read only', exact: true } ) } ) ).toHaveCount( 1 );
 		await expect( rows.filter( { has: page.getByRole( 'cell', { name: 'Read and write', exact: true } ) } ) ).toHaveCount( 1 );
@@ -169,30 +182,33 @@ test.describe( 'E1 AI-app connector (built-in mode)', () => {
 			const held = await rw.callTool( writeTool, CREATE_ARGS );
 			expect( held.isError ).toBe( true );
 			expect( held.text ).toContain( 'needs the site owner' );
-			expect( held.text ).toContain( 'tab=ai-apps' );
+			expect( held.text ).toContain( 'page=specflux-site-agent-apps' );
 			expect( thingsCreated() ).toBe( 0 );
 		} finally {
 			await rw.dispose();
 		}
 
-		// The activity list on the Connect screen: ran (the read), refused, waiting.
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
-		const activity = page.locator( 'table', { has: page.getByRole( 'columnheader', { name: 'Outcome' } ) } ).locator( 'tbody tr' );
+		// The activity list on the AI apps tab: ran (the read), refused, waiting.
+		await page.goto( APPS_URL );
+		const activity = await openActivity( page );
 		await expect( activity.filter( { hasText: 'specflux-e2e/create-thing' } ).filter( { hasText: 'Waiting for approval' } ).first() ).toBeVisible();
 		await expect( activity.filter( { hasText: 'specflux-e2e/create-thing' } ).filter( { hasText: 'Refused' } ).first() ).toBeVisible();
 		await expect( activity.filter( { hasText: 'specflux-e2e/read-thing' } ).filter( { has: page.getByRole( 'cell', { name: 'Ran', exact: true } ) } ).first() ).toBeVisible();
 
-		// And on the approvals tab, with the exact arguments.
+		// And in the waiting section, with the exact arguments.
+		const card = page.locator( 'article.specflux-site-agent-waiting-card', { hasText: 'specflux-e2e/create-thing' } );
+		await expect( card ).toHaveCount( 1 );
+		await expect( card ).toContainText( 'E2E connector thing' );
+
+		// The old Runs-screen tab URL still lands here.
 		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-runs&tab=ai-apps' );
-		const row = page.locator( 'tr', { hasText: 'specflux-e2e/create-thing' } );
-		await expect( row ).toHaveCount( 1 );
-		await expect( row ).toContainText( 'E2E connector thing' );
+		await expect( page ).toHaveURL( /page=specflux-site-agent-apps/ );
 	} );
 
 	test( 'once approved, the repeat runs exactly once; an identical repeat parks again', async ( { page } ) => {
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-runs&tab=ai-apps' );
+		await page.goto( APPS_URL );
 		const posted = page.waitForResponse( ( r ) => r.url().includes( 'admin-post.php' ) && 'POST' === r.request().method() );
-		await page.locator( 'tr', { hasText: 'specflux-e2e/create-thing' } ).getByRole( 'button', { name: 'Approve' } ).click();
+		await page.locator( 'article.specflux-site-agent-waiting-card', { hasText: 'specflux-e2e/create-thing' } ).getByRole( 'button', { name: 'Approve' } ).click();
 		await posted;
 		// The approval is now a one-time grant row.
 		expect( Number( dbQuery( "SELECT COUNT(*) FROM wp_options WHERE option_name LIKE 'specflux\\_site\\_agent\\_cxa\\_%'" ) ) ).toBe( 1 );
@@ -215,19 +231,24 @@ test.describe( 'E1 AI-app connector (built-in mode)', () => {
 			await rw.dispose();
 		}
 
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
-		const activity = page.locator( 'table', { has: page.getByRole( 'columnheader', { name: 'Outcome' } ) } ).locator( 'tbody tr' );
+		await page.goto( APPS_URL );
+		const activity = await openActivity( page );
 		await expect( activity.filter( { hasText: 'specflux-e2e/create-thing' } ).filter( { has: page.getByRole( 'cell', { name: 'Ran', exact: true } ) } ) ).toHaveCount( 1 );
 		// Parked twice (the first ask and the repeat after the approval was spent).
 		expect( await activity.filter( { hasText: 'specflux-e2e/create-thing' } ).filter( { hasText: 'Waiting for approval' } ).count() ).toBeGreaterThanOrEqual( 2 );
 	} );
 
 	test( 'revoking a connection stops it working', async ( { page } ) => {
-		await page.goto( '/wp-admin/admin.php?page=specflux-site-agent-connect' );
+		await page.goto( APPS_URL );
 		const posted = page.waitForResponse( ( r ) => r.url().includes( 'admin-post.php' ) && 'POST' === r.request().method() );
-		await page.locator( 'tr', { has: page.getByRole( 'cell', { name: 'Read only', exact: true } ) } ).getByRole( 'button', { name: 'Revoke' } ).click();
+		const readOnlyRow = () =>
+			page
+				.locator( 'tr' )
+				.filter( { has: page.getByRole( 'cell', { name: 'Password', exact: true } ) } )
+				.filter( { has: page.getByRole( 'cell', { name: 'Read only', exact: true } ) } );
+		await readOnlyRow().getByRole( 'button', { name: 'Revoke' } ).click();
 		await posted;
-		await expect( page.getByRole( 'cell', { name: 'Read only', exact: true } ) ).toHaveCount( 0 );
+		await expect( readOnlyRow() ).toHaveCount( 0 );
 
 		const ro = await openSession( auth.readOnly );
 		try {

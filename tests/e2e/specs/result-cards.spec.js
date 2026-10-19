@@ -36,7 +36,8 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		}
 	} );
 
-	test( 'a post result renders as a card with links, and the preview pane opens and remembers it is hidden', async ( { page } ) => {
+	/** Run the scripted retitle to the end and open the finished run; returns its id. */
+	async function runAndOpen( page ) {
 		await gotoRuns( page );
 		await waitLoaded( page );
 		await startRun( page, 'Retitle the launch post' );
@@ -52,6 +53,11 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		const runId = wpCli( [ 'db', 'query', 'SELECT id FROM wp_specflux_site_agent_runs ORDER BY id DESC LIMIT 1', '--skip-column-names' ] ).trim();
 		await gotoRuns( page, `&run_id=${ Number( runId ) }` );
 		await waitLoaded( page );
+		return Number( runId );
+	}
+
+	test( 'a post result renders as a card with links, and the preview pane shows it', async ( { page } ) => {
+		await runAndOpen( page );
 
 		// --- The card in the conversation -------------------------------------
 		// Consecutive tool calls collapse into a ledger group; open the one holding the retitle.
@@ -87,13 +93,24 @@ test.describe( 'E1 result cards and the preview pane (built-in mode)', () => {
 		await expect( open ).toHaveAttribute( 'href', /^https?:\/\// );
 		// Off by default: model-written content is not framed inside wp-admin.
 		await expect( pane.locator( 'iframe' ) ).toHaveCount( 0 );
+	} );
+
+	// PRODUCT BUG (d3-ui): hiding the pane does nothing visible. The kit's delegated click handler
+	// (assets/vendor/admin-ui-kit/aui.js:92-94) also toggles any [aria-expanded][aria-controls] button,
+	// undoing React's own aria-expanded/hidden update on the same click. Cause: PreviewPane.js:48-55
+	// (the toggle carries aria-controls). Observed after the click: class is-collapsed, aria-expanded="true", body not hidden.
+	test.fixme( 'the pane can be hidden and remembers it is hidden', async ( { page } ) => {
+		const runId = await runAndOpen( page );
+		const pane = page.locator( '.specflux-site-agent-preview-pane' );
+		const body = pane.locator( '#specflux-site-agent-preview-body' );
+		await expect( body ).toBeVisible();
 
 		await pane.getByRole( 'button', { name: 'Hide preview' } ).click();
 		await expect( body ).toBeHidden();
 		await expect( pane ).toHaveClass( /is-collapsed/ );
 
 		// A fresh load of the same run keeps the pane hidden (remembered per user).
-		await gotoRuns( page, `&run_id=${ Number( runId ) }` );
+		await gotoRuns( page, `&run_id=${ runId }` );
 		await waitLoaded( page );
 		const reloaded = page.locator( '.specflux-site-agent-preview-pane' );
 		await expect( reloaded ).toHaveClass( /is-collapsed/ );

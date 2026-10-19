@@ -56,13 +56,9 @@ test.describe( 'E1 OAuth 2.1 sign-in for AI apps', () => {
 		setOption( 'specflux_site_agent_connector_enabled', '0' );
 	} );
 
-	// PRODUCT BUG (found by this spec): with the connector on and WooCommerce active, any request
-	// that reaches `determine_current_user` during `plugins_loaded` (WooCommerce does) and has no
-	// user yet fatals: OAuth\Bearer::authenticate() -> onMcpRoute() (src/Connector/OAuth/Bearer.php:184,
-	// via :67) -> OAuth::serverUrl() (src/Connector/OAuth/OAuth.php:65) -> rest_url() before
-	// $wp_rewrite exists ("Call to a member function using_index_permalinks() on null").
-	// The whole logged-out front end and both .well-known documents come back as a PHP fatal.
-	test.fixme( 'both discovery documents are served, at the root and under the resource path', async () => {
+	// Regression: OAuth::serverUrl() ran before $wp_rewrite existed when WooCommerce hit
+	// determine_current_user during plugins_loaded (fixed in Site Agent c418d06).
+	test( 'both discovery documents are served, at the root and under the resource path', async () => {
 		const paths = [
 			'/.well-known/oauth-protected-resource',
 			`/.well-known/oauth-protected-resource${ MCP_PATH }`,

@@ -65,6 +65,12 @@ const PSEUDO_STATE_PATH = path.join( __dirname, '..', 'support', 'storage-state.
  *    which core moves into `.wrap` (WooCommerce's past-due Action Scheduler
  *    warning failed this spec on a long-lived env). Specflux Site Agent's own notices
  *    carry the attribute and are still checked.
+ *  - Settings ability list (`.aui-group-name`, `.aui-item-name`, `.aui-item-d`):
+ *    the group names, labels and descriptions are registered by the
+ *    abilities' own plugins (WooCommerce, mcp-adapter, the `specflux-e2e/*`
+ *    fixture), not Site Agent strings, so they cannot carry our text domain.
+ *    Site Agent's own chrome around the list is still checked.
+ *  - `.aui-chip`: the plugin version number ("v0.4.0"), not translatable text.
  */
 const EXCLUDE_SELECTORS = [
 	'[data-specflux-site-agent-content]',
@@ -85,6 +91,10 @@ const EXCLUDE_SELECTORS = [
 	'textarea',
 	'input',
 	'.notice:not([data-specflux-site-agent-notice])',
+	'.aui-group .aui-group-name',
+	'.aui-group .aui-item-name',
+	'.aui-group .aui-item-d',
+	'.aui-chip',
 ];
 
 /**
