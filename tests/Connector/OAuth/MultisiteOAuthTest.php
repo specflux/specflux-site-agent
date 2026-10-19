@@ -12,6 +12,7 @@ namespace Specflux\SiteAgent\Tests\Connector\OAuth;
 
 use Specflux\SiteAgent\Connector\ConnectScreen;
 use Specflux\SiteAgent\Connector\OAuth\Authorize;
+use Specflux\SiteAgent\Connector\OAuth\Bearer;
 use Specflux\SiteAgent\Connector\OAuth\Discovery;
 use Specflux\SiteAgent\Connector\OAuth\OAuth;
 use Specflux\SiteAgent\Connector\OAuth\Registration;
@@ -47,6 +48,16 @@ final class MultisiteOAuthTest extends OAuthTestCase {
 		ConnectScreen::render();
 
 		return (string) ob_get_clean();
+	}
+
+	public function test_a_subdirectory_subsite_sends_no_bearer_challenge_for_a_document_that_404s(): void {
+		$GLOBALS['specflux_site_agent_test_subdomain_install'] = false;
+		$this->onSubsite();
+		$request = new \SpecfluxSiteAgent_Test_Route_Request( '/specflux-site-agent/mcp' );
+
+		$response = new \SpecfluxSiteAgent_Test_Header_Response( 401 );
+		Bearer::challenge( $response, null, $request );
+		$this->assertArrayNotHasKey( 'WWW-Authenticate', $response->headers );
 	}
 
 	public function test_a_subdirectory_subsite_has_no_oauth_on_any_endpoint(): void {

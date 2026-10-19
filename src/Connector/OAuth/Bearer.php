@@ -250,6 +250,13 @@ final class Bearer {
 		if ( rtrim( (string) $request->get_route(), '/' ) !== '/' . Connector::ROUTE_NAMESPACE . '/' . Connector::ROUTE ) {
 			return $response;
 		}
+		// No OAuth here (subdirectory subsite, connector off): the metadata URL would 404 and the
+		// token endpoints do not exist. Send no challenge at all, as core does for application-password
+		// routes: a `Basic` challenge would pop a browser credentials dialog and add nothing, since
+		// clients using an application password send Basic credentials up front.
+		if ( ! OAuth::serving() ) {
+			return $response;
+		}
 		$status = (int) $response->get_status();
 		if ( 401 === $status ) {
 			$response->header( 'WWW-Authenticate', self::$rejected ? Discovery::challenge( 'invalid_token', 'The access token is invalid or has expired.' ) : Discovery::challenge() );
