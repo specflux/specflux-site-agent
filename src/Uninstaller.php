@@ -113,6 +113,8 @@ final class Uninstaller {
 		}
 
 		delete_metadata( 'user', 0, 'specflux_site_agent_agent_safety_check_dismissed', '', true );
+		// Connections: the per-site user option, plus the bare pre-0.4 network-wide key (inert on multisite).
+		delete_metadata( 'user', 0, \Specflux\SiteAgent\Connector\Connections::siteKey(), '', true );
 		delete_metadata( 'user', 0, 'specflux_site_agent_connections', '', true );
 		delete_post_meta_by_key( '_specflux_site_agent_stock_source_id' );
 		delete_post_meta_by_key( '_specflux_site_agent_style_variation' );

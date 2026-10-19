@@ -106,4 +106,41 @@ final class ConnectionsTest extends ConnectorTestCase {
 
 		$this->assertNull( Connections::current() );
 	}
+
+	public function test_a_connection_registered_on_one_site_is_not_valid_on_another(): void {
+		$GLOBALS['specflux_site_agent_test_multisite'] = true;
+		$GLOBALS['wpdb']->prefix                       = 'wp_2_';
+		Connections::add( self::USER, self::UUID, Connection::SCOPE_READ_WRITE );
+		$this->assertArrayHasKey( self::UUID, Connections::forUser( self::USER ) );
+
+		$GLOBALS['wpdb']->prefix = 'wp_3_';
+
+		$this->assertSame( array(), Connections::forUser( self::USER ) );
+		$GLOBALS['specflux_site_agent_test_app_password'] = self::UUID;
+		$this->assertNull( Connections::current() );
+	}
+
+	public function test_single_site_adopts_the_legacy_unprefixed_registry_and_drops_it(): void {
+		$GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ][ Connections::META_KEY ] = array( self::UUID => array( 'scope' => Connection::SCOPE_READ_WRITE ) );
+		$GLOBALS['specflux_site_agent_test_app_password']                                     = self::UUID;
+
+		$connection = Connections::current();
+
+		$this->assertNotNull( $connection );
+		$this->assertTrue( $connection->mayWrite() );
+		$meta = $GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ];
+		$this->assertArrayNotHasKey( Connections::META_KEY, $meta );
+		$this->assertArrayHasKey( 'wp_' . Connections::META_KEY, $meta );
+	}
+
+	public function test_on_multisite_the_legacy_unprefixed_registry_grants_nothing(): void {
+		$GLOBALS['specflux_site_agent_test_multisite']                                        = true;
+		$GLOBALS['wpdb']->prefix                                                              = 'wp_2_';
+		$GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ][ Connections::META_KEY ] = array( self::UUID => array( 'scope' => Connection::SCOPE_READ_WRITE ) );
+		$GLOBALS['specflux_site_agent_test_app_password']                                     = self::UUID;
+
+		$this->assertSame( array(), Connections::forUser( self::USER ) );
+		$this->assertNull( Connections::current() );
+		$this->assertArrayHasKey( Connections::META_KEY, $GLOBALS['specflux_site_agent_test_user_meta'][ self::USER ], 'left in place for the Uninstaller, not migrated' );
+	}
 }

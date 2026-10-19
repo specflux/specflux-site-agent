@@ -335,6 +335,24 @@ if ( ! function_exists( 'update_user_meta' ) ) {
 	}
 }
 
+if ( ! function_exists( 'update_user_option' ) ) {
+	/** Per-blog write like core (global=false): key becomes "{$wpdb->get_blog_prefix()}{$key}". */
+	function update_user_option( int $user_id, string $key, $value, bool $global = false ) {
+		$prefix = $global ? '' : $GLOBALS['wpdb']->get_blog_prefix();
+
+		return update_user_meta( $user_id, $prefix . $key, $value );
+	}
+}
+
+if ( ! function_exists( 'delete_user_option' ) ) {
+	/** Per-blog delete like core. */
+	function delete_user_option( int $user_id, string $key, bool $global = false ) {
+		$prefix = $global ? '' : $GLOBALS['wpdb']->get_blog_prefix();
+
+		return delete_user_meta( $user_id, $prefix . $key );
+	}
+}
+
 if ( ! function_exists( 'delete_user_meta' ) ) {
 	/** Test knob: clears one meta key for one user. */
 	function delete_user_meta( int $user_id, string $key ) {

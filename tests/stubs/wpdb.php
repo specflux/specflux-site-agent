@@ -55,6 +55,11 @@ if ( ! class_exists( 'wpdb', false ) ) {
 		/** Last insert id, like real wpdb. */
 		public int $insert_id = 0;
 
+		/** Per-blog table/meta prefix; tests simulate a blog switch by setting $prefix. */
+		public function get_blog_prefix(): string {
+			return $this->prefix;
+		}
+
 		public function get_charset_collate(): string {
 			return 'DEFAULT CHARACTER SET utf8mb4';
 		}

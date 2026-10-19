@@ -352,7 +352,8 @@ final class Gate {
 
 		$name = strtolower( trim( $value ) );
 
-		return in_array( $name, array( Connector::OPTION, Connections::META_KEY, Approvals::OPTION ), true )
+		return in_array( $name, array( Connector::OPTION, Connections::META_KEY, Connections::siteKey(), Approvals::OPTION ), true )
+			|| str_ends_with( $name, '_' . Connections::META_KEY )
 			|| str_starts_with( $name, Approvals::GRANT_PREFIX );
 	}
 

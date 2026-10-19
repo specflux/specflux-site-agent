@@ -20,8 +20,23 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Connections {
 
-	/** User meta: uuid => array{scope:string}. */
+	/**
+	 * User option base name: uuid => array{scope:string}.
+	 *
+	 * Stored per site as a user option, i.e. under user meta key
+	 * "{blog prefix}specflux_site_agent_connections" (on single-site the blog prefix is the
+	 * base prefix). The bare, unprefixed key is the pre-0.4 network-wide meta: single-site
+	 * migrates it on first read; multisite ignores it (fail closed, grants nothing) and
+	 * the Uninstaller removes it.
+	 */
 	public const META_KEY = 'specflux_site_agent_connections';
+
+	/** The full per-site user meta key for the current site. */
+	public static function siteKey(): string {
+		global $wpdb;
+
+		return ( is_object( $wpdb ) && method_exists( $wpdb, 'get_blog_prefix' ) ? (string) $wpdb->get_blog_prefix() : '' ) . self::META_KEY;
+	}
 
 	/**
 	 * The current request's connection, or null.
@@ -59,7 +74,17 @@ final class Connections {
 	 * @return array<string,array{scope:string}>
 	 */
 	public static function forUser( int $user_id ): array {
-		$raw = get_user_meta( $user_id, self::META_KEY, true );
+		// Read the prefixed key directly: get_user_option() would fall back to the bare network-wide key.
+		$raw = get_user_meta( $user_id, self::siteKey(), true );
+		if ( ! is_array( $raw ) && ! is_multisite() && self::siteKey() !== self::META_KEY ) {
+			// Single-site upgrade: adopt the pre-0.4 unprefixed registry once, then drop it.
+			$legacy = get_user_meta( $user_id, self::META_KEY, true );
+			if ( is_array( $legacy ) ) {
+				update_user_option( $user_id, self::META_KEY, $legacy );
+				delete_user_meta( $user_id, self::META_KEY );
+				$raw = $legacy;
+			}
+		}
 		if ( ! is_array( $raw ) ) {
 			return array();
 		}
@@ -83,14 +108,14 @@ final class Connections {
 
 		$registry          = self::forUser( $user_id );
 		$registry[ $uuid ] = array( 'scope' => Connection::sanitizeScope( $scope ) );
-		update_user_meta( $user_id, self::META_KEY, $registry );
+		update_user_option( $user_id, self::META_KEY, $registry );
 	}
 
 	/** Drop a connection from the registry. */
 	public static function remove( int $user_id, string $uuid ): void {
 		$registry = self::forUser( $user_id );
 		unset( $registry[ $uuid ] );
-		update_user_meta( $user_id, self::META_KEY, $registry );
+		update_user_option( $user_id, self::META_KEY, $registry );
 	}
 
 	/** Forget connections whose application password is deleted outside the Connect screen. */
