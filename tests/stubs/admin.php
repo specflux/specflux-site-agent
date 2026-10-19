@@ -171,18 +171,26 @@ if ( ! function_exists( 'wp_localize_script' ) ) {
 }
 
 if ( ! function_exists( 'add_menu_page' ) ) {
-	/** No-op shim: records nothing, just satisfies the call (0.3 S10/S20). */
+	/** Shim: records the page slug and render callback in $GLOBALS['specflux_site_agent_test_menu'] (menu title, capability, slug, callback, icon). */
 	function add_menu_page( ...$args ): string {
-		unset( $args );
+		$GLOBALS['specflux_site_agent_test_menu'][] = array(
+			'kind'     => 'menu',
+			'slug'     => $args[3] ?? '',
+			'callback' => $args[4] ?? '',
+		);
 
 		return '';
 	}
 }
 
 if ( ! function_exists( 'add_submenu_page' ) ) {
-	/** No-op shim: records nothing, just satisfies the call (0.3 S20). */
+	/** Shim: records the submenu slug and render callback in $GLOBALS['specflux_site_agent_test_menu'] (parent, title, menu title, capability, slug, callback). */
 	function add_submenu_page( ...$args ): string|false {
-		unset( $args );
+		$GLOBALS['specflux_site_agent_test_menu'][] = array(
+			'kind'     => 'submenu',
+			'slug'     => $args[4] ?? '',
+			'callback' => $args[5] ?? '',
+		);
 
 		return '';
 	}

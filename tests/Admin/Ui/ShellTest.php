@@ -195,4 +195,30 @@ final class ShellTest extends ConnectorTestCase {
 
 		$this->assertSame( array( 'runs', 'apps', 'settings' ), array_keys( Shell::tabs() ) );
 	}
+
+	/**
+	 * The top-level page and the first submenu share a slug (so they share one WordPress
+	 * hook). Two render callbacks on that hook print the screen twice, so only one may carry it.
+	 */
+	public function test_each_menu_slug_has_exactly_one_render_callback(): void {
+		$GLOBALS['specflux_site_agent_test_menu'] = array();
+
+		( new Shell() )->menu();
+
+		$per_slug = array();
+		foreach ( $GLOBALS['specflux_site_agent_test_menu'] as $entry ) {
+			if ( ! empty( $entry['callback'] ) ) {
+				$per_slug[ $entry['slug'] ] = ( $per_slug[ $entry['slug'] ] ?? 0 ) + 1;
+			}
+		}
+
+		$this->assertSame(
+			array(
+				Shell::RUNS     => 1,
+				Shell::APPS     => 1,
+				Shell::SETTINGS => 1,
+			),
+			$per_slug
+		);
+	}
 }

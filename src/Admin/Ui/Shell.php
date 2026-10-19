@@ -84,8 +84,9 @@ class Shell {
 		$title = __( 'Site Agent', 'specflux-site-agent' );
 
 		add_menu_page( $title, $title, ScreenCapability::current(), self::RUNS, array( new RunsScreen(), 'render' ), self::menuIcon() );
-		// The first submenu shares the parent's slug: it renames the auto-added entry.
-		add_submenu_page( self::RUNS, __( 'Site Agent: Runs', 'specflux-site-agent' ), __( 'Runs', 'specflux-site-agent' ), ScreenCapability::current(), self::RUNS, array( new RunsScreen(), 'render' ) );
+		// The first submenu shares the parent's slug: it renames the auto-added entry. It takes no
+		// callback (core's pattern): both would hook the same page and the screen would print twice.
+		add_submenu_page( self::RUNS, __( 'Site Agent: Runs', 'specflux-site-agent' ), __( 'Runs', 'specflux-site-agent' ), ScreenCapability::current(), self::RUNS );
 		add_submenu_page( self::RUNS, __( 'Site Agent: AI apps', 'specflux-site-agent' ), __( 'AI apps', 'specflux-site-agent' ), Connector::capability(), self::APPS, array( \Specflux\SiteAgent\Connector\AppsScreen::class, 'render' ) );
 		add_submenu_page( self::RUNS, __( 'Site Agent: Settings', 'specflux-site-agent' ), __( 'Settings', 'specflux-site-agent' ), 'manage_options', self::SETTINGS, array( new \Specflux\SiteAgent\Admin\SettingsScreen(), 'render' ) );
 	}
