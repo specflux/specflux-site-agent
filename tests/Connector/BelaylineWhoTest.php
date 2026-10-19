@@ -54,7 +54,10 @@ final class BelaylineWhoTest extends ConnectorTestCase {
 
 	public function test_a_name_another_plugin_already_gave_is_kept(): void {
 		$grant   = $this->grantFor( 'Claude' );
-		$already = array( 'label' => 'Someone else', 'sub' => '' );
+		$already = array(
+			'label' => 'Someone else',
+			'sub'   => '',
+		);
 
 		$this->assertSame( $already, BelaylineWho::name( $already, 'oauth:' . $grant ) );
 	}
@@ -68,6 +71,7 @@ final class BelaylineWhoTest extends ConnectorTestCase {
 
 		$this->assertArrayHasKey( 'belayline_map_who', $GLOBALS['specflux_site_agent_test_filters'] );
 		$grant = $this->grantFor( 'Claude' );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Belayline's hook, not ours.
 		$named = apply_filters( 'belayline_map_who', null, 'oauth:' . $grant );
 		$this->assertSame( 'Claude', $named['label'] ?? null );
 	}
