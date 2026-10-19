@@ -21,6 +21,7 @@ webpack.config.js
 assets/src
 .wp-env.json
 .wp-env.override.json
+.scratch
 playwright.config.js
 playwright-report
 test-results
