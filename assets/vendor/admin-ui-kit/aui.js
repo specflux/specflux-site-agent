@@ -12,12 +12,20 @@
     var f = formOf(e);
     if (f && !f.classList.contains('is-dirty')) { f.classList.add('is-dirty'); emit(f, 'aui:dirty', { form: f }); }
   }
+  /* A segmented control with data-name keeps a hidden input in sync so it posts with a plain form. */
+  function syncSeg(g) {
+    var n = g.getAttribute('data-name'), i = $('input[type=hidden][data-aui-seg]', g), p = $('[aria-pressed=true]', g);
+    if (!n) return;
+    if (!i) { i = d.createElement('input'); i.type = 'hidden'; i.name = n; i.setAttribute('data-aui-seg', ''); g.appendChild(i); i.defaultValue = p ? p.getAttribute('data-value') || '' : ''; }
+    i.value = p ? p.getAttribute('data-value') || '' : '';
+  }
   function snap(f) { f.__s = $$('[aria-pressed]', f).map(function (b) { return [b, b.getAttribute('aria-pressed')]; }); }
   function discard(f) {
     $$('input,textarea,select', f).forEach(function (i) {
       if (i.type === 'checkbox' || i.type === 'radio') i.checked = i.defaultChecked; else i.value = i.defaultValue;
     });
     (f.__s || []).forEach(function (p) { p[0].setAttribute('aria-pressed', p[1]); });
+    $$('.aui-seg[data-name]', f).forEach(syncSeg);
     f.classList.remove('is-dirty'); count(f); emit(f, 'aui:discard', { form: f });
   }
   function count(e) {
@@ -43,9 +51,21 @@
     if (e.shiftKey && d.activeElement === a) { e.preventDefault(); z.focus(); }
     else if (!e.shiftKey && d.activeElement === z) { e.preventDefault(); a.focus(); }
   }
+  /* Copy: icon-only buttons keep their icon. Only an optional [data-aui-copy-label] span changes text; the
+     result is announced in a polite live region. The word comes from data-copied-label (default "Copied"). */
+  function say(t) {
+    var r = $('.aui-live', d.body);
+    if (!r) { r = d.createElement('div'); r.className = 'aui-live aui-sr'; r.setAttribute('aria-live', 'polite'); r.setAttribute('role', 'status'); d.body.appendChild(r); }
+    r.textContent = ''; setTimeout(function () { r.textContent = t; }, 30);
+  }
   function copy(b) {
-    var s = tgt(b), t = s ? (s.value || s.textContent) : '', l = $('[data-aui-copy-label]', b) || b, o = l.textContent;
-    var ok = function () { l.textContent = 'Copied'; emit(b, 'aui:copy', { text: t }); setTimeout(function () { l.textContent = o; }, 1500); };
+    var s = tgt(b), t = s ? (s.value || s.textContent) : '', l = $('[data-aui-copy-label]', b), o = l && l.textContent,
+      msg = b.getAttribute('data-copied-label') || 'Copied';
+    var ok = function () {
+      if (l) { l.textContent = msg; setTimeout(function () { l.textContent = o; }, 1500); }
+      b.classList.add('is-copied'); setTimeout(function () { b.classList.remove('is-copied'); }, 1500);
+      say(msg); emit(b, 'aui:copy', { text: t });
+    };
     if (w.navigator.clipboard) w.navigator.clipboard.writeText(t).then(ok, ok);
     else { s.select(); try { d.execCommand('copy'); } catch (e) {} ok(); }
   }
@@ -59,9 +79,10 @@
   }
 
   w.AUI = {
-    version: '0.1.0',
+    version: '0.2.1',
     init: function (root) {
       root = root || d;
+      $$('.aui-seg[data-name]', root).forEach(syncSeg);
       $$('[data-aui-form]', root).forEach(snap);
       $$('[data-aui-counted]', root).forEach(count);
       if (root.__aui) return;
@@ -75,9 +96,10 @@
         else if ((b = t.closest('.aui-seg button'))) {
           if (b.disabled) return;
           $$('button', b.parentNode).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+          syncSeg(b.parentNode);
           if ((f = b.closest('[data-aui-filterbox]'))) filter(f);
           emit(b, 'aui:change', { value: b.getAttribute('data-value') || b.textContent.trim(), control: b.parentNode });
-          dirty(b);
+          if (b.parentNode.hasAttribute('data-name')) dirty(b); /* pure filters carry no form value */
         } else if ((b = t.closest('.aui-switch'))) {
           if (b.disabled) return;
           var on = b.getAttribute('aria-pressed') !== 'true', c = b.getAttribute('data-aui-class');

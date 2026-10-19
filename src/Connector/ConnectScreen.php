@@ -226,7 +226,7 @@ final class ConnectScreen {
 		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html( self::clientLabels()[ $shown['client'] ] ?? $shown['client'] ) . '</h2></div><div class="aui-card-b" style="display:flex;flex-direction:column;gap:12px">';
 		echo '<p>' . esc_html( $config['where'] ) . '</p>';
 		echo '<pre id="specflux-site-agent-config" class="specflux-site-agent-pre">' . esc_html( $config['text'] ) . '</pre>';
-		echo '<p><button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#specflux-site-agent-config" data-copied="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</span></button></p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Kit::icon() is escaped markup.
+		echo '<p><button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#specflux-site-agent-config" data-copied-label="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</span></button></p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Kit::icon() is escaped markup.
 
 		if ( is_array( $shown['test'] ) ) {
 			printf(
@@ -439,7 +439,7 @@ final class ConnectScreen {
 				$id = 'specflux-site-agent-oauth-url-' . $key;
 				echo '<div class="aui-copy"><label class="aui-sr" for="' . esc_attr( $id ) . '">' . esc_html__( 'MCP URL', 'specflux-site-agent' ) . '</label>';
 				echo '<input class="aui-input" id="' . esc_attr( $id ) . '" readonly value="' . esc_attr( $url ) . '" title="' . esc_attr( $url ) . '">';
-				echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#' . esc_attr( $id ) . '" data-copied="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+				echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#' . esc_attr( $id ) . '" data-copied-label="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 				echo '<p class="aui-muted">' . esc_html( $steps[ $key ][0] ) . '</p></div>';
 			} else {
 				echo '<p class="aui-muted">' . esc_html__( 'Makes an application password and shows the setup text to paste in.', 'specflux-site-agent' ) . '</p></div>';

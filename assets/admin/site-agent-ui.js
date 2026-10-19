@@ -118,30 +118,5 @@
 			$$( 'textarea[data-count-for]', event.detail.form ).forEach( updateCount );
 			$$( '[data-meta-template]', event.detail.form ).forEach( updateGroups );
 		} );
-
-		/* The kit's copy button swaps its label to an English "Copied"; show the translated word instead. */
-		d.addEventListener( 'aui:copy', function ( event ) {
-			var button = event.target,
-				label = button.querySelector && button.querySelector( '[data-aui-copy-label]' ),
-				copied = button.getAttribute && button.getAttribute( 'data-copied' );
-			if ( label && copied ) {
-				label.textContent = copied;
-			}
-		} );
-
-		/* Filtering the list is not an edit: the kit marks the form dirty on any segmented click, so undo that. */
-		d.addEventListener(
-			'click',
-			function ( event ) {
-				var button = event.target.closest && event.target.closest( '[data-aui-filter] button' ),
-					form = button && button.closest( '[data-aui-form]' );
-				if ( form && ! form.classList.contains( 'is-dirty' ) ) {
-					window.setTimeout( function () {
-						form.classList.remove( 'is-dirty' );
-					}, 0 );
-				}
-			},
-			true
-		);
 	} );
 }( document ) );

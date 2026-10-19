@@ -301,6 +301,21 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertStringContainsString( 'Claude Desktop (local proxy)', $html, 'folded into the Other card' );
 	}
 
+	public function test_every_copy_button_carries_the_translated_copied_label(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
+
+		$html = $this->html();
+
+		preg_match_all( '/<button[^>]*data-aui-copy[ >][^>]*>/', $html, $buttons );
+		$this->assertNotEmpty( $buttons[0] );
+		foreach ( $buttons[0] as $button ) {
+			$this->assertStringContainsString( 'data-copied-label="Copied"', $button );
+			$this->assertStringNotContainsString( 'data-copied="', $button, 'the old plugin-side attribute is gone' );
+		}
+		$this->assertStringContainsString( '<span data-aui-copy-label>', $html );
+	}
+
 	public function test_connections_and_sign_ins_share_one_connected_table_with_a_type_column(): void {
 		$this->enableConnector();
 		update_option( 'permalink_structure', '/%postname%/' );

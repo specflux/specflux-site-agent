@@ -64,6 +64,19 @@ final class SettingsScreenTest extends TestCase {
 		$this->assertMatchesRegularExpression( '/aria-pressed="true" aria-label="Use my theme[^"]*s patterns"/', $html );
 	}
 
+	public function test_the_read_write_filter_is_a_pure_filter_that_cannot_dirty_the_form(): void {
+		$GLOBALS['specflux_site_agent_test_abilities'] = array( 'acme/list-things' => new \SpecfluxSiteAgent_Test_Fake_Ability( 'acme/list-things', true, array( 'ok' => true ), 'desc' ) );
+		try {
+			$html = $this->html( $this->screen() );
+		} finally {
+			unset( $GLOBALS['specflux_site_agent_test_abilities'] );
+		}
+
+		// The kit only marks a form dirty for a segmented control that has a data-name.
+		$this->assertSame( 1, preg_match( '/<div class="aui-seg"[^>]*data-aui-filter[^>]*>/', $html, $m ) );
+		$this->assertStringNotContainsString( 'data-name', $m[0] );
+	}
+
 	public function test_the_switch_is_off_once_the_option_is_off(): void {
 		update_option( ThemePatterns::OPTION, false );
 

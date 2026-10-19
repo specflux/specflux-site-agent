@@ -143,7 +143,7 @@ final class AppsScreen {
 		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html__( 'MCP URL', 'specflux-site-agent' ) . '</h2></div><div class="aui-card-b" style="display:flex;flex-direction:column;gap:12px">';
 		echo '<div class="aui-copy"><label class="aui-sr" for="specflux-site-agent-mcp-url">' . esc_html__( 'MCP URL', 'specflux-site-agent' ) . '</label>';
 		echo '<input class="aui-input" id="specflux-site-agent-mcp-url" readonly value="' . esc_attr( $url ) . '" title="' . esc_attr( $url ) . '">';
-		echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#specflux-site-agent-mcp-url" data-copied="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
+		echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#specflux-site-agent-mcp-url" data-copied-label="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 		echo '<p class="aui-help">' . esc_html__( 'Paste this into any AI app that supports custom connectors.', 'specflux-site-agent' ) . '</p></div></section>';
 
 		echo '<section class="aui-card"><div class="aui-card-h"><h2 class="aui-card-t">' . esc_html__( 'Recent activity', 'specflux-site-agent' ) . '</h2></div><div class="aui-card-b">';
