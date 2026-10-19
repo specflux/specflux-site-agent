@@ -138,18 +138,31 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertSame( '', $this->html() );
 	}
 
+	public function test_the_password_cards_do_not_repeat_one_filler_sentence(): void {
+		$this->enableConnector();
+
+		$html = $this->html();
+
+		$this->assertStringNotContainsString( 'Makes an application password and shows', $html );
+		$this->assertStringNotContainsString( 'Other (copy the URL)', $html, 'a card title short enough not to wrap beside its badge' );
+		preg_match_all( '#<div class="aui-card-b specflux-site-agent-app-body"><p class="aui-muted">([^<]+)</p>#', $html, $m );
+		$this->assertGreaterThanOrEqual( 4, count( $m[1] ) );
+		$this->assertSame( $m[1], array_values( array_unique( $m[1] ) ), 'every app card body is different' );
+	}
+
 	public function test_the_oauth_cards_show_the_url_and_the_instructions(): void {
 		$this->enableConnector();
 		update_option( 'permalink_structure', '/%postname%/' );
 
 		$html = $this->html();
 
-		$this->assertStringContainsString( 'Claude (web, desktop and mobile)', $html );
+		$this->assertStringContainsString( '>Claude</h3>', $html );
+		$this->assertStringContainsString( 'In Claude (web, desktop or mobile)', $html );
 		$this->assertStringContainsString( 'ChatGPT', $html );
 		$this->assertSame( 3, substr_count( $html, 'value="' . esc_attr( ConnectScreen::serverUrl() ) . '"' ), 'one copy field per sign-in card, one in the right rail' );
 		$this->assertSame( 2, substr_count( $html, 'Copy URL' ) );
-		$this->assertStringContainsString( 'Customize &gt; Connectors and click Add custom connector', $html );
-		$this->assertStringContainsString( 'Plugins, open the Add menu, then Add custom MCP server', $html );
+		$this->assertStringContainsString( 'Customize &gt; Connectors, click Add custom connector', $html );
+		$this->assertStringContainsString( 'Plugins, then Add &gt; Add custom MCP server', $html );
 		$this->assertStringContainsString( 'id="specflux-site-agent-signed-in"', $html );
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}

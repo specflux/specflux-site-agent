@@ -316,16 +316,17 @@ final class ConnectScreen {
 	}
 
 	/**
-	 * The app cards, in order: key => title, kind, the connection client id (password apps), docs URL.
+	 * The app cards, in order: key => title, kind, the connection client id (password apps), docs URL,
+	 * a one-line blurb (password apps) and an optional name for the "Connect ..." dialog.
 	 *
-	 * @return array<string,array{title:string,kind:string,client:string,docs:string}>
+	 * @return array<string,array{title:string,kind:string,client:string,docs:string,blurb?:string,dialog?:string}>
 	 */
 	private static function appCards(): array {
 		$docs = self::docsLinks();
 
 		return array(
 			'claude'                  => array(
-				'title'  => __( 'Claude (web, desktop and mobile)', 'specflux-site-agent' ),
+				'title'  => __( 'Claude', 'specflux-site-agent' ),
 				'kind'   => 'signin',
 				'client' => '',
 				'docs'   => $docs['claude'],
@@ -341,24 +342,29 @@ final class ConnectScreen {
 				'kind'   => 'password',
 				'client' => ClientConfig::CLAUDE_CODE,
 				'docs'   => $docs[ ClientConfig::CLAUDE_CODE ],
+				'blurb'  => __( 'Gives you one command to run in your terminal.', 'specflux-site-agent' ),
 			),
 			ClientConfig::CURSOR      => array(
 				'title'  => __( 'Cursor', 'specflux-site-agent' ),
 				'kind'   => 'password',
 				'client' => ClientConfig::CURSOR,
 				'docs'   => $docs[ ClientConfig::CURSOR ],
+				'blurb'  => __( 'Gives you the JSON for Cursor\'s mcp.json.', 'specflux-site-agent' ),
 			),
 			ClientConfig::VS_CODE     => array(
 				'title'  => __( 'VS Code', 'specflux-site-agent' ),
 				'kind'   => 'password',
 				'client' => ClientConfig::VS_CODE,
 				'docs'   => $docs[ ClientConfig::VS_CODE ],
+				'blurb'  => __( 'Gives you the JSON for VS Code\'s mcp.json.', 'specflux-site-agent' ),
 			),
 			ClientConfig::OTHER       => array(
-				'title'  => __( 'Other (copy the URL)', 'specflux-site-agent' ),
+				'title'  => __( 'Other app', 'specflux-site-agent' ),
 				'kind'   => 'password',
 				'client' => ClientConfig::OTHER,
 				'docs'   => '',
+				'blurb'  => __( 'Gives you the URL and sign-in header for any MCP app.', 'specflux-site-agent' ),
+				'dialog' => __( 'another app', 'specflux-site-agent' ),
 			),
 		);
 	}
@@ -404,11 +410,11 @@ final class ConnectScreen {
 		$steps = array(
 			// Menu labels checked against https://claude.com/docs/connectors/custom/remote-mcp
 			// (Customize > Connectors > Add custom connector).
-			'claude'  => array( __( 'In Claude, open Customize > Connectors and click Add custom connector. Paste the URL above, click Add, then Connect. You will sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ), self::signedInMatches( 'claude' ) ),
+			'claude'  => array( __( 'In Claude (web, desktop or mobile), open Customize > Connectors, click Add custom connector and paste the URL above. Then sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ), self::signedInMatches( 'claude' ) ),
 			// Checked against https://developers.openai.com/apps-sdk/deploy/connect-chatgpt
 			// (ChatGPT Plugins > plus > Add custom MCP server; the page does not mention developer mode).
 			// Seen live 2026-10-09 on a Free account: Plugins > Add > Add custom MCP server, no developer mode.
-			'chatgpt' => array( __( 'In ChatGPT, go to Plugins, open the Add menu, then Add custom MCP server. Enter a name, paste the URL above (it must include the /mcp path), and finish the sign-in prompt. You will sign in to this site and choose Read only or Read and write. Your ChatGPT account or workspace policies decide whether you can add custom servers.', 'specflux-site-agent' ), self::signedInMatches( 'chatgpt', 'openai' ) ),
+			'chatgpt' => array( __( 'In ChatGPT, go to Plugins, then Add > Add custom MCP server, and paste the URL above. Then sign in to this site and choose Read only or Read and write. Your workspace may need to allow custom servers.', 'specflux-site-agent' ), self::signedInMatches( 'chatgpt', 'openai' ) ),
 		);
 
 		echo '<div class="aui-grid-3 specflux-site-agent-apps-grid">';
@@ -426,7 +432,7 @@ final class ConnectScreen {
 				$count = $counts[ $card['client'] ] ?? 0;
 				$badge = $count > 0
 					? '<span class="aui-badge aui-badge--ok aui-end">' . esc_html( sprintf( /* translators: %d: number of connections made for this app. */ _n( '%d connection', '%d connections', $count, 'specflux-site-agent' ), $count ) ) . '</span>'
-					: '<span class="aui-badge aui-end">' . esc_html__( 'No connection yet', 'specflux-site-agent' ) . '</span>';
+					: '<span class="aui-badge aui-end">' . esc_html__( 'None yet', 'specflux-site-agent' ) . '</span>';
 			}
 			echo self::cardHeader( $card['title'], $badge ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
 			echo '<div class="aui-card-b specflux-site-agent-app-body">';
@@ -442,7 +448,7 @@ final class ConnectScreen {
 				echo '<button type="button" class="aui-btn aui-btn--secondary aui-btn--sm" data-aui-copy data-aui-target="#' . esc_attr( $id ) . '" data-copied-label="' . esc_attr__( 'Copied', 'specflux-site-agent' ) . '">' . Kit::icon( 'copy' ) . '<span data-aui-copy-label>' . esc_html__( 'Copy URL', 'specflux-site-agent' ) . '</span></button></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped markup.
 				echo '<p class="aui-muted">' . esc_html( $steps[ $key ][0] ) . '</p></div>';
 			} else {
-				echo '<p class="aui-muted">' . esc_html__( 'Makes an application password and shows the setup text to paste in.', 'specflux-site-agent' ) . '</p></div>';
+				echo '<p class="aui-muted">' . esc_html( $card['blurb'] ?? '' ) . '</p></div>';
 			}
 
 			echo '<div class="aui-card-f">';
@@ -461,7 +467,7 @@ final class ConnectScreen {
 
 		foreach ( self::appCards() as $card ) {
 			if ( 'password' === $card['kind'] ) {
-				self::renderCreateDialog( $card['client'], $card['title'] );
+				self::renderCreateDialog( $card['client'], $card['dialog'] ?? $card['title'] );
 			}
 		}
 		self::renderCreateDialog( ClientConfig::CLAUDE_DESKTOP, self::clientLabels()[ ClientConfig::CLAUDE_DESKTOP ] );

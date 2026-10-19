@@ -51,9 +51,9 @@ async function openActivity( page ) {
  */
 async function createConnection( page, scope ) {
 	await page.goto( APPS_URL );
-	const card = page.locator( '.specflux-site-agent-app-card', { has: page.getByRole( 'heading', { name: 'Other (copy the URL)' } ) } );
+	const card = page.locator( '.specflux-site-agent-app-card', { has: page.getByRole( 'heading', { name: 'Other app' } ) } );
 	await card.getByRole( 'button', { name: 'Create connection' } ).click();
-	const dialog = page.getByRole( 'dialog', { name: /Connect Other/ } );
+	const dialog = page.getByRole( 'dialog', { name: /Connect another app/ } );
 	await dialog.getByRole( 'radio', { name: 'read' === scope ? /Read only/ : /Read and write/ } ).check();
 	await dialog.getByRole( 'button', { name: 'Create connection' } ).click();
 
