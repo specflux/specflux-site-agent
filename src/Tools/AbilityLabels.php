@@ -32,6 +32,11 @@ final class AbilityLabels {
 		if ( ! str_contains( $name, '/' ) ) {
 			return '';
 		}
+		// Virtual tools (specflux/propose-plan, ...) are not registered abilities; asking core for
+		// one raises a _doing_it_wrong notice, so probe silently first.
+		if ( function_exists( 'wp_has_ability' ) && ! wp_has_ability( $name ) ) {
+			return '';
+		}
 		$ability = wp_get_ability( $name );
 
 		return null !== $ability ? trim( $ability->get_label() ) : '';

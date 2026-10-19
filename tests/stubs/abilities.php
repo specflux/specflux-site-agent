@@ -155,7 +155,13 @@ if ( ! function_exists( 'wp_get_ability' ) ) {
 	 * @param string $name Ability name.
 	 */
 	function wp_get_ability( string $name ): ?object {
-		return $GLOBALS['specflux_site_agent_test_abilities'][ $name ] ?? null;
+		$ability = $GLOBALS['specflux_site_agent_test_abilities'][ $name ] ?? null;
+		if ( null === $ability && function_exists( '_doing_it_wrong' ) ) {
+			// Like WordPress 7.1: asking for an unregistered ability is a developer notice.
+			_doing_it_wrong( __FUNCTION__, sprintf( 'Ability "%s" not found.', $name ), '6.9.0' );
+		}
+
+		return $ability;
 	}
 }
 
