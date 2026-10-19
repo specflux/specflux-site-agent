@@ -9,6 +9,6 @@ test( 'built-in mode setup: Belayline Agent Governance inactive, admin logged in
 	// Activating every required plugin plus the readiness assertions is
 	// several sequential wp-cli round trips (container exec overhead each
 	// time); the default 45s spec timeout is tuned for a spec, not setup.
-	testInfo.setTimeout( 300000 );
+	testInfo.setTimeout( 900000 );
 	await setupFor( 'built_in', storageStatePath );
 } );

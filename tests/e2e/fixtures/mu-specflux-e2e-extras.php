@@ -35,6 +35,8 @@ add_action(
 add_action(
 	'wp_abilities_api_init',
 	static function (): void {
+		// Only while a spec asks for it, so other screens (pseudo-locale) never list it.
+		if ( '1' === get_option( 'specflux_site_agent_e2e_partner', '0' ) ) {
 		wp_register_ability(
 			'e2e-partner/ping',
 			array(
@@ -55,6 +57,7 @@ add_action(
 				'meta'                => array( 'show_in_rest' => true ),
 			)
 		);
+		}
 
 		if ( '1' !== get_option( 'specflux_site_agent_e2e_bulk_passthrough', '0' ) ) {
 			return;

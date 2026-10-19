@@ -39,12 +39,14 @@ test.describe.configure( { mode: 'serial', timeout: 300000 } );
 
 test.describe( 'E1 abilities from other plugins (built-in mode)', () => {
 	test.beforeAll( () => {
+		setOption( 'specflux_site_agent_e2e_partner', '1' );
 		deleteOption( 'specflux_site_agent_passthrough' );
 		deleteOption( 'specflux_site_agent_e2e_bulk_passthrough' );
 		deleteOption( PING_CALLS );
 	} );
 
 	test.afterAll( () => {
+		deleteOption( 'specflux_site_agent_e2e_partner' );
 		deleteOption( 'specflux_site_agent_passthrough' );
 		deleteOption( 'specflux_site_agent_e2e_bulk_passthrough' );
 		deleteOption( PING_CALLS );
