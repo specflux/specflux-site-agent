@@ -102,8 +102,7 @@ its first side-effecting write — and resuming exactly where it left off.
   WordPress's own revisions.
 * **Guided setup.** The Specflux Site Agent screen walks you through connecting a model, choosing how
   changes are approved, and, with Belayline Agent Governance, turning Specflux Site Agent on for your role.
-* **Multisite.** Works on a WordPress multisite network, one independent install per site
-  (see "Multisite" below).
+* **Multisite.** Works on a WordPress multisite network, one independent install per site (see the FAQ).
 
 **Background runs**
 
@@ -123,18 +122,6 @@ its first side-effecting write — and resuming exactly where it left off.
 * **It needs the queue to run.** Background steps run when WordPress's scheduled-task system
   (WP-Cron) fires, which on a quiet site can be minutes apart. See the FAQ on real cron.
 
-**Multisite**
-
-* Network-activate it or activate it per site. Every site gets its own runs, connections,
-  settings and queue; nothing is shared between sites, and a connection made on one site
-  doesn't work on another.
-* Signing in with Claude or ChatGPT (OAuth) is off on subsites of a subdirectory network,
-  because its discovery addresses can only live at the network's root. Application-password
-  connections (Claude Code, Cursor, VS Code) work everywhere. Sites on a subdomain network offer it.
-* Deleting the plugin walks every site. As on a single site, your data is kept unless you opt in
-  to removal first.
-* To keep the old behaviour of refusing multisite, return false from the
-  `specflux_site_agent_allow_multisite` filter.
 
 == Installation ==
 
@@ -247,9 +234,13 @@ with the `specflux_site_agent_theme_patterns` filter.
 
 = Does Specflux Site Agent support WordPress multisite? =
 
-Yes, from 0.4. Each site is independent: its own runs, connections, settings and queue. Signing in with
-Claude or ChatGPT is off on subsites of a subdirectory network (application-password
-connections still work there). See "Multisite" in the description.
+Yes, from 0.4, network-activated or per site. Each site is independent: its own runs, connections,
+settings and queue, and a connection made on one site doesn't work on another. Signing in with Claude or
+ChatGPT (OAuth) is off on subsites of a subdirectory network, because its discovery addresses can only
+live at the network's root; application-password connections (Claude Code, Cursor, VS Code) work
+everywhere, and sites on a subdomain network offer OAuth. Deleting the plugin walks every site, and your
+data is kept unless you opt in to removal first. Return false from the `specflux_site_agent_allow_multisite`
+filter to refuse multisite as before.
 
 = Is it safe to let an AI app connect? =
 
@@ -559,7 +550,7 @@ New:
 == Upgrade Notice ==
 
 = 0.4.0 =
-Runs now finish in the background with the page closed (they need WP-Cron, or a real cron on quiet sites), with an approval email, 90-day run retention and multisite support. Adds an MCP connector for AI apps (off until you turn it on), result cards, undo with Belayline Agent Governance 0.5, and new tools for comments, users, settings and menus. Adds database tables and indexes; back up your database first.
+Runs now finish in the background with the page closed (quiet sites need a real cron). Adds multisite, run retention, an MCP connector for AI apps (off until you turn it on) and result cards. Adds tables and indexes; back up first.
 
 = 0.3.3 =
 New name, slug and text domain. No feature changes.
