@@ -60,8 +60,9 @@ model turns, many tool calls — pausing for a human whenever a write needs
 approval, whenever the model needs to ask a clarifying question, or before
 its first side-effecting write — and resuming exactly where it left off.
 
-* **Runs are session-bound.** A run acts as the user who started it; nothing
-  runs in the background.
+* **Runs can finish with the page closed.** A run acts as the user who started it. If you close
+  the tab or shut the laptop, the run carries on in the background (see "Background runs"
+  below) and stops to wait for you when it needs an answer or an approval.
 * **Tools are WordPress Abilities**, restricted per run to an allow-list
   supplied directly by the consumer, or derived from a registered **pack**
   (a named tool surface — pages, posts, site, or commerce, all bundled).
@@ -101,8 +102,39 @@ its first side-effecting write — and resuming exactly where it left off.
   WordPress's own revisions.
 * **Guided setup.** The Specflux Site Agent screen walks you through connecting a model, choosing how
   changes are approved, and, with Belayline Agent Governance, turning Specflux Site Agent on for your role.
-* **Not for multisite.** Specflux Site Agent refuses to activate on a WordPress
-  multisite install.
+* **Multisite.** Works on a WordPress multisite network, one independent install per site
+  (see "Multisite" below).
+
+**Background runs**
+
+* **Runs carry on without you.** Close the page and the run keeps going, one step at a time,
+  through the Action Scheduler queue (the same library WooCommerce uses; Specflux Site Agent
+  bundles a copy). It acts as the user who started it, with that user's permissions.
+* **Approvals while you're away.** When a run needs approval and Belayline Agent Governance
+  is active, approve it in Belayline's Pending screen, from any device, and the run picks up
+  where it stopped. Pending approvals for runs stay open for 7 days instead of 1 hour. Rejecting one
+  is picked up the same way.
+* **A "run needs your approval" email.** Without Belayline, a run that stops for an approval,
+  a question or a plan, after you've left, emails the person who started it once, with a link
+  to the run. The email names the goal and what is waiting, never the details of the changes.
+  With Belayline active, Belayline sends its own approval email instead.
+* **Nothing runs forever.** A run that is still working or waiting after 14 days is cancelled.
+  Finished runs and their steps are deleted after 90 days.
+* **It needs the queue to run.** Background steps run when WordPress's scheduled-task system
+  (WP-Cron) fires, which on a quiet site can be minutes apart. See the FAQ on real cron.
+
+**Multisite**
+
+* Network-activate it or activate it per site. Every site gets its own runs, connections,
+  settings and queue; nothing is shared between sites, and a connection made on one site
+  doesn't work on another.
+* Signing in with Claude or ChatGPT (OAuth) is off on subsites of a subdirectory network,
+  because its discovery addresses can only live at the network's root. Application-password
+  connections (Claude Code, Cursor, VS Code) work everywhere. Sites on a subdomain network offer it.
+* Deleting the plugin walks every site. As on a single site, your data is kept unless you opt in
+  to removal first.
+* To keep the old behaviour of refusing multisite, return false from the
+  `specflux_site_agent_allow_multisite` filter.
 
 == Installation ==
 
@@ -154,9 +186,39 @@ plugins — new runs pick it up automatically.
 
 = Does a run keep going while I'm not looking? =
 
-No. Runs are session-bound and driven from the browser; nothing executes in
-the background. A parked run simply waits until someone with permission
-resolves it.
+Yes. Once a run is started, closing the page doesn't stop it: the next steps run in the
+background through Action Scheduler, as the person who started it. The run still stops when it
+needs a person (an approval, a question or a plan) and waits. Without Belayline Agent
+Governance it emails that person once; with Belayline active, Belayline's own approval email and
+Pending screen are how you approve while away. A run left waiting for 14 days is cancelled.
+
+= Will background runs work on a quiet site? What is real cron? =
+
+Background steps only run when WordPress's scheduled tasks (WP-Cron) fire, and WP-Cron only fires
+when someone visits the site. On a low-traffic site, or one that turns WP-Cron off with
+`DISABLE_WP_CRON`, a run can sit idle for a long time or never advance. The fix is a real cron
+job on your host that calls WordPress every minute. Either
+`* * * * * curl -s https://example.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1` (with your own address),
+or, if you have WP-CLI, `* * * * * wp cron event run --due-now --path=/path/to/wordpress`. Most hosts
+have a "cron jobs" screen in their panel. Add `define( 'DISABLE_WP_CRON', true );` to
+wp-config.php after you set it up, so visitors don't also trigger it. Runs started and watched in the
+browser don't depend on this.
+
+= How well does it scale? =
+
+We measured it on a development laptop (an older 1.4 GHz Intel i5 with debugging switched on) with 20,000
+orders, 10,000 posts and 10,000 runs. The plugin's own work per background step was about 0.1 second
+(95th percentile 0.12 s, 0.107 s with 10,500 runs and 100,000 Belayline audit rows), and the Runs screen listed
+runs in about 10 ms of database time. Those queue timings are the best case: they were driven from the
+command line, not by WP-Cron, so on a real site the wait between steps depends on your
+traffic or your cron job. About 17 KB of database per run. The full method and numbers are in PROOF-0.4-SCALE.md in the
+public repository, https://github.com/specflux/specflux-site-agent.
+
+= Do old runs get deleted? =
+
+Finished runs (and their steps) older than 90 days are deleted by a daily job, in small batches.
+Change the period with the `specflux_site_agent_run_retention_days` filter; return 0 to keep them
+all. Runs that are still waiting or working are never pruned, but are cancelled after 14 days.
 
 = What happens to a run in progress when I upgrade from 0.2? =
 
@@ -185,7 +247,9 @@ with the `specflux_site_agent_theme_patterns` filter.
 
 = Does Specflux Site Agent support WordPress multisite? =
 
-No. Specflux Site Agent refuses to activate on a multisite install.
+Yes, from 0.4. Each site is independent: its own runs, connections, settings and queue. Signing in with
+Claude or ChatGPT is off on subsites of a subdirectory network (application-password
+connections still work there). See "Multisite" in the description.
 
 = Is it safe to let an AI app connect? =
 
@@ -197,9 +261,9 @@ provider, so connect only apps you trust with that content.
 
 == External services ==
 
-Specflux Site Agent itself makes the outbound requests below. The ones for runs happen only while a
-human is actively driving a run from their own browser session — Specflux Site Agent never runs in the
-background.
+Specflux Site Agent itself makes the outbound requests below. The ones for runs happen only
+for a run a person started: while they are driving it from their browser, or, once they have
+closed the page, in the background on their behalf. Nothing is sent unless a person started a run.
 
 **Connected AI apps.** When you connect an AI app, the app calls your site; Specflux Site Agent doesn't
 call the app. Whatever its tools read (posts, comments, settings, store data) goes to that app
@@ -267,8 +331,13 @@ Library.
 
 Specflux Site Agent stores each run in two custom tables: the ID of the user who
 started it, the goal they typed, the conversation with the AI model, the
-tool calls and their results, and timestamps. Runs stay until you remove
-them or delete the plugin with the opt-in below.
+tool calls and their results, and timestamps. Finished runs and their steps are deleted after 90
+days (a site owner can change that with the `specflux_site_agent_run_retention_days` filter; 0
+keeps them).
+
+Background runs also leave Action Scheduler's own queue records (a scheduled action and a short
+log per step). When a background run waits for you and Belayline isn't active, Site Agent emails
+the account's address once, with the run's goal and a link, through your site's own mail.
 
 Runs are sent off-site to the AI provider you connected, and search terms
 are sent to Openverse; see "External services" above for exactly what.
@@ -340,6 +409,25 @@ the public repository, https://github.com/specflux/specflux-site-agent. To rebui
 = 0.4.0 =
 
 New:
+
+* Runs finish with the page closed. A run carries on in the background through Action Scheduler
+  (bundled), as the person who started it, and stops to wait when it needs an approval, a
+  question or a plan. Background steps need WP-Cron to fire; see the FAQ on real cron for quiet sites.
+* Approvals while you're away. With Belayline Agent Governance 0.5 or newer, approving a run's
+  request in Belayline resumes the run, and requests from runs stay open for 7 days instead of 1 hour. A
+  request that lapses ends the run with a clear reason.
+* A "run needs your approval" email. Without Belayline, a background run that stops for an
+  approval, question or plan emails its owner once, with a link to the run.
+* Retention: runs left waiting or working for 14 days are cancelled, and finished runs are deleted
+  after 90 days (filter `specflux_site_agent_run_retention_days`, 0 keeps them).
+* Multisite support, one independent install per site. Sign-in for Claude and ChatGPT (OAuth) is off
+  on subsites of a subdirectory network; application-password connections still work.
+* Connections belong to the site they were made on, so one site's connection no longer shows up or works on another site
+  in a network.
+* Redesigned Runs, AI apps and Settings screens: one calm layout, app cards with the setup
+  steps, one table of connected apps, and clearer approval cards. The AI apps card copy is shorter.
+* Belayline's Overview map can show a signed-in AI app by name.
+* The Runs list loads faster on sites with many runs (a new database index).
 
 * Connect AI apps over MCP. Specflux Site Agent runs its own MCP server on WordPress's MCP Adapter, off
   until you turn it on, with a Connect screen for Claude, ChatGPT, Claude Code, Cursor, VS Code
@@ -471,7 +559,7 @@ New:
 == Upgrade Notice ==
 
 = 0.4.0 =
-Adds an MCP connector for AI apps (off until you turn it on), result cards, undo with Belayline Agent Governance 0.5, and new tools for comments, users, settings and menus. Adds a database table.
+Runs now finish in the background with the page closed (they need WP-Cron, or a real cron on quiet sites), with an approval email, 90-day run retention and multisite support. Adds an MCP connector for AI apps (off until you turn it on), result cards, undo with Belayline Agent Governance 0.5, and new tools for comments, users, settings and menus. Adds database tables and indexes; back up your database first.
 
 = 0.3.3 =
 New name, slug and text domain. No feature changes.
