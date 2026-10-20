@@ -177,7 +177,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertStringContainsString( 'id="specflux-site-agent-signin-cursor"', $html );
 		$this->assertStringNotContainsString( 'id="specflux-site-agent-signin-vscode"', $html, 'VS Code documents OAuth only with a pre-set client id' );
 		$this->assertStringContainsString( 'type /mcp in Claude Code', $html );
-		$this->assertSame( 2, substr_count( $html, '>Use an app password</button>' ) );
+		$this->assertSame( 2, substr_count( $html, '>Use a password</button>' ) );
 		$this->assertSame( 2, substr_count( $html, '>Create connection</button><a' ) + substr_count( $html, '>Create connection</button><button' ), 'VS Code and Other still lead with a password' );
 		$this->assertStringNotContainsString( 'Gives you one command to run in your terminal.', $html );
 	}
@@ -189,7 +189,7 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$html = $this->html();
 
 		$this->assertStringNotContainsString( 'specflux-site-agent-signin-', $html );
-		$this->assertStringNotContainsString( 'Use an app password', $html );
+		$this->assertStringNotContainsString( 'Use a password', $html );
 		$this->assertStringContainsString( 'Gives you one command to run in your terminal.', $html );
 	}
 

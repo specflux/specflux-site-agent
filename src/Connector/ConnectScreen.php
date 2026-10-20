@@ -465,7 +465,7 @@ final class ConnectScreen {
 			echo '<div class="aui-card-f">';
 			if ( 'password' === $card['kind'] ) {
 				if ( null !== $sign_in ) {
-					echo '<button type="button" class="aui-btn aui-btn--ghost aui-btn--sm" data-aui-open="specflux-site-agent-dlg-' . esc_attr( $card['client'] ) . '">' . esc_html__( 'Use an app password', 'specflux-site-agent' ) . '</button>';
+					echo '<button type="button" class="aui-btn aui-btn--ghost aui-btn--sm" data-aui-open="specflux-site-agent-dlg-' . esc_attr( $card['client'] ) . '">' . esc_html__( 'Use a password', 'specflux-site-agent' ) . '</button>';
 				} else {
 					echo '<button type="button" class="aui-btn aui-btn--primary aui-btn--sm" data-aui-open="specflux-site-agent-dlg-' . esc_attr( $card['client'] ) . '">' . esc_html__( 'Create connection', 'specflux-site-agent' ) . '</button>';
 				}
