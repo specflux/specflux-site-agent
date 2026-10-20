@@ -92,4 +92,29 @@ final class ClientConfigTest extends TestCase {
 
 		$this->assertStringContainsString( "'https://x.test/a'\\''b'", $config['text'] );
 	}
+
+	public function test_claude_code_and_cursor_sign_in_with_no_password_in_the_setup(): void {
+		$claude = ClientConfig::signIn( ClientConfig::CLAUDE_CODE, self::URL );
+		$cursor = ClientConfig::signIn( ClientConfig::CURSOR, self::URL );
+
+		$this->assertNotNull( $claude );
+		$this->assertSame( "claude mcp add --transport http specflux 'https://example.test/wp-json/specflux-site-agent/mcp'", $claude['text'] );
+		$this->assertStringContainsString( '/mcp', $claude['where'] );
+		$this->assertNotNull( $cursor );
+		$this->assertSame( array( 'mcpServers' => array( 'specflux' => array( 'url' => self::URL ) ) ), json_decode( $cursor['text'], true ) );
+		$this->assertStringNotContainsString( 'Authorization', $claude['text'] . $cursor['text'] );
+	}
+
+	public function test_apps_without_documented_dynamic_sign_in_get_no_sign_in_setup(): void {
+		foreach ( array( ClientConfig::VS_CODE, ClientConfig::CLAUDE_DESKTOP, ClientConfig::OTHER, 'nope' ) as $client ) {
+			$this->assertNull( ClientConfig::signIn( $client, self::URL ), $client );
+		}
+	}
+
+	public function test_a_quote_in_the_url_cannot_break_out_of_the_sign_in_command(): void {
+		$config = ClientConfig::signIn( ClientConfig::CLAUDE_CODE, "https://x.test/a'b" );
+
+		$this->assertNotNull( $config );
+		$this->assertStringEndsWith( "'https://x.test/a'\\''b'", $config['text'] );
+	}
 }

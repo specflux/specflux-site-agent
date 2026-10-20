@@ -139,6 +139,37 @@ final class ClientConfig {
 	}
 
 	/**
+	 * The setup for a client that signs in to this site (OAuth), so no password
+	 * is made at all; null for a client whose docs do not promise sign-in.
+	 * VS Code is left out: its configuration reference documents OAuth only
+	 * with a pre-set client id, and this server registers clients dynamically.
+	 *
+	 * @param string $client A {@see clients()} id.
+	 * @param string $url    The server URL.
+	 * @return array{where:string,text:string}|null
+	 */
+	public static function signIn( string $client, string $url ): ?array {
+		switch ( $client ) {
+			case self::CLAUDE_CODE:
+				// https://code.claude.com/docs/en/mcp ("Use `/mcp` to authenticate with remote servers that require OAuth 2.0 authentication").
+				return array(
+					'where' => __( 'Run this in a terminal, then type /mcp in Claude Code, sign in to this site and choose Read only or Read and write.', 'specflux-site-agent' ),
+					'text'  => sprintf( 'claude mcp add --transport http %s %s', self::SERVER_NAME, self::quote( $url ) ),
+				);
+
+			case self::CURSOR:
+				// https://cursor.com/docs/context/mcp ("Cursor supports OAuth for servers that require it").
+				return array(
+					'where' => __( 'Add this to ~/.cursor/mcp.json (or merge it into the servers already there). Cursor asks you to sign in to this site, where you choose Read only or Read and write.', 'specflux-site-agent' ),
+					'text'  => (string) wp_json_encode( array( 'mcpServers' => array( self::SERVER_NAME => array( 'url' => $url ) ) ), JSON_UNESCAPED_SLASHES ),
+				);
+
+			default:
+				return null;
+		}
+	}
+
+	/**
 	 * Pretty JSON with slashes left alone, as a person would write it.
 	 *
 	 * @param array<string,mixed> $value The config.

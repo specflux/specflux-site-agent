@@ -167,6 +167,32 @@ final class ConnectScreenTest extends ConnectorTestCase {
 		$this->assertStringNotContainsString( 'Coming soon', $html );
 	}
 
+	public function test_claude_code_and_cursor_lead_with_sign_in_and_keep_the_password_as_a_fallback(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '/%postname%/' );
+
+		$html = $this->html();
+
+		$this->assertStringContainsString( 'id="specflux-site-agent-signin-claude-code" readonly value="claude mcp add --transport http specflux &#039;' . esc_attr( ConnectScreen::serverUrl() ) . '&#039;"', $html );
+		$this->assertStringContainsString( 'id="specflux-site-agent-signin-cursor"', $html );
+		$this->assertStringNotContainsString( 'id="specflux-site-agent-signin-vscode"', $html, 'VS Code documents OAuth only with a pre-set client id' );
+		$this->assertStringContainsString( 'type /mcp in Claude Code', $html );
+		$this->assertSame( 2, substr_count( $html, '>Use an app password</button>' ) );
+		$this->assertSame( 2, substr_count( $html, '>Create connection</button><a' ) + substr_count( $html, '>Create connection</button><button' ), 'VS Code and Other still lead with a password' );
+		$this->assertStringNotContainsString( 'Gives you one command to run in your terminal.', $html );
+	}
+
+	public function test_without_sign_in_claude_code_and_cursor_fall_back_to_a_password(): void {
+		$this->enableConnector();
+		update_option( 'permalink_structure', '' );
+
+		$html = $this->html();
+
+		$this->assertStringNotContainsString( 'specflux-site-agent-signin-', $html );
+		$this->assertStringNotContainsString( 'Use an app password', $html );
+		$this->assertStringContainsString( 'Gives you one command to run in your terminal.', $html );
+	}
+
 	public function test_plain_permalinks_show_the_reason_instead_of_the_instructions(): void {
 		$this->enableConnector();
 		update_option( 'permalink_structure', '' );
